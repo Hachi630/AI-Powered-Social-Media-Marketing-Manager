@@ -1,20 +1,11 @@
-import { useState } from 'react'
+import Dashboard from './components/Dashboard'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <h1>Vite + React + TypeScript</h1>
-        <div className="card">
-          <button onClick={() => setCount((count) => count + 1)}>
-            count is {count}
-          </button>
-        </div>
-      </div>
-    </>
+    <div className="app">
+      <Dashboard isLoggedIn={false} />
+    </div>
   )
 }
 

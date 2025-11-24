@@ -1,0 +1,113 @@
+.header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #d9d9d9;
+  height: 99px;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 32px;
+  max-width: 1831px;
+  margin: 0 auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logoImage {
+  width: 56px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.logoText {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1.2;
+  color: #1e1e1e;
+  letter-spacing: -0.48px;
+}
+
+.nav {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.navLink {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: #1e1e1e;
+  text-decoration: none;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.navLink:hover {
+  background-color: #f5f5f5;
+}
+
+.authButtons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.signInBtn {
+  background-color: #e3e3e3;
+  border: 1px solid #767676;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: #1e1e1e;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.signInBtn:hover {
+  background-color: #d0d0d0;
+}
+
+.registerBtn {
+  background-color: #2c2c2c;
+  border: 1px solid #2c2c2c;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.registerBtn:hover {
+  background-color: #1a1a1a;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+  
+  .nav {
+    display: none;
+  }
+}
+
