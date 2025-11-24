@@ -1,31 +1,48 @@
-import styles from './ChatBox.module.css';
+import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined } from '@ant-design/icons'
+import { Button, Card, Input, Space, Tooltip } from 'antd'
+import { useState } from 'react'
+import styles from './ChatBox.module.css'
 
-const imgImage = "https://www.figma.com/api/mcp/asset/3d8e0cdd-ecdb-4f02-b256-ee2d85bad6ec";
-const imgCode = "https://www.figma.com/api/mcp/asset/1453c2fc-6b55-4113-8550-24c95b6e4596";
-const imgMic = "https://www.figma.com/api/mcp/asset/19ec87e1-d893-4947-8003-861e52580e32";
-const imgArrow = "https://www.figma.com/api/mcp/asset/df0627ac-ba6b-421d-9701-e2fdb38facd6";
+const { TextArea } = Input
+
+const toolbarActions = [
+  { key: 'image', icon: <PictureOutlined />, label: 'Insert image' },
+  { key: 'code', icon: <CodeOutlined />, label: 'Share code' },
+  { key: 'audio', icon: <AudioOutlined />, label: 'Use microphone' },
+]
 
 export default function ChatBox() {
+  const [message, setMessage] = useState('')
+  const isEmpty = !message.trim()
+
   return (
-    <div className={styles.chatBox}>
-      <p className={styles.placeholder}>What would you like to know?</p>
-      <div className={styles.controls}>
-        <div className={styles.iconButtons}>
-          <button className={styles.iconButton}>
-            <img src={imgImage} alt="Image" className={styles.icon} />
-          </button>
-          <button className={styles.iconButton}>
-            <img src={imgCode} alt="Code" className={styles.icon} />
-          </button>
-          <button className={styles.iconButton}>
-            <img src={imgMic} alt="Mic" className={styles.icon} />
-          </button>
-        </div>
-        <button className={styles.sendButton}>
-          <img src={imgArrow} alt="Send" className={styles.icon} />
-        </button>
-      </div>
-    </div>
-  );
+    <Card className={styles.chatCard} bodyStyle={{ padding: 24 }}>
+      <Space direction="vertical" size={24} className={styles.inner}>
+        <TextArea
+          autoSize={{ minRows: 2, maxRows: 4 }}
+          placeholder="What would you like to know?"
+          value={message}
+          onChange={(event) => setMessage(event.target.value)}
+        />
+        <Space align="center" className={styles.toolbar}>
+          <Space size="middle">
+            {toolbarActions.map((action) => (
+              <Tooltip title={action.label} key={action.key}>
+                <Button shape="circle" icon={action.icon} />
+              </Tooltip>
+            ))}
+          </Space>
+          <Tooltip title="Send message">
+            <Button
+              type="primary"
+              shape="circle"
+              disabled={isEmpty}
+              icon={<ArrowUpOutlined />}
+            />
+          </Tooltip>
+        </Space>
+      </Space>
+    </Card>
+  )
 }
 

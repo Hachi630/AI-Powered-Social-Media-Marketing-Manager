@@ -1,25 +1,33 @@
-import { useState } from 'react';
-import Header from './Header';
-import ChatBox from './ChatBox';
-import Sidebar from './Sidebar';
-import styles from './Dashboard.module.css';
+import { Layout, Typography } from 'antd'
+import ChatBox from './ChatBox'
+import Header from './Header'
+import Sidebar from './Sidebar'
+import styles from './Dashboard.module.css'
 
 interface DashboardProps {
-  isLoggedIn?: boolean;
+  isLoggedIn?: boolean
 }
+
+const { Content, Sider } = Layout
 
 export default function Dashboard({ isLoggedIn = false }: DashboardProps) {
   return (
-    <div className={styles.dashboard}>
+    <Layout className={styles.dashboard}>
       <Header isLoggedIn={isLoggedIn} />
-      <div className={styles.content}>
-        {isLoggedIn && <Sidebar />}
-        <div className={styles.mainContent}>
-          <h1 className={styles.title}>What Can I Do For You Today?</h1>
+      <Layout>
+        {isLoggedIn && (
+          <Sider width={360} className={styles.sider} theme="light">
+            <Sidebar />
+          </Sider>
+        )}
+        <Content className={styles.content}>
+          <Typography.Title level={1} className={styles.title}>
+            What Can I Do For You Today?
+          </Typography.Title>
           <ChatBox />
-        </div>
-      </div>
-    </div>
-  );
+        </Content>
+      </Layout>
+    </Layout>
+  )
 }
 
