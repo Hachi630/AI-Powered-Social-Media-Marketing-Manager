@@ -1,2 +1,1 @@
-# Melo
-Melo project
+# 🚀 AI-Powered Social Media & Marketing Manager - Melo
