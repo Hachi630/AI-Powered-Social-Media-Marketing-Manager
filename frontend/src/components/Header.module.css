@@ -18,6 +18,18 @@
   min-width: 200px;
 }
 
+.logoButton {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.logoButton:focus-visible {
+  outline: 2px solid #6750a4;
+  border-radius: 8px;
+}
+
 .logoImage {
   width: 56px;
   height: 54px;
