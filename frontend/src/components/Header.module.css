@@ -18,6 +18,11 @@
   min-width: 200px;
 }
 
+.logoGroupCompact {
+  min-width: auto;
+  gap: 8px;
+}
+
 .logoButton {
   border: none;
   padding: 0;

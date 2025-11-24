@@ -2,6 +2,8 @@ import { Card, Calendar, Layout, Space, Typography } from 'antd'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState } from 'react'
 import Header from '../components/Header'
+import { MELO_LOGO } from '../constants/assets'
+import styles from './CalendarPlaceholder.module.css'
 
 const { Content } = Layout
 
@@ -19,14 +21,14 @@ export default function CalendarPlaceholder() {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Header isLoggedIn={false} />
-      <Content style={{ padding: '48px 24px' }}>
-        <Space direction="vertical" size="large" style={{ width: '100%', maxWidth: 1200, margin: '0 auto' }}>
-          <Typography.Title level={2} style={{ textAlign: 'center', marginBottom: 0 }}>
+    <Layout className={styles.layout}>
+      <Header isLoggedIn={false} showBrandName={false} logoSrc={MELO_LOGO} />
+      <Content className={styles.content}>
+        <Space direction="vertical" size="large" className={styles.container}>
+          <Typography.Title level={2} className={styles.title}>
             Smart Calendar
           </Typography.Title>
-          <Card>
+          <Card className={styles.card}>
             <Calendar
               fullscreen
               validRange={[dayjs().subtract(1, 'year'), dayjs().add(2, 'year')]}
@@ -35,7 +37,7 @@ export default function CalendarPlaceholder() {
               onPanelChange={onPanelChange}
             />
           </Card>
-          <Card>
+          <Card className={styles.card}>
             <Typography.Text strong>
               Selected date: {selectedValue.format('YYYY-MM-DD')}
             </Typography.Text>

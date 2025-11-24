@@ -13,6 +13,7 @@ import {
 } from 'antd'
 import { useState } from 'react'
 import Header from '../components/Header'
+import { MELO_LOGO } from '../constants/assets'
 import styles from './BrandProfile.module.css'
 
 const { Content } = Layout
@@ -55,7 +56,7 @@ export default function BrandProfile() {
 
   return (
     <Layout className={styles.layout}>
-      <Header isLoggedIn={false} />
+      <Header isLoggedIn={false} showBrandName={false} logoSrc={MELO_LOGO} />
       <Content className={styles.content}>
         <Typography.Title level={1} className={styles.pageTitle}>
           Brand Profile (Maya’s CalmNest)
