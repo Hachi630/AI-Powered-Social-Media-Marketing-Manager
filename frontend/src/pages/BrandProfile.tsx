@@ -62,7 +62,7 @@ export default function BrandProfile() {
           Brand Profile (Maya’s CalmNest)
         </Typography.Title>
 
-        <Row gutter={[24, 24]}>
+        <Row gutter={[150, 100]} className={styles.row}>
           <Col xs={24} md={8}>
             <Card title="Basic Info" className={styles.card}>
               <Space direction="vertical" size="large" className={styles.fullWidth}>
@@ -112,15 +112,13 @@ export default function BrandProfile() {
           </Col>
 
           <Col xs={24} md={6}>
-            <Card className={styles.card}>
-              <Button type="primary" block size="large">
-                Save Profile
-              </Button>
-            </Card>
+            <Button type="primary" block size="large">
+              Save Profile
+            </Button>
           </Col>
         </Row>
 
-        <Row gutter={[24, 24]}>
+        <Row gutter={[150, 100]} className={styles.row}>
           <Col xs={24} md={8}>
             <Card title="Target Knowledge Base" className={styles.card}>
               <Typography.Paragraph type="secondary">
