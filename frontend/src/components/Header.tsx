@@ -1,7 +1,9 @@
 import type { MenuProps } from 'antd'
 import { Button, Layout, Menu, Space, Typography } from 'antd'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
+import AuthModal from './AuthModal'
 import styles from './Header.module.css'
 
 export interface HeaderProps {
@@ -25,11 +27,16 @@ export default function Header({
 }: HeaderProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   let selectedKey =
     navItems?.find((item) => location.pathname.startsWith(String(item?.key)))?.key ?? ''
   if (!selectedKey && location.pathname === '/') {
     selectedKey = '/dashboard'
+  }
+
+  const handleAuthClick = () => {
+    setIsAuthModalOpen(true)
   }
 
   return (
@@ -53,11 +60,13 @@ export default function Header({
       />
       {!isLoggedIn && (
         <Space size="middle">
-          <Button>Sign in</Button>
-          <Button type="primary">Register</Button>
+          <Button onClick={handleAuthClick}>Sign in</Button>
+          <Button type="primary" onClick={handleAuthClick}>
+            Register
+          </Button>
         </Space>
       )}
+      <AuthModal open={isAuthModalOpen} onCancel={() => setIsAuthModalOpen(false)} />
     </AntHeader>
   )
 }
-
