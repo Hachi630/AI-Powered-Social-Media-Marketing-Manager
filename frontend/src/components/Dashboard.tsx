@@ -50,6 +50,7 @@ export default function Dashboard({
         {...headerOverrides}
       />
       <Layout>
+        {/* Sidebar with "Flippy chats" only shows when user is logged in */}
         {isLoggedIn && (
           <Sider
             width={360}
