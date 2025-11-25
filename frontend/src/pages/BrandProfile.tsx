@@ -39,6 +39,9 @@ export default function BrandProfile() {
   const [selectedTone, setSelectedTone] = useState('calm')
   const [audienceTags, setAudienceTags] = useState(initialAudience)
   const [keyword, setKeyword] = useState('')
+  const [products, setProducts] = useState(knowledgeProducts)
+  const [showProductInput, setShowProductInput] = useState(false)
+  const [newProduct, setNewProduct] = useState('')
 
   const addAudienceTag = () => {
     if (!keyword.trim()) {
@@ -52,6 +55,21 @@ export default function BrandProfile() {
 
   const removeAudienceTag = (tag: string) => {
     setAudienceTags(audienceTags.filter((item) => item !== tag))
+  }
+
+  const addProduct = () => {
+    if (!newProduct.trim()) {
+      return
+    }
+    if (!products.includes(newProduct.trim())) {
+      setProducts([...products, newProduct.trim()])
+    }
+    setNewProduct('')
+    setShowProductInput(false)
+  }
+
+  const removeProduct = (product: string) => {
+    setProducts(products.filter((item) => item !== product))
   }
 
   return (
@@ -83,7 +101,7 @@ export default function BrandProfile() {
             </Card>
           </Col>
 
-          <Col xs={24} md={10}>
+          <Col xs={24} md={11}>
             <Card
               title="Tone of Voice"
               extra={<Typography.Text type="secondary">How should the AI sound?</Typography.Text>}
@@ -111,7 +129,7 @@ export default function BrandProfile() {
             </Card>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={5}>
             <Button type="primary" block size="large">
               Save Profile
             </Button>
@@ -125,16 +143,55 @@ export default function BrandProfile() {
                 AI has learned about these products
               </Typography.Paragraph>
               <ul className={styles.list}>
-                {knowledgeProducts.map((product) => (
-                  <li key={product}>{product}</li>
+                {products.map((product) => (
+                  <li key={product}>
+                    {product}
+                    <Button
+                      type="link"
+                      size="small"
+                      onClick={() => removeProduct(product)}
+                      className={styles.removeButton}
+                    >
+                      ×
+                    </Button>
+                  </li>
                 ))}
               </ul>
-              <Button icon={<PlusOutlined />} type="dashed" block>
-                Add New Product
-              </Button>
+              {showProductInput ? (
+                <Space direction="vertical" size="small" className={styles.fullWidth}>
+                  <Input
+                    size="large"
+                    placeholder="Enter product name"
+                    value={newProduct}
+                    onChange={(event) => setNewProduct(event.target.value)}
+                    onPressEnter={addProduct}
+                    autoFocus
+                  />
+                  <Space>
+                    <Button type="primary" onClick={addProduct}>
+                      Add
+                    </Button>
+                    <Button onClick={() => {
+                      setShowProductInput(false)
+                      setNewProduct('')
+                    }}>
+                      Cancel
+                    </Button>
+                  </Space>
+                </Space>
+              ) : (
+                <Button
+                  icon={<PlusOutlined />}
+                  type="dashed"
+                  block
+                  onClick={() => setShowProductInput(true)}
+                >
+                  Add New Product
+                </Button>
+              )}
             </Card>
           </Col>
-          <Col xs={24} md={10}>
+          <Col xs={24} md={11}>
             <Card title="Target Audience" className={styles.card}>
               <Space direction="vertical" size="large" className={styles.fullWidth}>
                 <Input

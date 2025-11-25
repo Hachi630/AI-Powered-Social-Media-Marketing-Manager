@@ -67,6 +67,33 @@
 
 .list li {
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.removeButton {
+  padding: 0 4px !important;
+  height: auto !important;
+  margin-left: 8px;
+  color: #ff4d4f !important;
+}
+
+.removeButton:hover {
+  color: #ff7875 !important;
+}
+
+/* 确保所有 Input 和 Select 背景色为白色 */
+:global(.ant-input),
+:global(.ant-input-affix-wrapper),
+:global(.ant-select-selector) {
+  background-color: #ffffff !important;
+}
+
+:global(.ant-input):focus,
+:global(.ant-input-affix-wrapper):focus,
+:global(.ant-select-focused .ant-select-selector) {
+  background-color: #ffffff !important;
 }
 
 @media (max-width: 768px) {
