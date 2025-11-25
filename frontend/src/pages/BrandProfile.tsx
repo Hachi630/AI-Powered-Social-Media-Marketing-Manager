@@ -152,7 +152,7 @@ export default function BrandProfile() {
                       onClick={() => removeProduct(product)}
                       className={styles.removeButton}
                     >
-                      ×
+                      
                     </Button>
                   </li>
                 ))}
