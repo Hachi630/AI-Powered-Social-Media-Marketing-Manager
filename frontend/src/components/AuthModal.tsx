@@ -8,20 +8,23 @@ import {
   MobileOutlined,
   WindowsFilled,
 } from '@ant-design/icons'
-import { Button, Divider, Input, Modal, Space, Typography } from 'antd'
+import { Button, Divider, Input, message, Modal, Space, Typography } from 'antd'
 import { useState } from 'react'
+import { authService, User } from '../services/authService'
 import styles from './AuthModal.module.css'
 
 interface AuthModalProps {
   open: boolean
   onCancel: () => void
+  onLoginSuccess: (user: User) => void
 }
 
-export default function AuthModal({ open, onCancel }: AuthModalProps) {
+export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalProps) {
   const [step, setStep] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleEmailContinue = () => {
     if (email.trim()) {
@@ -34,9 +37,35 @@ export default function AuthModal({ open, onCancel }: AuthModalProps) {
     setPassword('')
   }
 
-  const handleSignupContinue = () => {
-    // Add actual registration logic here
-    console.log('Signup with:', { email, password })
+  const handleSignupContinue = async () => {
+    if (!email || !password) return
+
+    setLoading(true)
+    try {
+      // 1. Try to register
+      let response = await authService.register(email, password)
+
+      // 2. If user exists, try to login with the same credentials
+      if (!response.success && response.message === 'User already exists') {
+        response = await authService.login(email, password)
+      }
+
+      if (response.success && response.user) {
+        message.success('Successfully logged in!')
+        onLoginSuccess(response.user)
+        onCancel()
+        // Reset form
+        setStep('login')
+        setEmail('')
+        setPassword('')
+      } else {
+        message.error(response.message || 'Authentication failed')
+      }
+    } catch (error) {
+      message.error('An error occurred during authentication')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -168,6 +197,7 @@ export default function AuthModal({ open, onCancel }: AuthModalProps) {
                 className={styles.continueBtn}
                 onClick={handleSignupContinue}
                 disabled={!password.trim()}
+                loading={loading}
               >
                 Continue
               </Button>
@@ -188,4 +218,3 @@ export default function AuthModal({ open, onCancel }: AuthModalProps) {
     </Modal>
   )
 }
-

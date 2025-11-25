@@ -1,4 +1,4 @@
-import { PlusOutlined } from '@ant-design/icons'
+import { CloseOutlined, PlusOutlined } from '@ant-design/icons'
 import {
   Button,
   Card,
@@ -15,6 +15,7 @@ import { useState } from 'react'
 import Header from '../components/Header'
 import { MELO_LOGO } from '../constants/assets'
 import styles from './BrandProfile.module.css'
+import { User } from '../services/authService'
 
 const { Content } = Layout
 
@@ -24,7 +25,7 @@ const toneButtons = [
   { key: 'mindful', label: 'Mindful', color: '#b2b2b2' },
 ]
 
-const knowledgeProducts = ['Lavender Candle', 'Succulent Pot']
+const initialKnowledgeProducts = ['Lavender Candle', 'Succulent Pot']
 
 const industryOptions = [
   { value: 'home-decor', label: 'Home Decor' },
@@ -35,12 +36,18 @@ const industryOptions = [
 
 const initialAudience = ['Yoga lovers', 'Interior design enthusiast']
 
-export default function BrandProfile() {
+interface BrandProfileProps {
+  isLoggedIn: boolean
+  onLoginSuccess: (user: User) => void
+  onLogout: () => void
+}
+
+export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: BrandProfileProps) {
   const [selectedTone, setSelectedTone] = useState('calm')
   const [audienceTags, setAudienceTags] = useState(initialAudience)
   const [keyword, setKeyword] = useState('')
-  const [products, setProducts] = useState(knowledgeProducts)
-  const [showProductInput, setShowProductInput] = useState(false)
+  const [knowledgeProducts, setKnowledgeProducts] = useState(initialKnowledgeProducts)
+  const [showAddProductInput, setShowAddProductInput] = useState(false)
   const [newProduct, setNewProduct] = useState('')
 
   const addAudienceTag = () => {
@@ -57,24 +64,27 @@ export default function BrandProfile() {
     setAudienceTags(audienceTags.filter((item) => item !== tag))
   }
 
-  const addProduct = () => {
-    if (!newProduct.trim()) {
-      return
+  const handleAddProduct = () => {
+    if (newProduct.trim() && !knowledgeProducts.includes(newProduct.trim())) {
+      setKnowledgeProducts([...knowledgeProducts, newProduct.trim()])
+      setNewProduct('')
+      setShowAddProductInput(false)
     }
-    if (!products.includes(newProduct.trim())) {
-      setProducts([...products, newProduct.trim()])
-    }
-    setNewProduct('')
-    setShowProductInput(false)
   }
 
-  const removeProduct = (product: string) => {
-    setProducts(products.filter((item) => item !== product))
+  const handleRemoveProduct = (productToRemove: string) => {
+    setKnowledgeProducts(knowledgeProducts.filter((product) => product !== productToRemove))
   }
 
   return (
     <Layout className={styles.layout}>
-      <Header isLoggedIn={false} showBrandName={false} logoSrc={MELO_LOGO} />
+      <Header
+        isLoggedIn={isLoggedIn}
+        showBrandName={false}
+        logoSrc={MELO_LOGO}
+        onLoginSuccess={onLoginSuccess}
+        onLogout={onLogout}
+      />
       <Content className={styles.content}>
         <Typography.Title level={1} className={styles.pageTitle}>
           Brand Profile (Maya’s CalmNest)
@@ -143,51 +153,50 @@ export default function BrandProfile() {
                 AI has learned about these products
               </Typography.Paragraph>
               <ul className={styles.list}>
-                {products.map((product) => (
+                {knowledgeProducts.map((product) => (
                   <li key={product}>
                     {product}
                     <Button
-                      type="link"
+                      type="text"
+                      icon={<CloseOutlined />}
                       size="small"
-                      onClick={() => removeProduct(product)}
+                      onClick={() => handleRemoveProduct(product)}
                       className={styles.removeButton}
-                    >
-                      
-                    </Button>
+                    />
                   </li>
                 ))}
               </ul>
-              {showProductInput ? (
-                <Space direction="vertical" size="small" className={styles.fullWidth}>
-                  <Input
-                    size="large"
-                    placeholder="Enter product name"
-                    value={newProduct}
-                    onChange={(event) => setNewProduct(event.target.value)}
-                    onPressEnter={addProduct}
-                    autoFocus
-                  />
-                  <Space>
-                    <Button type="primary" onClick={addProduct}>
-                      Add
-                    </Button>
-                    <Button onClick={() => {
-                      setShowProductInput(false)
-                      setNewProduct('')
-                    }}>
-                      Cancel
-                    </Button>
-                  </Space>
-                </Space>
-              ) : (
+              {!showAddProductInput ? (
                 <Button
                   icon={<PlusOutlined />}
                   type="dashed"
                   block
-                  onClick={() => setShowProductInput(true)}
+                  onClick={() => setShowAddProductInput(true)}
                 >
                   Add New Product
                 </Button>
+              ) : (
+                <Space direction="vertical" className={styles.fullWidth}>
+                  <Input
+                    placeholder="Enter new product name"
+                    value={newProduct}
+                    onChange={(e) => setNewProduct(e.target.value)}
+                    onPressEnter={handleAddProduct}
+                  />
+                  <Space>
+                    <Button type="primary" onClick={handleAddProduct}>
+                      Add
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setShowAddProductInput(false)
+                        setNewProduct('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </Space>
+                </Space>
               )}
             </Card>
           </Col>
@@ -203,12 +212,7 @@ export default function BrandProfile() {
                 />
                 <Space wrap>
                   {audienceTags.map((tag) => (
-                    <Tag
-                      key={tag}
-                      color="blue"
-                      closable
-                      onClose={() => removeAudienceTag(tag)}
-                    >
+                    <Tag key={tag} color="blue" closable onClose={() => removeAudienceTag(tag)}>
                       {tag}
                     </Tag>
                   ))}
@@ -224,4 +228,3 @@ export default function BrandProfile() {
     </Layout>
   )
 }
-

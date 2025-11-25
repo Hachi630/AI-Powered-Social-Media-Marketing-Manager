@@ -4,9 +4,10 @@ import {
   PlusOutlined,
   SearchOutlined,
 } from '@ant-design/icons'
-import { Avatar, Button, Input, List, Space, Typography } from 'antd'
+import { Avatar, Button, Input, List, Typography } from 'antd'
 import { useState } from 'react'
 import styles from './Sidebar.module.css'
+import { User } from '../services/authService'
 
 const chatHistory = [
   'Analog Clock React app',
@@ -19,21 +20,23 @@ const chatHistory = [
 const avatarSrc = 'https://www.figma.com/api/mcp/asset/3d8e0cdd-ecdb-4f02-b256-ee2d85bad6ec'
 
 interface SidebarProps {
-  collapsed?: boolean
-  onToggleSidebar?: () => void
+  collapsed: boolean
+  onToggleSidebar: () => void
+  user?: User | null
 }
 
-export default function Sidebar({ collapsed = false, onToggleSidebar }: SidebarProps) {
+export default function Sidebar({ collapsed, onToggleSidebar, user }: SidebarProps) {
   const [selectedChat, setSelectedChat] = useState(0)
 
   return (
-    <div className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
-      <Space direction="vertical" size="large" className={styles.scrollable}>
-        <Space align="center" className={styles.headerRow}>
+    <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
+      <div className={styles.topSection}>
+        <div className={styles.header}>
           <Button
             shape="circle"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={onToggleSidebar}
+            className={styles.menuButton}
           />
           {!collapsed && (
             <>
@@ -43,7 +46,7 @@ export default function Sidebar({ collapsed = false, onToggleSidebar }: SidebarP
               <Button type="text" icon={<PlusOutlined />} />
             </>
           )}
-        </Space>
+        </div>
         {!collapsed && (
           <>
             <Input
@@ -52,8 +55,8 @@ export default function Sidebar({ collapsed = false, onToggleSidebar }: SidebarP
               prefix={<SearchOutlined />}
               allowClear
             />
-            <div>
-              <Typography.Text type="secondary" className={styles.sectionLabel}>
+            <div className={styles.chatsSection}>
+              <Typography.Text type="secondary" className={styles.sectionTitle}>
                 Chats
               </Typography.Text>
               <List
@@ -73,18 +76,11 @@ export default function Sidebar({ collapsed = false, onToggleSidebar }: SidebarP
             </div>
           </>
         )}
-      </Space>
-      {!collapsed ? (
-        <Space align="center" className={styles.userSection}>
-          <Avatar size={32} src={avatarSrc} />
-          <Typography.Text>Miya@gmail.com</Typography.Text>
-        </Space>
-      ) : (
-        <Space align="center" className={styles.userSectionCollapsed}>
-          <Avatar size={32} src={avatarSrc} />
-        </Space>
-      )}
-    </div>
+      </div>
+      <div className={styles.userSection}>
+        <Avatar size={32} src={avatarSrc} />
+        {!collapsed && <Typography.Text>{user?.email || 'Guest'}</Typography.Text>}
+      </div>
+    </aside>
   )
 }
-

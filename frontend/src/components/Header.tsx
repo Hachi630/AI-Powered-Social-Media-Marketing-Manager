@@ -1,15 +1,19 @@
 import type { MenuProps } from 'antd'
-import { Button, Layout, Menu, Space, Typography } from 'antd'
+import { Button, Layout, Menu, Space, Typography, Dropdown } from 'antd'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
 import styles from './Header.module.css'
+import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import { User } from '../services/authService'
 
 export interface HeaderProps {
   isLoggedIn?: boolean
   showBrandName?: boolean
   logoSrc?: string
+  onLoginSuccess?: (user: User) => void
+  onLogout?: () => void
 }
 
 const navItems: MenuProps['items'] = [
@@ -24,6 +28,8 @@ export default function Header({
   isLoggedIn = false,
   showBrandName = false,
   logoSrc = MELO_LOGO,
+  onLoginSuccess,
+  onLogout,
 }: HeaderProps) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -37,6 +43,17 @@ export default function Header({
 
   const handleAuthClick = () => {
     setIsAuthModalOpen(true)
+  }
+
+  const userMenu: MenuProps = {
+    items: [
+      {
+        key: 'logout',
+        label: 'Log out',
+        icon: <LogoutOutlined />,
+        onClick: onLogout,
+      },
+    ],
   }
 
   return (
@@ -58,15 +75,26 @@ export default function Header({
         items={navItems}
         onClick={({ key }) => navigate(String(key))}
       />
-      {!isLoggedIn && (
+      {!isLoggedIn ? (
         <Space size="middle">
           <Button onClick={handleAuthClick}>Sign in</Button>
           <Button type="primary" onClick={handleAuthClick}>
             Register
           </Button>
         </Space>
+      ) : (
+        <Dropdown menu={userMenu} placement="bottomRight">
+          <Button icon={<UserOutlined />} shape="circle" />
+        </Dropdown>
       )}
-      <AuthModal open={isAuthModalOpen} onCancel={() => setIsAuthModalOpen(false)} />
+      <AuthModal
+        open={isAuthModalOpen}
+        onCancel={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={(user) => {
+          onLoginSuccess?.(user)
+          setIsAuthModalOpen(false)
+        }}
+      />
     </AntHeader>
   )
 }

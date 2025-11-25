@@ -5,6 +5,7 @@ import Header, { type HeaderProps } from './Header'
 import Sidebar from './Sidebar'
 import styles from './Dashboard.module.css'
 import { DEFAULT_TAGLINE } from '../constants/assets'
+import { User } from '../services/authService'
 
 interface DashboardProps {
   isLoggedIn?: boolean
@@ -12,6 +13,9 @@ interface DashboardProps {
   tagline?: string
   background?: 'default' | 'light'
   headerOverrides?: Partial<HeaderProps>
+  onLoginSuccess?: (user: User) => void
+  onLogout?: () => void
+  user?: User | null
 }
 
 const { Content, Sider } = Layout
@@ -24,6 +28,9 @@ export default function Dashboard({
   tagline = DEFAULT_TAGLINE,
   background = 'default',
   headerOverrides,
+  onLoginSuccess,
+  onLogout,
+  user,
 }: DashboardProps) {
   const [collapsed, setCollapsed] = useState(false)
 
@@ -36,7 +43,12 @@ export default function Dashboard({
 
   return (
     <Layout className={dashboardClass.trim()}>
-      <Header isLoggedIn={isLoggedIn} {...headerOverrides} />
+      <Header
+        isLoggedIn={isLoggedIn}
+        onLoginSuccess={onLoginSuccess}
+        onLogout={onLogout}
+        {...headerOverrides}
+      />
       <Layout>
         {isLoggedIn && (
           <Sider
@@ -47,7 +59,11 @@ export default function Dashboard({
             trigger={null}
             className={styles.sider}
           >
-            <Sidebar collapsed={collapsed} onToggleSidebar={() => setCollapsed((prev) => !prev)} />
+            <Sidebar
+              collapsed={collapsed}
+              onToggleSidebar={() => setCollapsed((prev) => !prev)}
+              user={user}
+            />
           </Sider>
         )}
         <Content className={contentClass.trim()}>
@@ -63,4 +79,3 @@ export default function Dashboard({
     </Layout>
   )
 }
-

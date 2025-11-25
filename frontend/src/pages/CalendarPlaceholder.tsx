@@ -4,10 +4,21 @@ import { useState } from 'react'
 import Header from '../components/Header'
 import { MELO_LOGO } from '../constants/assets'
 import styles from './CalendarPlaceholder.module.css'
+import { User } from '../services/authService'
 
 const { Content } = Layout
 
-export default function CalendarPlaceholder() {
+interface CalendarPlaceholderProps {
+  isLoggedIn: boolean
+  onLoginSuccess: (user: User) => void
+  onLogout: () => void
+}
+
+export default function CalendarPlaceholder({
+  isLoggedIn,
+  onLoginSuccess,
+  onLogout,
+}: CalendarPlaceholderProps) {
   const [value, setValue] = useState(dayjs())
   const [selectedValue, setSelectedValue] = useState<Dayjs>(dayjs())
 
@@ -22,7 +33,13 @@ export default function CalendarPlaceholder() {
 
   return (
     <Layout className={styles.layout}>
-      <Header isLoggedIn={false} showBrandName={false} logoSrc={MELO_LOGO} />
+      <Header
+        isLoggedIn={isLoggedIn}
+        showBrandName={false}
+        logoSrc={MELO_LOGO}
+        onLoginSuccess={onLoginSuccess}
+        onLogout={onLogout}
+      />
       <Content className={styles.content}>
         <Space direction="vertical" size="large" className={styles.container}>
           <Typography.Title level={2} className={styles.title}>
@@ -47,4 +64,3 @@ export default function CalendarPlaceholder() {
     </Layout>
   )
 }
-
