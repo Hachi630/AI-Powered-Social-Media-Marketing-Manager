@@ -1,0 +1,76 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  gap: 24px;
+  transition: padding 0.2s ease;
+}
+
+.sidebarCollapsed {
+  padding-inline: 8px;
+}
+
+.scrollable {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+.searchInput :global(.ant-input) {
+  border-radius: 9999px;
+}
+
+.sectionLabel {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.chatList {
+  background: transparent;
+}
+
+.chatItem {
+  padding: 6px 12px !important;
+  border-radius: 8px;
+  border: none !important;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chatItem:hover {
+  background-color: #f0f0f0;
+}
+
+.chatItemActive {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+.userSection {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 16px;
+}
+
+.userSectionCollapsed {
+  justify-content: center;
+  padding-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    height: auto;
+  }
+}
+

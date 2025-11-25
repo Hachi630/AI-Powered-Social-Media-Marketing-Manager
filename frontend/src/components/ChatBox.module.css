@@ -1,0 +1,15 @@
+.chatCard {
+  width: 100%;
+  max-width: 1015px;
+  border-radius: 16px;
+}
+
+.inner {
+  width: 100%;
+}
+
+.toolbar {
+  width: 100%;
+  justify-content: space-between;
+}
+
