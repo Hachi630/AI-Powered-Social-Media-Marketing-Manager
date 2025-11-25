@@ -56,11 +56,11 @@
   font-size: 20px;
 }
 
-/* 让文字在按钮中相对居中，虽然 icon 在左边 */
+/* Center text in button relative to icon on the left */
 .socialBtn span:not(:global(.ant-btn-icon)) {
   flex: 1;
   text-align: left;
-  padding-left: 8px; /* 微调 */
+  padding-left: 8px; /* Fine-tune spacing */
 }
 
 .divider {
@@ -106,7 +106,7 @@
   opacity: 0.6;
 }
 
-/* 注册界面样式 */
+/* Signup page styles */
 .signupContainer {
   min-height: 500px;
   display: flex;

@@ -35,7 +35,7 @@ export default function AuthModal({ open, onCancel }: AuthModalProps) {
   }
 
   const handleSignupContinue = () => {
-    // 这里可以添加实际的注册逻辑
+    // Add actual registration logic here
     console.log('Signup with:', { email, password })
   }
 
