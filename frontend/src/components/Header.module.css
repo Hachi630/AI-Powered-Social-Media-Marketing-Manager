@@ -1,0 +1,65 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 99px !important;
+  padding: 0 32px;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #d9d9d9;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 200px;
+}
+
+.logoGroupCompact {
+  min-width: auto;
+  gap: 8px;
+}
+
+.logoButton {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.logoButton:focus-visible {
+  outline: 2px solid #6750a4;
+  border-radius: 8px;
+}
+
+.logoImage {
+  width: 56px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.logoText {
+  margin: 0 !important;
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+  color: #1e1e1e !important;
+  letter-spacing: -0.48px;
+}
+
+.menu {
+  flex: 1;
+  min-width: 0;
+  border-bottom: none;
+  background: transparent;
+}
+
+@media (max-width: 992px) {
+  .menu {
+    display: none;
+  }
+}
+
