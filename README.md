@@ -24,6 +24,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **React 18** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
@@ -33,6 +34,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **dayjs** - Date manipulation
 
 ### Backend
+
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **TypeScript** - Type safety
@@ -94,12 +96,14 @@ Melo/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd Melo
    ```
 
 2. **Install backend dependencies**
+
    ```bash
    cd backend
    npm install
@@ -114,12 +118,14 @@ Melo/
 ### Running the Application
 
 1. **Start MongoDB** (if running locally)
+
    ```bash
    # Make sure MongoDB is running on localhost:27017
    # Or update MONGODB_URI in backend/.env
    ```
 
 2. **Start the backend server**
+
    ```bash
    cd backend
    npm run dev
@@ -127,6 +133,7 @@ Melo/
    ```
 
 3. **Start the frontend development server**
+
    ```bash
    cd frontend
    npm run dev
@@ -142,11 +149,69 @@ Melo/
 
 Create a `.env` file in the `backend/` directory:
 
-```env
+````env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/melo
 JWT_SECRET=your_secret_key_here
 JWT_EXPIRE=7d
+
+### OAuth Provider Config
+For social login, add the following to `backend/.env` and create OAuth credentials in the provider consoles (Google, Microsoft, Apple):
+
+```env
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+MICROSOFT_CLIENT_ID=your-microsoft-client-id
+MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:5000
+````
+
+### Frontend (VITE environment variables)
+
+Frontend-only demo redirects (useful when backend is not set up yet): add to `frontend/.env` or `frontend/.env.local` with these variables:
+
+```
+VITE_GOOGLE_CLIENT_ID=your-google-client-id
+VITE_GOOGLE_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_MICROSOFT_CLIENT_ID=your-microsoft-client-id
+VITE_MICROSOFT_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_APPLE_CLIENT_ID=your-apple-client-id
+VITE_APPLE_REDIRECT_URI=http://localhost:5173/auth/callback
+VITE_PHONE_DEMO_URL=/auth/phone-demo
+```
+
+These allow the frontend `AuthModal` to directly redirect to the provider authorization pages without a running backend (for demonstration). For Google/Microsoft you still need to register the redirect URIs in their consoles matching these redirect URIs.
+
+Note: For Apple sign-in and phone-based OTP, follow the provider-specific docs linked in the Implementation section below.
+
+### Google-specific troubleshooting
+
+If you see a page like "Access to localhost was denied" or `HTTP ERROR 403` while attempting to test a Google OAuth login, it usually means one of the following:
+
+- **Redirect URI mismatch**: The redirect URI you registered in the Google Cloud Console must exactly match the URI used by your app (for the provided code it should be `http://localhost:5000/api/auth/google/callback`).
+- **Missing client id / secret**: If `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` are missing in your backend `.env`, Google may reject the request. The backend will now return a helpful error HTML indicating these are missing.
+- **Consent screen not configured / Test only**: If your OAuth consent screen is set to _Testing_, you must add your test accounts to the list of test users on the consent screen settings or publish the app. Otherwise Google will show an error and block the login attempt.
+- **Account or domain restrictions**: If you are using an enterprise account with restricted OAuth or policies, the request may be blocked.
+
+Steps to fix:
+
+1. In the Google Cloud Console (https://console.developers.google.com/):
+   - Create/select a project
+   - Under APIs & Services -> OAuth consent screen: configure your app, set the app type (External/internal), add the developer contact email, and if the app is in Testing, add your Google account email as a test user.
+   - Under Credentials -> Create credentials -> OAuth 2.0 Client ID -> Web application. Add the redirect URI: `http://localhost:5000/api/auth/google/callback` to the Authorized redirect URIs.
+   - Copy the Client ID and Client Secret and add them to your `backend/.env`:
+     ```env
+     GOOGLE_CLIENT_ID=...
+     GOOGLE_CLIENT_SECRET=...
+     BACKEND_URL=http://localhost:5000
+     FRONTEND_URL=http://localhost:5173
+     ```
+2. Restart the backend server.
+3. Re-open the SPA, click the Google login button and it should redirect to Google and back to your app.
+
+For Microsoft the setup is similar, but done in Azure Portal -> App Registrations -> (create app) -> Authentication -> Add redirect URI `http://localhost:5000/api/auth/microsoft/callback` and then add client secret under Certificates & secrets.
+
 ```
 
 ### Frontend
@@ -157,14 +222,18 @@ The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to 
 
 ### Base URL
 ```
+
 http://localhost:5000/api
+
 ```
 
 ### Authentication
 Most endpoints require JWT authentication. Include the token in the request header:
 ```
+
 Authorization: Bearer <token>
-```
+
+````
 
 ---
 
@@ -181,14 +250,16 @@ Check server running status.
   "status": "ok",
   "message": "Server is running"
 }
-```
+````
 
 #### 2. API Welcome
+
 **GET** `/api`
 
 Get API welcome message.
 
 **Response:**
+
 ```json
 {
   "message": "Welcome to Melo API"
@@ -200,6 +271,7 @@ Get API welcome message.
 ### Authentication Endpoints
 
 #### 1. Register User
+
 **POST** `/api/auth/register`
 
 Register a new user account.
@@ -207,6 +279,7 @@ Register a new user account.
 **Access:** Public
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -215,6 +288,7 @@ Register a new user account.
 ```
 
 **Success Response (201):**
+
 ```json
 {
   "success": true,
@@ -228,12 +302,14 @@ Register a new user account.
 ```
 
 **Error Responses:**
+
 - `400` - Missing email/password or user already exists
 - `500` - Server error
 
 ---
 
 #### 2. Login User
+
 **POST** `/api/auth/login`
 
 Authenticate user and get access token.
@@ -241,6 +317,7 @@ Authenticate user and get access token.
 **Access:** Public
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -249,6 +326,7 @@ Authenticate user and get access token.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -262,6 +340,7 @@ Authenticate user and get access token.
 ```
 
 **Error Responses:**
+
 - `400` - Missing email/password
 - `401` - Invalid credentials
 - `500` - Server error
@@ -269,6 +348,7 @@ Authenticate user and get access token.
 ---
 
 #### 3. Get Current User
+
 **GET** `/api/auth/me`
 
 Get current authenticated user information.
@@ -276,11 +356,13 @@ Get current authenticated user information.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -293,6 +375,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found
 - `500` - Server error
@@ -300,6 +383,7 @@ Authorization: Bearer <token>
 ---
 
 #### 4. Logout User
+
 **POST** `/api/auth/logout`
 
 Logout user (client should remove token).
@@ -307,11 +391,13 @@ Logout user (client should remove token).
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -320,6 +406,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 
 ---
@@ -327,15 +414,17 @@ Authorization: Bearer <token>
 ## 📊 Data Models
 
 ### User
+
 ```typescript
 {
-  id: string          // MongoDB ObjectId (as string)
-  email: string       // User email (unique, lowercase)
-  createdAt: string   // ISO 8601 timestamp
+  id: string; // MongoDB ObjectId (as string)
+  email: string; // User email (unique, lowercase)
+  createdAt: string; // ISO 8601 timestamp
 }
 ```
 
 ### AuthResponse
+
 ```typescript
 {
   success: boolean     // Request success status
@@ -391,9 +480,10 @@ npm run preview # Preview production build
 
 ## 🔒 Security Notes
 
-⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only. 
+⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only.
 
 **For production:**
+
 - Implement password hashing (bcrypt)
 - Use HTTPS
 - Add rate limiting
@@ -405,14 +495,14 @@ npm run preview # Preview production build
 
 ## 📝 HTTP Status Codes
 
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 404 | Not Found |
-| 500 | Internal Server Error |
+| Code | Description           |
+| ---- | --------------------- |
+| 200  | Success               |
+| 201  | Created               |
+| 400  | Bad Request           |
+| 401  | Unauthorized          |
+| 404  | Not Found             |
+| 500  | Internal Server Error |
 
 ---
 
@@ -428,6 +518,7 @@ npm run preview # Preview production build
 ### Frontend Testing
 
 The frontend automatically handles:
+
 - Token storage in `localStorage`
 - Token inclusion in authenticated requests
 - Automatic token validation on app load
