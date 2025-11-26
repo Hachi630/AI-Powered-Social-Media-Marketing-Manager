@@ -37,6 +37,10 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
     setPassword('')
   }
 
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://localhost:5000/api/auth/google'
+  }
+
   const handleSignupContinue = async () => {
     if (!email || !password) return
 
@@ -94,7 +98,13 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
           </Typography.Text>
 
           <Space direction="vertical" size={12} className={styles.socialButtons}>
-            <Button block size="large" icon={<GoogleOutlined />} className={styles.socialBtn}>
+            <Button 
+              block 
+              size="large" 
+              icon={<GoogleOutlined />} 
+              className={styles.socialBtn}
+              onClick={handleGoogleLogin}
+            >
               Continue with Google
             </Button>
             <Button block size="large" icon={<AppleFilled />} className={styles.socialBtn}>

@@ -2,7 +2,11 @@ import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IUser extends Document {
   email: string
-  password: string // 存储明文密码（仅演示用）
+  password?: string
+  googleId?: string
+  name?: string
+  avatar?: string
+  authProvider: 'local' | 'google'
   createdAt: Date
   updatedAt: Date
 }
@@ -18,7 +22,25 @@ const UserSchema: Schema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function(this: IUser) {
+        return this.authProvider === 'local'
+      },
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    name: {
+      type: String,
+    },
+    avatar: {
+      type: String,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
     },
   },
   {
