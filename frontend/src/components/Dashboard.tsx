@@ -35,6 +35,8 @@ export default function Dashboard({
   const [collapsed, setCollapsed] = useState(false)
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [conversationsUpdateTrigger, setConversationsUpdateTrigger] = useState(0)
+  const [isTyping, setIsTyping] = useState(false)
+  const [hasMessages, setHasMessages] = useState(false)
 
   const dashboardClass = `${styles.dashboard} ${
     background === 'light' ? styles.dashboardLight : ''
@@ -60,6 +62,14 @@ export default function Dashboard({
   const handleConversationsUpdate = useCallback(() => {
     // This will be called when conversations need to be refreshed
     setConversationsUpdateTrigger((prev) => prev + 1)
+  }, [])
+
+  const handleTypingStatus = useCallback((typing: boolean) => {
+    setIsTyping(typing)
+  }, [])
+
+  const handleContentChange = useCallback((hasContent: boolean) => {
+    setHasMessages(hasContent)
   }, [])
 
   return (
@@ -94,12 +104,16 @@ export default function Dashboard({
           </Sider>
         )}
         <Content className={contentClass.trim()}>
-          <Typography.Title level={1} className={styles.title}>
-            {heroTitle}
-          </Typography.Title>
+          {!isTyping && !hasMessages && (
+            <Typography.Title level={1} className={styles.title}>
+              {heroTitle}
+            </Typography.Title>
+          )}
           <ChatBox
             conversationId={selectedConversationId}
             onConversationChange={handleConversationChange}
+            onTypingStatusChange={handleTypingStatus}
+            onContentChange={handleContentChange}
           />
           {tagline && (
             <Typography.Paragraph className={styles.tagline}>{tagline}</Typography.Paragraph>

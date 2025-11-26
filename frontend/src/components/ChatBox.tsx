@@ -1,6 +1,8 @@
 import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined } from '@ant-design/icons'
-import { Button, Card, Input, Space, Tooltip, message, Spin, Typography } from 'antd'
-import { useState, useEffect } from 'react'
+import { Button, Card, Input, Space, Tooltip, message, Spin } from 'antd'
+import { useState, useEffect, useCallback } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import styles from './ChatBox.module.css'
 import { chatService, ChatMessage } from '../services/chatService'
 
@@ -15,9 +17,16 @@ const toolbarActions = [
 interface ChatBoxProps {
   conversationId?: string | null
   onConversationChange?: (conversationId: string | null) => void
+  onTypingStatusChange?: (typing: boolean) => void
+  onContentChange?: (hasMessages: boolean) => void
 }
 
-export default function ChatBox({ conversationId, onConversationChange }: ChatBoxProps) {
+export default function ChatBox({
+  conversationId,
+  onConversationChange,
+  onTypingStatusChange,
+  onContentChange,
+}: ChatBoxProps) {
   const [inputMessage, setInputMessage] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
@@ -33,6 +42,22 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
       setCurrentConversationId(null)
     }
   }, [conversationId])
+
+  // Inform parent when typing state changes
+  const updateTypingStatus = useCallback(
+    (typing: boolean) => {
+      if (onTypingStatusChange) {
+        onTypingStatusChange(typing)
+      }
+    },
+    [onTypingStatusChange]
+  )
+
+  useEffect(() => {
+    if (onContentChange) {
+      onContentChange(messages.length > 0)
+    }
+  }, [messages.length, onContentChange])
 
   const loadConversation = async (id: string) => {
     setLoading(true)
@@ -51,14 +76,6 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
     }
   }
 
-  const createNewConversation = () => {
-    setMessages([])
-    setCurrentConversationId(null)
-    if (onConversationChange) {
-      onConversationChange(null)
-    }
-  }
-
   const isEmpty = !inputMessage.trim()
 
   const handleSend = async () => {
@@ -74,6 +91,7 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
     setMessages((prev) => [...prev, userMessage])
     const currentInput = inputMessage.trim()
     setInputMessage('')
+    updateTypingStatus(false)
     setLoading(true)
 
     try {
@@ -110,6 +128,28 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
     }
   }
 
+  const handleInputChange = (value: string) => {
+    setInputMessage(value)
+    updateTypingStatus(Boolean(value.trim()))
+  }
+
+  const handleFocus = () => {
+    if (inputMessage.trim().length > 0) {
+      updateTypingStatus(true)
+    }
+  }
+
+  const handleBlur = () => {
+    updateTypingStatus(false)
+  }
+
+  // Reset typing status when component unmounts
+  useEffect(() => {
+    return () => {
+      updateTypingStatus(false)
+    }
+  }, [updateTypingStatus])
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -130,7 +170,11 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
               }`}
             >
               <div className={styles.messageContent}>
-                <Typography.Text>{msg.content}</Typography.Text>
+                <div className={styles.markdownContent}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           ))}
@@ -138,9 +182,7 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
             <div className={`${styles.messageItem} ${styles.assistantMessage}`}>
               <div className={styles.messageContent}>
                 <Spin size="small" />
-                <Typography.Text type="secondary" style={{ marginLeft: 8 }}>
-                  Thinking...
-                </Typography.Text>
+                <span className={styles.thinkingText}>Thinking...</span>
               </div>
             </div>
           )}
@@ -154,8 +196,10 @@ export default function ChatBox({ conversationId, onConversationChange }: ChatBo
             autoSize={{ minRows: 2, maxRows: 4 }}
             placeholder="What would you like to know?"
             value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
+            onChange={(e) => handleInputChange(e.target.value)}
             onKeyPress={handleKeyPress}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             disabled={loading}
           />
           <Space align="center" className={styles.toolbar}>

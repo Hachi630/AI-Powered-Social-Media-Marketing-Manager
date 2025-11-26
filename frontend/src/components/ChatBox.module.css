@@ -50,6 +50,62 @@
   border-bottom-left-radius: 4px;
 }
 
+.markdownContent {
+  color: inherit;
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3,
+.markdownContent h4,
+.markdownContent h5,
+.markdownContent h6 {
+  margin: 0.4em 0 0.2em;
+  font-weight: 600;
+}
+
+.markdownContent p {
+  margin: 0.35em 0;
+}
+
+.markdownContent ul,
+.markdownContent ol {
+  padding-left: 1.4em;
+  margin: 0.35em 0;
+}
+
+.markdownContent code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 0.15em 0.35em;
+  border-radius: 4px;
+  font-size: 0.95em;
+}
+
+.markdownContent pre {
+  padding: 12px;
+  background: #111827;
+  color: #f8fafc;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+.markdownContent blockquote {
+  border-left: 3px solid #d4d4d8;
+  margin: 0.35em 0;
+  padding-left: 12px;
+  color: #52525b;
+}
+
+.thinkingText {
+  margin-left: 8px;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
 .chatCard {
   width: 100%;
   border-radius: 16px;
