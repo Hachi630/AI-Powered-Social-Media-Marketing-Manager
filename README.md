@@ -147,7 +147,11 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/melo
 JWT_SECRET=your_secret_key_here
 JWT_EXPIRE=7d
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
 ```
+
+**Note**: Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 
 ### Frontend
 
@@ -321,6 +325,56 @@ Authorization: Bearer <token>
 
 **Error Responses:**
 - `401` - Not authorized
+
+---
+
+### Chat Endpoints
+
+#### 1. Send Chat Message
+**POST** `/api/chat`
+
+Send a message to the AI chat and receive a response based on user's Brand Profile.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "message": "What marketing strategies work best for my brand?",
+  "conversationHistory": [
+    {
+      "role": "user",
+      "content": "Hello"
+    },
+    {
+      "role": "assistant",
+      "content": "Hello! How can I help you today?"
+    }
+  ]
+}
+```
+
+**Note:** `conversationHistory` is optional. If provided, it should contain the last 10 messages for context.
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "response": "Based on your brand profile, I recommend focusing on..."
+}
+```
+
+**Error Responses:**
+- `400` - Message is required
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error or Gemini API error
 
 ---
 

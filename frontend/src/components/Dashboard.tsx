@@ -1,5 +1,5 @@
 import { Layout, Typography } from 'antd'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import ChatBox from './ChatBox'
 import Header, { type HeaderProps } from './Header'
 import Sidebar from './Sidebar'
@@ -33,6 +33,8 @@ export default function Dashboard({
   user,
 }: DashboardProps) {
   const [collapsed, setCollapsed] = useState(false)
+  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
+  const [conversationsUpdateTrigger, setConversationsUpdateTrigger] = useState(0)
 
   const dashboardClass = `${styles.dashboard} ${
     background === 'light' ? styles.dashboardLight : ''
@@ -40,6 +42,25 @@ export default function Dashboard({
   const contentClass = `${styles.content} ${
     background === 'light' ? styles.contentLight : ''
   }`
+
+  const handleConversationSelect = useCallback((conversationId: string | null) => {
+    setSelectedConversationId(conversationId)
+  }, [])
+
+  const handleNewConversation = useCallback(() => {
+    setSelectedConversationId(null)
+  }, [])
+
+  const handleConversationChange = useCallback((conversationId: string | null) => {
+    setSelectedConversationId(conversationId)
+    // Trigger conversations list update
+    setConversationsUpdateTrigger((prev) => prev + 1)
+  }, [])
+
+  const handleConversationsUpdate = useCallback(() => {
+    // This will be called when conversations need to be refreshed
+    setConversationsUpdateTrigger((prev) => prev + 1)
+  }, [])
 
   return (
     <Layout className={dashboardClass.trim()}>
@@ -65,6 +86,10 @@ export default function Dashboard({
               collapsed={collapsed}
               onToggleSidebar={() => setCollapsed((prev) => !prev)}
               user={user}
+              selectedConversationId={selectedConversationId}
+              onConversationSelect={handleConversationSelect}
+              onNewConversation={handleNewConversation}
+              conversationsUpdateTrigger={conversationsUpdateTrigger}
             />
           </Sider>
         )}
@@ -72,7 +97,10 @@ export default function Dashboard({
           <Typography.Title level={1} className={styles.title}>
             {heroTitle}
           </Typography.Title>
-          <ChatBox />
+          <ChatBox
+            conversationId={selectedConversationId}
+            onConversationChange={handleConversationChange}
+          />
           {tagline && (
             <Typography.Paragraph className={styles.tagline}>{tagline}</Typography.Paragraph>
           )}
