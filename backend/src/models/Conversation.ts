@@ -3,6 +3,7 @@ import mongoose, { Document, Schema, Types } from 'mongoose'
 export interface IConversationMessage {
   role: 'user' | 'assistant'
   content: string
+  images?: string[]
   timestamp: Date
 }
 
@@ -24,6 +25,10 @@ const ConversationMessageSchema: Schema = new Schema(
     content: {
       type: String,
       required: true,
+    },
+    images: {
+      type: [String],
+      default: undefined,
     },
     timestamp: {
       type: Date,
@@ -57,7 +62,7 @@ const ConversationSchema: Schema = new Schema(
   }
 )
 
-// 创建索引以提高查询性能
+// Create index to improve query performance
 ConversationSchema.index({ userId: 1, updatedAt: -1 })
 
 export default mongoose.model<IConversation>('Conversation', ConversationSchema)

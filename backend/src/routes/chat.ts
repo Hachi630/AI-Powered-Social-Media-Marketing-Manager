@@ -3,6 +3,8 @@ import { protect } from '../middleware/auth'
 import { AuthRequest } from '../types'
 import { geminiService, ChatMessage } from '../services/geminiService'
 import Conversation from '../models/Conversation'
+import { generateImage } from '../services/imageGenerationService'
+import { saveImage } from '../utils/imageStorage'
 
 const router = express.Router()
 
@@ -132,6 +134,83 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
   }
 })
 
+// @desc    Generate image
+// @route   POST /api/chat/generate-image
+// @access  Private
+router.post('/generate-image', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    const { prompt, conversationId } = req.body
+
+    // Validate prompt
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({ success: false, message: 'Prompt is required' })
+    }
+
+    // Generate image
+    const imageDataUrl = await generateImage(prompt.trim())
+
+    // Extract mime type and base64 data from data URL
+    const [header, base64Data] = imageDataUrl.split(',')
+    const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/png'
+
+    // Save image to file system
+    const imageUrl = await saveImage(base64Data, mimeType)
+
+    let conversation = null
+
+    // If conversationId exists, add image message to conversation
+    if (conversationId) {
+      conversation = await Conversation.findOne({
+        _id: conversationId,
+        userId: user._id,
+      })
+
+      if (conversation) {
+        conversation.messages.push({
+          role: 'assistant',
+          content: `Generated image: ${prompt.trim()}`,
+          images: [imageUrl],
+          timestamp: new Date(),
+        })
+        await conversation.save()
+      }
+    } else {
+      // Create new conversation for image
+      conversation = await Conversation.create({
+        userId: user._id,
+        title: generateTitle(`Image: ${prompt.trim()}`),
+        messages: [
+          {
+            role: 'assistant',
+            content: `Generated image: ${prompt.trim()}`,
+            images: [imageUrl],
+            timestamp: new Date(),
+          },
+        ],
+      })
+    }
+
+    res.json({
+      success: true,
+      imageUrl,
+      images: [imageUrl],
+      conversationId: conversation?._id.toString(),
+    })
+  } catch (error: any) {
+    console.error('Image generation error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate image',
+    })
+  }
+})
+
 // @desc    Get all conversations for current user
 // @route   GET /api/chat
 // @access  Private
@@ -196,6 +275,7 @@ router.get('/:conversationId', protect, async (req: AuthRequest, res: Response) 
         messages: conversation.messages.map((msg) => ({
           role: msg.role,
           content: msg.content,
+          images: msg.images,
           timestamp: msg.timestamp,
         })),
         createdAt: conversation.createdAt,

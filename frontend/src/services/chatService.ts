@@ -4,12 +4,22 @@ const API_URL = 'http://localhost:5000/api/chat'
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
+  images?: string[]
   timestamp?: Date | string
 }
 
 export interface ChatResponse {
   success: boolean
   response?: string
+  images?: string[]
+  conversationId?: string
+  message?: string
+}
+
+export interface ImageGenerationResponse {
+  success: boolean
+  imageUrl?: string
+  images?: string[]
   conversationId?: string
   message?: string
 }
@@ -149,6 +159,43 @@ export const chatService = {
 
       if (!response.ok) {
         return { success: false, message: data.message || 'Failed to delete conversation' }
+      }
+
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
+  /**
+   * Generate an image
+   */
+  async generateImage(
+    prompt: string,
+    conversationId?: string
+  ): Promise<ImageGenerationResponse> {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/generate-image`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          prompt,
+          conversationId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Failed to generate image' }
       }
 
       return data

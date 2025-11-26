@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import styles from './ChatBox.module.css'
 import { chatService, ChatMessage } from '../services/chatService'
+import ImageGenerationModal from './ImageGenerationModal'
 
 const { TextArea } = Input
 
@@ -31,6 +32,7 @@ export default function ChatBox({
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId || null)
+  const [imageModalOpen, setImageModalOpen] = useState(false)
 
   // Load conversation when conversationId changes
   useEffect(() => {
@@ -157,6 +159,41 @@ export default function ChatBox({
     }
   }
 
+  const handleImageGenerate = () => {
+    setImageModalOpen(true)
+  }
+
+  const handleImageSuccess = async (imageUrl: string, newConversationId?: string) => {
+    // Create assistant message with image
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: `Generated image`,
+      images: [imageUrl],
+      timestamp: new Date(),
+    }
+    setMessages((prev) => [...prev, assistantMessage])
+
+    // Update conversation ID if it's a new conversation
+    if (newConversationId && !currentConversationId) {
+      setCurrentConversationId(newConversationId)
+      if (onConversationChange) {
+        onConversationChange(newConversationId)
+      }
+    } else if (currentConversationId) {
+      // Reload conversation to get updated messages
+      loadConversation(currentConversationId)
+    }
+  }
+
+  const getImageUrl = (imagePath: string): string => {
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath
+    }
+    // Otherwise, prepend the backend URL
+    return `http://localhost:5000${imagePath}`
+  }
+
   return (
     <div className={styles.chatContainer}>
       {/* Messages display area */}
@@ -170,6 +207,18 @@ export default function ChatBox({
               }`}
             >
               <div className={styles.messageContent}>
+                {msg.images && msg.images.length > 0 && (
+                  <div className={styles.messageImages}>
+                    {msg.images.map((img, imgIndex) => (
+                      <img
+                        key={imgIndex}
+                        src={getImageUrl(img)}
+                        alt="Generated"
+                        className={styles.generatedImage}
+                      />
+                    ))}
+                  </div>
+                )}
                 <div className={styles.markdownContent}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {msg.content}
@@ -206,7 +255,12 @@ export default function ChatBox({
             <Space size="middle">
               {toolbarActions.map((action) => (
                 <Tooltip title={action.label} key={action.key}>
-                  <Button shape="circle" icon={action.icon} disabled={loading} />
+                  <Button
+                    shape="circle"
+                    icon={action.icon}
+                    disabled={loading}
+                    onClick={action.key === 'image' ? handleImageGenerate : undefined}
+                  />
                 </Tooltip>
               ))}
             </Space>
@@ -223,6 +277,14 @@ export default function ChatBox({
           </Space>
         </Space>
       </Card>
+
+      {/* Image Generation Modal */}
+      <ImageGenerationModal
+        open={imageModalOpen}
+        onCancel={() => setImageModalOpen(false)}
+        onSuccess={handleImageSuccess}
+        conversationId={currentConversationId}
+      />
     </div>
   )
 }

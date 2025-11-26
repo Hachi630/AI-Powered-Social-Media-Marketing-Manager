@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IUser extends Document {
   email: string
-  password: string // 存储明文密码（仅演示用）
+  password: string // Store plaintext password (for demonstration only)
   name?: string
   brandName?: string
   phone?: string
