@@ -12,12 +12,14 @@ interface CalendarPlaceholderProps {
   isLoggedIn: boolean
   onLoginSuccess: (user: User) => void
   onLogout: () => void
+  user?: User | null
 }
 
 export default function CalendarPlaceholder({
   isLoggedIn,
   onLoginSuccess,
   onLogout,
+  user,
 }: CalendarPlaceholderProps) {
   const [value, setValue] = useState(dayjs())
   const [selectedValue, setSelectedValue] = useState<Dayjs>(dayjs())
@@ -39,6 +41,7 @@ export default function CalendarPlaceholder({
         logoSrc={MELO_LOGO}
         onLoginSuccess={onLoginSuccess}
         onLogout={onLogout}
+        user={user}
       />
       <Content className={styles.content}>
         <Space direction="vertical" size="large" className={styles.container}>

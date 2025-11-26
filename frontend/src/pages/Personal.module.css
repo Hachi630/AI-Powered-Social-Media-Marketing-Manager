@@ -1,0 +1,206 @@
+.layout {
+  min-height: 100vh;
+  background: #fdfdfc; /* Light white background to match Dashboard */
+}
+
+.content {
+  padding: 64px 48px 80px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.headerSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 64px;
+  gap: 24px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  flex: 1;
+}
+
+.avatarSection {
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 106px;
+  height: 106px;
+  font-size: 48px;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.nameSection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.userName {
+  margin: 0 !important;
+  font-size: 48px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  color: #1e1e1e !important;
+}
+
+.nameInput {
+  font-size: 48px !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-bottom: 2px solid #d9d9d9 !important;
+  border-radius: 0 !important;
+}
+
+.nameInput:focus {
+  border-bottom-color: #6750a4 !important;
+  box-shadow: none !important;
+}
+
+.brandName {
+  font-size: 32px !important;
+  font-weight: 400 !important;
+  line-height: 1.2 !important;
+  color: #757575 !important;
+}
+
+.brandInput {
+  font-size: 32px !important;
+  font-weight: 400 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-bottom: 2px solid #d9d9d9 !important;
+  border-radius: 0 !important;
+}
+
+.brandInput:focus {
+  border-bottom-color: #6750a4 !important;
+  box-shadow: none !important;
+}
+
+.editButtonSection {
+  flex-shrink: 0;
+}
+
+.cardRow {
+  margin-bottom: 0;
+}
+
+.infoCard {
+  border-radius: 8px;
+  min-height: 200px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: 1px solid #d9d9d9 !important;
+  background-color: #ffffff !important;
+  height: 100%;
+}
+
+.infoCard :global(.ant-card-body) {
+  background-color: #ffffff !important;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: 100%;
+}
+
+.cardTitle {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  color: #1e1e1e !important;
+}
+
+.fieldValue {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  color: #757575 !important;
+  word-break: break-word;
+}
+
+/* Ensure all Input and Select have white background */
+:global(.ant-input),
+:global(.ant-input-affix-wrapper),
+:global(.ant-select-selector),
+:global(.ant-picker) {
+  background-color: #ffffff !important;
+  border: 1px solid #d9d9d9 !important;
+}
+
+:global(.ant-input):focus,
+:global(.ant-input-affix-wrapper):focus,
+:global(.ant-select-focused .ant-select-selector),
+:global(.ant-picker-focused) {
+  background-color: #ffffff !important;
+  border-color: #6750a4 !important;
+}
+
+/* Upload component styles */
+:global(.ant-upload-select-picture-card) {
+  width: 106px !important;
+  height: 106px !important;
+  border-radius: 50% !important;
+  overflow: hidden;
+}
+
+:global(.ant-upload-select-picture-card .ant-upload) {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 32px 16px;
+  }
+
+  .headerSection {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .userInfo {
+    width: 100%;
+  }
+
+  .editButtonSection {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .userName {
+    font-size: 32px !important;
+  }
+
+  .nameInput {
+    font-size: 32px !important;
+  }
+
+  .brandName {
+    font-size: 24px !important;
+  }
+
+  .brandInput {
+    font-size: 24px !important;
+  }
+
+  .infoCard {
+    min-height: auto;
+  }
+}
+

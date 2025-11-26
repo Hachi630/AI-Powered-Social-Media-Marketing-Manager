@@ -112,6 +112,7 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
 
           <div className={styles.emailSection}>
             <Input
+              type="email"
               size="large"
               placeholder="Email address"
               className={styles.emailInput}

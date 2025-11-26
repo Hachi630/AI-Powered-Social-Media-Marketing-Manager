@@ -10,12 +10,13 @@ import {
   Space,
   Tag,
   Typography,
+  message,
 } from 'antd'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import { MELO_LOGO } from '../constants/assets'
 import styles from './BrandProfile.module.css'
-import { User } from '../services/authService'
+import { User, authService } from '../services/authService'
 
 const { Content } = Layout
 
@@ -40,15 +41,43 @@ interface BrandProfileProps {
   isLoggedIn: boolean
   onLoginSuccess: (user: User) => void
   onLogout: () => void
+  user?: User | null
 }
 
-export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: BrandProfileProps) {
+export default function BrandProfile({
+  isLoggedIn,
+  onLoginSuccess,
+  onLogout,
+  user: propUser,
+}: BrandProfileProps) {
+  const [user, setUser] = useState<User | null>(propUser || null)
+  const [brandName, setBrandName] = useState('')
+  const [industry, setIndustry] = useState('')
   const [selectedTone, setSelectedTone] = useState('calm')
-  const [audienceTags, setAudienceTags] = useState(initialAudience)
+  const [audienceTags, setAudienceTags] = useState<string[]>([])
   const [keyword, setKeyword] = useState('')
-  const [knowledgeProducts, setKnowledgeProducts] = useState(initialKnowledgeProducts)
+  const [knowledgeProducts, setKnowledgeProducts] = useState<string[]>([])
   const [showAddProductInput, setShowAddProductInput] = useState(false)
   const [newProduct, setNewProduct] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Load user data on mount and when propUser changes
+  useEffect(() => {
+    const loadUser = async () => {
+      if (isLoggedIn) {
+        const currentUser = await authService.getCurrentUser()
+        if (currentUser) {
+          setUser(currentUser)
+          setBrandName(currentUser.brandName || '')
+          setIndustry(currentUser.industry || '')
+          setSelectedTone(currentUser.toneOfVoice || 'calm')
+          setKnowledgeProducts(currentUser.knowledgeProducts || [])
+          setAudienceTags(currentUser.targetAudience || [])
+        }
+      }
+    }
+    loadUser()
+  }, [isLoggedIn, propUser])
 
   const addAudienceTag = () => {
     if (!keyword.trim()) {
@@ -76,6 +105,31 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
     setKnowledgeProducts(knowledgeProducts.filter((product) => product !== productToRemove))
   }
 
+  const handleSaveProfile = async () => {
+    setLoading(true)
+    try {
+      const response = await authService.updateProfile({
+        brandName,
+        industry,
+        toneOfVoice: selectedTone,
+        knowledgeProducts,
+        targetAudience: audienceTags,
+      })
+
+      if (response.success && response.user) {
+        setUser(response.user)
+        onLoginSuccess(response.user)
+        message.success('Profile saved successfully')
+      } else {
+        message.error(response.message || 'Failed to save profile')
+      }
+    } catch (error) {
+      message.error('An error occurred while saving profile')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Layout className={styles.layout}>
       <Header
@@ -84,10 +138,11 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
         logoSrc={MELO_LOGO}
         onLoginSuccess={onLoginSuccess}
         onLogout={onLogout}
+        user={user}
       />
       <Content className={styles.content}>
         <Typography.Title level={1} className={styles.pageTitle}>
-          Brand Profile (Maya’s CalmNest)
+          Brand Profile ({user?.name || user?.brandName || 'User'})
         </Typography.Title>
 
         <Row gutter={[150, 100]} className={styles.row}>
@@ -96,13 +151,19 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
               <Space direction="vertical" size="large" className={styles.fullWidth}>
                 <div>
                   <Typography.Text className={styles.fieldLabel}>Brand Name</Typography.Text>
-                  <Input size="large" placeholder="Brand Name" defaultValue="ClamNest" />
+                  <Input
+                    size="large"
+                    placeholder="Brand Name"
+                    value={brandName}
+                    onChange={(e) => setBrandName(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Typography.Text className={styles.fieldLabel}>Industry</Typography.Text>
                   <Select
                     size="large"
-                    defaultValue="home-decor"
+                    value={industry}
+                    onChange={(value) => setIndustry(value)}
                     options={industryOptions}
                     className={styles.fullWidth}
                   />
@@ -140,7 +201,13 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
           </Col>
 
           <Col xs={24} md={5}>
-            <Button type="primary" block size="large">
+            <Button
+              type="primary"
+              block
+              size="large"
+              onClick={handleSaveProfile}
+              loading={loading}
+            >
               Save Profile
             </Button>
           </Col>

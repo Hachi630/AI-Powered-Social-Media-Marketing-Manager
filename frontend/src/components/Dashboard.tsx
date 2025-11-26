@@ -47,6 +47,7 @@ export default function Dashboard({
         isLoggedIn={isLoggedIn}
         onLoginSuccess={onLoginSuccess}
         onLogout={onLogout}
+        user={user}
         {...headerOverrides}
       />
       <Layout>
