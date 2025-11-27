@@ -33,6 +33,8 @@ const industryOptions = [
   { value: 'wellness', label: 'Wellness' },
   { value: 'lifestyle', label: 'Lifestyle' },
   { value: 'beauty', label: 'Beauty' },
+  { value: 'fashion', label: 'Fashion' },
+  { value: 'food', label: 'Food & Restaurant' },
 ]
 
 const initialAudience = ['Yoga lovers', 'Interior design enthusiast']
@@ -54,6 +56,8 @@ export default function BrandProfile({
   const [brandName, setBrandName] = useState('')
   const [industry, setIndustry] = useState('')
   const [selectedTone, setSelectedTone] = useState('calm')
+  const [customTone, setCustomTone] = useState('')
+  const [showCustomToneInput, setShowCustomToneInput] = useState(false)
   const [audienceTags, setAudienceTags] = useState<string[]>([])
   const [keyword, setKeyword] = useState('')
   const [knowledgeProducts, setKnowledgeProducts] = useState<string[]>([])
@@ -70,7 +74,18 @@ export default function BrandProfile({
           setUser(currentUser)
           setBrandName(currentUser.brandName || '')
           setIndustry(currentUser.industry || '')
-          setSelectedTone(currentUser.toneOfVoice || 'calm')
+          const toneOfVoice = currentUser.toneOfVoice || 'calm'
+          // Check if tone is a custom tone (not in predefined list)
+          const isCustomTone = !toneButtons.some((tone) => tone.key === toneOfVoice)
+          if (isCustomTone && toneOfVoice) {
+            setSelectedTone('custom')
+            setCustomTone(toneOfVoice)
+            setShowCustomToneInput(true)
+          } else {
+            setSelectedTone(toneOfVoice)
+            setCustomTone('')
+            setShowCustomToneInput(false)
+          }
           setKnowledgeProducts(currentUser.knowledgeProducts || [])
           setAudienceTags(currentUser.targetAudience || [])
         }
@@ -105,13 +120,27 @@ export default function BrandProfile({
     setKnowledgeProducts(knowledgeProducts.filter((product) => product !== productToRemove))
   }
 
+  const handleToneSelect = (toneKey: string) => {
+    if (toneKey === 'custom') {
+      setShowCustomToneInput(true)
+      setSelectedTone('custom')
+    } else {
+      setShowCustomToneInput(false)
+      setSelectedTone(toneKey)
+      setCustomTone('')
+    }
+  }
+
   const handleSaveProfile = async () => {
     setLoading(true)
     try {
+      // Use custom tone if custom is selected and has value, otherwise use selected tone
+      const toneOfVoice = selectedTone === 'custom' && customTone.trim() ? customTone.trim() : selectedTone
+
       const response = await authService.updateProfile({
         brandName,
         industry,
-        toneOfVoice: selectedTone,
+        toneOfVoice,
         knowledgeProducts,
         targetAudience: audienceTags,
       })
@@ -178,24 +207,53 @@ export default function BrandProfile({
               extra={<Typography.Text type="secondary">How should the AI sound?</Typography.Text>}
               className={styles.card}
             >
-              <Space size="middle" wrap>
-                {toneButtons.map((tone) => (
+              <Space direction="vertical" size="middle" className={styles.fullWidth}>
+                <Space size="middle" wrap>
+                  {toneButtons.map((tone) => (
+                    <Button
+                      key={tone.key}
+                      size="large"
+                      shape="round"
+                      className={styles.toneButton}
+                      type={selectedTone === tone.key ? 'primary' : 'default'}
+                      style={
+                        selectedTone === tone.key
+                          ? { backgroundColor: tone.color, borderColor: tone.color }
+                          : undefined
+                      }
+                      onClick={() => handleToneSelect(tone.key)}
+                    >
+                      {tone.label}
+                    </Button>
+                  ))}
                   <Button
-                    key={tone.key}
                     size="large"
                     shape="round"
                     className={styles.toneButton}
-                    type={selectedTone === tone.key ? 'primary' : 'default'}
-                    style={
-                      selectedTone === tone.key
-                        ? { backgroundColor: tone.color, borderColor: tone.color }
-                        : undefined
-                    }
-                    onClick={() => setSelectedTone(tone.key)}
+                    type={selectedTone === 'custom' ? 'primary' : 'default'}
+                    onClick={() => handleToneSelect('custom')}
                   >
-                    {tone.label}
+                    Custom
                   </Button>
-                ))}
+                </Space>
+                {showCustomToneInput && (
+                  <div>
+                    <Input
+                      size="large"
+                      placeholder="Enter custom tone of voice (e.g., professional, friendly, casual)"
+                      value={customTone}
+                      onChange={(e) => setCustomTone(e.target.value)}
+                      onPressEnter={() => {
+                        if (customTone.trim()) {
+                          setSelectedTone('custom')
+                        }
+                      }}
+                    />
+                    <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+                      Describe how you want the AI to communicate
+                    </Typography.Text>
+                  </div>
+                )}
               </Space>
             </Card>
           </Col>

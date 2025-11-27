@@ -50,6 +50,12 @@
   border-bottom-left-radius: 4px;
 }
 
+.actionButtons {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
 .markdownContent {
   color: inherit;
   font-size: 15px;

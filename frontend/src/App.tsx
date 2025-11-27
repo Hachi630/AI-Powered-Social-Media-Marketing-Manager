@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard'
 import './App.css'
 import { DEFAULT_TAGLINE, MELO_LOGO } from './constants/assets'
 import BrandProfile from './pages/BrandProfile'
-import CalendarPlaceholder from './pages/CalendarPlaceholder'
+import CalendarPage from './pages/Calendar'
 import Personal from './pages/Personal'
 import { authService, User } from './services/authService'
 
@@ -99,7 +99,7 @@ function App() {
             <Route
               path="/calendar"
               element={
-                <CalendarPlaceholder
+                <CalendarPage
                   isLoggedIn={isLoggedIn}
                   onLoginSuccess={handleLoginSuccess}
                   onLogout={handleLogout}
