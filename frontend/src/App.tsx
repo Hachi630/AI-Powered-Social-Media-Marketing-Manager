@@ -2,11 +2,13 @@ import { ConfigProvider } from 'antd'
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
+import OAuthCallback from './components/OAuthCallback'
 import './App.css'
 import { DEFAULT_TAGLINE, MELO_LOGO } from './constants/assets'
 import BrandProfile from './pages/BrandProfile'
 import CalendarPage from './pages/Calendar'
 import Personal from './pages/Personal'
+import PhoneDemo from './pages/PhoneDemo'
 import { authService, User } from './services/authService'
 
 function App() {
