@@ -26,7 +26,6 @@ Melo is an AI-powered social media and marketing management platform that helps 
 ## 🛠 Tech Stack
 
 ### Frontend
-
 - **React 18** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
@@ -36,7 +35,6 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **dayjs** - Date manipulation
 
 ### Backend
-
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **TypeScript** - Type safety
@@ -107,14 +105,12 @@ Melo/
 ### Installation
 
 1. **Clone the repository**
-
    ```bash
    git clone <repository-url>
    cd Melo
    ```
 
 2. **Install backend dependencies**
-
    ```bash
    cd backend
    npm install
@@ -129,14 +125,12 @@ Melo/
 ### Running the Application
 
 1. **Start MongoDB** (if running locally)
-
    ```bash
    # Make sure MongoDB is running on localhost:27017
    # Or update MONGODB_URI in backend/.env
    ```
 
 2. **Start the backend server**
-
    ```bash
    cd backend
    npm run dev
@@ -144,7 +138,6 @@ Melo/
    ```
 
 3. **Start the frontend development server**
-
    ```bash
    cd frontend
    npm run dev
@@ -160,7 +153,7 @@ Melo/
 
 Create a `.env` file in the `backend/` directory:
 
-````env
+```env
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/melo
 JWT_SECRET=your_secret_key_here
@@ -183,18 +176,14 @@ The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to 
 
 ### Base URL
 ```
-
 http://localhost:5000/api
-
 ```
 
 ### Authentication
 Most endpoints require JWT authentication. Include the token in the request header:
 ```
-
 Authorization: Bearer <token>
-
-````
+```
 
 ---
 
@@ -211,16 +200,14 @@ Check server running status.
   "status": "ok",
   "message": "Server is running"
 }
-````
+```
 
 #### 2. API Welcome
-
 **GET** `/api`
 
 Get API welcome message.
 
 **Response:**
-
 ```json
 {
   "message": "Welcome to Melo API"
@@ -232,7 +219,6 @@ Get API welcome message.
 ### Authentication Endpoints
 
 #### 1. Register User
-
 **POST** `/api/auth/register`
 
 Register a new user account.
@@ -240,7 +226,6 @@ Register a new user account.
 **Access:** Public
 
 **Request Body:**
-
 ```json
 {
   "email": "user@example.com",
@@ -249,7 +234,6 @@ Register a new user account.
 ```
 
 **Success Response (201):**
-
 ```json
 {
   "success": true,
@@ -263,14 +247,12 @@ Register a new user account.
 ```
 
 **Error Responses:**
-
 - `400` - Missing email/password or user already exists
 - `500` - Server error
 
 ---
 
 #### 2. Login User
-
 **POST** `/api/auth/login`
 
 Authenticate user and get access token.
@@ -278,7 +260,6 @@ Authenticate user and get access token.
 **Access:** Public
 
 **Request Body:**
-
 ```json
 {
   "email": "user@example.com",
@@ -287,7 +268,6 @@ Authenticate user and get access token.
 ```
 
 **Success Response (200):**
-
 ```json
 {
   "success": true,
@@ -301,7 +281,6 @@ Authenticate user and get access token.
 ```
 
 **Error Responses:**
-
 - `400` - Missing email/password
 - `401` - Invalid credentials
 - `500` - Server error
@@ -309,7 +288,6 @@ Authenticate user and get access token.
 ---
 
 #### 3. Get Current User
-
 **GET** `/api/auth/me`
 
 Get current authenticated user information.
@@ -317,13 +295,11 @@ Get current authenticated user information.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
-
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
-
 ```json
 {
   "success": true,
@@ -336,7 +312,6 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
-
 - `401` - Not authorized
 - `404` - User not found
 - `500` - Server error
@@ -344,7 +319,6 @@ Authorization: Bearer <token>
 ---
 
 #### 4. Logout User
-
 **POST** `/api/auth/logout`
 
 Logout user (client should remove token).
@@ -352,13 +326,11 @@ Logout user (client should remove token).
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
-
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
-
 ```json
 {
   "success": true,
@@ -367,7 +339,6 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
-
 - `401` - Not authorized
 
 ---
@@ -575,7 +546,6 @@ Authorization: Bearer <token>
 ## 📊 Data Models
 
 ### User
-
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -615,7 +585,6 @@ Authorization: Bearer <token>
 ```
 
 ### AuthResponse
-
 ```typescript
 {
   success: boolean     // Request success status
@@ -692,10 +661,9 @@ npm run preview # Preview production build
 
 ## 🔒 Security Notes
 
-⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only.
+⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only. 
 
 **For production:**
-
 - Implement password hashing (bcrypt)
 - Use HTTPS
 - Add rate limiting
@@ -710,14 +678,14 @@ npm run preview # Preview production build
 
 ## 📝 HTTP Status Codes
 
-| Code | Description           |
-| ---- | --------------------- |
-| 200  | Success               |
-| 201  | Created               |
-| 400  | Bad Request           |
-| 401  | Unauthorized          |
-| 404  | Not Found             |
-| 500  | Internal Server Error |
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 404 | Not Found |
+| 500 | Internal Server Error |
 
 ---
 
@@ -733,7 +701,6 @@ npm run preview # Preview production build
 ### Frontend Testing
 
 The frontend automatically handles:
-
 - Token storage in `localStorage`
 - Token inclusion in authenticated requests
 - Automatic token validation on app load

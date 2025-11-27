@@ -1,94 +1,42 @@
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini client with API key from environment
-const getAIClient = () => {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY environment variable is not set')
-  }
-  return new GoogleGenAI({ apiKey })
-}
+// Initialize Gemini client (automatically gets API key from GEMINI_API_KEY env var)
+const ai = new GoogleGenAI({})
 
 /**
  * Generate an image using Gemini API
  * @param prompt Text prompt for image generation
  * @returns Base64 encoded image data URL (data:mimeType;base64,data)
  */
-export async function generateImage(prompt: string, retries = 2): Promise<string> {
-  const startTime = Date.now()
-  const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image'
+export async function generateImage(prompt: string): Promise<string> {
+  try {
+    // Use a model that supports image generation
+    // Try gemini-2.5-flash-image or gemini-2.0-flash-exp
+    const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image'
 
-  console.log('[Image Generation] Starting image generation', {
-    model,
-    promptLength: prompt.length,
-    timestamp: new Date().toISOString(),
-  })
+    console.log('Generating image with prompt:', prompt)
+    console.log('Using model:', model)
 
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      // Validate API key
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error('GEMINI_API_KEY environment variable is not set')
-      }
+    // Call Gemini API with image generation request
+    const response = await ai.models.generateContent({
+      model,
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: prompt }],
+        },
+      ],
+      // Request image response using responseModalities (plural)
+      generationConfig: {
+        responseModalities: ['IMAGE'],
+      },
+    } as any)
 
-      const ai = getAIClient()
+    // Extract image from response
+    const responseAny = response as any
 
-      console.log('[Image Generation] Calling API', {
-        model,
-        attempt: attempt + 1,
-        prompt: prompt.substring(0, 100) + (prompt.length > 100 ? '...' : ''),
-      })
-
-      // Call Gemini API with image generation request
-      let response: any
-      
-      try {
-        // Method 1: Try getGenerativeModel approach
-        const generativeModel = ai.getGenerativeModel({ model })
-        const result = await generativeModel.generateContent({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-          },
-        })
-        response = result.response
-      } catch (method1Error: any) {
-        console.warn('[Image Generation] Method 1 failed, trying alternative', {
-          error: method1Error.message,
-        })
-        
-        // Method 2: Try direct models.generateContent
-        const result = await (ai as any).models.generateContent({
-          model,
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-          },
-        })
-        response = result
-      }
-
-      // Extract image from response
-      const responseAny = response as any
-
-      // Log response structure for debugging (only on first attempt or error)
-      if (attempt === 0) {
-        console.log('[Image Generation] API Response received', {
-          hasCandidates: !!responseAny.candidates,
-          hasParts: !!responseAny.parts,
-          hasText: !!responseAny.text,
-        })
-      }
+    // Log full response for debugging
+    console.log('API Response structure:', JSON.stringify(responseAny, null, 2))
 
     // Check different possible response structures
     let imageData: string | null = null
@@ -147,70 +95,17 @@ export async function generateImage(prompt: string, retries = 2): Promise<string
       }
     }
 
-      if (!imageData) {
-        // If no image found, log the response structure for debugging
-        console.error('[Image Generation] No image data found in response', {
-          attempt: attempt + 1,
-          responseStructure: JSON.stringify(responseAny, null, 2),
-        })
-        throw new Error('Image generation failed: No image data in API response. Please check the console for the full response structure.')
-      }
-
-      const duration = Date.now() - startTime
-      console.log('[Image Generation] Image generated successfully', {
-        model,
-        mimeType,
-        imageDataLength: imageData.length,
-        duration: `${duration}ms`,
-        attempt: attempt + 1,
-      })
-
-      // Return as data URL
-      return `data:${mimeType};base64,${imageData}`
-    } catch (error: any) {
-      const isLastAttempt = attempt === retries
-      const errorMessage = error.message || 'Unknown error'
-      const errorCode = error.code || error.status || 'UNKNOWN'
-
-      console.error('[Image Generation] Error generating image', {
-        attempt: attempt + 1,
-        maxAttempts: retries + 1,
-        error: errorMessage,
-        errorCode,
-        isLastAttempt,
-        stack: error.stack,
-      })
-
-      // Retry logic for transient errors
-      if (!isLastAttempt) {
-        const isRetryableError =
-          errorCode === 'ECONNRESET' ||
-          errorCode === 'ETIMEDOUT' ||
-          errorCode === 429 || // Rate limit
-          errorCode === 503 || // Service unavailable
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('network') ||
-          errorMessage.includes('ECONNREFUSED')
-
-        if (isRetryableError) {
-          const delay = Math.min(1000 * Math.pow(2, attempt), 5000) // Exponential backoff, max 5s
-          console.log(`[Image Generation] Retrying after ${delay}ms...`)
-          await new Promise((resolve) => setTimeout(resolve, delay))
-          continue
-        }
-      }
-
-      // Throw enhanced error with context
-      const enhancedError = new Error(
-        `Image generation failed (attempt ${attempt + 1}/${retries + 1}): ${errorMessage}`
-      ) as Error & { code?: string | number; originalError?: any }
-      enhancedError.code = errorCode
-      enhancedError.originalError = error
-      throw enhancedError
+    if (!imageData) {
+      // If no image found, log the response structure for debugging
+      console.error('No image data found in response. Full response:', JSON.stringify(responseAny, null, 2))
+      throw new Error('Image generation failed: No image data in API response. Please check the console for the full response structure.')
     }
-  }
 
-  // This should never be reached, but TypeScript needs it
-  throw new Error('Failed to generate image after all retry attempts')
+    // Return as data URL
+    return `data:${mimeType};base64,${imageData}`
+  } catch (error: any) {
+    console.error('Image generation error:', error)
+    throw new Error(`Image generation failed: ${error.message || 'Unknown error'}`)
+  }
 }
 

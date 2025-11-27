@@ -55,7 +55,7 @@ export default function ContentPlanModal({
 
       const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs]
 
-      const response = await fetch('http://localhost:5001/api/chat/generate-plan', {
+      const response = await fetch('http://localhost:5000/api/chat/generate-plan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ export default function ContentPlanModal({
     try {
       setLoading(true)
 
-      const response = await fetch('http://localhost:5001/api/chat/send-to-calendar', {
+      const response = await fetch('http://localhost:5000/api/chat/send-to-calendar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

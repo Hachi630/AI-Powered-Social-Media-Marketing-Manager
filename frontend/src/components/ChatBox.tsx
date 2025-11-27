@@ -221,7 +221,7 @@ export default function ChatBox({
       return imagePath
     }
     // Otherwise, prepend the backend URL
-    return `http://localhost:5001${imagePath}`
+    return `http://localhost:5000${imagePath}`
   }
 
   return (

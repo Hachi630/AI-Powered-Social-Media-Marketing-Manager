@@ -1,5 +1,5 @@
 // API base URL
-const API_URL = 'http://localhost:5001/api/campaigns'
+const API_URL = 'http://localhost:5000/api/campaigns'
 
 export interface Campaign {
   id: string
