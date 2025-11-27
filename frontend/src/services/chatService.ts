@@ -1,5 +1,5 @@
 // API base URL
-const API_URL = 'http://localhost:5000/api/chat'
+const API_URL = 'http://localhost:5001/api/chat'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'

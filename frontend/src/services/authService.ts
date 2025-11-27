@@ -1,5 +1,5 @@
 // API base URL - assuming backend runs on port 5000 and proxy is set up or CORS is handled
-export const API_URL = "http://localhost:5000/api/auth";
+export const API_URL = "http://localhost:5001/api/auth";
 
 export interface User {
   id: string

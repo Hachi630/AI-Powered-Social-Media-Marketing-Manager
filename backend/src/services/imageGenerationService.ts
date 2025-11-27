@@ -77,18 +77,6 @@ export async function generateImage(prompt: string, retries = 2): Promise<string
         })
         response = result
       }
-      model,
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
-        },
-      ],
-      // Request image response using responseModalities (plural)
-      generationConfig: {
-        responseModalities: ['IMAGE'],
-      },
-    } as any)
 
       // Extract image from response
       const responseAny = response as any
