@@ -1,4 +1,4 @@
-import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined } from '@ant-design/icons'
+import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined, CalendarOutlined } from '@ant-design/icons'
 import { Button, Card, Input, Space, Tooltip, message, Spin } from 'antd'
 import { useState, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm'
 import styles from './ChatBox.module.css'
 import { chatService, ChatMessage } from '../services/chatService'
 import ImageGenerationModal from './ImageGenerationModal'
+import ContentPlanModal from './ContentPlanModal'
 
 const { TextArea } = Input
 
@@ -33,6 +34,8 @@ export default function ChatBox({
   const [loading, setLoading] = useState(false)
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(conversationId || null)
   const [imageModalOpen, setImageModalOpen] = useState(false)
+  const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false)
+  const [lastUserMessage, setLastUserMessage] = useState<string>('')
 
   // Load conversation when conversationId changes
   useEffect(() => {
@@ -80,6 +83,24 @@ export default function ChatBox({
 
   const isEmpty = !inputMessage.trim()
 
+  // Check if message contains content plan intent
+  const hasContentPlanIntent = (message: string): boolean => {
+    const lowerMessage = message.toLowerCase()
+    const keywords = [
+      'generate',
+      'create',
+      'plan',
+      'content plan',
+      'marketing plan',
+      'calendar',
+      'schedule',
+      'campaign',
+      'social media',
+      'post schedule',
+    ]
+    return keywords.some((keyword) => lowerMessage.includes(keyword))
+  }
+
   const handleSend = async () => {
     if (isEmpty || loading) return
 
@@ -92,6 +113,7 @@ export default function ChatBox({
     // Add user message to the list immediately
     setMessages((prev) => [...prev, userMessage])
     const currentInput = inputMessage.trim()
+    setLastUserMessage(currentInput)
     setInputMessage('')
     updateTypingStatus(false)
     setLoading(true)
@@ -128,6 +150,14 @@ export default function ChatBox({
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleOpenContentPlanModal = () => {
+    setContentPlanModalOpen(true)
+  }
+
+  const handleContentPlanSuccess = () => {
+    message.success('Content plan sent to calendar successfully')
   }
 
   const handleInputChange = (value: string) => {
@@ -191,7 +221,7 @@ export default function ChatBox({
       return imagePath
     }
     // Otherwise, prepend the backend URL
-    return `http://localhost:5000${imagePath}`
+    return `http://localhost:5001${imagePath}`
   }
 
   return (
@@ -224,6 +254,20 @@ export default function ChatBox({
                     {msg.content}
                   </ReactMarkdown>
                 </div>
+                {msg.role === 'assistant' &&
+                  index === messages.length - 1 &&
+                  hasContentPlanIntent(lastUserMessage) && (
+                    <div className={styles.actionButtons}>
+                      <Button
+                        type="primary"
+                        icon={<CalendarOutlined />}
+                        onClick={handleOpenContentPlanModal}
+                        size="small"
+                      >
+                        Send to Calendar
+                      </Button>
+                    </div>
+                  )}
               </div>
             </div>
           ))}
@@ -284,6 +328,14 @@ export default function ChatBox({
         onCancel={() => setImageModalOpen(false)}
         onSuccess={handleImageSuccess}
         conversationId={currentConversationId}
+      />
+
+      {/* Content Plan Modal */}
+      <ContentPlanModal
+        open={contentPlanModalOpen}
+        goal={lastUserMessage}
+        onClose={() => setContentPlanModalOpen(false)}
+        onSuccess={handleContentPlanSuccess}
       />
     </div>
   )
