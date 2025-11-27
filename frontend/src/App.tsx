@@ -10,50 +10,50 @@ import Personal from './pages/Personal'
 import { authService, User } from './services/authService'
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
       if (authService.isAuthenticated()) {
-        const currentUser = await authService.getCurrentUser()
+        const currentUser = await authService.getCurrentUser();
         if (currentUser) {
-          setIsLoggedIn(true)
-          setUser(currentUser)
+          setIsLoggedIn(true);
+          setUser(currentUser);
         } else {
           // Token invalid
-          authService.logout()
-          setIsLoggedIn(false)
-          setUser(null)
+          authService.logout();
+          setIsLoggedIn(false);
+          setUser(null);
         }
       }
-      setIsLoading(false)
-    }
-    checkAuth()
-  }, [])
+      setIsLoading(false);
+    };
+    checkAuth();
+  }, []);
 
   const handleLoginSuccess = (user: User) => {
-    setIsLoggedIn(true)
-    setUser(user)
-  }
+    setIsLoggedIn(true);
+    setUser(user);
+  };
 
   const handleLogout = () => {
-    authService.logout()
-    setIsLoggedIn(false)
-    setUser(null)
-  }
+    authService.logout();
+    setIsLoggedIn(false);
+    setUser(null);
+  };
 
   if (isLoading) {
-    return <div>Loading...</div> // Or a proper loading spinner
+    return <div>Loading...</div>; // Or a proper loading spinner
   }
 
   return (
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: 'Inter, system-ui, sans-serif',
-          colorBgBase: '#f5f5f5',
+          fontFamily: "Inter, system-ui, sans-serif",
+          colorBgBase: "#f5f5f5",
         },
       }}
     >
@@ -129,12 +129,17 @@ function App() {
                 />
               }
             />
+            <Route
+              path="/auth/callback"
+              element={<OAuthCallback onLoginSuccess={handleLoginSuccess} />}
+            />
+            <Route path="/auth/phone-demo" element={<PhoneDemo />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </BrowserRouter>
     </ConfigProvider>
-  )
+  );
 }
 
-export default App
+export default App;
