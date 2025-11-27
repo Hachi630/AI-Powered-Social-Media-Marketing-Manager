@@ -11,8 +11,6 @@ import styles from './Sidebar.module.css'
 import { User } from '../services/authService'
 import { chatService, ConversationListItem } from '../services/chatService'
 
-const avatarSrc = 'https://www.figma.com/api/mcp/asset/3d8e0cdd-ecdb-4f02-b256-ee2d85bad6ec'
-
 interface SidebarProps {
   collapsed: boolean
   onToggleSidebar: () => void
@@ -183,7 +181,13 @@ export default function Sidebar({
         )}
       </div>
       <div className={styles.userSection}>
-        <Avatar size={32} src={avatarSrc} />
+        <Avatar
+          size={32}
+          src={user?.avatar}
+          style={{ backgroundColor: '#87d068' }}
+        >
+          {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'G'}
+        </Avatar>
         {!collapsed && <Typography.Text>{user?.email || 'Guest'}</Typography.Text>}
       </div>
     </aside>
