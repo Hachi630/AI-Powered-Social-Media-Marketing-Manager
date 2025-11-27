@@ -58,6 +58,18 @@ router.post('/register', async (req: Request, res: Response) => {
         user: {
           id: user._id.toString(),
           email: user.email,
+          name: user.name,
+          brandName: user.brandName,
+          phone: user.phone,
+          birthday: user.birthday,
+          gender: user.gender,
+          address: user.address,
+          aboutMe: user.aboutMe,
+          avatar: user.avatar,
+          industry: user.industry,
+          toneOfVoice: user.toneOfVoice,
+          knowledgeProducts: user.knowledgeProducts,
+          targetAudience: user.targetAudience,
           createdAt: user.createdAt,
         },
         token: generateToken(user._id.toString()),
@@ -99,6 +111,18 @@ router.post('/login', async (req: Request, res: Response) => {
       user: {
         id: user._id.toString(),
         email: user.email,
+        name: user.name,
+        brandName: user.brandName,
+        phone: user.phone,
+        birthday: user.birthday,
+        gender: user.gender,
+        address: user.address,
+        aboutMe: user.aboutMe,
+        avatar: user.avatar,
+        industry: user.industry,
+        toneOfVoice: user.toneOfVoice,
+        knowledgeProducts: user.knowledgeProducts,
+        targetAudience: user.targetAudience,
         createdAt: user.createdAt,
       },
       token: generateToken(user._id.toString()),
@@ -119,11 +143,92 @@ router.get('/me', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
+      res.status(200).json({
+        success: true,
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          brandName: user.brandName,
+          phone: user.phone,
+          birthday: user.birthday,
+          gender: user.gender,
+          address: user.address,
+          aboutMe: user.aboutMe,
+          avatar: user.avatar,
+          industry: user.industry,
+          toneOfVoice: user.toneOfVoice,
+          knowledgeProducts: user.knowledgeProducts,
+          targetAudience: user.targetAudience,
+          createdAt: user.createdAt,
+        },
+      })
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
+
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Extract allowed fields from request body
+    const {
+      name,
+      brandName,
+      phone,
+      birthday,
+      gender,
+      address,
+      aboutMe,
+      avatar,
+      industry,
+      toneOfVoice,
+      knowledgeProducts,
+      targetAudience,
+    } = req.body
+
+    // Update user fields
+    if (name !== undefined) user.name = name
+    if (brandName !== undefined) user.brandName = brandName
+    if (phone !== undefined) user.phone = phone
+    if (birthday !== undefined) user.birthday = birthday
+    if (gender !== undefined) user.gender = gender
+    if (address !== undefined) user.address = address
+    if (aboutMe !== undefined) user.aboutMe = aboutMe
+    if (avatar !== undefined) user.avatar = avatar
+    if (industry !== undefined) user.industry = industry
+    if (toneOfVoice !== undefined) user.toneOfVoice = toneOfVoice
+    if (knowledgeProducts !== undefined) user.knowledgeProducts = knowledgeProducts
+    if (targetAudience !== undefined) user.targetAudience = targetAudience
+
+    // Save updated user
+    await user.save()
+
     res.status(200).json({
       success: true,
       user: {
         id: user._id.toString(),
         email: user.email,
+        name: user.name,
+        brandName: user.brandName,
+        phone: user.phone,
+        birthday: user.birthday,
+        gender: user.gender,
+        address: user.address,
+        aboutMe: user.aboutMe,
+        avatar: user.avatar,
+        industry: user.industry,
+        toneOfVoice: user.toneOfVoice,
+        knowledgeProducts: user.knowledgeProducts,
+        targetAudience: user.targetAudience,
         createdAt: user.createdAt,
       },
     })

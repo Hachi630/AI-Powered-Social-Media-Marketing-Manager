@@ -5,7 +5,17 @@ export interface IUser extends Document {
   password?: string
   googleId?: string
   name?: string
+  brandName?: string
+  phone?: string
+  birthday?: string
+  gender?: string
+  address?: string
+  aboutMe?: string
   avatar?: string
+  industry?: string
+  toneOfVoice?: string
+  knowledgeProducts?: string[]
+  targetAudience?: string[]
   authProvider: 'local' | 'google'
   createdAt: Date
   updatedAt: Date
@@ -33,14 +43,60 @@ const UserSchema: Schema = new Schema(
     },
     name: {
       type: String,
+      trim: true,
     },
     avatar: {
       type: String,
+      trim: true,
     },
     authProvider: {
       type: String,
       enum: ['local', 'google'],
       default: 'local',
+    },
+    brandName: {
+      type: String,
+      trim: true,
+    },
+    phone: {
+      type: String,
+      trim: true,
+    },
+    birthday: {
+      type: String,
+      trim: true,
+    },
+    gender: {
+      type: String,
+      trim: true,
+    },
+    address: {
+      type: String,
+      trim: true,
+    },
+    aboutMe: {
+      type: String,
+      trim: true,
+    },
+    avatar: {
+      type: String,
+      trim: true,
+    },
+    industry: {
+      type: String,
+      trim: true,
+    },
+    toneOfVoice: {
+      type: String,
+      trim: true,
+    },
+    knowledgeProducts: {
+      type: [String],
+      default: [],
+    },
+    targetAudience: {
+      type: [String],
+      default: [],
     },
   },
   {

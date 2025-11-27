@@ -10,12 +10,13 @@ import {
   Space,
   Tag,
   Typography,
+  message,
 } from 'antd'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import { MELO_LOGO } from '../constants/assets'
 import styles from './BrandProfile.module.css'
-import { User } from '../services/authService'
+import { User, authService } from '../services/authService'
 
 const { Content } = Layout
 
@@ -32,6 +33,8 @@ const industryOptions = [
   { value: 'wellness', label: 'Wellness' },
   { value: 'lifestyle', label: 'Lifestyle' },
   { value: 'beauty', label: 'Beauty' },
+  { value: 'fashion', label: 'Fashion' },
+  { value: 'food', label: 'Food & Restaurant' },
 ]
 
 const initialAudience = ['Yoga lovers', 'Interior design enthusiast']
@@ -40,15 +43,56 @@ interface BrandProfileProps {
   isLoggedIn: boolean
   onLoginSuccess: (user: User) => void
   onLogout: () => void
+  user?: User | null
 }
 
-export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: BrandProfileProps) {
+export default function BrandProfile({
+  isLoggedIn,
+  onLoginSuccess,
+  onLogout,
+  user: propUser,
+}: BrandProfileProps) {
+  const [user, setUser] = useState<User | null>(propUser || null)
+  const [brandName, setBrandName] = useState('')
+  const [industry, setIndustry] = useState('')
   const [selectedTone, setSelectedTone] = useState('calm')
-  const [audienceTags, setAudienceTags] = useState(initialAudience)
+  const [customTone, setCustomTone] = useState('')
+  const [showCustomToneInput, setShowCustomToneInput] = useState(false)
+  const [audienceTags, setAudienceTags] = useState<string[]>([])
   const [keyword, setKeyword] = useState('')
-  const [knowledgeProducts, setKnowledgeProducts] = useState(initialKnowledgeProducts)
+  const [knowledgeProducts, setKnowledgeProducts] = useState<string[]>([])
   const [showAddProductInput, setShowAddProductInput] = useState(false)
   const [newProduct, setNewProduct] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  // Load user data on mount and when propUser changes
+  useEffect(() => {
+    const loadUser = async () => {
+      if (isLoggedIn) {
+        const currentUser = await authService.getCurrentUser()
+        if (currentUser) {
+          setUser(currentUser)
+          setBrandName(currentUser.brandName || '')
+          setIndustry(currentUser.industry || '')
+          const toneOfVoice = currentUser.toneOfVoice || 'calm'
+          // Check if tone is a custom tone (not in predefined list)
+          const isCustomTone = !toneButtons.some((tone) => tone.key === toneOfVoice)
+          if (isCustomTone && toneOfVoice) {
+            setSelectedTone('custom')
+            setCustomTone(toneOfVoice)
+            setShowCustomToneInput(true)
+          } else {
+            setSelectedTone(toneOfVoice)
+            setCustomTone('')
+            setShowCustomToneInput(false)
+          }
+          setKnowledgeProducts(currentUser.knowledgeProducts || [])
+          setAudienceTags(currentUser.targetAudience || [])
+        }
+      }
+    }
+    loadUser()
+  }, [isLoggedIn, propUser])
 
   const addAudienceTag = () => {
     if (!keyword.trim()) {
@@ -76,6 +120,45 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
     setKnowledgeProducts(knowledgeProducts.filter((product) => product !== productToRemove))
   }
 
+  const handleToneSelect = (toneKey: string) => {
+    if (toneKey === 'custom') {
+      setShowCustomToneInput(true)
+      setSelectedTone('custom')
+    } else {
+      setShowCustomToneInput(false)
+      setSelectedTone(toneKey)
+      setCustomTone('')
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    setLoading(true)
+    try {
+      // Use custom tone if custom is selected and has value, otherwise use selected tone
+      const toneOfVoice = selectedTone === 'custom' && customTone.trim() ? customTone.trim() : selectedTone
+
+      const response = await authService.updateProfile({
+        brandName,
+        industry,
+        toneOfVoice,
+        knowledgeProducts,
+        targetAudience: audienceTags,
+      })
+
+      if (response.success && response.user) {
+        setUser(response.user)
+        onLoginSuccess(response.user)
+        message.success('Profile saved successfully')
+      } else {
+        message.error(response.message || 'Failed to save profile')
+      }
+    } catch (error) {
+      message.error('An error occurred while saving profile')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <Layout className={styles.layout}>
       <Header
@@ -84,10 +167,11 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
         logoSrc={MELO_LOGO}
         onLoginSuccess={onLoginSuccess}
         onLogout={onLogout}
+        user={user}
       />
       <Content className={styles.content}>
         <Typography.Title level={1} className={styles.pageTitle}>
-          Brand Profile (Maya’s CalmNest)
+          Brand Profile ({user?.name || user?.brandName || 'User'})
         </Typography.Title>
 
         <Row gutter={[150, 100]} className={styles.row}>
@@ -96,13 +180,19 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
               <Space direction="vertical" size="large" className={styles.fullWidth}>
                 <div>
                   <Typography.Text className={styles.fieldLabel}>Brand Name</Typography.Text>
-                  <Input size="large" placeholder="Brand Name" defaultValue="ClamNest" />
+                  <Input
+                    size="large"
+                    placeholder="Brand Name"
+                    value={brandName}
+                    onChange={(e) => setBrandName(e.target.value)}
+                  />
                 </div>
                 <div>
                   <Typography.Text className={styles.fieldLabel}>Industry</Typography.Text>
                   <Select
                     size="large"
-                    defaultValue="home-decor"
+                    value={industry}
+                    onChange={(value) => setIndustry(value)}
                     options={industryOptions}
                     className={styles.fullWidth}
                   />
@@ -117,30 +207,65 @@ export default function BrandProfile({ isLoggedIn, onLoginSuccess, onLogout }: B
               extra={<Typography.Text type="secondary">How should the AI sound?</Typography.Text>}
               className={styles.card}
             >
-              <Space size="middle" wrap>
-                {toneButtons.map((tone) => (
+              <Space direction="vertical" size="middle" className={styles.fullWidth}>
+                <Space size="middle" wrap>
+                  {toneButtons.map((tone) => (
+                    <Button
+                      key={tone.key}
+                      size="large"
+                      shape="round"
+                      className={styles.toneButton}
+                      type={selectedTone === tone.key ? 'primary' : 'default'}
+                      style={
+                        selectedTone === tone.key
+                          ? { backgroundColor: tone.color, borderColor: tone.color }
+                          : undefined
+                      }
+                      onClick={() => handleToneSelect(tone.key)}
+                    >
+                      {tone.label}
+                    </Button>
+                  ))}
                   <Button
-                    key={tone.key}
                     size="large"
                     shape="round"
                     className={styles.toneButton}
-                    type={selectedTone === tone.key ? 'primary' : 'default'}
-                    style={
-                      selectedTone === tone.key
-                        ? { backgroundColor: tone.color, borderColor: tone.color }
-                        : undefined
-                    }
-                    onClick={() => setSelectedTone(tone.key)}
+                    type={selectedTone === 'custom' ? 'primary' : 'default'}
+                    onClick={() => handleToneSelect('custom')}
                   >
-                    {tone.label}
+                    Custom
                   </Button>
-                ))}
+                </Space>
+                {showCustomToneInput && (
+                  <div>
+                    <Input
+                      size="large"
+                      placeholder="Enter custom tone of voice (e.g., professional, friendly, casual)"
+                      value={customTone}
+                      onChange={(e) => setCustomTone(e.target.value)}
+                      onPressEnter={() => {
+                        if (customTone.trim()) {
+                          setSelectedTone('custom')
+                        }
+                      }}
+                    />
+                    <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
+                      Describe how you want the AI to communicate
+                    </Typography.Text>
+                  </div>
+                )}
               </Space>
             </Card>
           </Col>
 
           <Col xs={24} md={5}>
-            <Button type="primary" block size="large">
+            <Button
+              type="primary"
+              block
+              size="large"
+              onClick={handleSaveProfile}
+              loading={loading}
+            >
               Save Profile
             </Button>
           </Col>
