@@ -5,6 +5,13 @@ import { geminiService, ChatMessage } from '../services/geminiService'
 import Conversation from '../models/Conversation'
 import { generateImage } from '../services/imageGenerationService'
 import { saveImage } from '../utils/imageStorage'
+import {
+  validateChatMessage,
+  validateImagePrompt,
+  validateConversationLength,
+  chatRateLimiter,
+  imageRateLimiter,
+} from '../middleware/middleware'
 
 const router = express.Router()
 
@@ -23,32 +30,73 @@ const generateTitle = (message: string): string => {
 // @desc    Send chat message
 // @route   POST /api/chat
 // @access  Private
-router.post('/', protect, async (req: AuthRequest, res: Response) => {
+router.post('/', protect, chatRateLimiter, validateChatMessage, async (req: AuthRequest, res: Response) => {
+  const startTime = Date.now()
+  const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  
   try {
+    console.log('[Chat Route] New chat request', {
+      requestId,
+      userId: req.user?._id?.toString(),
+      hasConversationId: !!req.body.conversationId,
+      messageLength: req.body.message?.length || 0,
+    })
+
     const user = req.user
 
     if (!user) {
+      console.error('[Chat Route] User not found', { requestId })
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
     const { message, conversationId } = req.body
 
-    // Validate message
-    if (!message || !message.trim()) {
-      return res.status(400).json({ success: false, message: 'Message is required' })
-    }
-
     let conversation = null
 
-    // If conversationId exists, load the conversation
+    // If conversationId exists, load the conversation and validate length
     if (conversationId) {
-      conversation = await Conversation.findOne({
-        _id: conversationId,
-        userId: user._id,
-      })
+      try {
+        conversation = await Conversation.findOne({
+          _id: conversationId,
+          userId: user._id,
+        })
 
-      if (!conversation) {
-        return res.status(404).json({ success: false, message: 'Conversation not found' })
+        if (!conversation) {
+          console.warn('[Chat Route] Conversation not found', {
+            requestId,
+            conversationId,
+            userId: user._id.toString(),
+          })
+          return res.status(404).json({ success: false, message: 'Conversation not found' })
+        }
+
+        // Validate conversation length
+        const lengthValidation = await validateConversationLength(
+          conversationId,
+          user._id.toString()
+        )
+        if (!lengthValidation.valid) {
+          return res.status(400).json({
+            success: false,
+            message: lengthValidation.message,
+          })
+        }
+
+        console.log('[Chat Route] Loaded conversation', {
+          requestId,
+          conversationId,
+          messageCount: conversation.messages.length,
+        })
+      } catch (dbError: any) {
+        console.error('[Chat Route] Database error loading conversation', {
+          requestId,
+          conversationId,
+          error: dbError.message,
+        })
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to load conversation',
+        })
       }
     }
 
@@ -61,6 +109,13 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       targetAudience: user.targetAudience,
     }
 
+    console.log('[Chat Route] User context loaded', {
+      requestId,
+      hasBrandName: !!userContext.brandName,
+      hasIndustry: !!userContext.industry,
+      hasToneOfVoice: !!userContext.toneOfVoice,
+    })
+
     // Build messages array for Gemini API
     const messages: ChatMessage[] = []
 
@@ -72,6 +127,10 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
           content: msg.content,
         })
       })
+      console.log('[Chat Route] Added conversation history', {
+        requestId,
+        historyMessageCount: conversation.messages.length,
+      })
     }
 
     // Add current user message
@@ -81,44 +140,110 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     })
 
     // Call Gemini service
-    const aiResponse = await geminiService.generateContent({
-      messages,
-      userContext,
-    })
+    let aiResponse: string
+    try {
+      console.log('[Chat Route] Calling Gemini service', {
+        requestId,
+        totalMessages: messages.length,
+      })
+      
+      aiResponse = await geminiService.generateContent({
+        messages,
+        userContext,
+      })
+
+      console.log('[Chat Route] Gemini service response received', {
+        requestId,
+        responseLength: aiResponse.length,
+      })
+    } catch (geminiError: any) {
+      console.error('[Chat Route] Gemini service error', {
+        requestId,
+        error: geminiError.message,
+        errorCode: geminiError.code,
+        stack: geminiError.stack,
+      })
+      
+      // Return more specific error messages
+      const statusCode = geminiError.code === 'ENOTFOUND' || geminiError.code === 'ECONNREFUSED' 
+        ? 503 
+        : geminiError.code === 401 || geminiError.code === 403
+        ? 401
+        : 500
+
+      return res.status(statusCode).json({
+        success: false,
+        message: geminiError.message || 'Failed to generate AI response',
+        errorCode: geminiError.code,
+      })
+    }
 
     // Create or update conversation
-    if (!conversation) {
-      // Create new conversation
-      conversation = await Conversation.create({
-        userId: user._id,
-        title: generateTitle(message.trim()),
-        messages: [
-          {
-            role: 'user',
-            content: message.trim(),
-            timestamp: new Date(),
-          },
-          {
-            role: 'assistant',
-            content: aiResponse,
-            timestamp: new Date(),
-          },
-        ],
+    try {
+      if (!conversation) {
+        // Create new conversation
+        conversation = await Conversation.create({
+          userId: user._id,
+          title: generateTitle(message.trim()),
+          messages: [
+            {
+              role: 'user',
+              content: message.trim(),
+              timestamp: new Date(),
+            },
+            {
+              role: 'assistant',
+              content: aiResponse,
+              timestamp: new Date(),
+            },
+          ],
+        })
+        console.log('[Chat Route] Created new conversation', {
+          requestId,
+          conversationId: conversation._id.toString(),
+        })
+      } else {
+        // Update existing conversation
+        conversation.messages.push({
+          role: 'user',
+          content: message.trim(),
+          timestamp: new Date(),
+        })
+        conversation.messages.push({
+          role: 'assistant',
+          content: aiResponse,
+          timestamp: new Date(),
+        })
+        await conversation.save()
+        console.log('[Chat Route] Updated conversation', {
+          requestId,
+          conversationId: conversation._id.toString(),
+          totalMessages: conversation.messages.length,
+        })
+      }
+    } catch (dbError: any) {
+      console.error('[Chat Route] Database error saving conversation', {
+        requestId,
+        error: dbError.message,
+        stack: dbError.stack,
       })
-    } else {
-      // Update existing conversation
-      conversation.messages.push({
-        role: 'user',
-        content: message.trim(),
-        timestamp: new Date(),
+      
+      // Even if DB save fails, return the response (user got their answer)
+      // But log the error for monitoring
+      return res.status(200).json({
+        success: true,
+        response: aiResponse,
+        conversationId: conversation?._id?.toString() || null,
+        warning: 'Response generated but failed to save to database',
       })
-      conversation.messages.push({
-        role: 'assistant',
-        content: aiResponse,
-        timestamp: new Date(),
-      })
-      await conversation.save()
     }
+
+    const duration = Date.now() - startTime
+    console.log('[Chat Route] Request completed successfully', {
+      requestId,
+      duration: `${duration}ms`,
+      conversationId: conversation._id.toString(),
+    })
 
     res.json({
       success: true,
@@ -126,10 +251,19 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       conversationId: conversation._id.toString(),
     })
   } catch (error: any) {
-    console.error('Chat error:', error)
+    const duration = Date.now() - startTime
+    console.error('[Chat Route] Unexpected error', {
+      requestId,
+      error: error.message,
+      errorCode: error.code,
+      stack: error.stack,
+      duration: `${duration}ms`,
+    })
+    
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to generate response',
+      requestId, // Include request ID for debugging
     })
   }
 })
@@ -137,7 +271,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
 // @desc    Generate image
 // @route   POST /api/chat/generate-image
 // @access  Private
-router.post('/generate-image', protect, async (req: AuthRequest, res: Response) => {
+router.post('/generate-image', protect, imageRateLimiter, validateImagePrompt, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user
 
@@ -146,11 +280,6 @@ router.post('/generate-image', protect, async (req: AuthRequest, res: Response) 
     }
 
     const { prompt, conversationId } = req.body
-
-    // Validate prompt
-    if (!prompt || !prompt.trim()) {
-      return res.status(400).json({ success: false, message: 'Prompt is required' })
-    }
 
     // Generate image
     const imageDataUrl = await generateImage(prompt.trim())
