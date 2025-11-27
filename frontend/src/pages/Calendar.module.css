@@ -1,0 +1,120 @@
+.layout {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.content {
+  padding: 48px 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: min(1200px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.title {
+  text-align: center;
+  margin-bottom: 0 !important;
+}
+
+.card {
+  width: 100%;
+}
+
+.dateCell {
+  position: relative;
+  min-height: 80px;
+  padding: 4px;
+}
+
+.todayIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid #1890ff;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.itemsList {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.itemPreview {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.itemPreview:hover {
+  background: #e6f7ff;
+}
+
+.itemIcon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.itemLabel {
+  flex-shrink: 0;
+  font-weight: 500;
+  color: #666;
+}
+
+.itemTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+}
+
+.moreItems {
+  font-size: 11px;
+  color: #999;
+  padding: 2px 4px;
+  font-style: italic;
+}
+
+.itemCount {
+  color: #1890ff;
+  font-weight: normal;
+}
+
+/* Calendar cell hover effect */
+:global(.ant-picker-calendar-date-content) {
+  min-height: 80px;
+}
+
+:global(.ant-picker-calendar-date:hover) {
+  background: #f5f5f5;
+}
+

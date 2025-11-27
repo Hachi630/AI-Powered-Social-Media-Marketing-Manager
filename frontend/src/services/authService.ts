@@ -2,9 +2,21 @@
 export const API_URL = "http://localhost:5000/api/auth";
 
 export interface User {
-  id: string;
-  email: string;
-  createdAt: string;
+  id: string
+  email: string
+  name?: string
+  brandName?: string
+  phone?: string
+  birthday?: string
+  gender?: string
+  address?: string
+  aboutMe?: string
+  avatar?: string
+  industry?: string
+  toneOfVoice?: string
+  knowledgeProducts?: string[]
+  targetAudience?: string[]
+  createdAt: string
 }
 
 export interface AuthResponse {
@@ -83,4 +95,31 @@ export const authService = {
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem("token");
   },
-};
+
+  // Update user profile
+  updateProfile: async (profileData: Partial<User>): Promise<AuthResponse> => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      })
+      const data = await response.json()
+      if (data.success && data.user) {
+        return { success: true, user: data.user }
+      }
+      return { success: false, message: data.message || 'Failed to update profile' }
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+}
+

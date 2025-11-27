@@ -7,6 +7,7 @@ import AuthModal from './AuthModal'
 import styles from './Header.module.css'
 import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
 import { User } from '../services/authService'
+import { Avatar } from 'antd'
 
 export interface HeaderProps {
   isLoggedIn?: boolean
@@ -14,6 +15,7 @@ export interface HeaderProps {
   logoSrc?: string
   onLoginSuccess?: (user: User) => void
   onLogout?: () => void
+  user?: User | null
 }
 
 const navItems: MenuProps['items'] = [
@@ -30,6 +32,7 @@ export default function Header({
   logoSrc = MELO_LOGO,
   onLoginSuccess,
   onLogout,
+  user,
 }: HeaderProps) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -45,13 +48,31 @@ export default function Header({
     setIsAuthModalOpen(true)
   }
 
+  const handlePersonalClick = () => {
+    navigate('/personal')
+  }
+
+  const handleLogoutClick = () => {
+    onLogout?.()
+    navigate('/')
+  }
+
   const userMenu: MenuProps = {
     items: [
+      {
+        key: 'personal',
+        label: 'Personal',
+        icon: <UserOutlined />,
+        onClick: handlePersonalClick,
+      },
+      {
+        type: 'divider',
+      },
       {
         key: 'logout',
         label: 'Log out',
         icon: <LogoutOutlined />,
-        onClick: onLogout,
+        onClick: handleLogoutClick,
       },
     ],
   }
@@ -83,8 +104,14 @@ export default function Header({
           </Button>
         </Space>
       ) : (
-        <Dropdown menu={userMenu} placement="bottomRight">
-          <Button icon={<UserOutlined />} shape="circle" />
+        <Dropdown menu={userMenu} placement="bottomRight" arrow>
+          <Avatar
+            size="large"
+            src={user?.avatar}
+            style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
+          >
+            {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
+          </Avatar>
         </Dropdown>
       )}
       <AuthModal

@@ -251,6 +251,7 @@ export default function AuthModal({
 
           <div className={styles.emailSection}>
             <Input
+              type="email"
               size="large"
               placeholder="Email address"
               className={styles.emailInput}

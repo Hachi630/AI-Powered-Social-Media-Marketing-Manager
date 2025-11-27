@@ -16,6 +16,12 @@
   overflow-y: auto;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .headerRow {
   display: flex;
   align-items: center;
@@ -23,6 +29,7 @@
 }
 
 .title {
+  flex: 1;
   margin: 0 !important;
   font-family: 'Inter', sans-serif !important;
   font-weight: 600 !important;
@@ -56,6 +63,19 @@
 .chatItemActive {
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
+}
+
+.deleteButton {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.chatItem:hover .deleteButton {
+  opacity: 1;
+}
+
+.chatItem .deleteButton:hover {
+  opacity: 1;
 }
 
 .userSection {

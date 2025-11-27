@@ -18,7 +18,9 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **Dashboard**: Clean and intuitive interface for managing your marketing activities
 - **Brand Profile**: Configure your brand's tone of voice, target audience, and knowledge base
 - **Smart Calendar**: Schedule and manage your marketing campaigns
-- **Chat Interface**: AI-powered chat interface for content creation and marketing assistance
+- **AI Chat Interface**: AI-powered chat interface for content creation and marketing assistance with conversation history
+- **Image Generation**: Generate images using AI based on text prompts
+- **Conversation Management**: Save and manage chat conversations with message history
 - **Responsive Design**: Modern UI built with Ant Design, fully responsive across devices
 
 ## 🛠 Tech Stack
@@ -41,6 +43,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **MongoDB** - Database (via Mongoose)
 - **JWT** - Authentication tokens
 - **dotenv** - Environment variable management
+- **Google Gemini API** - AI chat and image generation
 
 ## 📁 Project Structure
 
@@ -53,12 +56,14 @@ Melo/
 │   │   │   ├── Header.tsx
 │   │   │   ├── Sidebar.tsx
 │   │   │   ├── ChatBox.tsx
-│   │   │   └── AuthModal.tsx
+│   │   │   ├── AuthModal.tsx
+│   │   │   └── ImageGenerationModal.tsx
 │   │   ├── pages/           # Page components
 │   │   │   ├── BrandProfile.tsx
 │   │   │   └── CalendarPlaceholder.tsx
 │   │   ├── services/        # API service layer
-│   │   │   └── authService.ts
+│   │   │   ├── authService.ts
+│   │   │   └── chatService.ts
 │   │   ├── constants/       # Constants and assets
 │   │   │   └── assets.ts
 │   │   └── App.tsx          # Main app component
@@ -69,14 +74,20 @@ Melo/
 │   │   ├── config/          # Configuration files
 │   │   │   └── database.ts
 │   │   ├── models/          # MongoDB models
-│   │   │   └── User.ts
+│   │   │   ├── User.ts
+│   │   │   └── Conversation.ts
 │   │   ├── routes/          # API routes
-│   │   │   └── auth.ts
+│   │   │   ├── auth.ts
+│   │   │   └── chat.ts
+│   │   ├── services/        # Business logic services
+│   │   │   ├── geminiService.ts
+│   │   │   └── imageGenerationService.ts
 │   │   ├── middleware/      # Express middleware
 │   │   │   ├── auth.ts
 │   │   │   └── errorHandler.ts
 │   │   ├── utils/           # Utility functions
-│   │   │   └── jwt.ts
+│   │   │   ├── jwt.ts
+│   │   │   └── imageStorage.ts
 │   │   ├── types/           # TypeScript types
 │   │   │   └── index.ts
 │   │   └── index.ts          # Entry point
@@ -154,65 +165,15 @@ PORT=5000
 MONGODB_URI=mongodb://localhost:27017/melo
 JWT_SECRET=your_secret_key_here
 JWT_EXPIRE=7d
-
-### OAuth Provider Config
-For social login, add the following to `backend/.env` and create OAuth credentials in the provider consoles (Google, Microsoft, Apple):
-
-```env
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-MICROSOFT_CLIENT_ID=your-microsoft-client-id
-MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
-FRONTEND_URL=http://localhost:5173
-BACKEND_URL=http://localhost:5000
-````
-
-### Frontend (VITE environment variables)
-
-Frontend-only demo redirects (useful when backend is not set up yet): add to `frontend/.env` or `frontend/.env.local` with these variables:
-
-```
-VITE_GOOGLE_CLIENT_ID=your-google-client-id
-VITE_GOOGLE_REDIRECT_URI=http://localhost:5173/auth/callback
-VITE_MICROSOFT_CLIENT_ID=your-microsoft-client-id
-VITE_MICROSOFT_REDIRECT_URI=http://localhost:5173/auth/callback
-VITE_APPLE_CLIENT_ID=your-apple-client-id
-VITE_APPLE_REDIRECT_URI=http://localhost:5173/auth/callback
-VITE_PHONE_DEMO_URL=/auth/phone-demo
+GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 ```
 
-These allow the frontend `AuthModal` to directly redirect to the provider authorization pages without a running backend (for demonstration). For Google/Microsoft you still need to register the redirect URIs in their consoles matching these redirect URIs.
-
-Note: For Apple sign-in and phone-based OTP, follow the provider-specific docs linked in the Implementation section below.
-
-### Google-specific troubleshooting
-
-If you see a page like "Access to localhost was denied" or `HTTP ERROR 403` while attempting to test a Google OAuth login, it usually means one of the following:
-
-- **Redirect URI mismatch**: The redirect URI you registered in the Google Cloud Console must exactly match the URI used by your app (for the provided code it should be `http://localhost:5000/api/auth/google/callback`).
-- **Missing client id / secret**: If `GOOGLE_CLIENT_ID` or `GOOGLE_CLIENT_SECRET` are missing in your backend `.env`, Google may reject the request. The backend will now return a helpful error HTML indicating these are missing.
-- **Consent screen not configured / Test only**: If your OAuth consent screen is set to _Testing_, you must add your test accounts to the list of test users on the consent screen settings or publish the app. Otherwise Google will show an error and block the login attempt.
-- **Account or domain restrictions**: If you are using an enterprise account with restricted OAuth or policies, the request may be blocked.
-
-Steps to fix:
-
-1. In the Google Cloud Console (https://console.developers.google.com/):
-   - Create/select a project
-   - Under APIs & Services -> OAuth consent screen: configure your app, set the app type (External/internal), add the developer contact email, and if the app is in Testing, add your Google account email as a test user.
-   - Under Credentials -> Create credentials -> OAuth 2.0 Client ID -> Web application. Add the redirect URI: `http://localhost:5000/api/auth/google/callback` to the Authorized redirect URIs.
-   - Copy the Client ID and Client Secret and add them to your `backend/.env`:
-     ```env
-     GOOGLE_CLIENT_ID=...
-     GOOGLE_CLIENT_SECRET=...
-     BACKEND_URL=http://localhost:5000
-     FRONTEND_URL=http://localhost:5173
-     ```
-2. Restart the backend server.
-3. Re-open the SPA, click the Google login button and it should redirect to Google and back to your app.
-
-For Microsoft the setup is similar, but done in Azure Portal -> App Registrations -> (create app) -> Authentication -> Add redirect URI `http://localhost:5000/api/auth/microsoft/callback` and then add client secret under Certificates & secrets.
-
-```
+**Note**: 
+- Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
+- `GEMINI_IMAGE_MODEL` is optional, defaults to `gemini-2.5-flash-image` if not set
+- Make sure the `backend/uploads/images/` directory exists for image storage
 
 ### Frontend
 
@@ -411,15 +372,245 @@ Authorization: Bearer <token>
 
 ---
 
+### Chat Endpoints
+
+#### 1. Send Chat Message
+**POST** `/api/chat`
+
+Send a message to the AI chat and receive a response based on user's Brand Profile. Automatically manages conversation history.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "message": "What marketing strategies work best for my brand?",
+  "conversationId": "optional_conversation_id"
+}
+```
+
+**Note:** 
+- `conversationId` is optional. If provided, the message will be added to the existing conversation. If not provided, a new conversation will be created.
+- The API automatically maintains conversation history based on the conversation ID.
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "response": "Based on your brand profile, I recommend focusing on...",
+  "conversationId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Error Responses:**
+- `400` - Message is required
+- `401` - Not authorized
+- `404` - User not found or conversation not found
+- `500` - Server error or Gemini API error
+
+---
+
+#### 2. Generate Image
+**POST** `/api/chat/generate-image`
+
+Generate an image using AI based on a text prompt.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "prompt": "a cute little rabbit on the grass",
+  "conversationId": "optional_conversation_id"
+}
+```
+
+**Note:**
+- `prompt` is required - the text description of the image to generate
+- `conversationId` is optional. If provided, the generated image will be added to the conversation. If not, a new conversation will be created.
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "imageUrl": "/uploads/images/1764196856532-ui9irxyi45.png",
+  "images": ["/uploads/images/1764196856532-ui9irxyi45.png"],
+  "conversationId": "507f1f77bcf86cd799439011"
+}
+```
+
+**Error Responses:**
+- `400` - Prompt is required
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error or image generation failed
+
+---
+
+#### 3. Get All Conversations
+**GET** `/api/chat`
+
+Get all conversations for the current user, sorted by most recent.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "conversations": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "title": "Marketing strategies",
+      "updatedAt": "2024-01-01T00:00:00.000Z",
+      "createdAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error
+
+---
+
+#### 4. Get Single Conversation
+**GET** `/api/chat/:conversationId`
+
+Get a specific conversation with all its messages.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "conversation": {
+    "id": "507f1f77bcf86cd799439011",
+    "title": "Marketing strategies",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello",
+        "images": null,
+        "timestamp": "2024-01-01T00:00:00.000Z"
+      },
+      {
+        "role": "assistant",
+        "content": "Hello! How can I help you?",
+        "images": null,
+        "timestamp": "2024-01-01T00:01:00.000Z"
+      },
+      {
+        "role": "assistant",
+        "content": "Generated image: a cute rabbit",
+        "images": ["/uploads/images/1764196856532-ui9irxyi45.png"],
+        "timestamp": "2024-01-01T00:02:00.000Z"
+      }
+    ],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:02:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- `401` - Not authorized
+- `404` - User not found or conversation not found
+- `500` - Server error
+
+---
+
+#### 5. Delete Conversation
+**DELETE** `/api/chat/:conversationId`
+
+Delete a specific conversation.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Conversation deleted successfully"
+}
+```
+
+**Error Responses:**
+- `401` - Not authorized
+- `404` - User not found or conversation not found
+- `500` - Server error
+
+---
+
 ## 📊 Data Models
 
 ### User
 
 ```typescript
 {
-  id: string; // MongoDB ObjectId (as string)
-  email: string; // User email (unique, lowercase)
-  createdAt: string; // ISO 8601 timestamp
+  id: string                    // MongoDB ObjectId (as string)
+  email: string                 // User email (unique, lowercase)
+  password: string              // Password (plain text for demo)
+  name?: string                 // User's name
+  brandName?: string            // Brand name
+  industry?: string             // Industry
+  toneOfVoice?: string          // Brand tone of voice
+  knowledgeProducts?: string[]  // Knowledge base products
+  targetAudience?: string[]     // Target audience
+  createdAt: string            // ISO 8601 timestamp
+  updatedAt: string            // ISO 8601 timestamp
+}
+```
+
+### Conversation
+```typescript
+{
+  id: string                    // MongoDB ObjectId (as string)
+  userId: string               // Reference to User
+  title: string                // Conversation title (auto-generated)
+  messages: ConversationMessage[] // Array of messages
+  createdAt: string           // ISO 8601 timestamp
+  updatedAt: string           // ISO 8601 timestamp
+}
+```
+
+### ConversationMessage
+```typescript
+{
+  role: 'user' | 'assistant'   // Message role
+  content: string              // Message text content
+  images?: string[]            // Optional array of image URLs
+  timestamp: string           // ISO 8601 timestamp
 }
 ```
 
@@ -431,6 +622,27 @@ Authorization: Bearer <token>
   token?: string      // JWT token (on login/register)
   user?: User         // User information
   message?: string    // Error message
+}
+```
+
+### ChatResponse
+```typescript
+{
+  success: boolean           // Request success status
+  response?: string         // AI response text
+  conversationId?: string   // Conversation ID
+  message?: string          // Error message
+}
+```
+
+### ImageGenerationResponse
+```typescript
+{
+  success: boolean           // Request success status
+  imageUrl?: string          // Generated image URL
+  images?: string[]          // Array of image URLs
+  conversationId?: string    // Conversation ID
+  message?: string          // Error message
 }
 ```
 
@@ -490,6 +702,9 @@ npm run preview # Preview production build
 - Implement proper input validation
 - Add CORS restrictions
 - Use environment variables for secrets
+- Implement file upload size limits
+- Add image validation and sanitization
+- Consider using cloud storage (AWS S3, Google Cloud Storage) instead of local file system
 
 ---
 
@@ -523,6 +738,17 @@ The frontend automatically handles:
 - Token inclusion in authenticated requests
 - Automatic token validation on app load
 - Login state management across components
+- Conversation history management
+- Image generation and display
+
+### Image Generation Testing
+
+1. Login to the application
+2. Click the image icon in the chat toolbar
+3. Enter a prompt (e.g., "a cute little rabbit on the grass")
+4. Click "Generate" or press Ctrl+Enter / Cmd+Enter
+5. The generated image should appear in the chat
+6. Images are saved to `backend/uploads/images/` directory
 
 ---
 
