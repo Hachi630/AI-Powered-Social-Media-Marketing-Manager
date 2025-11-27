@@ -58,6 +58,19 @@
   border: 1px solid #e0e0e0;
 }
 
+.deleteButton {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.chatItem:hover .deleteButton {
+  opacity: 1;
+}
+
+.chatItem .deleteButton:hover {
+  opacity: 1;
+}
+
 .userSection {
   border-top: 1px solid #e0e0e0;
   padding-top: 16px;

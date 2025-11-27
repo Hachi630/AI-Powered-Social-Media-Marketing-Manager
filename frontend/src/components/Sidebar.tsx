@@ -3,8 +3,9 @@ import {
   MenuUnfoldOutlined,
   PlusOutlined,
   SearchOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
-import { Avatar, Button, Input, List, Typography, Spin } from 'antd'
+import { Avatar, Button, Input, List, Typography, Spin, Modal, message } from 'antd'
 import { useState, useEffect } from 'react'
 import styles from './Sidebar.module.css'
 import { User } from '../services/authService'
@@ -72,6 +73,37 @@ export default function Sidebar({
     }
   }
 
+  const handleDeleteConversation = (e: React.MouseEvent, conversationId: string) => {
+    // Prevent event bubbling to avoid triggering conversation selection
+    e.stopPropagation()
+
+    Modal.confirm({
+      title: 'Delete Conversation',
+      content: 'Are you sure you want to delete this conversation? This action cannot be undone.',
+      okText: 'Delete',
+      okType: 'danger',
+      cancelText: 'Cancel',
+      onOk: async () => {
+        try {
+          const result = await chatService.deleteConversation(conversationId)
+          if (result.success) {
+            message.success('Conversation deleted successfully')
+            // Reload conversations
+            await loadConversations()
+            // If deleted conversation was selected, clear selection
+            if (selectedConversationId === conversationId && onConversationSelect) {
+              onConversationSelect(null)
+            }
+          } else {
+            message.error(result.message || 'Failed to delete conversation')
+          }
+        } catch (error) {
+          message.error('An error occurred while deleting the conversation')
+        }
+      },
+    })
+  }
+
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
       <div className={styles.topSection}>
@@ -117,6 +149,17 @@ export default function Sidebar({
                         selectedConversationId === item.id ? styles.chatItemActive : ''
                       }`}
                       onClick={() => handleConversationClick(item.id)}
+                      actions={[
+                        <Button
+                          key="delete"
+                          type="text"
+                          danger
+                          size="small"
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => handleDeleteConversation(e, item.id)}
+                          className={styles.deleteButton}
+                        />,
+                      ]}
                     >
                       <Typography.Text ellipsis>{item.title}</Typography.Text>
                     </List.Item>
