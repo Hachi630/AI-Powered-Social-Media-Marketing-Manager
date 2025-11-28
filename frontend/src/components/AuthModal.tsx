@@ -7,84 +7,126 @@ import {
   LeftOutlined,
   MobileOutlined,
   WindowsFilled,
-} from '@ant-design/icons'
-import { Button, Divider, Input, message, Modal, Space, Typography } from 'antd'
-import { useState } from 'react'
-import { authService, User } from '../services/authService'
-import styles from './AuthModal.module.css'
+} from "@ant-design/icons";
+import {
+  Button,
+  Divider,
+  Input,
+  message,
+  Modal,
+  Space,
+  Typography,
+} from "antd";
+import { useState } from "react";
+import { authService, User } from "../services/authService";
+import styles from "./AuthModal.module.css";
 
 interface AuthModalProps {
-  open: boolean
-  onCancel: () => void
-  onLoginSuccess: (user: User) => void
+  open: boolean;
+  onCancel: () => void;
+  onLoginSuccess: (user: User) => void;
 }
 
-export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalProps) {
-  const [step, setStep] = useState<'login' | 'signup'>('login')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
+export default function AuthModal({
+  open,
+  onCancel,
+  onLoginSuccess,
+}: AuthModalProps) {
+  const [step, setStep] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleEmailContinue = () => {
     if (email.trim()) {
-      setStep('signup')
+      setStep("signup");
     }
-  }
+  };
+
+  const handleSocialLogin = (
+    provider: "google" | "apple" | "microsoft" | "phone"
+  ) => {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const googleRedirect =
+      import.meta.env.VITE_GOOGLE_REDIRECT_URI ||
+      `${window.location.origin}/auth/callback`;
+
+    if (provider === "google") {
+      if (!googleClientId) {
+        message.error("Google Client ID not configured");
+        return;
+      }
+      const state = Math.random().toString(36).substring(2);
+      const params = new URLSearchParams({
+        client_id: googleClientId,
+        redirect_uri: googleRedirect,
+        response_type: "code",
+        scope: "openid email profile",
+        state,
+        prompt: "consent",
+      });
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    } else if (provider === "phone") {
+      window.location.href = "/auth/phone-demo";
+    } else {
+      message.info(`${provider} login not configured yet`);
+    }
+  };
 
   const handleBackToLogin = () => {
-    setStep('login')
-    setPassword('')
-  }
+    setStep("login");
+    setPassword("");
+  };
 
   const handleSignupContinue = async () => {
-    if (!email || !password) return
+    if (!email || !password) return;
 
-    setLoading(true)
+    setLoading(true);
     try {
       // 1. Try to register
-      let response = await authService.register(email, password)
+      let response = await authService.register(email, password);
 
       // 2. If user exists, try to login with the same credentials
-      if (!response.success && response.message === 'User already exists') {
-        response = await authService.login(email, password)
+      if (!response.success && response.message === "User already exists") {
+        response = await authService.login(email, password);
       }
 
       if (response.success && response.user) {
-        message.success('Successfully logged in!')
-        onLoginSuccess(response.user)
-        onCancel()
+        message.success("Successfully logged in!");
+        onLoginSuccess(response.user);
+        onCancel();
         // Reset form
-        setStep('login')
-        setEmail('')
-        setPassword('')
+        setStep("login");
+        setEmail("");
+        setPassword("");
       } else {
-        message.error(response.message || 'Authentication failed')
+        message.error(response.message || "Authentication failed");
       }
     } catch (error) {
-      message.error('An error occurred during authentication')
+      message.error("An error occurred during authentication");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <Modal
       open={open}
       onCancel={() => {
-        onCancel()
-        setStep('login')
-        setEmail('')
-        setPassword('')
+        onCancel();
+        setStep("login");
+        setEmail("");
+        setPassword("");
       }}
       footer={null}
       centered
-      width={step === 'signup' ? 480 : 400}
+      width={step === "signup" ? 480 : 400}
       className={styles.authModal}
-      maskStyle={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
-      closable={step === 'login'}
+      maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}
+      closable={step === "login"}
     >
-      {step === 'login' ? (
+      {step === "login" ? (
         <div className={styles.container}>
           <Typography.Title level={2} className={styles.title}>
             Log in or sign up
@@ -93,17 +135,45 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
             You'll get smarter responses and can upload files, images, and more.
           </Typography.Text>
 
-          <Space direction="vertical" size={12} className={styles.socialButtons}>
-            <Button block size="large" icon={<GoogleOutlined />} className={styles.socialBtn}>
+          <Space
+            direction="vertical"
+            size={12}
+            className={styles.socialButtons}
+          >
+            <Button
+              block
+              size="large"
+              icon={<GoogleOutlined />}
+              className={styles.socialBtn}
+              onClick={() => handleSocialLogin("google")}
+            >
               Continue with Google
             </Button>
-            <Button block size="large" icon={<AppleFilled />} className={styles.socialBtn}>
+            <Button
+              block
+              size="large"
+              icon={<AppleFilled />}
+              className={styles.socialBtn}
+              onClick={() => handleSocialLogin("apple")}
+            >
               Continue with Apple
             </Button>
-            <Button block size="large" icon={<WindowsFilled />} className={styles.socialBtn}>
+            <Button
+              block
+              size="large"
+              icon={<WindowsFilled />}
+              className={styles.socialBtn}
+              onClick={() => handleSocialLogin("microsoft")}
+            >
               Continue with Microsoft
             </Button>
-            <Button block size="large" icon={<MobileOutlined />} className={styles.socialBtn}>
+            <Button
+              block
+              size="large"
+              icon={<MobileOutlined />}
+              className={styles.socialBtn}
+              onClick={() => handleSocialLogin("phone")}
+            >
               Continue with phone
             </Button>
           </Space>
@@ -151,7 +221,9 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
 
             <div className={styles.signupForm}>
               <div className={styles.emailFieldWrapper}>
-                <Typography.Text className={styles.fieldLabel}>Email address</Typography.Text>
+                <Typography.Text className={styles.fieldLabel}>
+                  Email address
+                </Typography.Text>
                 <div className={styles.emailFieldWithEdit}>
                   <Input
                     size="large"
@@ -171,10 +243,12 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
               </div>
 
               <div className={styles.passwordFieldWrapper}>
-                <Typography.Text className={styles.fieldLabel}>Password</Typography.Text>
+                <Typography.Text className={styles.fieldLabel}>
+                  Password
+                </Typography.Text>
                 <Input
                   size="large"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -183,7 +257,13 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
                   suffix={
                     <Button
                       type="text"
-                      icon={showPassword ? <EyeOutlined /> : <EyeInvisibleOutlined />}
+                      icon={
+                        showPassword ? (
+                          <EyeOutlined />
+                        ) : (
+                          <EyeInvisibleOutlined />
+                        )
+                      }
                       onClick={() => setShowPassword(!showPassword)}
                       className={styles.eyeButton}
                     />
@@ -217,5 +297,5 @@ export default function AuthModal({ open, onCancel, onLoginSuccess }: AuthModalP
         </div>
       )}
     </Modal>
-  )
+  );
 }
