@@ -63,17 +63,18 @@ export default function AuthModal({
   const handleSocialLogin = (
     provider: "google" | "apple" | "microsoft" | "phone"
   ) => {
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    const googleRedirect =
-      import.meta.env.VITE_GOOGLE_REDIRECT_URI ||
-      `${window.location.origin}/auth/callback`;
+    const state = Math.random().toString(36).substring(2);
+    const defaultRedirect = `${window.location.origin}/auth/callback`;
 
     if (provider === "google") {
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      const googleRedirect =
+        import.meta.env.VITE_GOOGLE_REDIRECT_URI || defaultRedirect;
+
       if (!googleClientId) {
         message.error("Google Client ID not configured");
         return;
       }
-      const state = Math.random().toString(36).substring(2);
       const params = new URLSearchParams({
         client_id: googleClientId,
         redirect_uri: googleRedirect,
@@ -83,6 +84,35 @@ export default function AuthModal({
         prompt: "consent",
       });
       window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    } else if (provider === "apple") {
+      const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID;
+      const appleRedirect =
+        import.meta.env.VITE_APPLE_REDIRECT_URI || defaultRedirect;
+
+      // If Apple Client ID is configured, use real OAuth
+      if (appleClientId) {
+        const params = new URLSearchParams({
+          client_id: appleClientId,
+          redirect_uri: appleRedirect,
+          response_type: "code id_token",
+          scope: "name email",
+          response_mode: "form_post",
+          state,
+        });
+        window.location.href = `https://appleid.apple.com/auth/authorize?${params.toString()}`;
+      } else {
+        // Demo mode: simulate Apple login
+        message.loading("Connecting to Apple...", 1.5).then(() => {
+          const demoUser: User = {
+            id: `apple_${Date.now()}`,
+            email: `demo_apple_user@icloud.com`,
+            createdAt: new Date().toISOString(),
+          };
+          message.success("Successfully logged in with Apple! (Demo mode)");
+          onLoginSuccess(demoUser);
+          onCancel();
+        });
+      }
     } else if (provider === "phone") {
       setStep("phone");
     } else {
