@@ -17,7 +17,7 @@ import {
   Space,
   Typography,
 } from "antd";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { authService, User } from "../services/authService";
 import styles from "./AuthModal.module.css";
 
@@ -32,11 +32,27 @@ export default function AuthModal({
   onCancel,
   onLoginSuccess,
 }: AuthModalProps) {
-  const [step, setStep] = useState<"login" | "signup">("login");
+  const [step, setStep] = useState<
+    "login" | "signup" | "phone" | "phone-verify"
+  >("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup interval on unmount or when countdown reaches 0
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
 
   const handleEmailContinue = () => {
     if (email.trim()) {
@@ -68,15 +84,89 @@ export default function AuthModal({
       });
       window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
     } else if (provider === "phone") {
-      window.location.href = "/auth/phone-demo";
+      setStep("phone");
     } else {
       message.info(`${provider} login not configured yet`);
     }
   };
 
   const handleBackToLogin = () => {
+    // Clear timer when going back
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
     setStep("login");
     setPassword("");
+    setPhoneNumber("");
+    setVerificationCode("");
+    setCountdown(0);
+  };
+
+  const handleSendCode = async () => {
+    if (!phoneNumber.trim() || phoneNumber.length < 10) {
+      message.error("Please enter a valid phone number");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Simulate sending verification code (in production, call real SMS API)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setStep("phone-verify");
+      message.success("Verification code sent! (Demo: use 123456)");
+      // Clear any existing timer before starting new one
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      // Start countdown
+      setCountdown(60);
+      timerRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) {
+              clearInterval(timerRef.current);
+              timerRef.current = null;
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } catch {
+      message.error("Failed to send verification code");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode.trim()) {
+      message.error("Please enter the verification code");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Demo: accept "123456" as valid code
+      if (verificationCode === "123456") {
+        // Create a demo user for phone login
+        const demoUser: User = {
+          id: `phone_${Date.now()}`,
+          email: `${phoneNumber}@phone.demo`,
+          createdAt: new Date().toISOString(),
+        };
+        message.success("Successfully logged in!");
+        onLoginSuccess(demoUser);
+        onCancel();
+        // Reset form
+        handleBackToLogin();
+      } else {
+        message.error("Invalid verification code. Demo code is: 123456");
+      }
+    } catch {
+      message.error("Verification failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignupContinue = async () => {
@@ -103,7 +193,7 @@ export default function AuthModal({
       } else {
         message.error(response.message || "Authentication failed");
       }
-    } catch (error) {
+    } catch {
       message.error("An error occurred during authentication");
     } finally {
       setLoading(false);
@@ -114,19 +204,142 @@ export default function AuthModal({
     <Modal
       open={open}
       onCancel={() => {
+        // Clear timer when closing modal
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
         onCancel();
         setStep("login");
         setEmail("");
         setPassword("");
+        setPhoneNumber("");
+        setVerificationCode("");
+        setCountdown(0);
       }}
       footer={null}
       centered
-      width={step === "signup" ? 480 : 400}
+      width={
+        step === "signup" || step === "phone" || step === "phone-verify"
+          ? 480
+          : 400
+      }
       className={styles.authModal}
       maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}
       closable={step === "login"}
     >
-      {step === "login" ? (
+      {step === "phone" ? (
+        <div className={styles.signupContainer}>
+          <div className={styles.logoContainer}>
+            <Button
+              type="text"
+              icon={<LeftOutlined />}
+              className={styles.backButton}
+              onClick={handleBackToLogin}
+            />
+          </div>
+          <div className={styles.signupContent}>
+            <Typography.Title level={2} className={styles.signupTitle}>
+              Continue with phone
+            </Typography.Title>
+            <Typography.Text className={styles.signupSubtitle}>
+              Enter your phone number to receive a verification code.
+            </Typography.Text>
+
+            <div className={styles.signupForm}>
+              <div className={styles.emailFieldWrapper}>
+                <Typography.Text className={styles.fieldLabel}>
+                  Phone number
+                </Typography.Text>
+                <Input
+                  size="large"
+                  placeholder="+1 (555) 123-4567"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  onPressEnter={handleSendCode}
+                  className={styles.emailInput}
+                />
+              </div>
+
+              <Button
+                type="primary"
+                block
+                size="large"
+                className={styles.continueBtn}
+                onClick={handleSendCode}
+                disabled={!phoneNumber.trim()}
+                loading={loading}
+              >
+                Send verification code
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : step === "phone-verify" ? (
+        <div className={styles.signupContainer}>
+          <div className={styles.logoContainer}>
+            <Button
+              type="text"
+              icon={<LeftOutlined />}
+              className={styles.backButton}
+              onClick={() => setStep("phone")}
+            />
+          </div>
+          <div className={styles.signupContent}>
+            <Typography.Title level={2} className={styles.signupTitle}>
+              Enter verification code
+            </Typography.Title>
+            <Typography.Text className={styles.signupSubtitle}>
+              We sent a code to {phoneNumber}
+            </Typography.Text>
+
+            <div className={styles.signupForm}>
+              <div className={styles.emailFieldWrapper}>
+                <Typography.Text className={styles.fieldLabel}>
+                  Verification code
+                </Typography.Text>
+                <Input
+                  size="large"
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  onPressEnter={handleVerifyCode}
+                  className={styles.emailInput}
+                  maxLength={6}
+                />
+              </div>
+
+              <Button
+                type="primary"
+                block
+                size="large"
+                className={styles.continueBtn}
+                onClick={handleVerifyCode}
+                disabled={!verificationCode.trim()}
+                loading={loading}
+              >
+                Verify and sign in
+              </Button>
+
+              <div style={{ textAlign: "center", marginTop: 16 }}>
+                {countdown > 0 ? (
+                  <Typography.Text type="secondary">
+                    Resend code in {countdown}s
+                  </Typography.Text>
+                ) : (
+                  <Button
+                    type="link"
+                    onClick={handleSendCode}
+                    loading={loading}
+                  >
+                    Resend code
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : step === "login" ? (
         <div className={styles.container}>
           <Typography.Title level={2} className={styles.title}>
             Log in or sign up
