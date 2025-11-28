@@ -1,7 +1,7 @@
 import { GoogleGenAI } from '@google/genai'
 
-// Initialize Gemini client (automatically gets API key from GEMINI_API_KEY env var)
-const ai = new GoogleGenAI({})
+// Initialize Gemini client with API key from environment
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
