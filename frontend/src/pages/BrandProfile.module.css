@@ -137,6 +137,163 @@
   background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%) !important;
 }
 
+/* Company Selector Styles */
+.companySelector {
+  margin-bottom: 32px;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%) !important;
+  box-shadow: 0 8px 32px rgba(30, 58, 95, 0.3);
+}
+
+.companySelector:hover {
+  transform: none;
+}
+
+.companySelector :global(.ant-card-body) {
+  background: transparent !important;
+  padding: 24px 32px;
+}
+
+.companySelectorContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.companySelectorHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.companySelectorIcon {
+  font-size: 28px;
+  color: #60a5fa;
+}
+
+.companySelectorTitle {
+  font-size: 18px;
+  color: #ffffff !important;
+  white-space: nowrap;
+}
+
+.companyList {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.companyItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.companyItem:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.companyItemActive {
+  background: rgba(96, 165, 250, 0.2) !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+}
+
+.companyItem .companyName {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 14px;
+  flex: 1;
+}
+
+.companyNameInput {
+  flex: 1;
+  min-width: 100px;
+}
+
+.companyActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.companyItem:hover .companyActions {
+  opacity: 1;
+}
+
+.companyItemActive .companyActions {
+  opacity: 1;
+}
+
+.companyActionBtn {
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 4px !important;
+}
+
+.companyActionBtn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.companyDeleteBtn {
+  color: rgba(239, 68, 68, 0.8) !important;
+  padding: 4px !important;
+}
+
+.companyDeleteBtn:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.companyDeleteBtn:disabled {
+  color: rgba(255, 255, 255, 0.3) !important;
+  cursor: not-allowed;
+}
+
+.addCompanyForm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.addCompanyForm :global(.ant-input) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: none !important;
+  min-width: 160px;
+}
+
+.addCompanyBtn {
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: transparent !important;
+  border-radius: 10px !important;
+  height: 42px;
+  padding: 0 20px;
+  transition: all 0.2s ease;
+}
+
+.addCompanyBtn:hover {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
 .fullWidth {
   width: 100%;
 }
@@ -386,6 +543,38 @@
   }
 
   .saveButton {
+    width: 100%;
+  }
+
+  /* Company Selector responsive */
+  .companySelectorContent {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .companySelector :global(.ant-card-body) {
+    padding: 20px;
+  }
+
+  .companyList {
+    width: 100%;
+  }
+
+  .companyItem {
+    flex: 1;
+    min-width: calc(50% - 6px);
+  }
+
+  .addCompanyBtn {
+    width: 100%;
+  }
+
+  .addCompanyForm {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .addCompanyForm :global(.ant-input) {
     width: 100%;
   }
 }

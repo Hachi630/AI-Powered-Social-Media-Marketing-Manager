@@ -1,4 +1,4 @@
-import { CloseOutlined, PlusOutlined, UploadOutlined, FileTextOutlined, FilePdfOutlined, FileExcelOutlined, FileUnknownOutlined, DeleteOutlined } from '@ant-design/icons'
+import { CloseOutlined, PlusOutlined, UploadOutlined, FileTextOutlined, FilePdfOutlined, FileExcelOutlined, FileUnknownOutlined, DeleteOutlined, ShopOutlined, EditOutlined, CheckOutlined } from '@ant-design/icons'
 import {
   Button,
   Card,
@@ -41,6 +41,32 @@ const industryOptions = [
 
 const initialAudience = ['Yoga lovers', 'Interior design enthusiast']
 
+// Company data structure for multi-company support
+interface CompanyData {
+  id: string
+  name: string
+  brandName: string
+  industry: string
+  toneOfVoice: string
+  customTone: string
+  knowledgeProducts: string[]
+  targetAudience: string[]
+  companyDescription: string
+}
+
+// Default company template
+const createDefaultCompany = (name: string): CompanyData => ({
+  id: `company_${Date.now()}`,
+  name,
+  brandName: '',
+  industry: '',
+  toneOfVoice: 'calm',
+  customTone: '',
+  knowledgeProducts: [],
+  targetAudience: [],
+  companyDescription: '',
+})
+
 interface BrandProfileProps {
   isLoggedIn: boolean
   onLoginSuccess: (user: User) => void
@@ -68,6 +94,44 @@ export default function BrandProfile({
   const [loading, setLoading] = useState(false)
   const [companyDescription, setCompanyDescription] = useState('')
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([])
+  
+  // Multi-company state management
+  const [companies, setCompanies] = useState<CompanyData[]>([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null)
+  const [isAddingCompany, setIsAddingCompany] = useState(false)
+  const [newCompanyName, setNewCompanyName] = useState('')
+  const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null)
+  const [editingCompanyName, setEditingCompanyName] = useState('')
+
+  // Load companies from localStorage on mount
+  useEffect(() => {
+    const savedCompanies = localStorage.getItem('melo_companies')
+    const savedSelectedId = localStorage.getItem('melo_selected_company')
+    
+    if (savedCompanies) {
+      const parsed = JSON.parse(savedCompanies) as CompanyData[]
+      if (parsed.length > 0) {
+        setCompanies(parsed)
+        
+        // Restore selected company or select first one
+        if (savedSelectedId && parsed.find(c => c.id === savedSelectedId)) {
+          setSelectedCompanyId(savedSelectedId)
+          loadCompanyData(parsed.find(c => c.id === savedSelectedId)!)
+        } else {
+          setSelectedCompanyId(parsed[0].id)
+          loadCompanyData(parsed[0])
+        }
+        return
+      }
+    }
+    
+    // Create default company if none exists
+    const defaultCompany = createDefaultCompany('My Company')
+    setCompanies([defaultCompany])
+    setSelectedCompanyId(defaultCompany.id)
+    localStorage.setItem('melo_companies', JSON.stringify([defaultCompany]))
+    localStorage.setItem('melo_selected_company', defaultCompany.id)
+  }, [])
 
   // Load user data on mount and when propUser changes
   useEffect(() => {
@@ -76,27 +140,171 @@ export default function BrandProfile({
         const currentUser = await authService.getCurrentUser()
         if (currentUser) {
           setUser(currentUser)
-          setBrandName(currentUser.brandName || '')
-          setIndustry(currentUser.industry || '')
-          const toneOfVoice = currentUser.toneOfVoice || 'calm'
-          // Check if tone is a custom tone (not in predefined list)
-          const isCustomTone = !toneButtons.some((tone) => tone.key === toneOfVoice)
-          if (isCustomTone && toneOfVoice) {
-            setSelectedTone('custom')
-            setCustomTone(toneOfVoice)
-            setShowCustomToneInput(true)
-          } else {
-            setSelectedTone(toneOfVoice)
-            setCustomTone('')
-            setShowCustomToneInput(false)
+          // Only load from user if no companies exist (first time)
+          if (companies.length === 0) {
+            setBrandName(currentUser.brandName || '')
+            setIndustry(currentUser.industry || '')
+            const toneOfVoice = currentUser.toneOfVoice || 'calm'
+            // Check if tone is a custom tone (not in predefined list)
+            const isCustomTone = !toneButtons.some((tone) => tone.key === toneOfVoice)
+            if (isCustomTone && toneOfVoice) {
+              setSelectedTone('custom')
+              setCustomTone(toneOfVoice)
+              setShowCustomToneInput(true)
+            } else {
+              setSelectedTone(toneOfVoice)
+              setCustomTone('')
+              setShowCustomToneInput(false)
+            }
+            setKnowledgeProducts(currentUser.knowledgeProducts || [])
+            setAudienceTags(currentUser.targetAudience || [])
           }
-          setKnowledgeProducts(currentUser.knowledgeProducts || [])
-          setAudienceTags(currentUser.targetAudience || [])
         }
       }
     }
     loadUser()
   }, [isLoggedIn, propUser])
+
+  // Load company data into form
+  const loadCompanyData = (company: CompanyData) => {
+    setBrandName(company.brandName)
+    setIndustry(company.industry)
+    const toneOfVoice = company.toneOfVoice || 'calm'
+    const isCustomTone = !toneButtons.some((tone) => tone.key === toneOfVoice)
+    if (isCustomTone && toneOfVoice && toneOfVoice !== 'calm') {
+      setSelectedTone('custom')
+      setCustomTone(company.customTone || toneOfVoice)
+      setShowCustomToneInput(true)
+    } else {
+      setSelectedTone(toneOfVoice)
+      setCustomTone(company.customTone || '')
+      setShowCustomToneInput(toneOfVoice === 'custom')
+    }
+    setKnowledgeProducts(company.knowledgeProducts)
+    setAudienceTags(company.targetAudience)
+    setCompanyDescription(company.companyDescription)
+  }
+
+  // Save current form data to selected company
+  const saveCurrentToCompany = () => {
+    if (!selectedCompanyId) return
+    
+    const toneOfVoice = selectedTone === 'custom' && customTone.trim() ? customTone.trim() : selectedTone
+    
+    const updatedCompanies = companies.map(company => {
+      if (company.id === selectedCompanyId) {
+        return {
+          ...company,
+          brandName,
+          industry,
+          toneOfVoice,
+          customTone,
+          knowledgeProducts,
+          targetAudience: audienceTags,
+          companyDescription,
+        }
+      }
+      return company
+    })
+    
+    setCompanies(updatedCompanies)
+    localStorage.setItem('melo_companies', JSON.stringify(updatedCompanies))
+  }
+
+  // Switch to a different company
+  const handleSelectCompany = (companyId: string) => {
+    // Save current data first
+    if (selectedCompanyId) {
+      saveCurrentToCompany()
+    }
+    
+    setSelectedCompanyId(companyId)
+    localStorage.setItem('melo_selected_company', companyId)
+    
+    const company = companies.find(c => c.id === companyId)
+    if (company) {
+      loadCompanyData(company)
+    }
+  }
+
+  // Add a new company
+  const handleAddCompany = () => {
+    if (!newCompanyName.trim()) {
+      message.error('Please enter a company name')
+      return
+    }
+    
+    // Save current data first
+    if (selectedCompanyId) {
+      saveCurrentToCompany()
+    }
+    
+    const newCompany = createDefaultCompany(newCompanyName.trim())
+    const updatedCompanies = [...companies, newCompany]
+    
+    setCompanies(updatedCompanies)
+    localStorage.setItem('melo_companies', JSON.stringify(updatedCompanies))
+    
+    // Select the new company
+    setSelectedCompanyId(newCompany.id)
+    localStorage.setItem('melo_selected_company', newCompany.id)
+    loadCompanyData(newCompany)
+    
+    setNewCompanyName('')
+    setIsAddingCompany(false)
+    message.success(`Company "${newCompany.name}" created!`)
+  }
+
+  // Delete a company
+  const handleDeleteCompany = (companyId: string) => {
+    const company = companies.find(c => c.id === companyId)
+    if (!company) return
+    
+    const updatedCompanies = companies.filter(c => c.id !== companyId)
+    setCompanies(updatedCompanies)
+    localStorage.setItem('melo_companies', JSON.stringify(updatedCompanies))
+    
+    // If deleted company was selected, select another
+    if (selectedCompanyId === companyId) {
+      if (updatedCompanies.length > 0) {
+        setSelectedCompanyId(updatedCompanies[0].id)
+        localStorage.setItem('melo_selected_company', updatedCompanies[0].id)
+        loadCompanyData(updatedCompanies[0])
+      } else {
+        setSelectedCompanyId(null)
+        localStorage.removeItem('melo_selected_company')
+      }
+    }
+    
+    message.success(`Company "${company.name}" deleted`)
+  }
+
+  // Edit company name
+  const handleEditCompanyName = (companyId: string) => {
+    const company = companies.find(c => c.id === companyId)
+    if (company) {
+      setEditingCompanyId(companyId)
+      setEditingCompanyName(company.name)
+    }
+  }
+
+  // Save edited company name
+  const handleSaveCompanyName = () => {
+    if (!editingCompanyId || !editingCompanyName.trim()) return
+    
+    const updatedCompanies = companies.map(company => {
+      if (company.id === editingCompanyId) {
+        return { ...company, name: editingCompanyName.trim() }
+      }
+      return company
+    })
+    
+    setCompanies(updatedCompanies)
+    localStorage.setItem('melo_companies', JSON.stringify(updatedCompanies))
+    
+    setEditingCompanyId(null)
+    setEditingCompanyName('')
+  }
 
   const addAudienceTag = () => {
     if (!keyword.trim()) {
@@ -167,6 +375,9 @@ export default function BrandProfile({
       // Use custom tone if custom is selected and has value, otherwise use selected tone
       const toneOfVoice = selectedTone === 'custom' && customTone.trim() ? customTone.trim() : selectedTone
 
+      // Save to local company data
+      saveCurrentToCompany()
+
       const response = await authService.updateProfile({
         brandName,
         industry,
@@ -204,6 +415,101 @@ export default function BrandProfile({
         <Typography.Title level={1} className={styles.pageTitle}>
           Brand Profile ({user?.name || user?.brandName || 'User'})
         </Typography.Title>
+
+        {/* Company Selector */}
+        <Card className={`${styles.card} ${styles.companySelector}`}>
+          <div className={styles.companySelectorContent}>
+            <div className={styles.companySelectorHeader}>
+              <ShopOutlined className={styles.companySelectorIcon} />
+              <Typography.Text strong className={styles.companySelectorTitle}>
+                Select Company
+              </Typography.Text>
+            </div>
+            
+            <div className={styles.companyList}>
+              {companies.map((company) => (
+                <div
+                  key={company.id}
+                  className={`${styles.companyItem} ${selectedCompanyId === company.id ? styles.companyItemActive : ''}`}
+                  onClick={() => handleSelectCompany(company.id)}
+                >
+                  {editingCompanyId === company.id ? (
+                    <Input
+                      size="small"
+                      value={editingCompanyName}
+                      onChange={(e) => setEditingCompanyName(e.target.value)}
+                      onPressEnter={handleSaveCompanyName}
+                      onClick={(e) => e.stopPropagation()}
+                      className={styles.companyNameInput}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className={styles.companyName}>{company.name}</span>
+                  )}
+                  
+                  <div className={styles.companyActions} onClick={(e) => e.stopPropagation()}>
+                    {editingCompanyId === company.id ? (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<CheckOutlined />}
+                        onClick={handleSaveCompanyName}
+                        className={styles.companyActionBtn}
+                      />
+                    ) : (
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<EditOutlined />}
+                        onClick={() => handleEditCompanyName(company.id)}
+                        className={styles.companyActionBtn}
+                      />
+                    )}
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<DeleteOutlined />}
+                      onClick={() => handleDeleteCompany(company.id)}
+                      className={styles.companyDeleteBtn}
+                      disabled={companies.length <= 1}
+                    />
+                  </div>
+                </div>
+              ))}
+              
+              {/* Add new company */}
+              {isAddingCompany ? (
+                <div className={styles.addCompanyForm}>
+                  <Input
+                    size="middle"
+                    placeholder="Enter company name..."
+                    value={newCompanyName}
+                    onChange={(e) => setNewCompanyName(e.target.value)}
+                    onPressEnter={handleAddCompany}
+                    autoFocus
+                  />
+                  <Space>
+                    <Button type="primary" size="small" onClick={handleAddCompany}>
+                      Add
+                    </Button>
+                    <Button size="small" onClick={() => { setIsAddingCompany(false); setNewCompanyName(''); }}>
+                      Cancel
+                    </Button>
+                  </Space>
+                </div>
+              ) : (
+                <Button
+                  type="dashed"
+                  icon={<PlusOutlined />}
+                  onClick={() => setIsAddingCompany(true)}
+                  className={styles.addCompanyBtn}
+                >
+                  Add New Company
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
 
         <div className={styles.gridContainer}>
           {/* Row 1: Basic Info + Company Description + Tone of Voice */}
