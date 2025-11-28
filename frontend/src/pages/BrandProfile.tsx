@@ -1,4 +1,4 @@
-import { CloseOutlined, PlusOutlined } from '@ant-design/icons'
+import { CloseOutlined, PlusOutlined, UploadOutlined, FileTextOutlined, FilePdfOutlined, FileExcelOutlined, FileUnknownOutlined, DeleteOutlined } from '@ant-design/icons'
 import {
   Button,
   Card,
@@ -11,7 +11,9 @@ import {
   Tag,
   Typography,
   message,
+  Upload,
 } from 'antd'
+import type { UploadFile, UploadProps } from 'antd'
 import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 import { MELO_LOGO } from '../constants/assets'
@@ -64,6 +66,8 @@ export default function BrandProfile({
   const [showAddProductInput, setShowAddProductInput] = useState(false)
   const [newProduct, setNewProduct] = useState('')
   const [loading, setLoading] = useState(false)
+  const [companyDescription, setCompanyDescription] = useState('')
+  const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([])
 
   // Load user data on mount and when propUser changes
   useEffect(() => {
@@ -131,6 +135,32 @@ export default function BrandProfile({
     }
   }
 
+  // Get file icon based on file type
+  const getFileIcon = (fileName: string) => {
+    const ext = fileName.split('.').pop()?.toLowerCase()
+    if (['pdf'].includes(ext || '')) return <FilePdfOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
+    if (['xlsx', 'xls', 'csv'].includes(ext || '')) return <FileExcelOutlined style={{ fontSize: 24, color: '#52c41a' }} />
+    if (['doc', 'docx', 'txt'].includes(ext || '')) return <FileTextOutlined style={{ fontSize: 24, color: '#1890ff' }} />
+    return <FileUnknownOutlined style={{ fontSize: 24, color: '#8c8c8c' }} />
+  }
+
+  // Handle file upload
+  const handleFileUpload: UploadProps['onChange'] = ({ fileList }) => {
+    setUploadedFiles(fileList)
+  }
+
+  // Handle file removal
+  const handleRemoveFile = (file: UploadFile) => {
+    setUploadedFiles(uploadedFiles.filter(f => f.uid !== file.uid))
+  }
+
+  // Format file size
+  const formatFileSize = (size: number) => {
+    if (size < 1024) return `${size} B`
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`
+  }
+
   const handleSaveProfile = async () => {
     setLoading(true)
     try {
@@ -143,6 +173,7 @@ export default function BrandProfile({
         toneOfVoice,
         knowledgeProducts,
         targetAudience: audienceTags,
+        companyDescription,
       })
 
       if (response.success && response.user) {
@@ -174,181 +205,245 @@ export default function BrandProfile({
           Brand Profile ({user?.name || user?.brandName || 'User'})
         </Typography.Title>
 
-        <Row gutter={[150, 100]} className={styles.row}>
-          <Col xs={24} md={8}>
-            <Card title="Basic Info" className={styles.card}>
-              <Space direction="vertical" size="large" className={styles.fullWidth}>
-                <div>
-                  <Typography.Text className={styles.fieldLabel}>Brand Name</Typography.Text>
-                  <Input
-                    size="large"
-                    placeholder="Brand Name"
-                    value={brandName}
-                    onChange={(e) => setBrandName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Typography.Text className={styles.fieldLabel}>Industry</Typography.Text>
-                  <Select
-                    size="large"
-                    value={industry}
-                    onChange={(value) => setIndustry(value)}
-                    options={industryOptions}
-                    className={styles.fullWidth}
-                  />
-                </div>
-              </Space>
-            </Card>
-          </Col>
+        <div className={styles.gridContainer}>
+          {/* Row 1: Basic Info + Company Description + Tone of Voice */}
+          <Card title="Basic Info" className={`${styles.card} ${styles.basicInfo}`}>
+            <Space direction="vertical" size="large" className={styles.fullWidth}>
+              <div>
+                <Typography.Text className={styles.fieldLabel}>Brand Name</Typography.Text>
+                <Input
+                  size="large"
+                  placeholder="Brand Name"
+                  value={brandName}
+                  onChange={(e) => setBrandName(e.target.value)}
+                />
+              </div>
+              <div>
+                <Typography.Text className={styles.fieldLabel}>Industry</Typography.Text>
+                <Select
+                  size="large"
+                  value={industry}
+                  onChange={(value) => setIndustry(value)}
+                  options={industryOptions}
+                  className={styles.fullWidth}
+                  placeholder="Select industry"
+                />
+              </div>
+            </Space>
+          </Card>
 
-          <Col xs={24} md={11}>
-            <Card
-              title="Tone of Voice"
-              extra={<Typography.Text type="secondary">How should the AI sound?</Typography.Text>}
-              className={styles.card}
-            >
-              <Space direction="vertical" size="middle" className={styles.fullWidth}>
-                <Space size="middle" wrap>
-                  {toneButtons.map((tone) => (
-                    <Button
-                      key={tone.key}
-                      size="large"
-                      shape="round"
-                      className={styles.toneButton}
-                      type={selectedTone === tone.key ? 'primary' : 'default'}
-                      style={
-                        selectedTone === tone.key
-                          ? { backgroundColor: tone.color, borderColor: tone.color }
-                          : undefined
-                      }
-                      onClick={() => handleToneSelect(tone.key)}
-                    >
-                      {tone.label}
-                    </Button>
-                  ))}
+          <Card title="Company Description" className={`${styles.card} ${styles.companyDesc}`}>
+            <Space direction="vertical" size="middle" className={styles.fullWidth}>
+              <Typography.Text type="secondary">
+                Describe your company, products, services, and unique value proposition
+              </Typography.Text>
+              <Input.TextArea
+                size="large"
+                placeholder="Tell us about your company... (e.g., mission, vision, history, products, services)"
+                value={companyDescription}
+                onChange={(e) => setCompanyDescription(e.target.value)}
+                rows={6}
+                maxLength={2000}
+                showCount
+                className={styles.textArea}
+              />
+            </Space>
+          </Card>
+
+          <Card
+            title="Tone of Voice"
+            className={`${styles.card} ${styles.toneOfVoice}`}
+          >
+            <Space direction="vertical" size="middle" className={styles.fullWidth}>
+              <Typography.Text type="secondary">
+                How should the AI sound?
+              </Typography.Text>
+              <Space size="middle" wrap>
+                {toneButtons.map((tone) => (
                   <Button
+                    key={tone.key}
                     size="large"
                     shape="round"
                     className={styles.toneButton}
-                    type={selectedTone === 'custom' ? 'primary' : 'default'}
-                    onClick={() => handleToneSelect('custom')}
+                    type={selectedTone === tone.key ? 'primary' : 'default'}
+                    style={
+                      selectedTone === tone.key
+                        ? { backgroundColor: tone.color, borderColor: tone.color }
+                        : undefined
+                    }
+                    onClick={() => handleToneSelect(tone.key)}
                   >
-                    Custom
+                    {tone.label}
+                  </Button>
+                ))}
+                <Button
+                  size="large"
+                  shape="round"
+                  className={styles.toneButton}
+                  type={selectedTone === 'custom' ? 'primary' : 'default'}
+                  onClick={() => handleToneSelect('custom')}
+                >
+                  Custom
+                </Button>
+              </Space>
+              {showCustomToneInput && (
+                <div>
+                  <Input
+                    size="large"
+                    placeholder="Enter custom tone (e.g., professional, friendly)"
+                    value={customTone}
+                    onChange={(e) => setCustomTone(e.target.value)}
+                    onPressEnter={() => {
+                      if (customTone.trim()) {
+                        setSelectedTone('custom')
+                      }
+                    }}
+                  />
+                  <Typography.Text type="secondary" className={styles.helperText}>
+                    Describe how you want the AI to communicate
+                  </Typography.Text>
+                </div>
+              )}
+            </Space>
+          </Card>
+
+          {/* Row 2: Upload Database + Target Knowledge Base + Target Audience */}
+          <Card title="Upload Database" className={`${styles.card} ${styles.uploadDatabase}`}>
+            <Space direction="vertical" size="middle" className={styles.fullWidth}>
+              <Typography.Text type="secondary">
+                Upload annual reports, financial data, product catalogs, or any business documents
+              </Typography.Text>
+              <Upload.Dragger
+                multiple
+                fileList={uploadedFiles}
+                onChange={handleFileUpload}
+                beforeUpload={() => false}
+                accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                className={styles.uploadDragger}
+              >
+                <p className={styles.uploadIcon}>
+                  <UploadOutlined />
+                </p>
+                <p className={styles.uploadText}>Click or drag files to upload</p>
+                <p className={styles.uploadHint}>
+                  Supports PDF, Excel, CSV, Word, TXT
+                </p>
+              </Upload.Dragger>
+              {uploadedFiles.length > 0 && (
+                <div className={styles.fileList}>
+                  {uploadedFiles.map((file) => (
+                    <div key={file.uid} className={styles.fileItem}>
+                      <div className={styles.fileInfo}>
+                        {getFileIcon(file.name)}
+                        <div className={styles.fileDetails}>
+                          <Typography.Text ellipsis className={styles.fileName}>
+                            {file.name}
+                          </Typography.Text>
+                          <Typography.Text type="secondary" className={styles.fileSize}>
+                            {file.size ? formatFileSize(file.size) : ''}
+                          </Typography.Text>
+                        </div>
+                      </div>
+                      <Button
+                        type="text"
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleRemoveFile(file)}
+                        className={styles.deleteFileBtn}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Space>
+          </Card>
+
+          <Card title="Target Knowledge Base" className={`${styles.card} ${styles.knowledgeBase}`}>
+            <Typography.Paragraph type="secondary">
+              AI has learned about these products
+            </Typography.Paragraph>
+            <ul className={styles.list}>
+              {knowledgeProducts.map((product) => (
+                <li key={product}>
+                  <span className={styles.productName}>{product}</span>
+                  <Button
+                    type="text"
+                    icon={<CloseOutlined />}
+                    size="small"
+                    onClick={() => handleRemoveProduct(product)}
+                    className={styles.removeButton}
+                  />
+                </li>
+              ))}
+            </ul>
+            {!showAddProductInput ? (
+              <Button
+                icon={<PlusOutlined />}
+                type="dashed"
+                block
+                onClick={() => setShowAddProductInput(true)}
+              >
+                Add New Product
+              </Button>
+            ) : (
+              <Space direction="vertical" className={styles.fullWidth}>
+                <Input
+                  placeholder="Enter new product name"
+                  value={newProduct}
+                  onChange={(e) => setNewProduct(e.target.value)}
+                  onPressEnter={handleAddProduct}
+                />
+                <Space>
+                  <Button type="primary" onClick={handleAddProduct}>
+                    Add
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowAddProductInput(false)
+                      setNewProduct('')
+                    }}
+                  >
+                    Cancel
                   </Button>
                 </Space>
-                {showCustomToneInput && (
-                  <div>
-                    <Input
-                      size="large"
-                      placeholder="Enter custom tone of voice (e.g., professional, friendly, casual)"
-                      value={customTone}
-                      onChange={(e) => setCustomTone(e.target.value)}
-                      onPressEnter={() => {
-                        if (customTone.trim()) {
-                          setSelectedTone('custom')
-                        }
-                      }}
-                    />
-                    <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px' }}>
-                      Describe how you want the AI to communicate
-                    </Typography.Text>
-                  </div>
-                )}
               </Space>
-            </Card>
-          </Col>
+            )}
+          </Card>
 
-          <Col xs={24} md={5}>
+          <Card title="Target Audience" className={`${styles.card} ${styles.targetAudience}`}>
+            <Space direction="vertical" size="large" className={styles.fullWidth}>
+              <Input
+                size="large"
+                placeholder="Add Keywords"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                onPressEnter={addAudienceTag}
+              />
+              <div className={styles.tagsContainer}>
+                {audienceTags.map((tag) => (
+                  <Tag key={tag} color="blue" closable onClose={() => removeAudienceTag(tag)}>
+                    {tag}
+                  </Tag>
+                ))}
+              </div>
+              <Button type="primary" onClick={addAudienceTag}>
+                Add Keyword
+              </Button>
+            </Space>
+          </Card>
+
+          {/* Save Button */}
+          <div className={styles.saveButtonContainer}>
             <Button
               type="primary"
-              block
               size="large"
               onClick={handleSaveProfile}
               loading={loading}
+              className={styles.saveButton}
             >
               Save Profile
             </Button>
-          </Col>
-        </Row>
-
-        <Row gutter={[150, 100]} className={styles.row}>
-          <Col xs={24} md={8}>
-            <Card title="Target Knowledge Base" className={styles.card}>
-              <Typography.Paragraph type="secondary">
-                AI has learned about these products
-              </Typography.Paragraph>
-              <ul className={styles.list}>
-                {knowledgeProducts.map((product) => (
-                  <li key={product}>
-                    {product}
-                    <Button
-                      type="text"
-                      icon={<CloseOutlined />}
-                      size="small"
-                      onClick={() => handleRemoveProduct(product)}
-                      className={styles.removeButton}
-                    />
-                  </li>
-                ))}
-              </ul>
-              {!showAddProductInput ? (
-                <Button
-                  icon={<PlusOutlined />}
-                  type="dashed"
-                  block
-                  onClick={() => setShowAddProductInput(true)}
-                >
-                  Add New Product
-                </Button>
-              ) : (
-                <Space direction="vertical" className={styles.fullWidth}>
-                  <Input
-                    placeholder="Enter new product name"
-                    value={newProduct}
-                    onChange={(e) => setNewProduct(e.target.value)}
-                    onPressEnter={handleAddProduct}
-                  />
-                  <Space>
-                    <Button type="primary" onClick={handleAddProduct}>
-                      Add
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setShowAddProductInput(false)
-                        setNewProduct('')
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </Space>
-                </Space>
-              )}
-            </Card>
-          </Col>
-          <Col xs={24} md={11}>
-            <Card title="Target Audience" className={styles.card}>
-              <Space direction="vertical" size="large" className={styles.fullWidth}>
-                <Input
-                  size="large"
-                  placeholder="Add Keywords"
-                  value={keyword}
-                  onChange={(event) => setKeyword(event.target.value)}
-                  onPressEnter={addAudienceTag}
-                />
-                <Space wrap>
-                  {audienceTags.map((tag) => (
-                    <Tag key={tag} color="blue" closable onClose={() => removeAudienceTag(tag)}>
-                      {tag}
-                    </Tag>
-                  ))}
-                </Space>
-                <Button type="primary" onClick={addAudienceTag}>
-                  Add Keyword
-                </Button>
-              </Space>
-            </Card>
-          </Col>
-        </Row>
+          </div>
+        </div>
       </Content>
     </Layout>
   )
