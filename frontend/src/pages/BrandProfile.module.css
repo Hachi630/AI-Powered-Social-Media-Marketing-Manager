@@ -1,47 +1,297 @@
 .layout {
   min-height: 100vh;
-  background: #fdfdfc; /* Light white background to match Dashboard */
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 }
 
 .content {
-  padding: 64px 48px 80px; /* Increased padding, wider than before */
-  max-width: 1440px; /* Increased max width */
+  padding: 48px 32px 64px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
 .pageTitle {
   text-align: center;
-  margin-bottom: 56px !important; /* Increased bottom spacing */
-  font-family: 'Inter', sans-serif !important;
+  margin-bottom: 48px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-weight: 700 !important;
-  font-size: 48px !important; /* Match Dashboard title size */
+  font-size: 40px !important;
+  color: #1a1a2e !important;
+  letter-spacing: -0.5px;
 }
 
-.row {
-  margin-bottom: 100px !important; /* Ensure 100px vertical spacing between Rows */
+/* Grid Layout */
+.gridContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  align-items: stretch;
 }
 
-.row:last-child {
-  margin-bottom: 0 !important; /* Last Row doesn't need bottom spacing */
-}
-
+/* Card base styles */
 .card {
-  border-radius: 12px;
-  min-height: 280px; /* Slightly increased height */
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03); /* Add subtle shadow to distinguish on light background */
-  border: 1px solid #d9d9d9 !important; /* Gray border */
-  background-color: #ffffff !important; /* Ensure card background is white */
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: none !important;
+  background: #ffffff !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Ensure Card inner content area maintains white background */
-.card :global(.ant-card-body) {
-  background-color: #ffffff !important;
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* Ensure Card header also maintains white background */
 .card :global(.ant-card-head) {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-bottom: none;
+  padding: 16px 24px;
+  min-height: auto;
+  flex-shrink: 0;
+}
+
+.card :global(.ant-card-head-wrapper) {
+  flex-wrap: nowrap;
+}
+
+.card :global(.ant-card-head-title) {
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.card :global(.ant-card-extra) {
+  color: rgba(255, 255, 255, 0.85) !important;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.card :global(.ant-card-body) {
+  padding: 24px;
+  background: #ffffff !important;
+  flex: 1;
+}
+
+/* Grid placement for each card */
+.basicInfo {
+  grid-column: span 1;
+}
+
+.companyDesc {
+  grid-column: span 1;
+}
+
+.toneOfVoice {
+  grid-column: span 1;
+}
+
+.uploadDatabase {
+  grid-column: span 1;
+}
+
+.knowledgeBase {
+  grid-column: span 1;
+}
+
+.targetAudience {
+  grid-column: span 1;
+}
+
+.saveButtonContainer {
+  grid-column: span 3;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 16px;
+}
+
+/* Different header colors for variety */
+.basicInfo :global(.ant-card-head) {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+}
+
+.companyDesc :global(.ant-card-head) {
+  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%) !important;
+}
+
+.toneOfVoice :global(.ant-card-head) {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%) !important;
+}
+
+.uploadDatabase :global(.ant-card-head) {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%) !important;
+}
+
+.knowledgeBase :global(.ant-card-head) {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+}
+
+.targetAudience :global(.ant-card-head) {
+  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%) !important;
+}
+
+/* Company Selector Styles */
+.companySelector {
+  margin-bottom: 32px;
+  border-radius: 20px !important;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%) !important;
+  box-shadow: 0 8px 32px rgba(30, 58, 95, 0.3);
+}
+
+.companySelector:hover {
+  transform: none;
+}
+
+.companySelector :global(.ant-card-body) {
+  background: transparent !important;
+  padding: 24px 32px;
+}
+
+.companySelectorContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.companySelectorHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.companySelectorIcon {
+  font-size: 28px;
+  color: #60a5fa;
+}
+
+.companySelectorTitle {
+  font-size: 18px;
+  color: #ffffff !important;
+  white-space: nowrap;
+}
+
+.companyList {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.companyItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.companyItem:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.companyItemActive {
+  background: rgba(96, 165, 250, 0.2) !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+}
+
+.companyItem .companyName {
+  color: #ffffff;
+  font-weight: 500;
+  font-size: 14px;
+  flex: 1;
+}
+
+.companyNameInput {
+  flex: 1;
+  min-width: 100px;
+}
+
+.companyActions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.companyItem:hover .companyActions {
+  opacity: 1;
+}
+
+.companyItemActive .companyActions {
+  opacity: 1;
+}
+
+.companyActionBtn {
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 4px !important;
+}
+
+.companyActionBtn:hover {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.companyDeleteBtn {
+  color: rgba(239, 68, 68, 0.8) !important;
+  padding: 4px !important;
+}
+
+.companyDeleteBtn:hover {
+  color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+}
+
+.companyDeleteBtn:disabled {
+  color: rgba(255, 255, 255, 0.3) !important;
+  cursor: not-allowed;
+}
+
+.addCompanyForm {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.addCompanyForm :global(.ant-input) {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border: none !important;
+  min-width: 160px;
+}
+
+.addCompanyBtn {
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  background: transparent !important;
+  border-radius: 10px !important;
+  height: 42px;
+  padding: 0 20px;
+  transition: all 0.2s ease;
+}
+
+.addCompanyBtn:hover {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
 .fullWidth {
@@ -51,43 +301,190 @@
 .fieldLabel {
   display: block;
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
+  color: #374151;
+  font-size: 14px;
 }
 
 .toneButton {
-  min-width: 120px;
+  min-width: 100px;
+  font-weight: 500;
 }
 
-.list {
-  margin: 0 0 24px 20px;
-  padding: 0;
-  color: #757575;
+.helperText {
+  font-size: 12px;
+  display: block;
+  margin-top: 8px;
+}
+
+/* Text Area styles */
+.textArea {
+  resize: none !important;
+}
+
+.textArea :global(.ant-input) {
+  font-size: 14px;
   line-height: 1.6;
 }
 
-.list li {
+/* Upload Database styles */
+.uploadDragger {
+  border: 2px dashed #d1d5db !important;
+  border-radius: 12px !important;
+  background: #fafafa !important;
+  transition: all 0.2s ease;
+}
+
+.uploadDragger:hover {
+  border-color: #ec4899 !important;
+  background: #fdf2f8 !important;
+}
+
+.uploadIcon {
+  font-size: 40px;
+  color: #ec4899;
   margin-bottom: 8px;
+}
+
+.uploadText {
+  font-size: 15px;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 4px !important;
+}
+
+.uploadHint {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.fileList {
+  margin-top: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.fileItem {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  transition: background 0.2s ease;
+}
+
+.fileItem:hover {
+  background: #f3f4f6;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.fileDetails {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  max-width: 100%;
+}
+
+.fileSize {
+  font-size: 12px;
+}
+
+.deleteFileBtn {
+  color: #ef4444 !important;
+  flex-shrink: 0;
+}
+
+.deleteFileBtn:hover {
+  color: #dc2626 !important;
+  background: #fee2e2 !important;
+}
+
+/* Knowledge Base list */
+.list {
+  margin: 0 0 16px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: background 0.2s ease;
+}
+
+.list li:hover {
+  background: #f3f4f6;
+}
+
+.productName {
+  color: #4b5563;
+  font-size: 14px;
 }
 
 .removeButton {
   padding: 0 4px !important;
   height: auto !important;
-  margin-left: 8px;
-  color: #ff4d4f !important;
+  color: #ef4444 !important;
+  flex-shrink: 0;
 }
 
 .removeButton:hover {
-  color: #ff7875 !important;
+  color: #dc2626 !important;
 }
 
-/* Ensure all Input and Select have white background */
+/* Tags container */
+.tagsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 32px;
+}
+
+/* Save button */
+.saveButton {
+  min-width: 200px;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transition: all 0.2s ease;
+}
+
+.saveButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+/* Input and Select styles */
 :global(.ant-input),
 :global(.ant-input-affix-wrapper),
 :global(.ant-select-selector) {
   background-color: #ffffff !important;
+  border-radius: 10px !important;
 }
 
 :global(.ant-input):focus,
@@ -96,17 +493,88 @@
   background-color: #ffffff !important;
 }
 
-@media (max-width: 768px) {
-  .content {
-    padding: 32px 16px;
-  }
-
-  .card {
-    min-height: auto;
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .gridContainer {
+    grid-template-columns: repeat(2, 1fr);
   }
   
+  .basicInfo,
+  .companyDesc,
+  .toneOfVoice,
+  .uploadDatabase,
+  .knowledgeBase,
+  .targetAudience {
+    grid-column: span 1;
+  }
+  
+  .saveButtonContainer {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 24px 16px;
+  }
+
   .pageTitle {
-    font-size: 32px !important;
+    font-size: 28px !important;
     margin-bottom: 32px !important;
+  }
+
+  .gridContainer {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .basicInfo,
+  .companyDesc,
+  .toneOfVoice,
+  .uploadDatabase,
+  .knowledgeBase,
+  .targetAudience,
+  .saveButtonContainer {
+    grid-column: span 1;
+  }
+
+  .card :global(.ant-card-body) {
+    padding: 16px;
+  }
+
+  .saveButton {
+    width: 100%;
+  }
+
+  /* Company Selector responsive */
+  .companySelectorContent {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .companySelector :global(.ant-card-body) {
+    padding: 20px;
+  }
+
+  .companyList {
+    width: 100%;
+  }
+
+  .companyItem {
+    flex: 1;
+    min-width: calc(50% - 6px);
+  }
+
+  .addCompanyBtn {
+    width: 100%;
+  }
+
+  .addCompanyForm {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .addCompanyForm :global(.ant-input) {
+    width: 100%;
   }
 }
