@@ -2,7 +2,8 @@ import mongoose, { Document, Schema } from 'mongoose'
 
 export interface IUser extends Document {
   email: string
-  password: string // Store plaintext password (for demonstration only)
+  password?: string
+  googleId?: string
   name?: string
   brandName?: string
   phone?: string
@@ -15,6 +16,7 @@ export interface IUser extends Document {
   toneOfVoice?: string
   knowledgeProducts?: string[]
   targetAudience?: string[]
+  authProvider: 'local' | 'google'
   createdAt: Date
   updatedAt: Date
 }
@@ -30,11 +32,27 @@ const UserSchema: Schema = new Schema(
     },
     password: {
       type: String,
-      required: true,
+      required: function(this: IUser) {
+        return this.authProvider === 'local'
+      },
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     name: {
       type: String,
       trim: true,
+    },
+    avatar: {
+      type: String,
+      trim: true,
+    },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google'],
+      default: 'local',
     },
     brandName: {
       type: String,
