@@ -1,19 +1,31 @@
-import express, { Request, Response } from "express";
-import User from "../models/User";
-import { generateToken } from "../utils/jwt";
-import axios from "axios";
-import crypto from "crypto";
-import { protect } from "../middleware/auth";
-import { AuthRequest } from "../types";
+import express, { Request, Response } from 'express'
+import { OAuth2Client } from 'google-auth-library'
+import dotenv from 'dotenv'
+import User from '../models/User'
+import { generateToken } from '../utils/jwt'
+import { protect } from '../middleware/auth'
+import { AuthRequest } from '../types'
+import axios from 'axios'
+import crypto from 'crypto'
 
-interface GoogleUser {
-  email?: string;
-  id?: string;
-  name?: string;
-  given_name?: string;
-  family_name?: string;
-  picture?: string;
+dotenv.config()
+
+// Validate Google OAuth configuration
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
+
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || 
+    GOOGLE_CLIENT_ID === 'your_google_client_id_here' || 
+    GOOGLE_CLIENT_SECRET === 'your_google_client_secret_here') {
+  console.warn('⚠️  Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env')
 }
+
+const oauth2Client = new OAuth2Client(
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI
+)
 
 interface MicrosoftUser {
   mail?: string;
@@ -22,7 +34,8 @@ interface MicrosoftUser {
   id?: string;
 }
 
-const router = express.Router();
+const router = express.Router()
+
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
@@ -299,38 +312,27 @@ router.post("/logout", protect, (req: Request, res: Response) => {
 // ----------------------------
 // Google OAuth
 // ----------------------------
-// Redirect to Google OAuth consent page
-router.get("/google", (req: Request, res: Response) => {
-  // Server-side checks for config to give clear error to developer instead of provider 403
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
-    const html = `
-      <html>
-      <body style="font-family: Helvetica, Arial, sans-serif; text-align:center;">
-        <h2>Google OAuth is not configured</h2>
-        <p>Please add <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code> to your backend <code>.env</code> and restart the server.</p>
-        <p>See README for details.</p>
-      </body>
-      </html>`
-    return res.status(500).send(html)
+// @desc    Initiate Google OAuth login
+// @route   GET /api/auth/google
+// @access  Public
+router.get('/google', (req: Request, res: Response) => {
+  try {
+    const authUrl = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
+      ],
+      prompt: 'consent',
+    })
+    res.redirect(authUrl)
+  } catch (error: any) {
+    console.error('Error generating Google OAuth URL:', error)
+    // Let Google show the error instead of redirecting to frontend
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
+    res.redirect(`${frontendUrl}/?error=google_oauth_error`)
   }
-  const state = crypto.randomBytes(16).toString("hex");
-  // You can store state in a DB or session to validate in callback (omitted for brevity)
-
-  const redirectUri = `${process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`}/api/auth/google/callback`;
-  const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_CLIENT_ID || "",
-    redirect_uri: redirectUri,
-    response_type: "code",
-    scope: "openid email profile",
-    access_type: "offline",
-    prompt: "consent",
-    state,
-  });
-
-  res.redirect(
-    `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
-  );
-});
+})
 
 // Config check endpoints so frontend can quickly verify provider setup
 router.get('/google/config', (req: Request, res: Response) => {
@@ -338,69 +340,71 @@ router.get('/google/config', (req: Request, res: Response) => {
   res.json({ configured })
 })
 
-// Callback for Google OAuth
-router.get("/google/callback", async (req: Request, res: Response) => {
-  const code = req.query.code as string | undefined;
-  if (!code) {
-    return res.redirect(
-      `${process.env.FRONTEND_URL || "http://localhost:5173"}/auth/callback?error=missing_code`
-    );
-  }
-
+// @desc    Google OAuth callback
+// @route   GET /api/auth/google/callback
+// @access  Public
+router.get('/google/callback', async (req: Request, res: Response) => {
   try {
-    const redirectUri = `${process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`}/api/auth/google/callback`;
+    const { code } = req.query
 
-    // Exchange authorization code for access token
-    const tokenResp = await axios.post<{ access_token: string }>(
-      "https://oauth2.googleapis.com/token",
-      new URLSearchParams({
-        code,
-        client_id: process.env.GOOGLE_CLIENT_ID || "",
-        client_secret: process.env.GOOGLE_CLIENT_SECRET || "",
-        redirect_uri: redirectUri,
-        grant_type: "authorization_code",
-      }).toString(),
-      {
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      }
-    );
+    if (!code) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=oauth_failed`)
+    }
 
-    const accessToken = tokenResp.data.access_token;
+    const { tokens } = await oauth2Client.getToken(code as string)
+    oauth2Client.setCredentials(tokens)
 
-    // Request user profile
-    const userInfoResp = await axios.get<GoogleUser>(
-      "https://www.googleapis.com/oauth2/v2/userinfo",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: tokens.id_token!,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    })
+    const payload = ticket.getPayload()
+    
+    if (!payload) {
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=oauth_failed`)
+    }
 
-    const googleUser = userInfoResp.data;
-    const email = googleUser?.email;
+    const { email, sub: googleId, name, picture } = payload
+
     if (!email) {
-      throw new Error("No email returned from Google");
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=no_email`)
     }
 
-    // Find or create a user
-    let user = await User.findOne({ email });
-    if (!user) {
-      // Use a random password for OAuth-created accounts (we store plaintext here per the project, though it's insecure)
-      const randomPassword = crypto.randomBytes(16).toString("hex");
-      user = await User.create({ email, password: randomPassword });
+    let user = await User.findOne({ 
+      $or: [
+        { email },
+        { googleId }
+      ]
+    })
+
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleId
+        user.authProvider = 'google'
+        if (name) user.name = name
+        if (picture) user.avatar = picture
+        await user.save()
+      }
+    } else {
+      user = await User.create({
+        email,
+        googleId,
+        name: name || '',
+        avatar: picture || '',
+        authProvider: 'google',
+      })
     }
 
-    const token = generateToken(user._id.toString());
-    // Redirect to frontend callback route with our token
-    const frontendUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}`;
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
-  } catch (err: any) {
-    console.error("Google OAuth callback error", err);
-    const frontendUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}`;
-    res.redirect(
-      `${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message)}`
-    );
+    const token = generateToken(user._id.toString())
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`)
+  } catch (error: any) {
+    console.error('Google OAuth error:', error)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+    res.redirect(`${frontendUrl}/?error=oauth_failed`)
   }
-});
+})
 
 // ----------------------------
 // Microsoft OAuth
@@ -436,6 +440,7 @@ router.get('/microsoft/config', (req: Request, res: Response) => {
   const configured = !!(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
   res.json({ configured });
 });
+
 router.get("/microsoft/callback", async (req: Request, res: Response) => {
   const code = req.query.code as string | undefined;
   if (!code) {

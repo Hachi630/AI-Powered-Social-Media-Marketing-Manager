@@ -13,7 +13,7 @@
   max-height: 60vh;
   overflow-y: auto;
   padding: 16px;
-  background-color: #fafafa;
+  background-color: transparent;
   border-radius: 12px;
 }
 
@@ -33,20 +33,49 @@
 .messageContent {
   max-width: 70%;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: 16px;
   word-wrap: break-word;
+  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3);
+  position: relative;
+}
+
+.messageContent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(255, 255, 255, 0.08) 8px,
+      rgba(255, 255, 255, 0.08) 16px
+    );
+  border-radius: 16px;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+.messageContent > * {
+  position: relative;
+  z-index: 1;
 }
 
 .userMessage .messageContent {
-  background-color: #6750a4;
-  color: #ffffff;
+  background-color: #FFF0D6;
+  color: #908066;
+  border: 1px solid #E1DBC3;
   border-bottom-right-radius: 4px;
 }
 
 .assistantMessage .messageContent {
-  background-color: #ffffff;
-  color: #1e1e1e;
-  border: 1px solid #d9d9d9;
+  background-color: #FFEFD5;
+  color: #908066;
+  border: 1px solid #E1DBC3;
   border-bottom-left-radius: 4px;
 }
 
@@ -61,6 +90,7 @@
   font-size: 15px;
   line-height: 1.7;
   white-space: pre-wrap;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .markdownContent h1,
@@ -85,36 +115,42 @@
 
 .markdownContent code {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(225, 219, 195, 0.3);
   padding: 0.15em 0.35em;
   border-radius: 4px;
   font-size: 0.95em;
+  color: #908066;
 }
 
 .markdownContent pre {
   padding: 12px;
-  background: #111827;
-  color: #f8fafc;
+  background: rgba(174, 144, 110, 0.1);
+  color: #908066;
+  border: 1px solid #E1DBC3;
   border-radius: 8px;
   overflow: auto;
 }
 
 .markdownContent blockquote {
-  border-left: 3px solid #d4d4d8;
+  border-left: 3px solid #E1DBC3;
   margin: 0.35em 0;
   padding-left: 12px;
-  color: #52525b;
+  color: #9E8E74;
 }
 
 .thinkingText {
   margin-left: 8px;
-  color: #8c8c8c;
+  color: #B1A285;
   font-size: 14px;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .chatCard {
   width: 100%;
   border-radius: 16px;
+  background-color: #FAF6EA !important;
+  border: 1px solid #E1DBC3 !important;
+  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3) !important;
 }
 
 .inner {
@@ -137,7 +173,59 @@
   max-width: 100%;
   max-height: 500px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3);
   object-fit: contain;
+}
+
+/* 输入框样式 */
+.chatCard :global(.ant-input),
+.chatCard :global(.ant-input:focus),
+.chatCard :global(.ant-input-focused) {
+  background-color: #FAF6EA !important;
+  border-color: #E1DBC3 !important;
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  border-radius: 12px !important;
+}
+
+.chatCard :global(.ant-input::placeholder) {
+  color: #B1A285 !important;
+}
+
+/* 工具栏按钮样式 */
+.toolbar :global(.ant-btn-circle) {
+  background-color: #FFF4D5 !important;
+  border-color: #B0A996 !important;
+  color: #908066 !important;
+}
+
+.toolbar :global(.ant-btn-circle:hover) {
+  background-color: #FFEFD5 !important;
+  border-color: #AE906E !important;
+}
+
+.toolbar :global(.ant-btn-circle:disabled) {
+  background-color: #FAF6EA !important;
+  border-color: #E1DBC3 !important;
+  color: #B1A285 !important;
+}
+
+/* 发送按钮样式 */
+.toolbar :global(.ant-btn-primary) {
+  background-color: #AE906E !important;
+  border-color: #AE906E !important;
+  box-shadow: 0 2px 4px rgba(174, 144, 110, 0.3) !important;
+}
+
+.toolbar :global(.ant-btn-primary:hover:not(:disabled)) {
+  background-color: #B98E6B !important;
+  border-color: #B98E6B !important;
+  box-shadow: 0 4px 8px rgba(174, 144, 110, 0.4) !important;
+}
+
+.toolbar :global(.ant-btn-primary:disabled) {
+  background-color: #E1DBC3 !important;
+  border-color: #E1DBC3 !important;
+  color: #B1A285 !important;
 }
 
