@@ -220,8 +220,8 @@ export default function ChatBox({
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath
     }
-    // Otherwise, prepend the backend URL
-    return `http://localhost:5000${imagePath}`
+    // Otherwise, use relative path (Vite proxy will handle it)
+    return imagePath
   }
 
   return (
@@ -283,8 +283,8 @@ export default function ChatBox({
       )}
 
       {/* Input area */}
-      <Card className={styles.chatCard} bodyStyle={{ padding: 24 }}>
-        <Space direction="vertical" size={24} className={styles.inner}>
+      <Card className={styles.chatCard} styles={{ body: { padding: 24 } }}>
+        <Space orientation="vertical" size={24} className={styles.inner}>
           <TextArea
             autoSize={{ minRows: 2, maxRows: 4 }}
             placeholder="What would you like to know?"
