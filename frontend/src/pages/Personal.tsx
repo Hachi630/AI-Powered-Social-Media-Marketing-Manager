@@ -12,6 +12,7 @@ import {
   Upload,
   Avatar,
   message,
+  Modal,
 } from 'antd'
 import { useState, useEffect } from 'react'
 import {
@@ -20,6 +21,9 @@ import {
   CloseOutlined,
   UploadOutlined,
   UserOutlined,
+  LockOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
 } from '@ant-design/icons'
 import Header from '../components/Header'
 import { MELO_LOGO } from '../constants/assets'
@@ -67,6 +71,14 @@ export default function Personal({
   const [originalData, setOriginalData] = useState(formData)
   const [avatarFile, setAvatarFile] = useState<UploadFile[]>([])
   const [avatarBase64, setAvatarBase64] = useState<string>('')
+  
+  // Password change modal state
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Load user data on mount
   useEffect(() => {
@@ -223,6 +235,45 @@ export default function Personal({
     return false
   }
 
+  // Handle password change
+  const handlePasswordChange = async () => {
+    // Validate passwords
+    if (!newPassword.trim()) {
+      message.error('Please enter a new password')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      message.error('Password must be at least 6 characters long')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      message.error('Passwords do not match')
+      return
+    }
+
+    setPasswordLoading(true)
+    try {
+      const response = await authService.changePassword(newPassword)
+      if (response.success) {
+        message.success('Password changed successfully')
+        setShowPasswordModal(false)
+        setNewPassword('')
+        setConfirmPassword('')
+      } else {
+        message.error(response.message || 'Failed to change password')
+      }
+    } catch (error) {
+      message.error('An error occurred while changing password')
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
+
+  // Check if user is local auth user (can change password)
+  const isLocalAuthUser = user?.authProvider === 'local' || !user?.authProvider
+
   const renderField = (
     label: string,
     value: string,
@@ -375,9 +426,19 @@ export default function Personal({
                 </Button>
               </Space>
             ) : (
-              <Button icon={<EditOutlined />} onClick={handleEdit}>
-                Edit
-              </Button>
+              <Space direction="vertical" size="middle">
+                <Button icon={<EditOutlined />} onClick={handleEdit}>
+                  Edit
+                </Button>
+                {isLocalAuthUser && (
+                  <Button 
+                    icon={<LockOutlined />} 
+                    onClick={() => setShowPasswordModal(true)}
+                  >
+                    Change Password
+                  </Button>
+                )}
+              </Space>
             )}
           </div>
         </div>
@@ -434,6 +495,50 @@ export default function Personal({
             </Card>
           </Col>
         </Row>
+
+        {/* Change Password Modal */}
+        <Modal
+          title="Change Password"
+          open={showPasswordModal}
+          onOk={handlePasswordChange}
+          onCancel={() => {
+            setShowPasswordModal(false)
+            setNewPassword('')
+            setConfirmPassword('')
+          }}
+          confirmLoading={passwordLoading}
+          okText="Change Password"
+          cancelText="Cancel"
+        >
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <div>
+              <Typography.Text strong>New Password</Typography.Text>
+              <Input.Password
+                size="large"
+                placeholder="Enter new password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
+                style={{ marginTop: 8 }}
+              />
+              <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: 4 }}>
+                Password must be at least 6 characters long
+              </Typography.Text>
+            </div>
+            <div>
+              <Typography.Text strong>Confirm Password</Typography.Text>
+              <Input.Password
+                size="large"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                iconRender={(visible) => (visible ? <EyeOutlined /> : <EyeInvisibleOutlined />)}
+                style={{ marginTop: 8 }}
+                onPressEnter={handlePasswordChange}
+              />
+            </div>
+          </Space>
+        </Modal>
       </Content>
     </Layout>
   )

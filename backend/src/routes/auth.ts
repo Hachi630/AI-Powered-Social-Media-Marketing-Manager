@@ -70,6 +70,7 @@ router.post("/register", async (req: Request, res: Response) => {
           toneOfVoice: user.toneOfVoice,
           knowledgeProducts: user.knowledgeProducts,
           targetAudience: user.targetAudience,
+          authProvider: user.authProvider,
           createdAt: user.createdAt,
         },
         token: generateToken(user._id.toString()),
@@ -129,6 +130,7 @@ router.post("/login", async (req: Request, res: Response) => {
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
+        authProvider: user.authProvider,
         createdAt: user.createdAt,
       },
       token: generateToken(user._id.toString()),
@@ -168,6 +170,7 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
           toneOfVoice: user.toneOfVoice,
           knowledgeProducts: user.knowledgeProducts,
           targetAudience: user.targetAudience,
+          authProvider: user.authProvider,
           createdAt: user.createdAt,
         },
       })
@@ -237,6 +240,7 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
+        authProvider: user.authProvider,
         createdAt: user.createdAt,
       },
     });
@@ -244,6 +248,45 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// @desc    Change user password
+// @route   PUT /api/auth/password
+// @access  Private
+router.put('/password', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Check if user is a local auth user (not Google)
+    if (user.authProvider !== 'local') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Password change is only available for local authentication users' 
+      })
+    }
+
+    const { newPassword } = req.body
+
+    // Validate new password
+    if (!newPassword || newPassword.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Please provide a new password' })
+    }
+
+    // Update password (plain text as per existing implementation)
+    user.password = newPassword.trim()
+    await user.save()
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully',
+    })
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+})
 
 // @desc    Log user out
 // @route   POST /api/auth/logout
