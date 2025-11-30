@@ -11,8 +11,6 @@ import styles from './Sidebar.module.css'
 import { User } from '../services/authService'
 import { chatService, ConversationListItem } from '../services/chatService'
 
-const avatarSrc = 'https://www.figma.com/api/mcp/asset/3d8e0cdd-ecdb-4f02-b256-ee2d85bad6ec'
-
 interface SidebarProps {
   collapsed: boolean
   onToggleSidebar: () => void
@@ -34,6 +32,7 @@ export default function Sidebar({
 }: SidebarProps) {
   const [conversations, setConversations] = useState<ConversationListItem[]>([])
   const [loading, setLoading] = useState(false)
+  const [searchKeyword, setSearchKeyword] = useState<string>('')
 
   const loadConversations = async () => {
     if (!user) {
@@ -104,6 +103,15 @@ export default function Sidebar({
     })
   }
 
+  // Filter conversations based on search keyword
+  const filteredConversations = conversations.filter((conversation) => {
+    if (!searchKeyword.trim()) {
+      return true
+    }
+    const keyword = searchKeyword.toLowerCase().trim()
+    return conversation.title.toLowerCase().includes(keyword)
+  })
+
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''}`}>
       <div className={styles.topSection}>
@@ -130,6 +138,8 @@ export default function Sidebar({
               placeholder="Search"
               prefix={<SearchOutlined />}
               allowClear
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
             />
             <div className={styles.chatsSection}>
               <Typography.Text type="secondary" className={styles.sectionTitle}>
@@ -142,7 +152,7 @@ export default function Sidebar({
               ) : (
                 <List
                   className={styles.chatList}
-                  dataSource={conversations}
+                  dataSource={filteredConversations}
                   renderItem={(item) => (
                     <List.Item
                       className={`${styles.chatItem} ${
@@ -171,7 +181,13 @@ export default function Sidebar({
         )}
       </div>
       <div className={styles.userSection}>
-        <Avatar size={32} src={avatarSrc} />
+        <Avatar
+          size={32}
+          src={user?.avatar}
+          style={{ backgroundColor: '#87d068' }}
+        >
+          {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'G'}
+        </Avatar>
         {!collapsed && <Typography.Text>{user?.email || 'Guest'}</Typography.Text>}
       </div>
     </aside>

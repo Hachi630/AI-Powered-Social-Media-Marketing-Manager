@@ -23,9 +23,9 @@ import { User, authService } from '../services/authService'
 const { Content } = Layout
 
 const toneButtons = [
-  { key: 'calm', label: 'Calm', color: '#6750a4' },
-  { key: 'warm', label: 'Warm', color: '#cab4ff' },
-  { key: 'mindful', label: 'Mindful', color: '#b2b2b2' },
+  { key: 'calm', label: 'Calm', color: '#AE906E' },
+  { key: 'warm', label: 'Warm', color: '#B98E6B' },
+  { key: 'mindful', label: 'Mindful', color: '#908066' },
 ]
 
 const initialKnowledgeProducts = ['Lavender Candle', 'Succulent Pot']

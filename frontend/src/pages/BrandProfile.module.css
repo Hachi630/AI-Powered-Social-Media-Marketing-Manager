@@ -1,6 +1,9 @@
 .layout {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background-color: #FAF9F4;
+  background-image: 
+    radial-gradient(circle at 2px 2px, rgba(225, 219, 195, 0.12) 1px, transparent 0);
+  background-size: 24px 24px;
 }
 
 .content {
@@ -12,10 +15,10 @@
 .pageTitle {
   text-align: center;
   margin-bottom: 48px !important;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
   font-weight: 700 !important;
   font-size: 40px !important;
-  color: #1a1a2e !important;
+  color: #908066 !important;
   letter-spacing: -0.5px;
 }
 
@@ -30,26 +33,50 @@
 /* Card base styles */
 .card {
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: none !important;
-  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3);
+  border: 1px solid #E1DBC3 !important;
+  background: #FFEFD5 !important;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   overflow: visible;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(255, 255, 255, 0.08) 8px,
+      rgba(255, 255, 255, 0.08) 16px
+    );
+  border-radius: 16px;
+  pointer-events: none;
+  opacity: 0.3;
+  z-index: 0;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(225, 219, 195, 0.4);
 }
 
 .card :global(.ant-card-head) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  border-bottom: none;
+  background: #FFF0D6 !important;
+  border-bottom: 1px solid #E1DBC3 !important;
   padding: 16px 24px;
   min-height: auto;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .card :global(.ant-card-head-wrapper) {
@@ -57,16 +84,17 @@
 }
 
 .card :global(.ant-card-head-title) {
-  color: #ffffff !important;
+  color: #908066 !important;
   font-weight: 600;
   font-size: 16px;
   white-space: nowrap;
   overflow: visible;
   text-overflow: unset;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .card :global(.ant-card-extra) {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: #B1A285 !important;
   font-size: 12px;
   white-space: nowrap;
   margin-left: 8px;
@@ -75,8 +103,10 @@
 
 .card :global(.ant-card-body) {
   padding: 24px;
-  background: #ffffff !important;
+  background: #FFEFD5 !important;
   flex: 1;
+  position: relative;
+  z-index: 1;
 }
 
 /* Grid placement for each card */
@@ -112,37 +142,38 @@
   padding-top: 16px;
 }
 
-/* Different header colors for variety */
+/* Different header colors for variety - 使用统一的温暖色调 */
 .basicInfo :global(.ant-card-head) {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  background: #FFF0D6 !important;
 }
 
 .companyDesc :global(.ant-card-head) {
-  background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%) !important;
+  background: #FFF0D6 !important;
 }
 
 .toneOfVoice :global(.ant-card-head) {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%) !important;
+  background: #FFF0D6 !important;
 }
 
 .uploadDatabase :global(.ant-card-head) {
-  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%) !important;
+  background: #FFF0D6 !important;
 }
 
 .knowledgeBase :global(.ant-card-head) {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%) !important;
+  background: #FFF0D6 !important;
 }
 
 .targetAudience :global(.ant-card-head) {
-  background: linear-gradient(135deg, #22c55e 0%, #4ade80 100%) !important;
+  background: #FFF0D6 !important;
 }
 
 /* Company Selector Styles */
 .companySelector {
   margin-bottom: 32px;
   border-radius: 20px !important;
-  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%) !important;
-  box-shadow: 0 8px 32px rgba(30, 58, 95, 0.3);
+  background: #FFEFD5 !important;
+  border: 1px solid #E1DBC3 !important;
+  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3);
 }
 
 .companySelector:hover {
@@ -169,13 +200,14 @@
 
 .companySelectorIcon {
   font-size: 28px;
-  color: #60a5fa;
+  color: #908066;
 }
 
 .companySelectorTitle {
   font-size: 18px;
-  color: #ffffff !important;
+  color: #908066 !important;
   white-space: nowrap;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .companyList {
@@ -191,8 +223,8 @@
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid transparent;
+  background: #FFF0D6;
+  border: 2px solid #E1DBC3;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -200,21 +232,22 @@
 }
 
 .companyItem:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(96, 165, 250, 0.3);
+  background: #FFEFD5;
+  border-color: #AE906E;
 }
 
 .companyItemActive {
-  background: rgba(96, 165, 250, 0.2) !important;
-  border-color: #60a5fa !important;
-  box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+  background: #FFF0D6 !important;
+  border-color: #AE906E !important;
+  box-shadow: 0 2px 8px rgba(174, 144, 110, 0.3);
 }
 
 .companyItem .companyName {
-  color: #ffffff;
+  color: #908066;
   font-weight: 500;
   font-size: 14px;
   flex: 1;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .companyNameInput {
@@ -239,13 +272,13 @@
 }
 
 .companyActionBtn {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: #908066 !important;
   padding: 4px !important;
 }
 
 .companyActionBtn:hover {
-  color: #ffffff !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  color: #AE906E !important;
+  background: rgba(174, 144, 110, 0.1) !important;
 }
 
 .companyDeleteBtn {
@@ -259,7 +292,7 @@
 }
 
 .companyDeleteBtn:disabled {
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: #B1A285 !important;
   cursor: not-allowed;
 }
 
@@ -268,30 +301,38 @@
   align-items: center;
   gap: 12px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: #FFF0D6;
+  border: 1px solid #E1DBC3;
   border-radius: 12px;
 }
 
 .addCompanyForm :global(.ant-input) {
-  background: rgba(255, 255, 255, 0.9) !important;
-  border: none !important;
+  background: #FAF6EA !important;
+  border: 1px solid #E1DBC3 !important;
+  color: #908066 !important;
   min-width: 160px;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.addCompanyForm :global(.ant-input::placeholder) {
+  color: #B1A285 !important;
 }
 
 .addCompanyBtn {
-  color: rgba(255, 255, 255, 0.8) !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
-  background: transparent !important;
+  color: #908066 !important;
+  border-color: #E1DBC3 !important;
+  background: #FFF0D6 !important;
   border-radius: 10px !important;
   height: 42px;
   padding: 0 20px;
   transition: all 0.2s ease;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .addCompanyBtn:hover {
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
-  background: rgba(255, 255, 255, 0.1) !important;
+  color: #AE906E !important;
+  border-color: #AE906E !important;
+  background: #FFEFD5 !important;
 }
 
 .fullWidth {
@@ -302,19 +343,50 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #374151;
+  color: #908066;
   font-size: 14px;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .toneButton {
   min-width: 100px;
   font-weight: 500;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+  border-color: #E1DBC3 !important;
+  color: #908066 !important;
+}
+
+.toneButton:not(.ant-btn-primary) {
+  background: #FAF6EA !important;
+}
+
+.toneButton.ant-btn-primary {
+  background: #AE906E !important;
+  border-color: #AE906E !important;
+  color: #FAF9F4 !important;
+}
+
+.toneButton:hover:not(.ant-btn-primary) {
+  border-color: #AE906E !important;
+  color: #AE906E !important;
 }
 
 .helperText {
   font-size: 12px;
   display: block;
   margin-top: 8px;
+  color: #B1A285;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+/* 更新文本区域样式 */
+.card :global(.ant-typography) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.card :global(.ant-typography-secondary) {
+  color: #B1A285 !important;
 }
 
 /* Text Area styles */
@@ -325,37 +397,51 @@
 .textArea :global(.ant-input) {
   font-size: 14px;
   line-height: 1.6;
+  background-color: #FAF6EA !important;
+  border-color: #E1DBC3 !important;
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.textArea :global(.ant-input::placeholder) {
+  color: #B1A285 !important;
+}
+
+.textArea :global(.ant-input):focus {
+  border-color: #AE906E !important;
+  box-shadow: 0 0 0 2px rgba(174, 144, 110, 0.1) !important;
 }
 
 /* Upload Database styles */
 .uploadDragger {
-  border: 2px dashed #d1d5db !important;
+  border: 2px dashed #E1DBC3 !important;
   border-radius: 12px !important;
-  background: #fafafa !important;
+  background: #FAF6EA !important;
   transition: all 0.2s ease;
 }
 
 .uploadDragger:hover {
-  border-color: #ec4899 !important;
-  background: #fdf2f8 !important;
+  border-color: #AE906E !important;
+  background: #FFF0D6 !important;
 }
 
 .uploadIcon {
   font-size: 40px;
-  color: #ec4899;
+  color: #908066;
   margin-bottom: 8px;
 }
 
 .uploadText {
   font-size: 15px;
-  color: #374151;
+  color: #908066;
   font-weight: 500;
   margin-bottom: 4px !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .uploadHint {
   font-size: 13px;
-  color: #9ca3af;
+  color: #B1A285;
 }
 
 .fileList {
@@ -369,14 +455,16 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  background: #f9fafb;
+  background: #FAF6EA;
+  border: 1px solid #E1DBC3;
   border-radius: 10px;
   margin-bottom: 8px;
   transition: background 0.2s ease;
 }
 
 .fileItem:hover {
-  background: #f3f4f6;
+  background: #FFF0D6;
+  border-color: #AE906E;
 }
 
 .fileInfo {
@@ -397,12 +485,14 @@
 .fileName {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: #908066;
   max-width: 100%;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .fileSize {
   font-size: 12px;
+  color: #B1A285;
 }
 
 .deleteFileBtn {
@@ -427,19 +517,22 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #f9fafb;
+  background: #FAF6EA;
+  border: 1px solid #E1DBC3;
   border-radius: 8px;
   margin-bottom: 8px;
   transition: background 0.2s ease;
 }
 
 .list li:hover {
-  background: #f3f4f6;
+  background: #FFF0D6;
+  border-color: #AE906E;
 }
 
 .productName {
-  color: #4b5563;
+  color: #908066;
   font-size: 14px;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .removeButton {
@@ -468,29 +561,49 @@
   font-size: 16px;
   font-weight: 600;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
-  border: none !important;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  background: #AE906E !important;
+  border: 1px solid #AE906E !important;
+  color: #FAF9F4 !important;
+  box-shadow: 0 2px 8px rgba(174, 144, 110, 0.3);
   transition: all 0.2s ease;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .saveButton:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  background: #B98E6B !important;
+  border-color: #B98E6B !important;
+  box-shadow: 0 4px 12px rgba(174, 144, 110, 0.4);
 }
 
 /* Input and Select styles */
-:global(.ant-input),
-:global(.ant-input-affix-wrapper),
-:global(.ant-select-selector) {
-  background-color: #ffffff !important;
+.card :global(.ant-input),
+.card :global(.ant-input-affix-wrapper),
+.card :global(.ant-select-selector),
+.card :global(.ant-input) {
+  background-color: #FAF6EA !important;
+  border-color: #E1DBC3 !important;
+  color: #908066 !important;
   border-radius: 10px !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
-:global(.ant-input):focus,
-:global(.ant-input-affix-wrapper):focus,
-:global(.ant-select-focused .ant-select-selector) {
-  background-color: #ffffff !important;
+.card :global(.ant-input::placeholder),
+.card :global(.ant-input-affix-wrapper input::placeholder) {
+  color: #B1A285 !important;
+}
+
+.card :global(.ant-input):focus,
+.card :global(.ant-input-affix-wrapper):focus,
+.card :global(.ant-select-focused .ant-select-selector) {
+  background-color: #FAF6EA !important;
+  border-color: #AE906E !important;
+  box-shadow: 0 0 0 2px rgba(174, 144, 110, 0.1) !important;
+}
+
+.card :global(.ant-select-selection-item),
+.card :global(.ant-select-selection-placeholder) {
+  color: #908066 !important;
 }
 
 /* Responsive Design */
