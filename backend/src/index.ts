@@ -23,8 +23,19 @@ connectDB()
 const app = express()
 const PORT = process.env.PORT || 5001
 
-// Middleware
-app.use(cors())
+// CORS configuration - must be FIRST, before any other middleware
+// Allow all origins in development to avoid CORS issues
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+}))
+
+// Body parsing middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 

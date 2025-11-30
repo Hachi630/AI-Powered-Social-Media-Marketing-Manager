@@ -1,5 +1,5 @@
-// API base URL
-const API_URL = 'http://localhost:5000/api/chat'
+// API base URL - using Vite proxy (no CORS issues)
+const API_URL = '/api/chat'
 
 export interface ChatMessage {
   role: 'user' | 'assistant'

@@ -33,7 +33,9 @@ const UserSchema: Schema = new Schema(
     password: {
       type: String,
       required: function(this: IUser) {
-        return this.authProvider === 'local'
+        // Password is required only if user doesn't have googleId
+        // If user has googleId, they are using Google OAuth and password is not required
+        return !this.googleId
       },
     },
     googleId: {
