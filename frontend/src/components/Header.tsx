@@ -38,9 +38,11 @@ export default function Header({
   const navigate = useNavigate()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
+  const isHomePage = location.pathname === '/' || location.pathname === '/home'
+  
   let selectedKey =
     navItems?.find((item) => location.pathname.startsWith(String(item?.key)))?.key ?? ''
-  if (!selectedKey && location.pathname === '/') {
+  if (!selectedKey && location.pathname === '/' && isLoggedIn) {
     selectedKey = '/dashboard'
   }
 
@@ -54,7 +56,7 @@ export default function Header({
 
   const handleLogoutClick = () => {
     onLogout?.()
-    navigate('/')
+    navigate('/home')
   }
 
   const userMenu: MenuProps = {
@@ -79,7 +81,7 @@ export default function Header({
 
   return (
     <AntHeader className={styles.header}>
-      <button className={styles.logoButton} onClick={() => navigate('/dashboard')}>
+      <button className={styles.logoButton} onClick={() => navigate(isLoggedIn ? '/dashboard' : '/')}>
         <div className={`${styles.logoGroup} ${!showBrandName ? styles.logoGroupCompact : ''}`}>
           <img src={logoSrc} alt="MELO logo" className={styles.logoImage} />
           {showBrandName && (
@@ -89,13 +91,15 @@ export default function Header({
           )}
         </div>
       </button>
-      <Menu
-        className={styles.menu}
-        mode="horizontal"
-        selectedKeys={selectedKey ? [String(selectedKey)] : []}
-        items={navItems}
-        onClick={({ key }) => navigate(String(key))}
-      />
+      {isLoggedIn && !isHomePage && (
+        <Menu
+          className={styles.menu}
+          mode="horizontal"
+          selectedKeys={selectedKey ? [String(selectedKey)] : []}
+          items={navItems}
+          onClick={({ key }) => navigate(String(key))}
+        />
+      )}
       {!isLoggedIn ? (
         <Space size="middle">
           <Button onClick={handleAuthClick}>Sign in</Button>

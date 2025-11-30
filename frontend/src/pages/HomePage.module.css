@@ -1,0 +1,640 @@
+.layout {
+  min-height: 100vh;
+  background-color: #FAF9F4;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.content {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Ant Design Row/Col responsive adjustments */
+/* Gutter is handled by Ant Design Row component, but we ensure proper spacing */
+.productsRow :global(.ant-col),
+.advantagesRow :global(.ant-col),
+.outcomesRow :global(.ant-col),
+.audienceRow :global(.ant-col) {
+  margin-bottom: 0;
+}
+
+/* Hero Section */
+.heroSection {
+  text-align: center;
+  padding: 120px 0 80px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.heroTitle {
+  font-size: 64px !important;
+  font-weight: 700 !important;
+  line-height: 1.1 !important;
+  color: #1e1e1e !important;
+  margin-bottom: 24px !important;
+  letter-spacing: -1.28px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.heroSubtitle {
+  font-size: 20px !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+  margin-bottom: 48px !important;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.heroButtons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Section Styles */
+.section {
+  padding: 100px 0;
+  text-align: center;
+}
+
+.sectionTitle {
+  font-size: 48px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  color: #1e1e1e !important;
+  margin-bottom: 16px !important;
+  letter-spacing: -0.96px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.sectionDescription {
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+  margin-bottom: 64px !important;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* Products Section */
+.productsRow {
+  margin-top: 48px;
+}
+
+.productCard {
+  height: 100%;
+  border-radius: 16px !important;
+  border: 1px solid #e1dbc3 !important;
+  background: #ffffff !important;
+  transition: all 0.3s ease;
+  padding: 32px 24px;
+  text-align: left;
+}
+
+.productCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-4px);
+}
+
+.productIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #AE906E 0%, #B98E6B 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.productIcon {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.productTitle {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: #1e1e1e !important;
+  margin-bottom: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.productDescription {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* Advantages Section */
+.advantagesRow {
+  margin-top: 48px;
+}
+
+.advantageCard {
+  height: 100%;
+  border-radius: 16px !important;
+  border: 1px solid #e1dbc3 !important;
+  background: #ffffff !important;
+  transition: all 0.3s ease;
+  padding: 32px 24px;
+  text-align: left;
+}
+
+.advantageCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-4px);
+}
+
+.advantageIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #908066 0%, #B1A285 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.advantageIcon {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.advantageTitle {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: #1e1e1e !important;
+  margin-bottom: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.advantageDescription {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* Outcomes Section */
+.outcomesRow {
+  margin-top: 48px;
+}
+
+.outcomeCard {
+  height: 100%;
+  border-radius: 16px !important;
+  border: 1px solid #e1dbc3 !important;
+  background: #ffffff !important;
+  transition: all 0.3s ease;
+  padding: 32px 24px;
+  text-align: left;
+}
+
+.outcomeCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-4px);
+}
+
+.outcomeIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #AE906E 0%, #908066 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.outcomeIcon {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.outcomeMetric {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.metricValue {
+  font-size: 48px;
+  font-weight: 700;
+  color: #AE906E;
+  line-height: 1;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.metricLabel {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.outcomeTitle {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: #1e1e1e !important;
+  margin-bottom: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.outcomeDescription {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* Target Audience Section */
+.audienceRow {
+  margin-top: 48px;
+}
+
+.audienceCard {
+  height: 100%;
+  border-radius: 16px !important;
+  border: 1px solid #e1dbc3 !important;
+  background: #ffffff !important;
+  transition: all 0.3s ease;
+  padding: 32px 24px;
+  text-align: left;
+}
+
+.audienceCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-4px);
+}
+
+.audienceIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #B98E6B 0%, #B1A285 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.audienceIcon {
+  font-size: 32px;
+  color: #ffffff;
+}
+
+.audienceTitle {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: #1e1e1e !important;
+  margin-bottom: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.audienceDescription {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  color: #666 !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+/* CTA Section */
+.ctaSection {
+  text-align: center;
+  padding: 120px 0;
+  background: linear-gradient(135deg, #AE906E 0%, #908066 100%);
+  border-radius: 24px;
+  margin: 100px 0;
+  color: #ffffff;
+}
+
+.ctaTitle {
+  font-size: 48px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  color: #ffffff !important;
+  margin-bottom: 16px !important;
+  letter-spacing: -0.96px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.ctaDescription {
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  margin-bottom: 48px !important;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.ctaButton {
+  height: 56px;
+  padding: 0 48px;
+  font-size: 18px;
+  font-weight: 600;
+  background: #ffffff !important;
+  color: #AE906E !important;
+  border: none !important;
+}
+
+.ctaButton:hover {
+  background: #f5f5f5 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Footer */
+.footer {
+  background: #1e1e1e;
+  color: #ffffff;
+  padding: 48px 24px;
+  margin-top: 100px;
+}
+
+.footerContent {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+
+.footerText {
+  color: rgba(255, 255, 255, 0.7) !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.footerLink {
+  color: rgba(255, 255, 255, 0.7) !important;
+  padding: 0 !important;
+}
+
+.footerLink:hover {
+  color: #ffffff !important;
+}
+
+/* Responsive Design - Following Ant Design breakpoints */
+/* xs: <576px, sm: >=576px, md: >=768px, lg: >=992px, xl: >=1200px, xxl: >=1600px */
+
+/* Large screens (xl and above) */
+@media (min-width: 1200px) {
+  .content {
+    padding: 0 48px;
+  }
+}
+
+/* Medium screens (lg) */
+@media (max-width: 1199px) and (min-width: 992px) {
+  .content {
+    padding: 0 32px;
+  }
+}
+
+/* Tablet and below (md and below) */
+@media (max-width: 991px) {
+  .heroTitle {
+    font-size: 48px !important;
+  }
+
+  .sectionTitle {
+    font-size: 36px !important;
+  }
+
+  .ctaTitle {
+    font-size: 36px !important;
+  }
+
+  .heroSection {
+    padding: 80px 0 60px;
+  }
+
+  .section {
+    padding: 80px 0;
+  }
+
+  .content {
+    padding: 0 24px;
+  }
+
+}
+
+/* Mobile (sm and below) */
+@media (max-width: 767px) {
+  .heroTitle {
+    font-size: 36px !important;
+  }
+
+  .heroSubtitle {
+    font-size: 18px !important;
+  }
+
+  .sectionTitle {
+    font-size: 32px !important;
+  }
+
+  .ctaTitle {
+    font-size: 32px !important;
+  }
+
+  .heroSection {
+    padding: 60px 0 40px;
+  }
+
+  .section {
+    padding: 60px 0;
+  }
+
+  .ctaSection {
+    padding: 80px 24px;
+    margin: 60px 0;
+    border-radius: 16px;
+  }
+
+  .content {
+    padding: 0 16px;
+  }
+
+  .heroButtons {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .heroButtons button {
+    width: 100%;
+  }
+
+  .footerContent {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
+
+
+  .productCard,
+  .advantageCard,
+  .outcomeCard,
+  .audienceCard {
+    padding: 24px 16px !important;
+  }
+
+  .productIconWrapper,
+  .advantageIconWrapper,
+  .outcomeIconWrapper,
+  .audienceIconWrapper {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 20px;
+  }
+
+  .productIcon,
+  .advantageIcon,
+  .outcomeIcon,
+  .audienceIcon {
+    font-size: 28px;
+  }
+
+  .productTitle,
+  .advantageTitle,
+  .outcomeTitle,
+  .audienceTitle {
+    font-size: 20px !important;
+  }
+
+  .productDescription,
+  .advantageDescription,
+  .outcomeDescription,
+  .audienceDescription {
+    font-size: 14px !important;
+  }
+
+  .metricValue {
+    font-size: 40px;
+  }
+}
+
+/* Small mobile (xs) */
+@media (max-width: 575px) {
+  .content {
+    padding: 0 16px;
+  }
+
+  .heroTitle {
+    font-size: 28px !important;
+    letter-spacing: -0.56px !important;
+  }
+
+  .heroSubtitle {
+    font-size: 16px !important;
+  }
+
+  .sectionTitle {
+    font-size: 28px !important;
+    letter-spacing: -0.56px !important;
+  }
+
+  .sectionDescription {
+    font-size: 16px !important;
+  }
+
+  .ctaTitle {
+    font-size: 28px !important;
+    letter-spacing: -0.56px !important;
+  }
+
+  .ctaDescription {
+    font-size: 16px !important;
+  }
+
+  .heroSection {
+    padding: 48px 0 32px;
+  }
+
+  .section {
+    padding: 48px 0;
+  }
+
+  .ctaSection {
+    padding: 60px 16px;
+    margin: 48px 0;
+    border-radius: 12px;
+  }
+
+  .footer {
+    padding: 32px 16px;
+    margin-top: 60px;
+  }
+
+  .productCard,
+  .advantageCard,
+  .outcomeCard,
+  .audienceCard {
+    padding: 20px 12px !important;
+  }
+
+  .productIconWrapper,
+  .advantageIconWrapper,
+  .outcomeIconWrapper,
+  .audienceIconWrapper {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+
+  .productIcon,
+  .advantageIcon,
+  .outcomeIcon,
+  .audienceIcon {
+    font-size: 24px;
+  }
+
+  .productTitle,
+  .advantageTitle,
+  .outcomeTitle,
+  .audienceTitle {
+    font-size: 18px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .productDescription,
+  .advantageDescription,
+  .outcomeDescription,
+  .audienceDescription {
+    font-size: 14px !important;
+  }
+
+  .metricValue {
+    font-size: 36px;
+  }
+
+  .metricLabel {
+    font-size: 12px;
+  }
+
+  .ctaButton {
+    height: 48px;
+    padding: 0 32px;
+    font-size: 16px;
+  }
+}
+
