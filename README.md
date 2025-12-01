@@ -161,6 +161,7 @@ JWT_EXPIRE=7d
 GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
+GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
 ```
 
 **Note**: 
@@ -171,6 +172,12 @@ GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 ### Frontend
 
 The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to proxy API requests to the backend.
+
+### Frontend(.env)
+```env
+VITE_BACKEND_PORT=5000
+VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
+```
 
 ## 📚 API Documentation
 
