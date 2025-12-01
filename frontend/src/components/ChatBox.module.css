@@ -323,26 +323,36 @@
 
 .chatCard {
   width: 100%;
-  border-radius: 16px;
-  background-color: var(--bg-secondary, #ffffff) !important;
+  border-radius: 24px;
+  background-color: #ffffff !important;
   border: 1px solid var(--border-color, #e0e0e0) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  transition: box-shadow 0.3s ease;
+}
+
+.chatCard:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12) !important;
 }
 
 [data-theme="warm"] .chatCard {
-  background-color: #FAF6EA !important;
+  background-color: #ffffff !important;
   border: 1px solid #E1DBC3 !important;
-  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(174, 144, 110, 0.15) !important;
+}
+
+[data-theme="warm"] .chatCard:hover {
+  box-shadow: 0 6px 24px rgba(174, 144, 110, 0.2) !important;
 }
 
 /* Ensure mobile chat box doesn't block messages */
 @media (max-width: 767px) {
   .chatCard {
-    background-color: var(--bg-primary, #f5f5f5) !important;
+    background-color: #ffffff !important;
+    border-radius: 20px 20px 0 0 !important;
   }
 
   [data-theme="warm"] .chatCard {
-    background-color: #FAF9F4 !important;
+    background-color: #ffffff !important;
   }
 }
 
@@ -370,10 +380,36 @@
 
 .plusButton {
   flex-shrink: 0;
+  color: #667eea !important;
+  border-color: #667eea !important;
+}
+
+.plusButton:hover {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  border-color: #667eea !important;
+  color: #667eea !important;
 }
 
 .sendButton {
   flex-shrink: 0;
+  background-color: #667eea !important;
+  border-color: #667eea !important;
+}
+
+.sendButton:hover:not(:disabled) {
+  background-color: #5568d3 !important;
+  border-color: #5568d3 !important;
+}
+
+.plusButton {
+  color: #667eea !important;
+  border-color: #667eea !important;
+}
+
+.plusButton:hover {
+  background-color: rgba(102, 126, 234, 0.1) !important;
+  border-color: #667eea !important;
+  color: #667eea !important;
 }
 
 .messageImages {
@@ -395,17 +431,19 @@
 .chatCard :global(.ant-input),
 .chatCard :global(.ant-input:focus),
 .chatCard :global(.ant-input-focused) {
-  background-color: var(--bg-secondary, #ffffff) !important;
+  background-color: #ffffff !important;
   border-color: var(--border-color, #e0e0e0) !important;
   color: var(--text-primary, #1e1e1e) !important;
   font-family: var(--font-family, 'Inter', sans-serif) !important;
-  border-radius: 12px !important;
+  border-radius: 20px !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 [data-theme="warm"] .chatCard :global(.ant-input),
 [data-theme="warm"] .chatCard :global(.ant-input:focus),
 [data-theme="warm"] .chatCard :global(.ant-input-focused) {
-  background-color: #FAF6EA !important;
+  background-color: #ffffff !important;
   border-color: #E1DBC3 !important;
   color: #908066 !important;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
