@@ -41,7 +41,7 @@
 }
 
 .segment.active {
-  background: var(--primary-color, #646cff);
+  background: var(--primary-color, #667eea);
   color: #ffffff;
   font-weight: 600;
 }
