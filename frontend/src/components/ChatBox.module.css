@@ -185,16 +185,16 @@
 }
 
 .userMessage .messageContent {
-  background-color: var(--bg-secondary, #ffffff);
-  color: var(--text-primary, #1e1e1e);
-  border: 1px solid var(--border-color, #e0e0e0);
+  background-color: var(--accent-color, var(--bg-secondary, #ffffff));
+  color: var(--accent-color-text, var(--text-primary, #1e1e1e));
+  border: 1px solid var(--accent-color, var(--border-color, #e0e0e0));
   border-bottom-right-radius: 4px;
 }
 
 [data-theme="warm"] .userMessage .messageContent {
-  background-color: #FFF0D6;
-  color: #908066;
-  border: 1px solid #E1DBC3;
+  background-color: var(--accent-color, #FFF0D6);
+  color: var(--accent-color-text, #908066);
+  border: 1px solid var(--accent-color, #E1DBC3);
 }
 
 .assistantMessage .messageContent {

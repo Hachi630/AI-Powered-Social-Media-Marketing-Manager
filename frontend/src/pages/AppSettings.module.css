@@ -1,11 +1,11 @@
 .settingsModal :global(.ant-modal-header) {
-  background-color: var(--bg-secondary, #ffffff) !important;
-  border-bottom: 1px solid var(--border-color, #e0e0e0) !important;
+  background-color: #ffffff !important;
+  border-bottom: none !important;
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-header) {
   background-color: #FFEFD5 !important;
-  border-bottom: 1px solid #E1DBC3 !important;
+  border-bottom: none !important;
 }
 
 .settingsModal :global(.ant-modal-title) {
@@ -21,7 +21,7 @@
 }
 
 .settingsModal :global(.ant-modal-body) {
-  background-color: var(--bg-secondary, #ffffff) !important;
+  background-color: #ffffff !important;
   padding: 24px !important;
 }
 
@@ -30,14 +30,14 @@
 }
 
 .settingsModal :global(.ant-modal-footer) {
-  background-color: var(--bg-secondary, #ffffff) !important;
-  border-top: 1px solid var(--border-color, #e0e0e0) !important;
+  background-color: #ffffff !important;
+  border-top: none !important;
   padding: 16px 24px !important;
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-footer) {
   background-color: #FFEFD5 !important;
-  border-top: 1px solid #E1DBC3 !important;
+  border-top: none !important;
 }
 
 .modalTitle {
@@ -58,6 +58,17 @@
 .modalContent {
   max-height: 60vh;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Hide scrollbar but keep scrolling functionality */
+.modalContent::-webkit-scrollbar {
+  display: none;
+}
+
+.modalContent {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .resetButton {
@@ -69,7 +80,7 @@
   min-height: 200px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   border: 1px solid var(--border-color, #e0e0e0) !important;
-  background-color: var(--bg-secondary, #ffffff) !important;
+  background-color: #ffffff !important;
   height: 100%;
 }
 
@@ -80,7 +91,7 @@
 }
 
 .settingCard :global(.ant-card-head) {
-  background-color: var(--bg-secondary, #ffffff) !important;
+  background-color: #ffffff !important;
   border-bottom: 1px solid var(--border-color, #e0e0e0) !important;
   padding: 16px 24px !important;
 }
@@ -103,7 +114,7 @@
 }
 
 .settingCard :global(.ant-card-body) {
-  background-color: var(--bg-secondary, #ffffff) !important;
+  background-color: #ffffff !important;
   padding: 24px !important;
 }
 
@@ -151,6 +162,7 @@
   display: flex;
   gap: 12px;
   align-items: center;
+  margin-top: 12px;
 }
 
 .colorInput {
@@ -163,6 +175,50 @@
 
 .colorTextInput {
   flex: 1;
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.colorSwatch {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  padding: 0;
+  position: relative;
+}
+
+.colorSwatch:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.colorSwatchActive {
+  border-color: var(--text-primary, #1e1e1e) !important;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="warm"] .colorSwatchActive {
+  border-color: #908066 !important;
+}
+
+.colorSwatchActive::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .slider {
@@ -190,15 +246,15 @@
 }
 
 .select :global(.ant-select-selector) {
-  background-color: var(--bg-secondary, #ffffff) !important;
-  border: 1px solid var(--border-color, #e0e0e0) !important;
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
   color: var(--text-primary, #1e1e1e) !important;
   font-family: var(--font-family, 'Inter', sans-serif) !important;
 }
 
 [data-theme="warm"] .select :global(.ant-select-selector) {
-  background-color: #FAF6EA !important;
-  border: 1px solid #E1DBC3 !important;
+  background-color: #FFEFD5 !important;
+  border: 1px solid rgba(144, 128, 102, 0.2) !important;
   color: #908066 !important;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
 }
@@ -209,6 +265,40 @@
 
 [data-theme="warm"] .select :global(.ant-select-focused .ant-select-selector) {
   border-color: #AE906E !important;
+}
+
+/* Font preview in select options - ensure inline styles work */
+.select :global(.ant-select-item-option-content) {
+  font-family: inherit !important;
+}
+
+.select :global(.ant-select-item-option-content span) {
+  font-family: inherit !important;
+}
+
+.select :global(.ant-select-selection-item) {
+  font-family: inherit !important;
+}
+
+/* Global styles for select dropdown to ensure font preview works */
+:global(.ant-select-dropdown) :global(.ant-select-item-option-content) {
+  font-family: inherit !important;
+}
+
+:global(.ant-select-dropdown) :global(.ant-select-item-option-content span) {
+  font-family: inherit !important;
+}
+
+.settingsModal :global(.ant-modal-content) {
+  background-color: #ffffff !important;
+}
+
+[data-theme="warm"] .settingsModal :global(.ant-modal-content) {
+  background-color: #FFEFD5 !important;
+}
+
+.settingsModal :global(.ant-modal) {
+  background-color: transparent !important;
 }
 
 /* Responsive styles - Mobile */

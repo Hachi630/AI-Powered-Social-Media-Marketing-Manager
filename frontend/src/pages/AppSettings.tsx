@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   Col,
+  Input,
   Modal,
   Row,
   Select,
@@ -17,11 +18,20 @@ import ThemeToggle from '../components/ThemeToggle'
 const { Text } = Typography
 
 const fontOptions = [
-  { value: 'Inter, system-ui, sans-serif', label: 'Inter' },
-  { value: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif", label: 'ZCOOL KuaiLe' },
-  { value: 'Arial, sans-serif', label: 'Arial' },
-  { value: 'Georgia, serif', label: 'Georgia' },
-  { value: "'Times New Roman', serif", label: 'Times New Roman' },
+  { value: 'Inter, system-ui, sans-serif', label: 'Inter', fontFamily: 'Inter, system-ui, sans-serif' },
+  { value: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif", label: 'ZCOOL KuaiLe', fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif" },
+  { value: 'Arial, sans-serif', label: 'Arial', fontFamily: 'Arial, sans-serif' },
+  { value: 'Georgia, serif', label: 'Georgia', fontFamily: 'Georgia, serif' },
+  { value: "'Times New Roman', serif", label: 'Times New Roman', fontFamily: "'Times New Roman', serif" },
+]
+
+const accentColorOptions = [
+  { value: '#bacf65', label: 'Green', color: '#bacf65' },
+  { value: '#fbda41', label: 'Yellow', color: '#fbda41' },
+  { value: '#b9dec9', label: 'Mint', color: '#b9dec9' },
+  { value: '#83cbac', label: 'Teal', color: '#83cbac' },
+  { value: '#93d5dc', label: 'Sky', color: '#93d5dc' },
+  { value: '#f6cec1', label: 'Peach', color: '#f6cec1' },
 ]
 
 interface AppSettingsProps {
@@ -47,6 +57,10 @@ export default function AppSettings({
 
   const handleFontFamilyChange = (value: string) => {
     updatePendingSettings({ fontFamily: value })
+  }
+
+  const handleAccentColorChange = (color: string) => {
+    updatePendingSettings({ accentColor: color })
   }
 
   const handleApply = () => {
@@ -147,15 +161,69 @@ export default function AppSettings({
             <Card className={styles.settingCard} title="Font Family">
               <div className={styles.settingItem}>
                 <Text className={styles.settingLabel}>Font Family</Text>
-                <Select
-                  value={pendingSettings.fontFamily}
-                  onChange={handleFontFamilyChange}
-                  options={fontOptions}
-                  className={styles.select}
-                  style={{ width: '100%' }}
-                />
+                <div style={{ fontFamily: pendingSettings.fontFamily }}>
+                  <Select
+                    value={pendingSettings.fontFamily}
+                    onChange={handleFontFamilyChange}
+                    className={styles.select}
+                    style={{ width: '100%' }}
+                    getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body}
+                  >
+                    {fontOptions.map((option) => (
+                      <Select.Option
+                        key={option.value}
+                        value={option.value}
+                        label={option.label}
+                      >
+                        <span style={{ fontFamily: option.fontFamily }}>
+                          {option.label}
+                        </span>
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </div>
                 <Text className={styles.settingDescription}>
                   Choose the font family for the application
+                </Text>
+              </div>
+            </Card>
+          </Col>
+
+          {/* Accent Color */}
+          <Col xs={24} sm={24} md={12} lg={12}>
+            <Card className={styles.settingCard} title="Accent Color">
+              <div className={styles.settingItem}>
+                <Text className={styles.settingLabel}>Theme Color</Text>
+                <div className={styles.colorGrid}>
+                  {accentColorOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      className={`${styles.colorSwatch} ${
+                        pendingSettings.accentColor === option.value ? styles.colorSwatchActive : ''
+                      }`}
+                      style={{ backgroundColor: option.color }}
+                      onClick={() => handleAccentColorChange(option.value)}
+                      title={option.label}
+                      aria-label={`Select ${option.label} color`}
+                    />
+                  ))}
+                </div>
+                <div className={styles.colorPickerWrapper}>
+                  <Input
+                    type="color"
+                    value={pendingSettings.accentColor}
+                    onChange={(e) => handleAccentColorChange(e.target.value)}
+                    className={styles.colorInput}
+                  />
+                  <Input
+                    value={pendingSettings.accentColor}
+                    onChange={(e) => handleAccentColorChange(e.target.value)}
+                    className={styles.colorTextInput}
+                    placeholder="#646cff"
+                  />
+                </div>
+                <Text className={styles.settingDescription}>
+                  Choose the accent color for buttons and your messages
                 </Text>
               </div>
             </Card>
