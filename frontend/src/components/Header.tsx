@@ -100,24 +100,26 @@ export default function Header({
           onClick={({ key }) => navigate(String(key))}
         />
       )}
-      {!isLoggedIn ? (
-        <Space size="middle">
-          <Button onClick={handleAuthClick}>Sign in</Button>
-          <Button type="primary" onClick={handleAuthClick}>
-            Register
-          </Button>
-        </Space>
-      ) : (
-        <Dropdown menu={userMenu} placement="bottomRight" arrow>
-          <Avatar
-            size="large"
-            src={user?.avatar}
-            style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
-          >
-            {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
-          </Avatar>
-        </Dropdown>
-      )}
+      <div className={styles.headerActions}>
+        {!isLoggedIn ? (
+          <Space size="middle">
+            <Button onClick={handleAuthClick}>Sign in</Button>
+            <Button type="primary" onClick={handleAuthClick}>
+              Register
+            </Button>
+          </Space>
+        ) : (
+          <Dropdown menu={userMenu} placement="bottomRight" arrow>
+            <Avatar
+              size="large"
+              src={user?.avatar}
+              style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
+            >
+              {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
+            </Avatar>
+          </Dropdown>
+        )}
+      </div>
       <AuthModal
         open={isAuthModalOpen}
         onCancel={() => setIsAuthModalOpen(false)}

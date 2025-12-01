@@ -13,16 +13,15 @@ import {
   UserOutlined,
   FileTextOutlined,
   BulbOutlined,
+  DownOutlined,
 } from '@ant-design/icons'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Header from '../components/Header'
 import AuthModal from '../components/AuthModal'
-import { MELO_LOGO } from '../constants/assets'
 import styles from './HomePage.module.css'
 import { User } from '../services/authService'
 
-const { Content, Footer } = Layout
+const { Footer } = Layout
 const { Title, Paragraph } = Typography
 
 interface HomePageProps {
@@ -157,38 +156,62 @@ export default function HomePage({
 
   return (
     <Layout className={styles.layout}>
-      <Header
-        isLoggedIn={isLoggedIn}
-        onLoginSuccess={onLoginSuccess}
-        onLogout={onLogout}
-        user={user}
-        showBrandName={false}
-        logoSrc={MELO_LOGO}
-      />
-      <Content className={styles.content}>
-        {/* Hero Section */}
-        <section className={styles.heroSection}>
-          <Title level={1} className={styles.heroTitle}>
-            Transform Your Marketing with AI-Powered Solutions
-          </Title>
-          <Paragraph className={styles.heroSubtitle}>
-            Melo helps businesses create, manage, and optimize their social media content and
-            marketing strategies with the power of artificial intelligence.
-          </Paragraph>
-          <Space size="large" className={styles.heroButtons}>
-            <Button type="primary" size="large" onClick={handleGetStarted}>
-              Get Started
-            </Button>
-            <Button size="large" onClick={() => navigate('/dashboard')}>
-              Learn More
-            </Button>
-          </Space>
-        </section>
+      {/* Hero Section */}
+      <section className={styles.heroSection}>
+        <div className={styles.heroContentWrapper}>
+          <Row gutter={[48, 48]} align="middle">
+            <Col xs={24} lg={12} className={styles.heroLeft}>
+              <div className={styles.heroContent}>
+                <Title level={1} className={styles.heroTitle}>
+                  <span className={styles.gradientText1}>Start</span> framing your own story with{' '}
+                  <span className={styles.gradientText2}>AI-powered</span> marketing
+                </Title>
+                <Paragraph className={styles.heroSubtitle}>
+                  Create, manage, and optimize your social media content and marketing strategies
+                  with the power of artificial intelligence.
+                </Paragraph>
+                <Space size="large" className={styles.heroButtons}>
+                  <Button type="primary" size="large" onClick={handleGetStarted} className={styles.heroButtonPrimary}>
+                    Get Started
+                  </Button>
+                  <Button size="large" onClick={() => navigate('/dashboard')} className={styles.heroButtonSecondary}>
+                    Explore Melo
+                  </Button>
+                </Space>
+                <div className={styles.scrollHint}>
+                  <DownOutlined className={styles.scrollIcon} />
+                  <span>Scroll to learn more</span>
+                </div>
+              </div>
+            </Col>
+            <Col xs={24} lg={12} className={styles.heroRight}>
+              <div className={styles.heroVisuals}>
+                <div className={styles.abstractBackground}></div>
+                <div className={styles.productCardsContainer}>
+                  {products.slice(0, 3).map((product, index) => (
+                    <Card key={index} className={styles.heroProductCard} style={{ transform: `rotate(${index === 0 ? -5 : index === 1 ? 5 : -3}deg)` }}>
+                      <div className={styles.heroProductIconWrapper}>{product.icon}</div>
+                      <Title level={4} className={styles.heroProductTitle}>
+                        {product.title}
+                      </Title>
+                      <Paragraph className={styles.heroProductDescription}>{product.description}</Paragraph>
+                      <div className={styles.heroProductBadge}>
+                        <span>Featured</span>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </section>
 
-        {/* Products Section */}
-        <section className={styles.section}>
+      {/* Products Section */}
+      <section className={styles.section}>
+        <div className={styles.sectionContentWrapper}>
           <Title level={2} className={styles.sectionTitle}>
-            Our Products
+            Our <span className={styles.gradientText1}>Products</span>
           </Title>
           <Paragraph className={styles.sectionDescription}>
             Comprehensive tools to power your marketing success
@@ -206,12 +229,14 @@ export default function HomePage({
               </Col>
             ))}
           </Row>
-        </section>
+        </div>
+      </section>
 
-        {/* Advantages Section */}
-        <section className={styles.section}>
+      {/* Advantages Section */}
+      <section className={styles.section}>
+        <div className={styles.sectionContentWrapper}>
           <Title level={2} className={styles.sectionTitle}>
-            Why Choose Melo
+            Why Choose <span className={styles.gradientText2}>Melo</span>
           </Title>
           <Paragraph className={styles.sectionDescription}>
             Discover what makes our platform the best choice for your marketing needs
@@ -231,12 +256,14 @@ export default function HomePage({
               </Col>
             ))}
           </Row>
-        </section>
+        </div>
+      </section>
 
-        {/* Outcomes Section */}
-        <section className={styles.section}>
+      {/* Outcomes Section */}
+      <section className={styles.section}>
+        <div className={styles.sectionContentWrapper}>
           <Title level={2} className={styles.sectionTitle}>
-            Proven Results
+            Proven <span className={styles.gradientText1}>Results</span>
           </Title>
           <Paragraph className={styles.sectionDescription}>
             See the impact Melo can have on your marketing performance
@@ -258,12 +285,14 @@ export default function HomePage({
               </Col>
             ))}
           </Row>
-        </section>
+        </div>
+      </section>
 
-        {/* Target Audience Section */}
-        <section className={styles.section}>
+      {/* Target Audience Section */}
+      <section className={styles.section}>
+        <div className={styles.sectionContentWrapper}>
           <Title level={2} className={styles.sectionTitle}>
-            Built for Everyone
+            Built for <span className={styles.gradientText2}>Everyone</span>
           </Title>
           <Paragraph className={styles.sectionDescription}>
             Melo is designed to serve diverse marketing needs across industries
@@ -283,10 +312,12 @@ export default function HomePage({
               </Col>
             ))}
           </Row>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA Section */}
-        <section className={styles.ctaSection}>
+      {/* CTA Section */}
+      <section className={styles.ctaSection}>
+        <div className={styles.sectionContentWrapper}>
           <Title level={2} className={styles.ctaTitle}>
             Ready to Transform Your Marketing?
           </Title>
@@ -296,8 +327,8 @@ export default function HomePage({
           <Button type="primary" size="large" onClick={handleGetStarted} className={styles.ctaButton}>
             Get Started Free
           </Button>
-        </section>
-      </Content>
+        </div>
+      </section>
       <Footer className={styles.footer}>
         <div className={styles.footerContent}>
           <Paragraph className={styles.footerText}>© 2025 Melo. All rights reserved.</Paragraph>
