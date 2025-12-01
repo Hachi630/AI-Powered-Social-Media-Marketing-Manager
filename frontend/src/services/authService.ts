@@ -1,5 +1,5 @@
-// API base URL - assuming backend runs on port 5000 and proxy is set up or CORS is handled
-const API_URL = 'http://localhost:5000/api/auth'
+// API base URL - using Vite proxy (no CORS issues)
+const API_URL = '/api/auth'
 
 export interface User {
   id: string
@@ -95,6 +95,26 @@ export const authService = {
   // Check if user is logged in
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem('token')
+  },
+
+  // Login/Register with Google OAuth
+  googleLogin: async (idToken: string): Promise<AuthResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      })
+      const data = await response.json()
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
   },
 
   // Update user profile

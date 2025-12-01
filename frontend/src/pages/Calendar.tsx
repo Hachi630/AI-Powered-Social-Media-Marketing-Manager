@@ -188,7 +188,7 @@ export default function CalendarPage({
         user={user}
       />
       <Content className={styles.content}>
-        <Space direction="vertical" size="large" className={styles.container}>
+        <Space orientation="vertical" size="large" className={styles.container}>
           <div className={styles.header}>
             <Typography.Title level={2} className={styles.title}>
               Smart Calendar
