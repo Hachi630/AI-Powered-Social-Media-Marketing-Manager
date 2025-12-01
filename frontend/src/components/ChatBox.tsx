@@ -1,5 +1,5 @@
 import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined, CalendarOutlined } from '@ant-design/icons'
-import { Button, Card, Input, Space, Tooltip, message, Spin, Grid } from 'antd'
+import { Button, Card, Input, Space, Tooltip, message, Spin } from 'antd'
 import { useState, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -7,8 +7,6 @@ import styles from './ChatBox.module.css'
 import { chatService, ChatMessage } from '../services/chatService'
 import ImageGenerationModal from './ImageGenerationModal'
 import ContentPlanModal from './ContentPlanModal'
-
-const { useBreakpoint } = Grid
 
 const { TextArea } = Input
 
@@ -31,8 +29,6 @@ export default function ChatBox({
   onTypingStatusChange,
   onContentChange,
 }: ChatBoxProps) {
-  const screens = useBreakpoint()
-  const isMobile = !screens.md
   const [inputMessage, setInputMessage] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
@@ -224,12 +220,12 @@ export default function ChatBox({
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath
     }
-    // Otherwise, prepend the backend URL
-    return `http://localhost:5000${imagePath}`
+    // Otherwise, use relative path (Vite proxy will handle it)
+    return imagePath
   }
 
   return (
-    <div className={`${styles.chatContainer} ${isMobile ? styles.mobileChatContainer : ''}`}>
+    <div className={styles.chatContainer}>
       {/* Messages display area */}
       {messages.length > 0 && (
         <div className={styles.messagesContainer}>
@@ -287,8 +283,8 @@ export default function ChatBox({
       )}
 
       {/* Input area */}
-      <Card className={`${styles.chatCard} ${isMobile ? styles.mobileChatCard : ''}`} bodyStyle={{ padding: 24 }}>
-        <Space direction="vertical" size={24} className={styles.inner}>
+      <Card className={styles.chatCard} styles={{ body: { padding: 24 } }}>
+        <Space orientation="vertical" size={24} className={styles.inner}>
           <TextArea
             autoSize={{ minRows: 2, maxRows: 4 }}
             placeholder="What would you like to know?"

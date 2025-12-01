@@ -7,6 +7,7 @@ import { DEFAULT_TAGLINE, MELO_LOGO } from './constants/assets'
 import BrandProfile from './pages/BrandProfile'
 import CalendarPage from './pages/Calendar'
 import Personal from './pages/Personal'
+import HomePage from './pages/HomePage'
 import { authService, User } from './services/authService'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
@@ -18,12 +19,12 @@ function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void
     if (token) {
       localStorage.setItem('token', token)
       authService.getCurrentUser().then((user) => {
-        if (user) {
-          onLoginSuccess(user)
-          window.location.href = '/'
-        } else {
-          window.location.href = '/?error=auth_failed'
-        }
+      if (user) {
+        onLoginSuccess(user)
+        window.location.href = '/dashboard'
+      } else {
+        window.location.href = '/?error=auth_failed'
+      }
       })
     } else if (error) {
       console.error('OAuth error:', error)
@@ -101,18 +102,26 @@ function AppContent() {
       <Route
         path="/"
         element={
-          <Dashboard
+          isLoggedIn ? (
+            <Navigate to="/dashboard" replace />
+          ) : (
+            <HomePage
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+            />
+          )
+        }
+      />
+      <Route
+        path="/home"
+        element={
+          <HomePage
             isLoggedIn={isLoggedIn}
             onLoginSuccess={handleLoginSuccess}
             onLogout={handleLogout}
             user={user}
-            heroTitle="Where every word begins with a little melody?"
-            tagline={DEFAULT_TAGLINE}
-            background="light"
-            headerOverrides={{
-              showBrandName: false,
-              logoSrc: MELO_LOGO,
-            }}
           />
         }
       />

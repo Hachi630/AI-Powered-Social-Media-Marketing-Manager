@@ -413,7 +413,7 @@ export default function BrandProfile({
       />
       <Content className={styles.content}>
         <Typography.Title level={1} className={styles.pageTitle}>
-          Brand Profile ({user?.name || user?.brandName || 'User'})
+          Brand Profile ({[user?.name || 'User', user?.brandName].filter(Boolean).join(' - ')})
         </Typography.Title>
 
         {/* Company Selector */}

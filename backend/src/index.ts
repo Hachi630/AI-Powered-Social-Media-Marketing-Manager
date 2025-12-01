@@ -21,10 +21,21 @@ dotenv.config()
 connectDB()
 
 const app = express()
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001
 
-// Middleware
-app.use(cors())
+// CORS configuration - must be FIRST, before any other middleware
+// Allow all origins in development to avoid CORS issues
+app.use(cors({
+  origin: true, // Allow all origins in development
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+}))
+
+// Body parsing middleware
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
@@ -49,6 +60,45 @@ app.get('/api', (req: Request, res: Response) => {
 app.use(errorHandler)
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`)
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`)
+})
+
+// Graceful shutdown handlers
+process.on('uncaughtException', (error: Error) => {
+  console.error('[FATAL] Uncaught Exception:', error)
+  console.error('Stack:', error.stack)
+  // Close server gracefully
+  server.close(() => {
+    console.log('Server closed due to uncaught exception')
+    process.exit(1)
+  })
+})
+
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise)
+  console.error('Reason:', reason)
+  // Close server gracefully
+  server.close(() => {
+    console.log('Server closed due to unhandled rejection')
+    process.exit(1)
+  })
+})
+
+// Graceful shutdown on SIGTERM and SIGINT
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...')
+  server.close(() => {
+    console.log('Process terminated')
+    process.exit(0)
+  })
+})
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...')
+  server.close(() => {
+    console.log('Process terminated')
+    process.exit(0)
+  })
 })

@@ -44,7 +44,7 @@ export default function CalendarPlaceholder({
         user={user}
       />
       <Content className={styles.content}>
-        <Space direction="vertical" size="large" className={styles.container}>
+        <Space orientation="vertical" size="large" className={styles.container}>
           <Typography.Title level={2} className={styles.title}>
             Smart Calendar
           </Typography.Title>
