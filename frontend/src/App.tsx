@@ -10,6 +10,7 @@ import Personal from './pages/Personal'
 import HomePage from './pages/HomePage'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
+import { AppSettingsProvider } from './contexts/AppSettingsContext'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -220,7 +221,9 @@ function AppWithTheme() {
 function App() {
   return (
     <ThemeProvider>
-      <AppWithTheme />
+      <AppSettingsProvider>
+        <AppWithTheme />
+      </AppSettingsProvider>
     </ThemeProvider>
   )
 }
