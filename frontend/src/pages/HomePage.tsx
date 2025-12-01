@@ -20,6 +20,11 @@ import { useNavigate } from 'react-router-dom'
 import AuthModal from '../components/AuthModal'
 import styles from './HomePage.module.css'
 import { User } from '../services/authService'
+import lulinYangImg from '../img/Lulin Yang.png'
+import kikiXingImg from '../img/Kiki Xing.png'
+import tazwarHabibImg from '../img/Tazwar Habib.png'
+import weijingZhangImg from '../img/Weijing Zhang.png'
+import xingyuanZhouImg from '../img/Xingyuan Zhou.png'
 
 const { Footer } = Layout
 const { Title, Paragraph } = Typography
@@ -329,6 +334,45 @@ export default function HomePage({
           </Button>
         </div>
       </section>
+
+      {/* Team Section */}
+      <section className={styles.teamSection}>
+        <div className={styles.sectionContentWrapper}>
+          <Title level={2} className={styles.sectionTitle}>
+            Our <span className={styles.gradientText1}>Team</span>
+          </Title>
+          <Paragraph className={styles.sectionDescription}>
+            Meet the talented developers behind Melo
+          </Paragraph>
+          <Row gutter={[32, 32]} className={styles.teamRow} justify="center">
+            {[
+              { id: 1, avatar: lulinYangImg, name: 'Lulin Yang' },
+              { id: 2, avatar: kikiXingImg, name: 'Kiki Xing' },
+              { id: 3, avatar: tazwarHabibImg, name: 'Tazwar Habib' },
+              { id: 4, avatar: weijingZhangImg, name: 'Weijing Zhang' },
+              { id: 5, avatar: xingyuanZhouImg, name: 'Xingyuan Zhou' },
+            ].map((member) => (
+              <Col xs={24} sm={12} md={8} lg={6} xl={6} key={member.id}>
+                <div className={styles.teamMemberCard}>
+                  <div className={styles.teamMemberAvatar}>
+                    {member.avatar ? (
+                      <img src={member.avatar} alt={member.name || `Team member ${member.id}`} />
+                    ) : (
+                      <div className={styles.avatarPlaceholder}>
+                        <span>Avatar {member.id}</span>
+                      </div>
+                    )}
+                  </div>
+                  <Title level={4} className={styles.teamMemberName}>
+                    {member.name || ''}
+                  </Title>
+                </div>
+              </Col>
+            ))}
+          </Row>
+        </div>
+      </section>
+
       <Footer className={styles.footer}>
         <div className={styles.footerContent}>
           <Paragraph className={styles.footerText}>© 2025 Melo. All rights reserved.</Paragraph>

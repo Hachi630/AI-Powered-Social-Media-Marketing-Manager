@@ -624,6 +624,74 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Team Section */
+.teamSection {
+  position: relative;
+  padding: 100px 0;
+  text-align: center;
+  width: 100%;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  overflow: hidden;
+}
+
+.teamRow {
+  margin-top: 48px;
+}
+
+.teamMemberCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.teamMemberCard:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.teamMemberAvatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.teamMemberAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.teamMemberName {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
 /* Footer */
 .footer {
   background: #1e1e1e;
@@ -740,8 +808,25 @@
     padding: 60px 0;
   }
 
+  .teamSection {
+    padding: 60px 0;
+  }
+
   .sectionContentWrapper {
     padding: 0 16px;
+  }
+
+  .teamMemberCard {
+    padding: 24px 16px;
+  }
+
+  .teamMemberAvatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .teamMemberName {
+    font-size: 18px !important;
   }
 
   .ctaSection {
@@ -875,8 +960,25 @@
     padding: 48px 0;
   }
 
+  .teamSection {
+    padding: 48px 0;
+  }
+
   .sectionContentWrapper {
     padding: 0 16px;
+  }
+
+  .teamMemberCard {
+    padding: 20px 12px;
+  }
+
+  .teamMemberAvatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .teamMemberName {
+    font-size: 16px !important;
   }
 
   .ctaSection {
