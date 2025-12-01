@@ -257,7 +257,7 @@
   font-size: 13px;
 }
 
-/* 响应式样式 - 移动端 */
+/* Responsive styles - Mobile */
 @media (max-width: 767px) {
   .container,
   .signupContent {

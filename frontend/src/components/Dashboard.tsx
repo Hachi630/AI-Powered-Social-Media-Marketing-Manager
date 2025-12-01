@@ -155,32 +155,59 @@ export default function Dashboard({
           </Drawer>
         )}
         <Content className={contentClass.trim()}>
-          {(!isMobile || !hasMessages) && (
-            <Typography.Title level={1} className={styles.title}>
-              {heroTitle}
-            </Typography.Title>
-          )}
-          <ChatBox
-            conversationId={selectedConversationId}
-            onConversationChange={handleConversationChange}
-            onTypingStatusChange={handleTypingStatus}
-            onContentChange={handleContentChange}
-          />
-          {tagline && (
-            <Typography.Paragraph className={styles.tagline}>{tagline}</Typography.Paragraph>
-          )}
-          {isLoggedIn && isMobile && (
-            <FloatButton
-              icon={<MenuOutlined />}
-              type="primary"
-              style={{
-                right: 16,
-                bottom: 16,
-                backgroundColor: '#AE906E',
-                borderColor: '#AE906E',
-              }}
-              onClick={() => setSidebarDrawerOpen(true)}
-            />
+          {isMobile ? (
+            <>
+              {/* Mobile: Center title when no messages */}
+              {!hasMessages && (
+                <Typography.Title level={1} className={styles.mobileTitle}>
+                  {heroTitle}
+                </Typography.Title>
+              )}
+              {/* Mobile: Chat box container */}
+              <div className={styles.mobileChatWrapper}>
+                <ChatBox
+                  conversationId={selectedConversationId}
+                  onConversationChange={handleConversationChange}
+                  onTypingStatusChange={handleTypingStatus}
+                  onContentChange={handleContentChange}
+                />
+                {/* Mobile: Tagline fixed below chat box */}
+                {tagline && (
+                  <Typography.Paragraph className={styles.mobileTagline}>{tagline}</Typography.Paragraph>
+                )}
+              </div>
+              {isLoggedIn && (
+                <FloatButton
+                  icon={<MenuOutlined />}
+                  type="primary"
+                  style={{
+                    right: 16,
+                    bottom: 16,
+                    backgroundColor: '#AE906E',
+                    borderColor: '#AE906E',
+                  }}
+                  onClick={() => setSidebarDrawerOpen(true)}
+                />
+              )}
+            </>
+          ) : (
+            <>
+              {/* Web: Keep original layout */}
+              {!hasMessages && (
+                <Typography.Title level={1} className={styles.title}>
+                  {heroTitle}
+                </Typography.Title>
+              )}
+              <ChatBox
+                conversationId={selectedConversationId}
+                onConversationChange={handleConversationChange}
+                onTypingStatusChange={handleTypingStatus}
+                onContentChange={handleContentChange}
+              />
+              {tagline && (
+                <Typography.Paragraph className={styles.tagline}>{tagline}</Typography.Paragraph>
+              )}
+            </>
           )}
         </Content>
       </Layout>

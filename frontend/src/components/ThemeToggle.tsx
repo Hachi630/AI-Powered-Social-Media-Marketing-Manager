@@ -3,20 +3,35 @@ import styles from './ThemeToggle.module.css'
 
 export default function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
-  const isDark = theme === 'dark'
+  const isWarm = theme === 'warm'
+
+  const handleClassicClick = () => {
+    if (!isWarm) return // Already on classic, do nothing
+    toggleTheme()
+  }
+
+  const handleWarmClick = () => {
+    if (isWarm) return // Already on warm, do nothing
+    toggleTheme()
+  }
 
   return (
-    <button
-      className={`${styles.toggle} ${isDark ? styles.dark : styles.light}`}
-      onClick={toggleTheme}
-      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-    >
-      <span className={styles.track}>
-        <span className={styles.thumb} />
-        <span className={styles.labelOff}>OFF</span>
-        <span className={styles.labelOn}>ON</span>
-      </span>
-    </button>
+    <div className={styles.toggleContainer}>
+      <button
+        className={`${styles.segment} ${!isWarm ? styles.active : ''}`}
+        onClick={handleClassicClick}
+        aria-label="Switch to classic mode"
+      >
+        Classic
+      </button>
+      <button
+        className={`${styles.segment} ${isWarm ? styles.active : ''}`}
+        onClick={handleWarmClick}
+        aria-label="Switch to warm mode"
+      >
+        Warm
+      </button>
+    </div>
   )
 }
 

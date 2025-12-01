@@ -1,11 +1,50 @@
+/* CSS Variables for Theme System */
 :root {
-  font-family: 'ZCOOL KuaiLe', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Default theme variables (white/gray style) */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --text-primary: #1e1e1e;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --primary-color: #646cff;
+  --primary-hover: #535bf2;
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --bg-texture: none;
+}
+
+:root[data-theme="default"] {
+  --bg-primary: #f5f5f5;
+  --bg-secondary: #ffffff;
+  --text-primary: #1e1e1e;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --primary-color: #646cff;
+  --primary-hover: #535bf2;
+  --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --bg-texture: none;
+}
+
+:root[data-theme="warm"] {
+  --bg-primary: #FAF9F4;
+  --bg-secondary: #FFEFD5;
+  --bg-secondary-bright: #FFF0D6;
+  --text-primary: #908066;
+  --text-secondary: #B1A285;
+  --border-color: #E1DBC3;
+  --primary-color: #AE906E;
+  --primary-hover: #B98E6B;
+  --font-family: 'ZCOOL KuaiLe', Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --bg-texture: radial-gradient(circle at 2px 2px, rgba(225, 219, 195, 0.12) 1px, transparent 0);
+}
+
+:root {
+  font-family: var(--font-family);
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light;
-  color: #908066;
-  background-color: #FAF9F4;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,11 +54,11 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--primary-color);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--primary-hover);
 }
 
 * {
@@ -31,21 +70,20 @@ body {
   padding: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #FAF9F4;
-  background-image: 
-    radial-gradient(circle at 2px 2px, rgba(225, 219, 195, 0.12) 1px, transparent 0);
+  background-color: var(--bg-primary);
+  background-image: var(--bg-texture);
   background-size: 24px 24px;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
-  background-color: #FAF9F4;
+  background-color: var(--bg-primary);
 }
 
-/* 响应式全局样式 */
+/* Responsive global styles */
 @media (max-width: 767px) {
-  /* 确保触摸目标足够大 */
+  /* Ensure touch targets are large enough */
   button,
   a,
   [role="button"] {
@@ -53,7 +91,7 @@ body {
     min-width: 44px;
   }
 
-  /* 优化移动端字体大小 */
+  /* Optimize mobile font sizes */
   body {
     font-size: 14px;
   }
