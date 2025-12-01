@@ -313,7 +313,7 @@ export default function CalendarItemModal({
           </Select>
         </Form.Item>
 
-        <Space direction="horizontal" size="middle" style={{ width: '100%' }}>
+        <Space orientation="horizontal" size="middle" style={{ width: '100%' }}>
           <Form.Item
             name="date"
             label="Date"
@@ -375,7 +375,7 @@ export default function CalendarItemModal({
           }))}
         />
 
-        <Space direction="horizontal" size="middle" style={{ width: '100%' }}>
+        <Space orientation="horizontal" size="middle" style={{ width: '100%' }}>
           <Form.Item name="status" label="Status" style={{ flex: 1 }}>
             <Select placeholder="Select status">
               {statusOptions.map((option) => (

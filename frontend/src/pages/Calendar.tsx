@@ -86,12 +86,16 @@ export default function CalendarPage({
   }, [loadCalendarItems])
 
   const onSelect = (newValue: Dayjs) => {
+    // Only update selected value, don't open modal
+    // Modal should only open when user explicitly clicks on a date cell
     setValue(newValue)
     setSelectedValue(newValue)
   }
 
   const onPanelChange = (newValue: Dayjs) => {
     setValue(newValue)
+    // When panel changes, update selected value but don't open modal
+    setSelectedValue(newValue)
   }
 
   // Get items for a specific date
@@ -108,8 +112,25 @@ export default function CalendarPage({
     const displayItems = items.slice(0, maxDisplay)
     const remainingCount = items.length - maxDisplay
 
+    const handleDateCellClick = (e: React.MouseEvent) => {
+      // Only open modal if clicking directly on the date cell (not on items)
+      e.stopPropagation()
+      setSelectedValue(date)
+      const itemsForDate = getItemsForDate(date)
+      if (itemsForDate.length === 0) {
+        // Empty date cell - open create modal
+        setSelectedItem(null)
+        setSelectedDate(date)
+        setModalOpen(true)
+      }
+    }
+
     return (
-      <div className={styles.dateCell}>
+      <div 
+        className={styles.dateCell}
+        onClick={handleDateCellClick}
+        style={{ cursor: items.length === 0 ? 'pointer' : 'default' }}
+      >
         {isToday && <div className={styles.todayIndicator} />}
         <div className={styles.itemsList}>
           {displayItems.map((item) => {
@@ -140,17 +161,6 @@ export default function CalendarPage({
     )
   }
 
-  const handleCellClick = (date: Dayjs) => {
-    setSelectedValue(date)
-    // If clicking on empty space, open modal to create new item
-    const items = getItemsForDate(date)
-    if (items.length === 0) {
-      setSelectedItem(null)
-      setSelectedDate(date)
-      setModalOpen(true)
-    }
-  }
-
   const handleModalClose = () => {
     setModalOpen(false)
     setSelectedItem(null)
@@ -178,7 +188,7 @@ export default function CalendarPage({
         user={user}
       />
       <Content className={styles.content}>
-        <Space direction="vertical" size="large" className={styles.container}>
+        <Space orientation="vertical" size="large" className={styles.container}>
           <div className={styles.header}>
             <Typography.Title level={2} className={styles.title}>
               Smart Calendar
@@ -201,7 +211,7 @@ export default function CalendarPage({
               value={value}
               onPanelChange={onPanelChange}
               dateCellRender={dateCellRender}
-              onSelect={handleCellClick}
+              onSelect={onSelect}
             />
           </Card>
           {isLoggedIn && (

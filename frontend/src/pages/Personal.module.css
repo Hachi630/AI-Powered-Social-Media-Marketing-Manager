@@ -93,6 +93,10 @@
 
 .editButtonSection {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
 }
 
 .cardRow {
@@ -180,7 +184,9 @@
   .editButtonSection {
     width: 100%;
     display: flex;
-    justify-content: flex-end;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
   }
 
   .userName {

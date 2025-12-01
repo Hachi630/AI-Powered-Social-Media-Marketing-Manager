@@ -1,5 +1,5 @@
-// API base URL - assuming backend runs on port 5000 and proxy is set up or CORS is handled
-const API_URL = 'http://localhost:5000/api/auth'
+// API base URL - using Vite proxy (no CORS issues)
+const API_URL = '/api/auth'
 
 export interface User {
   id: string
@@ -16,6 +16,7 @@ export interface User {
   toneOfVoice?: string
   knowledgeProducts?: string[]
   targetAudience?: string[]
+  authProvider?: 'local' | 'google'
   createdAt: string
 }
 
@@ -96,6 +97,26 @@ export const authService = {
     return !!localStorage.getItem('token')
   },
 
+  // Login/Register with Google OAuth
+  googleLogin: async (idToken: string): Promise<AuthResponse> => {
+    try {
+      const response = await fetch(`${API_URL}/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      })
+      const data = await response.json()
+      if (data.token) {
+        localStorage.setItem('token', data.token)
+      }
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
   // Update user profile
   updateProfile: async (profileData: Partial<User>): Promise<AuthResponse> => {
     const token = localStorage.getItem('token')
@@ -117,6 +138,32 @@ export const authService = {
         return { success: true, user: data.user }
       }
       return { success: false, message: data.message || 'Failed to update profile' }
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
+  // Change password
+  changePassword: async (newPassword: string): Promise<AuthResponse> => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newPassword }),
+      })
+      const data = await response.json()
+      if (data.success) {
+        return { success: true, message: data.message || 'Password changed successfully' }
+      }
+      return { success: false, message: data.message || 'Failed to change password' }
     } catch (error) {
       return { success: false, message: 'Network error' }
     }
