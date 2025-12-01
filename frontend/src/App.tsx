@@ -9,6 +9,7 @@ import CalendarPage from './pages/Calendar'
 import Personal from './pages/Personal'
 import HomePage from './pages/HomePage'
 import { authService, User } from './services/authService'
+import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -181,27 +182,46 @@ function AppContent() {
   )
 }
 
-function App() {
+function AppWithTheme() {
+  const { theme } = useTheme()
+
+  const themeConfig = theme === 'warm' ? {
+    token: {
+      fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
+      colorBgBase: '#FAF9F4',
+      colorPrimary: '#AE906E',
+      colorText: '#908066',
+      colorTextSecondary: '#B1A285',
+      borderRadius: 12,
+      boxShadow: '0 2px 8px rgba(225, 219, 195, 0.3)',
+    },
+  } : {
+    token: {
+      fontFamily: 'Inter, system-ui, sans-serif',
+      colorBgBase: '#f5f5f5',
+      colorPrimary: '#646cff',
+      colorText: '#1e1e1e',
+      colorTextSecondary: '#666666',
+      borderRadius: 8,
+    },
+  }
+
   return (
-    <ConfigProvider
-      theme={{
-        token: {
-          fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
-          colorBgBase: '#FAF9F4',
-          colorPrimary: '#AE906E',
-          colorText: '#908066',
-          colorTextSecondary: '#B1A285',
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(225, 219, 195, 0.3)',
-        },
-      }}
-    >
+    <ConfigProvider theme={themeConfig}>
       <BrowserRouter>
         <div className="app">
           <AppContent />
         </div>
       </BrowserRouter>
     </ConfigProvider>
+  )
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppWithTheme />
+    </ThemeProvider>
   )
 }
 

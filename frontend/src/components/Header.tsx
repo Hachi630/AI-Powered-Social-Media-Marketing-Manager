@@ -1,13 +1,16 @@
 import type { MenuProps } from 'antd'
-import { Button, Layout, Menu, Space, Typography, Dropdown } from 'antd'
+import { Button, Layout, Menu, Space, Typography, Dropdown, Drawer, Grid } from 'antd'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
+import ThemeToggle from './ThemeToggle'
 import styles from './Header.module.css'
-import { UserOutlined, LogoutOutlined } from '@ant-design/icons'
+import { UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import { User } from '../services/authService'
 import { Avatar } from 'antd'
+
+const { useBreakpoint } = Grid
 
 export interface HeaderProps {
   isLoggedIn?: boolean
@@ -36,7 +39,10 @@ export default function Header({
 }: HeaderProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const screens = useBreakpoint()
+  const isMobile = !screens.lg
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isHomePage = location.pathname === '/' || location.pathname === '/home'
   
@@ -80,46 +86,77 @@ export default function Header({
   }
 
   return (
-    <AntHeader className={styles.header}>
-      <button className={styles.logoButton} onClick={() => navigate(isLoggedIn ? '/dashboard' : '/')}>
-        <div className={`${styles.logoGroup} ${!showBrandName ? styles.logoGroupCompact : ''}`}>
-          <img src={logoSrc} alt="MELO logo" className={styles.logoImage} />
-          {showBrandName && (
-            <Typography.Title level={4} className={styles.logoText}>
-              MELO.AI
-            </Typography.Title>
+    <>
+      <AntHeader className={styles.header}>
+        <button className={styles.logoButton} onClick={() => navigate(isLoggedIn ? '/dashboard' : '/')}>
+          <div className={`${styles.logoGroup} ${!showBrandName ? styles.logoGroupCompact : ''}`}>
+            <img src={logoSrc} alt="MELO logo" className={styles.logoImage} />
+            {showBrandName && (
+              <Typography.Title level={4} className={styles.logoText}>
+                MELO.AI
+              </Typography.Title>
+            )}
+          </div>
+        </button>
+        {isLoggedIn && !isHomePage && !isMobile && (
+          <Menu
+            className={styles.menu}
+            mode="horizontal"
+            selectedKeys={selectedKey ? [String(selectedKey)] : []}
+            items={navItems}
+            onClick={({ key }) => navigate(String(key))}
+          />
+        )}
+        <div className={styles.headerActions}>
+          {!isHomePage && <ThemeToggle />}
+          {isLoggedIn && !isHomePage && isMobile && (
+            <Button
+              type="text"
+              icon={<MenuOutlined />}
+              onClick={() => setMobileMenuOpen(true)}
+              className={styles.mobileMenuButton}
+            />
+          )}
+          {!isLoggedIn ? (
+            <Space size="middle">
+              <Button onClick={handleAuthClick}>Sign in</Button>
+              <Button type="primary" onClick={handleAuthClick}>
+                Register
+              </Button>
+            </Space>
+          ) : (
+            <Dropdown menu={userMenu} placement="bottomRight" arrow>
+              <Avatar
+                size="large"
+                src={user?.avatar}
+                style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
+              >
+                {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
+              </Avatar>
+            </Dropdown>
           )}
         </div>
-      </button>
-      {isLoggedIn && !isHomePage && (
-        <Menu
-          className={styles.menu}
-          mode="horizontal"
-          selectedKeys={selectedKey ? [String(selectedKey)] : []}
-          items={navItems}
-          onClick={({ key }) => navigate(String(key))}
-        />
+      </AntHeader>
+      {isLoggedIn && !isHomePage && isMobile && (
+        <Drawer
+          title="Menu"
+          placement="right"
+          onClose={() => setMobileMenuOpen(false)}
+          open={mobileMenuOpen}
+          width={280}
+          className={styles.mobileDrawer}
+        >
+          <Menu
+            mode="vertical"
+            selectedKeys={selectedKey ? [String(selectedKey)] : []}
+            items={navItems}
+            onClick={({ key }) => {
+              navigate(String(key))
+              setMobileMenuOpen(false)
+            }}
+          />
+        </Drawer>
       )}
-      <div className={styles.headerActions}>
-        {!isLoggedIn ? (
-          <Space size="middle">
-            <Button onClick={handleAuthClick}>Sign in</Button>
-            <Button type="primary" onClick={handleAuthClick}>
-              Register
-            </Button>
-          </Space>
-        ) : (
-          <Dropdown menu={userMenu} placement="bottomRight" arrow>
-            <Avatar
-              size="large"
-              src={user?.avatar}
-              style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
-            >
-              {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
-            </Avatar>
-          </Dropdown>
-        )}
-      </div>
       <AuthModal
         open={isAuthModalOpen}
         onCancel={() => setIsAuthModalOpen(false)}
@@ -128,6 +165,6 @@ export default function Header({
           setIsAuthModalOpen(false)
         }}
       />
-    </AntHeader>
+    </>
   )
 }
