@@ -60,30 +60,110 @@ export default function AuthModal({
     }
   };
 
+  // Initialize Google Sign-In when component mounts and modal opens
+  useEffect(() => {
+    if (!open) return;
+    
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    
+    if (googleClientId && typeof window !== 'undefined') {
+      // Wait for Google SDK to load
+      const initGoogleSignIn = () => {
+        if ((window as any).google) {
+          (window as any).google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: handleGoogleSignIn,
+          });
+        } else {
+          // Retry after a short delay if SDK not loaded yet
+          setTimeout(initGoogleSignIn, 100);
+        }
+      };
+      
+      initGoogleSignIn();
+    }
+  }, [open]);
+
+  // Handle Google Sign-In callback (receives ID token)
+  const handleGoogleSignIn = async (response: any) => {
+    try {
+      setLoading(true);
+      
+      if (!response.credential) {
+        message.error("Failed to get Google credentials");
+        return;
+      }
+
+      // Send ID token to backend
+      const result = await authService.googleLogin(response.credential);
+      
+      if (result.success && result.user) {
+        message.success("Successfully signed in with Google!");
+        onLoginSuccess(result.user);
+        onCancel();
+      } else {
+        message.error(result.message || "Failed to sign in with Google");
+      }
+    } catch (error: any) {
+      console.error("Google sign-in error:", error);
+      message.error("An error occurred during Google sign-in");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSocialLogin = (
     provider: "google" | "apple" | "microsoft" | "phone"
   ) => {
-    const state = Math.random().toString(36).substring(2);
+    // Generate OAuth state for CSRF protection
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const defaultRedirect = `${window.location.origin}/auth/callback`;
 
     if (provider === "google") {
       const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      const googleRedirect =
-        import.meta.env.VITE_GOOGLE_REDIRECT_URI || defaultRedirect;
 
       if (!googleClientId) {
         message.error("Google Client ID not configured");
         return;
       }
-      const params = new URLSearchParams({
-        client_id: googleClientId,
-        redirect_uri: googleRedirect,
-        response_type: "code",
-        scope: "openid email profile",
-        state,
-        prompt: "consent",
-      });
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+      // Check if Google SDK is loaded
+      if (typeof window === 'undefined' || !(window as any).google) {
+        message.error("Google Sign-In SDK is loading. Please wait a moment and try again.");
+        return;
+      }
+
+      // Trigger Google Sign-In by clicking a hidden Google button
+      try {
+        // Create a hidden Google Sign-In button and trigger it
+        const buttonContainer = document.getElementById('google-signin-button-hidden');
+        if (buttonContainer) {
+          // Render button if not already rendered
+          if (!buttonContainer.hasChildNodes()) {
+            (window as any).google.accounts.id.renderButton(buttonContainer, {
+              theme: 'outline',
+              size: 'large',
+              text: 'signin_with',
+            });
+          }
+          // Trigger the button click after a short delay
+          setTimeout(() => {
+            const googleButton = buttonContainer.querySelector('div[role="button"]') as HTMLElement;
+            if (googleButton) {
+              googleButton.click();
+            } else {
+              // Fallback: try One Tap
+              (window as any).google.accounts.id.prompt();
+            }
+          }, 100);
+        } else {
+          // Fallback: try One Tap
+          (window as any).google.accounts.id.prompt();
+        }
+      } catch (error) {
+        console.error("Google Sign-In error:", error);
+        message.error("Failed to initialize Google Sign-In");
+      }
     } else if (provider === "apple") {
       const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID;
       const appleRedirect =
@@ -383,12 +463,15 @@ export default function AuthModal({
             size={12}
             className={styles.socialButtons}
           >
+            {/* Hidden Google Sign-In button container */}
+            <div id="google-signin-button-hidden" style={{ display: 'none' }}></div>
             <Button
               block
               size="large"
               icon={<GoogleOutlined />}
               className={styles.socialBtn}
               onClick={() => handleSocialLogin("google")}
+              loading={loading}
             >
               Continue with Google
             </Button>

@@ -214,8 +214,8 @@ export default function ChatBox({
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath
     }
-    // Otherwise, prepend the backend URL
-    return `http://localhost:5000${imagePath}`
+    // Otherwise, use relative path (Vite proxy will handle it)
+    return imagePath
   }
 
   return (

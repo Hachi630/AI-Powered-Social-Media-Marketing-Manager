@@ -5,6 +5,7 @@ import User from '../models/User'
 import { generateToken } from '../utils/jwt'
 import { protect } from '../middleware/auth'
 import { AuthRequest } from '../types'
+import { verifyGoogleToken } from '../utils/googleAuth'
 import axios from 'axios'
 import crypto from 'crypto'
 
@@ -152,6 +153,97 @@ router.post("/login", async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// @desc    Login/Register with Google OAuth
+// @route   POST /api/auth/google
+// @access  Public
+router.post('/google', async (req: Request, res: Response) => {
+  try {
+    const { idToken } = req.body
+
+    // Validate ID token
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google ID token is required',
+      })
+    }
+
+    // Verify Google token
+    let googleUser
+    try {
+      googleUser = await verifyGoogleToken(idToken)
+    } catch (error: any) {
+      return res.status(401).json({
+        success: false,
+        message: error.message || 'Invalid Google token',
+      })
+    }
+
+    // Check if user exists by Google ID
+    let user = await User.findOne({ googleId: googleUser.sub })
+
+    // If not found by Google ID, check by email
+    if (!user) {
+      user = await User.findOne({ email: googleUser.email })
+    }
+
+    if (user) {
+      // Update existing user with Google ID if not already set
+      if (!user.googleId) {
+        user.googleId = googleUser.sub
+        user.authProvider = 'google' // Set auth provider for Google OAuth users
+      }
+      // Update user info from Google if available
+      if (googleUser.name && !user.name) {
+        user.name = googleUser.name
+      }
+      if (googleUser.picture && !user.avatar) {
+        user.avatar = googleUser.picture
+      }
+      await user.save()
+    } else {
+      // Create new user
+      user = await User.create({
+        email: googleUser.email,
+        googleId: googleUser.sub,
+        name: googleUser.name,
+        avatar: googleUser.picture,
+        authProvider: 'google', // Set auth provider to avoid password validation
+        // Password is not required for Google OAuth users
+      })
+    }
+
+    // Return user and token
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        brandName: user.brandName,
+        phone: user.phone,
+        birthday: user.birthday,
+        gender: user.gender,
+        address: user.address,
+        aboutMe: user.aboutMe,
+        avatar: user.avatar,
+        industry: user.industry,
+        toneOfVoice: user.toneOfVoice,
+        knowledgeProducts: user.knowledgeProducts,
+        targetAudience: user.targetAudience,
+        createdAt: user.createdAt,
+      },
+      token: generateToken(user._id.toString()),
+    })
+  } catch (error: any) {
+    console.error('[Google OAuth] Error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to authenticate with Google',
+    })
+  }
+})
 
 // @desc    Get current user
 // @route   GET /api/auth/me

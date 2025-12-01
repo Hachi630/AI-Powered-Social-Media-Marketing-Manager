@@ -1,12 +1,21 @@
 .layout {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--bg-primary, #f5f5f5);
+}
+
+[data-theme="warm"] .layout {
+  background: #FAF9F4;
 }
 
 .content {
   padding: 48px 16px;
   display: flex;
   justify-content: center;
+  background: var(--bg-primary, #f5f5f5);
+}
+
+[data-theme="warm"] .content {
+  background: #FAF9F4;
 }
 
 .container {
@@ -27,10 +36,34 @@
 .title {
   text-align: center;
   margin-bottom: 0 !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  color: var(--text-primary, #1e1e1e) !important;
+}
+
+[data-theme="warm"] .title {
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  color: #908066 !important;
 }
 
 .card {
   width: 100%;
+  background: var(--bg-primary, #f5f5f5) !important;
+  border: 1px solid var(--border-color, #e0e0e0) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="warm"] .card {
+  background: #FAF9F4 !important;
+  border: 1px solid #E1DBC3 !important;
+  box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3) !important;
+}
+
+.card :global(.ant-card-body) {
+  background: var(--bg-primary, #f5f5f5) !important;
+}
+
+[data-theme="warm"] .card :global(.ant-card-body) {
+  background: #FAF9F4 !important;
 }
 
 .dateCell {
@@ -45,10 +78,14 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 2px solid #1890ff;
+  border: 2px solid var(--primary-color, #646cff);
   border-radius: 4px;
   pointer-events: none;
   z-index: 1;
+}
+
+[data-theme="warm"] .todayIndicator {
+  border: 2px solid #AE906E;
 }
 
 .itemsList {
@@ -64,18 +101,32 @@
   align-items: center;
   gap: 4px;
   padding: 2px 4px;
-  background: #f0f0f0;
+  background: var(--bg-secondary, #f5f5f5);
+  border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 3px;
   cursor: pointer;
   font-size: 12px;
+  font-family: var(--font-family, 'Inter', sans-serif);
   transition: background-color 0.2s;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+[data-theme="warm"] .itemPreview {
+  background: #FFF0D6;
+  border: 1px solid #E1DBC3;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
 .itemPreview:hover {
-  background: #e6f7ff;
+  background: var(--bg-secondary, #ffffff);
+  border-color: var(--primary-color, #646cff);
+}
+
+[data-theme="warm"] .itemPreview:hover {
+  background: #FFEFD5;
+  border-color: #AE906E;
 }
 
 .itemIcon {
@@ -86,7 +137,13 @@
 .itemLabel {
   flex-shrink: 0;
   font-weight: 500;
-  color: #666;
+  color: var(--text-secondary, #666666);
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .itemLabel {
+  color: #B1A285;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .itemTitle {
@@ -94,27 +151,489 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #333;
+  color: var(--text-primary, #1e1e1e);
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .itemTitle {
+  color: #908066;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+/* Responsive styles - Tablet */
+@media (max-width: 991px) and (min-width: 768px) {
+  .content {
+    padding: 32px 12px;
+  }
+
+  .container {
+    gap: 20px;
+  }
+
+  .dateCell {
+    min-height: 70px;
+  }
+}
+
+/* Responsive styles - Mobile */
+@media (max-width: 767px) {
+  .content {
+    padding: 24px 8px;
+  }
+
+  .container {
+    gap: 16px;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .title {
+    font-size: 24px !important;
+  }
+
+  .dateCell {
+    min-height: 60px;
+    padding: 2px;
+  }
+
+  .itemPreview {
+    font-size: 10px;
+    padding: 1px 2px;
+  }
+
+  .itemIcon {
+    font-size: 12px;
+  }
+
+  .itemLabel {
+    display: none;
+  }
+
+  .itemTitle {
+    font-size: 10px;
+  }
 }
 
 .moreItems {
   font-size: 11px;
-  color: #999;
+  color: var(--text-secondary, #666666);
   padding: 2px 4px;
   font-style: italic;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .moreItems {
+  color: #B1A285;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .itemCount {
-  color: #1890ff;
+  color: var(--text-primary, #1e1e1e);
   font-weight: normal;
+  font-family: var(--font-family, 'Inter', sans-serif);
 }
 
-/* Calendar cell hover effect */
-:global(.ant-picker-calendar-date-content) {
-  min-height: 80px;
+[data-theme="warm"] .itemCount {
+  color: #908066;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+/* Calendar component global styles */
+:global(.ant-picker-calendar) {
+  background: var(--bg-primary, #f5f5f5) !important;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar) {
+  background: #FAF9F4 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+:global(.ant-picker-calendar-header) {
+  background: var(--bg-primary, #f5f5f5) !important;
+  border-bottom: 1px solid var(--border-color, #e0e0e0) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header) {
+  background: #FAF9F4 !important;
+  border-bottom: 1px solid #E1DBC3 !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-year-select),
+:global(.ant-picker-calendar-header .ant-picker-calendar-month-select) {
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-year-select),
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-month-select) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-year-select:hover),
+:global(.ant-picker-calendar-header .ant-picker-calendar-month-select:hover) {
+  color: var(--primary-color, #646cff) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-year-select:hover),
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-month-select:hover) {
+  color: #AE906E !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch) {
+  color: var(--text-primary, #1e1e1e) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch) {
+  color: #908066 !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper) {
+  color: var(--text-primary, #1e1e1e) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+  background: var(--bg-primary, #f5f5f5) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper) {
+  color: #908066 !important;
+  border-color: #E1DBC3 !important;
+  background: #FAF9F4 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper-checked) {
+  background: var(--primary-color, #646cff) !important;
+  border-color: var(--primary-color, #646cff) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper-checked) {
+  background: #AE906E !important;
+  border-color: #AE906E !important;
+  color: #FAF9F4 !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper-checked .ant-radio-button-checked) {
+  color: #ffffff !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper-checked .ant-radio-button-checked) {
+  color: #FAF9F4 !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper:hover) {
+  color: var(--primary-color, #646cff) !important;
+  border-color: var(--primary-color, #646cff) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper:hover) {
+  color: #AE906E !important;
+  border-color: #AE906E !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper:active) {
+  color: var(--text-primary, #1e1e1e) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper:active) {
+  color: #908066 !important;
+  border-color: #E1DBC3 !important;
+}
+
+/* Ensure text is clearly visible in selected state */
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper-checked span) {
+  color: #ffffff !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper-checked span) {
+  color: #FAF9F4 !important;
+}
+
+:global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked) span) {
+  color: var(--text-primary, #1e1e1e) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-header .ant-picker-calendar-mode-switch .ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked) span) {
+  color: #908066 !important;
+}
+
+:global(.ant-picker-calendar-table) {
+  background: var(--bg-primary, #f5f5f5) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-table) {
+  background: #FAF9F4 !important;
+}
+
+:global(.ant-picker-calendar-table tbody) {
+  background: var(--bg-primary, #f5f5f5) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-table tbody) {
+  background: #FAF9F4 !important;
+}
+
+:global(.ant-picker-calendar-table tbody td) {
+  background: var(--bg-primary, #f5f5f5) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-table tbody td) {
+  background: #FAF9F4 !important;
+}
+
+:global(.ant-picker-calendar-table thead th) {
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid var(--border-color, #e0e0e0) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-table thead th) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  border-bottom: 1px solid #E1DBC3 !important;
+}
+
+:global(.ant-picker-calendar-date) {
+  background: var(--bg-primary, #f5f5f5) !important;
+  border: 1px solid transparent !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date) {
+  background: #FAF9F4 !important;
 }
 
 :global(.ant-picker-calendar-date:hover) {
-  background: #f5f5f5;
+  background: var(--bg-secondary, #f5f5f5) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date:hover) {
+  background: #FFEFD5 !important;
+  border-color: #E1DBC3 !important;
+}
+
+:global(.ant-picker-calendar-date-selected) {
+  background: var(--bg-primary, #f5f5f5) !important;
+  border-color: var(--primary-color, #646cff) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date-selected) {
+  background: #FAF9F4 !important;
+  border-color: #AE906E !important;
+}
+
+:global(.ant-picker-calendar-date-selected .ant-picker-calendar-date-value) {
+  color: var(--primary-color, #646cff) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date-selected .ant-picker-calendar-date-value) {
+  color: #AE906E !important;
+}
+
+:global(.ant-picker-calendar-date-value) {
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date-value) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+:global(.ant-picker-calendar-date-today .ant-picker-calendar-date-value) {
+  color: var(--primary-color, #646cff) !important;
+  font-weight: 600 !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date-today .ant-picker-calendar-date-value) {
+  color: #AE906E !important;
+}
+
+:global(.ant-picker-calendar-date-content) {
+  min-height: 80px;
+  color: var(--text-primary, #1e1e1e) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-date-content) {
+  color: #908066 !important;
+}
+
+:global(.ant-picker-calendar-last-month-cell .ant-picker-calendar-date-value),
+:global(.ant-picker-calendar-next-month-btn-day .ant-picker-calendar-date-value) {
+  color: var(--text-secondary, #999999) !important;
+}
+
+[data-theme="warm"] :global(.ant-picker-calendar-last-month-cell .ant-picker-calendar-date-value),
+[data-theme="warm"] :global(.ant-picker-calendar-next-month-btn-day .ant-picker-calendar-date-value) {
+  color: #B1A285 !important;
+}
+
+/* Year view month labels centered - desktop only */
+@media (min-width: 768px) {
+  /* Year view table cells */
+  :global(.ant-picker-calendar-month-panel-table td),
+  :global(.ant-picker-calendar-year-panel-table td) {
+    position: relative !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+  }
+
+  /* Year view date cells */
+  :global(.ant-picker-calendar-month-panel-table td .ant-picker-calendar-date),
+  :global(.ant-picker-calendar-year-panel-table td .ant-picker-calendar-date) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+    min-height: 80px !important;
+    position: relative !important;
+    padding: 0 !important;
+  }
+
+  /* Year view date content area */
+  :global(.ant-picker-calendar-month-panel-table td .ant-picker-calendar-date-content),
+  :global(.ant-picker-calendar-year-panel-table td .ant-picker-calendar-date-content) {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 100% !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: auto !important;
+  }
+
+  /* Year view date value (month labels) */
+  :global(.ant-picker-calendar-month-panel-table td .ant-picker-calendar-date-value),
+  :global(.ant-picker-calendar-year-panel-table td .ant-picker-calendar-date-value) {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    transform: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    text-align: center !important;
+    display: block !important;
+    line-height: normal !important;
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+    color: #908066 !important;
+  }
+
+  /* Compatible with old class names */
+  :global(.ant-picker-calendar-month-panel-month .ant-picker-calendar-date),
+  :global(.ant-picker-calendar-year-panel-month .ant-picker-calendar-date) {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+    min-height: 80px !important;
+  }
+
+  :global(.ant-picker-calendar-month-panel-month .ant-picker-calendar-date-value),
+  :global(.ant-picker-calendar-year-panel-month .ant-picker-calendar-date-value) {
+    position: static !important;
+    transform: none !important;
+    margin: 0 !important;
+    text-align: center !important;
+    display: block !important;
+    font-family: var(--font-family, 'Inter', sans-serif) !important;
+    color: var(--text-primary, #1e1e1e) !important;
+  }
+
+  [data-theme="warm"] :global(.ant-picker-calendar-month-panel-month .ant-picker-calendar-date-value),
+  [data-theme="warm"] :global(.ant-picker-calendar-year-panel-month .ant-picker-calendar-date-value) {
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+    color: #908066 !important;
+  }
+}
+
+/* Button styles - desktop only */
+@media (min-width: 768px) {
+  .header :global(.ant-btn-primary) {
+    background-color: var(--primary-color, #646cff) !important;
+    border-color: var(--primary-color, #646cff) !important;
+    color: #ffffff !important;
+    font-family: var(--font-family, 'Inter', sans-serif) !important;
+  }
+
+  [data-theme="warm"] .header :global(.ant-btn-primary) {
+    background-color: #AE906E !important;
+    border-color: #AE906E !important;
+    color: #FAF9F4 !important;
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  }
+
+  .header :global(.ant-btn-primary:hover) {
+    background-color: var(--primary-hover, #535bf2) !important;
+    border-color: var(--primary-hover, #535bf2) !important;
+  }
+
+  [data-theme="warm"] .header :global(.ant-btn-primary:hover) {
+    background-color: #B98E6B !important;
+    border-color: #B98E6B !important;
+  }
+}
+
+/* Mobile button styles - Add Post button */
+@media (max-width: 767px) {
+  .header :global(.ant-btn-primary) {
+    background-color: var(--primary-color, #646cff) !important;
+    border-color: var(--primary-color, #646cff) !important;
+    color: #ffffff !important;
+    font-family: var(--font-family, 'Inter', sans-serif) !important;
+  }
+
+  [data-theme="warm"] .header :global(.ant-btn-primary) {
+    background-color: #AE906E !important;
+    border-color: #AE906E !important;
+    color: #FAF9F4 !important;
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  }
+
+  .header :global(.ant-btn-primary:hover),
+  .header :global(.ant-btn-primary:active) {
+    background-color: var(--primary-hover, #535bf2) !important;
+    border-color: var(--primary-hover, #535bf2) !important;
+    color: #ffffff !important;
+  }
+
+  [data-theme="warm"] .header :global(.ant-btn-primary:hover),
+  [data-theme="warm"] .header :global(.ant-btn-primary:active) {
+    background-color: #B98E6B !important;
+    border-color: #B98E6B !important;
+    color: #FAF9F4 !important;
+  }
+}
+
+.card :global(.ant-btn-primary) {
+  background-color: #AE906E !important;
+  border-color: #AE906E !important;
+  color: #FAF9F4 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+.card :global(.ant-btn-primary:hover) {
+  background-color: #B98E6B !important;
+  border-color: #B98E6B !important;
+}
+
+.card :global(.ant-typography) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+.card :global(.ant-typography strong) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
 }
 

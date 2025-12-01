@@ -124,6 +124,7 @@
     height: 40px !important;
     min-width: 40px !important;
   }
+<<<<<<< HEAD
 
   /* Input row mobile styles */
   .inputRow {
@@ -204,17 +205,29 @@
 }
 
 .userMessage .messageContent {
-  background-color: #FFF0D6;
-  color: #908066;
-  border: 1px solid #E1DBC3;
+  background-color: var(--bg-secondary, #ffffff);
+  color: var(--text-primary, #1e1e1e);
+  border: 1px solid var(--border-color, #e0e0e0);
   border-bottom-right-radius: 4px;
 }
 
+[data-theme="warm"] .userMessage .messageContent {
+  background-color: #FFF0D6;
+  color: #908066;
+  border: 1px solid #E1DBC3;
+}
+
 .assistantMessage .messageContent {
+  background-color: var(--bg-secondary, #ffffff);
+  color: var(--text-primary, #1e1e1e);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-bottom-left-radius: 4px;
+}
+
+[data-theme="warm"] .assistantMessage .messageContent {
   background-color: #FFEFD5;
   color: #908066;
   border: 1px solid #E1DBC3;
-  border-bottom-left-radius: 4px;
 }
 
 .actionButtons {
@@ -228,6 +241,10 @@
   font-size: 15px;
   line-height: 1.7;
   white-space: pre-wrap;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .markdownContent {
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
@@ -253,42 +270,80 @@
 
 .markdownContent code {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  background: rgba(225, 219, 195, 0.3);
+  background: rgba(0, 0, 0, 0.05);
   padding: 0.15em 0.35em;
   border-radius: 4px;
   font-size: 0.95em;
+  color: var(--text-primary, #1e1e1e);
+}
+
+[data-theme="warm"] .markdownContent code {
+  background: rgba(225, 219, 195, 0.3);
   color: #908066;
 }
 
 .markdownContent pre {
   padding: 12px;
-  background: rgba(174, 144, 110, 0.1);
-  color: #908066;
-  border: 1px solid #E1DBC3;
+  background: rgba(0, 0, 0, 0.03);
+  color: var(--text-primary, #1e1e1e);
+  border: 1px solid var(--border-color, #e0e0e0);
   border-radius: 8px;
   overflow: auto;
 }
 
+[data-theme="warm"] .markdownContent pre {
+  background: rgba(174, 144, 110, 0.1);
+  color: #908066;
+  border: 1px solid #E1DBC3;
+}
+
 .markdownContent blockquote {
-  border-left: 3px solid #E1DBC3;
+  border-left: 3px solid var(--border-color, #e0e0e0);
   margin: 0.35em 0;
   padding-left: 12px;
+  color: var(--text-secondary, #666666);
+}
+
+[data-theme="warm"] .markdownContent blockquote {
+  border-left: 3px solid #E1DBC3;
   color: #9E8E74;
 }
 
 .thinkingText {
   margin-left: 8px;
-  color: #B1A285;
+  color: var(--text-secondary, #666666);
   font-size: 14px;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .thinkingText {
+  color: #B1A285;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .chatCard {
   width: 100%;
   border-radius: 16px;
+  background-color: var(--bg-secondary, #ffffff) !important;
+  border: 1px solid var(--border-color, #e0e0e0) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="warm"] .chatCard {
   background-color: #FAF6EA !important;
   border: 1px solid #E1DBC3 !important;
   box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3) !important;
+}
+
+/* Ensure mobile chat box doesn't block messages */
+@media (max-width: 767px) {
+  .chatCard {
+    background-color: var(--bg-primary, #f5f5f5) !important;
+  }
+
+  [data-theme="warm"] .chatCard {
+    background-color: #FAF9F4 !important;
+  }
 }
 
 .inner {
@@ -336,53 +391,101 @@
   object-fit: contain;
 }
 
-/* 输入框样式 */
+/* Input field styles */
 .chatCard :global(.ant-input),
 .chatCard :global(.ant-input:focus),
 .chatCard :global(.ant-input-focused) {
+  background-color: var(--bg-secondary, #ffffff) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  border-radius: 12px !important;
+}
+
+[data-theme="warm"] .chatCard :global(.ant-input),
+[data-theme="warm"] .chatCard :global(.ant-input:focus),
+[data-theme="warm"] .chatCard :global(.ant-input-focused) {
   background-color: #FAF6EA !important;
   border-color: #E1DBC3 !important;
   color: #908066 !important;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
-  border-radius: 12px !important;
 }
 
 .chatCard :global(.ant-input::placeholder) {
+  color: var(--text-secondary, #999999) !important;
+}
+
+[data-theme="warm"] .chatCard :global(.ant-input::placeholder) {
   color: #B1A285 !important;
 }
 
-/* 工具栏按钮样式 */
+/* Toolbar button styles */
 .toolbar :global(.ant-btn-circle) {
+  background-color: var(--bg-secondary, #f5f5f5) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-primary, #1e1e1e) !important;
+}
+
+[data-theme="warm"] .toolbar :global(.ant-btn-circle) {
   background-color: #FFF4D5 !important;
   border-color: #B0A996 !important;
   color: #908066 !important;
 }
 
 .toolbar :global(.ant-btn-circle:hover) {
+  background-color: var(--bg-secondary, #ffffff) !important;
+  border-color: var(--primary-color, #646cff) !important;
+}
+
+[data-theme="warm"] .toolbar :global(.ant-btn-circle:hover) {
   background-color: #FFEFD5 !important;
   border-color: #AE906E !important;
 }
 
 .toolbar :global(.ant-btn-circle:disabled) {
+  background-color: var(--bg-secondary, #f5f5f5) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-secondary, #999999) !important;
+}
+
+[data-theme="warm"] .toolbar :global(.ant-btn-circle:disabled) {
   background-color: #FAF6EA !important;
   border-color: #E1DBC3 !important;
   color: #B1A285 !important;
 }
 
-/* 发送按钮样式 */
+/* Send button styles */
 .toolbar :global(.ant-btn-primary) {
+  background-color: var(--primary-color, #646cff) !important;
+  border-color: var(--primary-color, #646cff) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="warm"] .toolbar :global(.ant-btn-primary) {
   background-color: #AE906E !important;
   border-color: #AE906E !important;
   box-shadow: 0 2px 4px rgba(174, 144, 110, 0.3) !important;
 }
 
 .toolbar :global(.ant-btn-primary:hover:not(:disabled)) {
+  background-color: var(--primary-hover, #535bf2) !important;
+  border-color: var(--primary-hover, #535bf2) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-theme="warm"] .toolbar :global(.ant-btn-primary:hover:not(:disabled)) {
   background-color: #B98E6B !important;
   border-color: #B98E6B !important;
   box-shadow: 0 4px 8px rgba(174, 144, 110, 0.4) !important;
 }
 
 .toolbar :global(.ant-btn-primary:disabled) {
+  background-color: var(--border-color, #e0e0e0) !important;
+  border-color: var(--border-color, #e0e0e0) !important;
+  color: var(--text-secondary, #999999) !important;
+}
+
+[data-theme="warm"] .toolbar :global(.ant-btn-primary:disabled) {
   background-color: #E1DBC3 !important;
   border-color: #E1DBC3 !important;
   color: #B1A285 !important;

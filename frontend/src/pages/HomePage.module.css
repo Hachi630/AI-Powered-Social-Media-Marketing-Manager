@@ -4,6 +4,46 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
+/* Header Bar */
+.headerBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(10, 10, 10, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px 0;
+}
+
+.headerContent {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+}
+
+.headerLogo {
+  height: 52px;
+  width: auto;
+  filter: invert(1);
+}
+
+.headerTagline {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  letter-spacing: 0.5px;
+}
+
 .content {
   width: 100%;
   max-width: 1440px;
@@ -22,50 +62,308 @@
 
 /* Hero Section */
 .heroSection {
-  text-align: center;
-  padding: 120px 0 80px;
-  max-width: 900px;
+  position: relative;
+  padding: 160px 0 100px;
+  min-height: 80vh;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  overflow: hidden;
+  width: 100%;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.heroContentWrapper {
+  max-width: 1440px;
   margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
+}
+
+.heroLeft {
+  position: relative;
+  z-index: 2;
+}
+
+.heroContent {
+  max-width: 600px;
+}
+
+.logoWrapper {
+  margin-bottom: 32px;
+}
+
+.heroLogo {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+  filter: invert(1);
 }
 
 .heroTitle {
   font-size: 64px !important;
   font-weight: 700 !important;
   line-height: 1.1 !important;
-  color: #1e1e1e !important;
+  color: #ffffff !important;
   margin-bottom: 24px !important;
   letter-spacing: -1.28px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
+.gradientText1 {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradientText2 {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
 .heroSubtitle {
   font-size: 20px !important;
   line-height: 1.6 !important;
-  color: #666 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   margin-bottom: 48px !important;
-  max-width: 700px;
-  margin-left: auto;
-  margin-right: auto;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
 .heroButtons {
   display: flex;
-  justify-content: center;
   gap: 16px;
+  margin-bottom: 48px;
+}
+
+.heroButtonPrimary {
+  height: 56px;
+  padding: 0 32px;
+  font-size: 16px;
+  font-weight: 600;
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.heroButtonPrimary:hover {
+  background: #f5f5f5 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+}
+
+.heroButtonSecondary {
+  height: 56px;
+  padding: 0 32px;
+  font-size: 16px;
+  font-weight: 600;
+  background: transparent !important;
+  color: #ffffff !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.heroButtonSecondary:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-2px);
+}
+
+.scrollHint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.scrollIcon {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+/* Hero Right - Visuals */
+.heroRight {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 600px;
+}
+
+.heroVisuals {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.abstractBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.abstractBackground::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: float1 20s ease-in-out infinite;
+}
+
+.abstractBackground::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(52, 211, 153, 0.2) 100%);
+  border-radius: 50%;
+  filter: blur(80px);
+  animation: float2 25s ease-in-out infinite;
+}
+
+@keyframes float1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+}
+
+@keyframes float2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(1.1);
+  }
+}
+
+/* Ribbon-like shapes */
+.abstractBackground {
+  background-image: 
+    radial-gradient(ellipse at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 70%, rgba(16, 185, 129, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+}
+
+.productCardsContainer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px;
+}
+
+.heroProductCard {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.heroProductCard:hover {
+  transform: translateY(-8px) rotate(0deg) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+.heroProductIconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.heroProductIconWrapper svg {
+  font-size: 28px;
+  color: #ffffff;
+}
+
+.heroProductTitle {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin-bottom: 8px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.heroProductDescription {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  margin: 0 0 12px 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.heroProductBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #10b981;
+  font-weight: 500;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Section Styles */
 .section {
+  position: relative;
   padding: 100px 0;
   text-align: center;
+  width: 100%;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  overflow: hidden;
+}
+
+.sectionContentWrapper {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+  width: 100%;
 }
 
 .sectionTitle {
   font-size: 48px !important;
   font-weight: 700 !important;
   line-height: 1.2 !important;
-  color: #1e1e1e !important;
+  color: #ffffff !important;
   margin-bottom: 16px !important;
   letter-spacing: -0.96px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
@@ -74,7 +372,7 @@
 .sectionDescription {
   font-size: 18px !important;
   line-height: 1.6 !important;
-  color: #666 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   margin-bottom: 64px !important;
   max-width: 600px;
   margin-left: auto;
@@ -90,16 +388,19 @@
 .productCard {
   height: 100%;
   border-radius: 16px !important;
-  border: 1px solid #e1dbc3 !important;
-  background: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   padding: 32px 24px;
   text-align: left;
 }
 
 .productCard:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .productIconWrapper {
@@ -108,7 +409,7 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #AE906E 0%, #B98E6B 100%);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
   border-radius: 12px;
   margin-bottom: 24px;
 }
@@ -121,7 +422,7 @@
 .productTitle {
   font-size: 24px !important;
   font-weight: 600 !important;
-  color: #1e1e1e !important;
+  color: #ffffff !important;
   margin-bottom: 12px !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -129,7 +430,7 @@
 .productDescription {
   font-size: 16px !important;
   line-height: 1.6 !important;
-  color: #666 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   margin: 0 !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -142,16 +443,19 @@
 .advantageCard {
   height: 100%;
   border-radius: 16px !important;
-  border: 1px solid #e1dbc3 !important;
-  background: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   padding: 32px 24px;
   text-align: left;
 }
 
 .advantageCard:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .advantageIconWrapper {
@@ -160,7 +464,7 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #908066 0%, #B1A285 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(52, 211, 153, 0.3) 100%);
   border-radius: 12px;
   margin-bottom: 24px;
 }
@@ -173,7 +477,7 @@
 .advantageTitle {
   font-size: 24px !important;
   font-weight: 600 !important;
-  color: #1e1e1e !important;
+  color: #ffffff !important;
   margin-bottom: 12px !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -181,7 +485,7 @@
 .advantageDescription {
   font-size: 16px !important;
   line-height: 1.6 !important;
-  color: #666 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   margin: 0 !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -194,16 +498,19 @@
 .outcomeCard {
   height: 100%;
   border-radius: 16px !important;
-  border: 1px solid #e1dbc3 !important;
-  background: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   padding: 32px 24px;
   text-align: left;
 }
 
 .outcomeCard:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .outcomeIconWrapper {
@@ -212,7 +519,7 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #AE906E 0%, #908066 100%);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
   border-radius: 12px;
   margin-bottom: 24px;
 }
@@ -231,14 +538,17 @@
 .metricValue {
   font-size: 48px;
   font-weight: 700;
-  color: #AE906E;
+  background: linear-gradient(135deg, #6366f1 0%, #10b981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   line-height: 1;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
 }
 
 .metricLabel {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   margin-top: 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -248,7 +558,7 @@
 .outcomeTitle {
   font-size: 24px !important;
   font-weight: 600 !important;
-  color: #1e1e1e !important;
+  color: #ffffff !important;
   margin-bottom: 12px !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -256,7 +566,7 @@
 .outcomeDescription {
   font-size: 16px !important;
   line-height: 1.6 !important;
-  color: #666 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   margin: 0 !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -269,16 +579,19 @@
 .audienceCard {
   height: 100%;
   border-radius: 16px !important;
-  border: 1px solid #e1dbc3 !important;
-  background: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   padding: 32px 24px;
   text-align: left;
 }
 
 .audienceCard:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
   transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 .audienceIconWrapper {
@@ -287,7 +600,7 @@
   justify-content: center;
   width: 64px;
   height: 64px;
-  background: linear-gradient(135deg, #B98E6B 0%, #B1A285 100%);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.3) 0%, rgba(52, 211, 153, 0.3) 100%);
   border-radius: 12px;
   margin-bottom: 24px;
 }
@@ -300,7 +613,7 @@
 .audienceTitle {
   font-size: 24px !important;
   font-weight: 600 !important;
-  color: #1e1e1e !important;
+  color: #ffffff !important;
   margin-bottom: 12px !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
@@ -308,18 +621,19 @@
 .audienceDescription {
   font-size: 16px !important;
   line-height: 1.6 !important;
-  color: #666 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
   margin: 0 !important;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
 /* CTA Section */
 .ctaSection {
+  position: relative;
   text-align: center;
   padding: 120px 0;
-  background: linear-gradient(135deg, #AE906E 0%, #908066 100%);
-  border-radius: 24px;
-  margin: 100px 0;
+  width: 100%;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  overflow: hidden;
   color: #ffffff;
 }
 
@@ -349,15 +663,110 @@
   padding: 0 48px;
   font-size: 18px;
   font-weight: 600;
-  background: #ffffff !important;
-  color: #AE906E !important;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: #ffffff !important;
   border: none !important;
+  border-radius: 12px !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
 }
 
 .ctaButton:hover {
-  background: #f5f5f5 !important;
+  background: linear-gradient(135deg, #5558e3 0%, #7c4fe8 100%) !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+}
+
+/* Team Section */
+.teamSection {
+  position: relative;
+  padding: 100px 0;
+  text-align: center;
+  width: 100%;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0f0f0f 100%);
+  overflow: hidden;
+}
+
+.teamRow {
+  margin-top: 48px;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.teamMemberWrapper {
+  flex: 0 0 calc(20% - 26px);
+  max-width: calc(20% - 26px);
+}
+
+.teamMemberCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.teamMemberCard:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.teamMemberAvatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 14px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+.teamMemberAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.teamMemberName {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 0 0 8px 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.teamMemberRole {
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.teamDescription {
+  white-space: nowrap;
+  text-align: center !important;
+  max-width: none !important;
+  width: auto !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 /* Footer */
@@ -365,7 +774,7 @@
   background: #1e1e1e;
   color: #ffffff;
   padding: 48px 24px;
-  margin-top: 100px;
+  margin-top: 0;
 }
 
 .footerContent {
@@ -387,6 +796,8 @@
 .footerLink {
   color: rgba(255, 255, 255, 0.7) !important;
   padding: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+  font-size: 14px !important;
 }
 
 .footerLink:hover {
@@ -412,6 +823,18 @@
 
 /* Tablet and below (md and below) */
 @media (max-width: 991px) {
+  .headerTagline {
+    font-size: 14px;
+  }
+
+  .headerLogo {
+    height: 44px;
+  }
+
+  .heroSection {
+    padding-top: 140px;
+  }
+
   .heroTitle {
     font-size: 48px !important;
   }
@@ -432,14 +855,45 @@
     padding: 80px 0;
   }
 
+  .sectionContentWrapper {
+    padding: 0 24px;
+  }
+
   .content {
     padding: 0 24px;
   }
 
+  .heroRight {
+    min-height: 500px;
+    margin-top: 48px;
+  }
 }
 
 /* Mobile (sm and below) */
 @media (max-width: 767px) {
+  .headerBar {
+    padding: 14px 0;
+  }
+
+  .headerContent {
+    padding: 0 16px;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .headerTagline {
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .headerLogo {
+    height: 38px;
+  }
+
+  .heroSection {
+    padding-top: 130px;
+  }
+
   .heroTitle {
     font-size: 36px !important;
   }
@@ -460,14 +914,50 @@
     padding: 60px 0 40px;
   }
 
+  .heroContentWrapper {
+    padding: 0 16px;
+  }
+
   .section {
     padding: 60px 0;
   }
 
+  .teamSection {
+    padding: 60px 0;
+  }
+
+  .sectionContentWrapper {
+    padding: 0 16px;
+  }
+
+  .teamMemberCard {
+    padding: 24px 16px;
+  }
+
+  .teamMemberAvatar {
+    width: 100px;
+    height: 100px;
+  }
+
+  .teamRow {
+    gap: 24px;
+  }
+
+  .teamMemberWrapper {
+    flex: 0 0 calc(33.33% - 16px);
+    max-width: calc(33.33% - 16px);
+  }
+
+  .teamMemberName {
+    font-size: 18px !important;
+  }
+
+  .teamMemberRole {
+    font-size: 13px !important;
+  }
+
   .ctaSection {
-    padding: 80px 24px;
-    margin: 60px 0;
-    border-radius: 16px;
+    padding: 80px 0;
   }
 
   .content {
@@ -482,6 +972,25 @@
 
   .heroButtons button {
     width: 100%;
+  }
+
+  .heroButtonPrimary,
+  .heroButtonSecondary {
+    width: 100%;
+  }
+
+  .heroRight {
+    min-height: 400px;
+    margin-top: 32px;
+  }
+
+  .productCardsContainer {
+    gap: 16px;
+    padding: 10px;
+  }
+
+  .heroProductCard {
+    transform: rotate(0deg) !important;
   }
 
   .footerContent {
@@ -535,6 +1044,22 @@
 
 /* Small mobile (xs) */
 @media (max-width: 575px) {
+  .headerBar {
+    padding: 12px 0;
+  }
+
+  .headerTagline {
+    font-size: 11px;
+  }
+
+  .headerLogo {
+    height: 32px;
+  }
+
+  .heroSection {
+    padding-top: 120px;
+  }
+
   .content {
     padding: 0 16px;
   }
@@ -570,19 +1095,82 @@
     padding: 48px 0 32px;
   }
 
+  .heroContentWrapper {
+    padding: 0 16px;
+  }
+
   .section {
     padding: 48px 0;
   }
 
+  .teamSection {
+    padding: 48px 0;
+  }
+
+  .sectionContentWrapper {
+    padding: 0 16px;
+  }
+
+  .teamMemberCard {
+    padding: 20px 12px;
+  }
+
+  .teamMemberAvatar {
+    width: 80px;
+    height: 80px;
+  }
+
+  .teamRow {
+    gap: 16px;
+  }
+
+  .teamMemberWrapper {
+    flex: 0 0 calc(50% - 8px);
+    max-width: calc(50% - 8px);
+  }
+
+  .teamMemberName {
+    font-size: 16px !important;
+  }
+
+  .teamMemberRole {
+    font-size: 12px !important;
+  }
+
   .ctaSection {
-    padding: 60px 16px;
-    margin: 48px 0;
-    border-radius: 12px;
+    padding: 60px 0;
   }
 
   .footer {
     padding: 32px 16px;
-    margin-top: 60px;
+    margin-top: 0;
+  }
+
+  .heroRight {
+    min-height: 350px;
+    margin-top: 24px;
+  }
+
+  .heroProductCard {
+    padding: 16px !important;
+  }
+
+  .heroProductIconWrapper {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+  }
+
+  .heroProductIconWrapper svg {
+    font-size: 24px;
+  }
+
+  .heroProductTitle {
+    font-size: 18px !important;
+  }
+
+  .heroProductDescription {
+    font-size: 13px !important;
   }
 
   .productCard,

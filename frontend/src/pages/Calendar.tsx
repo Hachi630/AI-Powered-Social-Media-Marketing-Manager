@@ -1,4 +1,4 @@
-import { Card, Calendar, Layout, Typography, Button, Space, message } from 'antd'
+import { Card, Calendar, Layout, Typography, Button, Space, message, Grid } from 'antd'
 import { PlusOutlined } from '@ant-design/icons'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState, useEffect, useCallback } from 'react'
@@ -8,6 +8,8 @@ import styles from './Calendar.module.css'
 import { User } from '../services/authService'
 import { CalendarItem, calendarService } from '../services/calendarService'
 import CalendarItemModal from '../components/CalendarItemModal'
+
+const { useBreakpoint } = Grid
 
 const { Content } = Layout
 
@@ -45,6 +47,8 @@ export default function CalendarPage({
   onLogout,
   user,
 }: CalendarProps) {
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const [value, setValue] = useState(dayjs())
   const [selectedValue, setSelectedValue] = useState<Dayjs>(dayjs())
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([])
@@ -188,7 +192,7 @@ export default function CalendarPage({
         user={user}
       />
       <Content className={styles.content}>
-        <Space direction="vertical" size="large" className={styles.container}>
+        <Space orientation="vertical" size="large" className={styles.container}>
           <div className={styles.header}>
             <Typography.Title level={2} className={styles.title}>
               Smart Calendar
@@ -206,7 +210,7 @@ export default function CalendarPage({
           </div>
           <Card className={styles.card} loading={loading}>
             <Calendar
-              fullscreen
+              fullscreen={!isMobile}
               validRange={[dayjs().subtract(1, 'year'), dayjs().add(2, 'year')]}
               value={value}
               onPanelChange={onPanelChange}
