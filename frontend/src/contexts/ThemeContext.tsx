@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 
-type Theme = 'light' | 'dark'
+type Theme = 'default' | 'warm'
 
 interface ThemeContextType {
   theme: Theme
@@ -12,7 +12,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const savedTheme = localStorage.getItem('theme') as Theme
-    return savedTheme || 'light'
+    return savedTheme || 'default'
   })
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [theme])
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'))
+    setTheme((prev) => (prev === 'default' ? 'warm' : 'default'))
   }
 
   return (

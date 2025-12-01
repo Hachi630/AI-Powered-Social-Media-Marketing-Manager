@@ -257,3 +257,40 @@
   font-size: 13px;
 }
 
+/* Responsive styles - Mobile */
+@media (max-width: 767px) {
+  .container,
+  .signupContent {
+    padding: 24px 16px;
+  }
+
+  .title,
+  .signupTitle {
+    font-size: 28px !important;
+  }
+
+  .subtitle,
+  .signupSubtitle {
+    font-size: 14px;
+  }
+
+  .socialBtn,
+  .emailInput,
+  .continueBtn {
+    height: 44px !important;
+    font-size: 14px !important;
+  }
+
+  .passwordInput {
+    height: 44px;
+  }
+
+  .emailInputReadonly {
+    height: 44px;
+  }
+
+  .editButton {
+    height: 44px !important;
+  }
+}
+

@@ -115,6 +115,10 @@ export default function AuthModal({
   const handleSocialLogin = (
     provider: "google" | "apple" | "microsoft" | "phone"
   ) => {
+    // Generate OAuth state for CSRF protection
+    const state = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const defaultRedirect = `${window.location.origin}/auth/callback`;
+
     if (provider === "google") {
       const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
