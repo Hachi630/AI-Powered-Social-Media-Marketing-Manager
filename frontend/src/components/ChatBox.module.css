@@ -6,6 +6,90 @@
   gap: 24px;
 }
 
+/* 响应式样式 - 平板端 */
+@media (max-width: 991px) and (min-width: 768px) {
+  .messageContent {
+    max-width: 80% !important;
+    padding: 10px 14px !important;
+  }
+
+  .messagesContainer {
+    padding: 12px !important;
+    gap: 12px !important;
+    max-height: 50vh !important;
+  }
+
+  .chatCard :global(.ant-card-body) {
+    padding: 16px !important;
+  }
+}
+
+/* 响应式样式 - 移动端 */
+@media (max-width: 767px) {
+  .mobileChatContainer {
+    position: relative;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 0;
+  }
+
+  .mobileChatContainer .messagesContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 140px; /* Space for fixed input */
+    max-height: none;
+  }
+
+  .mobileChatCard {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-bottom: none !important;
+    box-shadow: 0 -2px 8px rgba(225, 219, 195, 0.3) !important;
+    z-index: 10;
+  }
+
+  .mobileChatCard :global(.ant-card-body) {
+    padding: 16px !important;
+  }
+
+  .messageContent {
+    max-width: 90% !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+  }
+
+  .messagesContainer {
+    padding: 12px !important;
+    gap: 12px !important;
+  }
+
+  .markdownContent {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  .toolbar :global(.ant-btn-circle) {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .toolbar :global(.ant-btn-primary) {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+  }
+}
+
 .messagesContainer {
   display: flex;
   flex-direction: column;

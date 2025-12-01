@@ -22,13 +22,7 @@
   letter-spacing: -0.5px;
 }
 
-/* Grid Layout */
-.gridContainer {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  align-items: stretch;
-}
+/* Grid Layout - 已改为 Row/Col，保留样式用于兼容 */
 
 /* Card base styles */
 .card {

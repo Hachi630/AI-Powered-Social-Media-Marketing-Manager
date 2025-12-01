@@ -43,6 +43,26 @@ body {
   background-color: #FAF9F4;
 }
 
+/* 响应式全局样式 */
+@media (max-width: 767px) {
+  /* 确保触摸目标足够大 */
+  button,
+  a,
+  [role="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* 优化移动端字体大小 */
+  body {
+    font-size: 14px;
+  }
+
+  h1 {
+    font-size: 2em;
+  }
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;

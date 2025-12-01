@@ -1,5 +1,5 @@
 import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined, CalendarOutlined } from '@ant-design/icons'
-import { Button, Card, Input, Space, Tooltip, message, Spin } from 'antd'
+import { Button, Card, Input, Space, Tooltip, message, Spin, Grid } from 'antd'
 import { useState, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -7,6 +7,8 @@ import styles from './ChatBox.module.css'
 import { chatService, ChatMessage } from '../services/chatService'
 import ImageGenerationModal from './ImageGenerationModal'
 import ContentPlanModal from './ContentPlanModal'
+
+const { useBreakpoint } = Grid
 
 const { TextArea } = Input
 
@@ -29,6 +31,8 @@ export default function ChatBox({
   onTypingStatusChange,
   onContentChange,
 }: ChatBoxProps) {
+  const screens = useBreakpoint()
+  const isMobile = !screens.md
   const [inputMessage, setInputMessage] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loading, setLoading] = useState(false)
@@ -225,7 +229,7 @@ export default function ChatBox({
   }
 
   return (
-    <div className={styles.chatContainer}>
+    <div className={`${styles.chatContainer} ${isMobile ? styles.mobileChatContainer : ''}`}>
       {/* Messages display area */}
       {messages.length > 0 && (
         <div className={styles.messagesContainer}>
@@ -283,7 +287,7 @@ export default function ChatBox({
       )}
 
       {/* Input area */}
-      <Card className={styles.chatCard} bodyStyle={{ padding: 24 }}>
+      <Card className={`${styles.chatCard} ${isMobile ? styles.mobileChatCard : ''}`} bodyStyle={{ padding: 24 }}>
         <Space direction="vertical" size={24} className={styles.inner}>
           <TextArea
             autoSize={{ minRows: 2, maxRows: 4 }}

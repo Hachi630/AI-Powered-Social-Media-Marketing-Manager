@@ -1,6 +1,7 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 24px;
   height: 99px !important;
   padding: 0 32px;
@@ -104,9 +105,122 @@
   box-shadow: 0 2px 4px rgba(174, 144, 110, 0.2) !important;
 }
 
-@media (max-width: 992px) {
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.mobileMenuButton {
+  display: none;
+}
+
+.mobileDrawer :global(.ant-drawer-header) {
+  background-color: #FEFDF8;
+  border-bottom: 1px solid #E1DBC3;
+  padding: 16px 24px;
+}
+
+.mobileDrawer :global(.ant-drawer-header-title) {
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+  color: #908066;
+}
+
+.mobileDrawer :global(.ant-drawer-body) {
+  background-color: #FAF9F4;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.mobileDrawer :global(.ant-menu) {
+  background-color: transparent;
+  border: none;
+}
+
+.mobileDrawer :global(.ant-menu-item) {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  margin: 0 !important;
+  padding: 16px 24px !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  height: auto !important;
+  line-height: 1.5 !important;
+  min-height: 48px !important;
+}
+
+.mobileDrawer :global(.ant-menu-item .ant-menu-title-content) {
+  width: 100% !important;
+  overflow: visible !important;
+  text-overflow: unset !important;
+  white-space: normal !important;
+}
+
+.mobileDrawer :global(.ant-menu-item:hover) {
+  background-color: #FFF0D6 !important;
+  color: #AE906E !important;
+}
+
+.mobileDrawer :global(.ant-menu-item-selected) {
+  background-color: #FFEFD5 !important;
+  color: #AE906E !important;
+}
+
+.mobileUserSection {
+  margin-top: 16px;
+  border-top: 1px solid #E1DBC3;
+  padding-top: 16px;
+}
+
+.drawerAuthButtons {
+  margin-top: 24px;
+  width: 100%;
+}
+
+.drawerAuthButtons :global(.ant-btn) {
+  height: 44px;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+/* 响应式样式 - 只在移动端生效 */
+@media (max-width: 991px) {
   .menu {
     display: none;
+  }
+
+  .mobileMenuButton {
+    display: block;
+  }
+
+  .header {
+    padding: 0 16px;
+    justify-content: space-between;
+  }
+
+  .logoImage {
+    width: 48px;
+    height: 46px;
+  }
+
+  .rightSection {
+    gap: 8px;
+    margin-left: 0;
+  }
+
+  .header :global(.ant-avatar) {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 16px !important;
+  }
+
+  .mobileMenuButton {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

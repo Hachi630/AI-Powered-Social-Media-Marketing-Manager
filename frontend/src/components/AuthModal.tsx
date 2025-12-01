@@ -16,10 +16,13 @@ import {
   Modal,
   Space,
   Typography,
+  Grid,
 } from "antd";
 import { useState, useRef, useEffect } from "react";
 import { authService, User } from "../services/authService";
 import styles from "./AuthModal.module.css";
+
+const { useBreakpoint } = Grid;
 
 interface AuthModalProps {
   open: boolean;
@@ -32,6 +35,8 @@ export default function AuthModal({
   onCancel,
   onLoginSuccess,
 }: AuthModalProps) {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [step, setStep] = useState<
     "login" | "signup" | "phone" | "phone-verify"
   >("login");
@@ -199,6 +204,10 @@ export default function AuthModal({
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://localhost:5000/api/auth/google'
+  }
+
   const handleSignupContinue = async () => {
     if (!email || !password) return;
 
@@ -250,7 +259,9 @@ export default function AuthModal({
       footer={null}
       centered
       width={
-        step === "signup" || step === "phone" || step === "phone-verify"
+        isMobile
+          ? "90%"
+          : step === "signup" || step === "phone" || step === "phone-verify"
           ? 480
           : 400
       }
@@ -388,7 +399,7 @@ export default function AuthModal({
               size="large"
               icon={<GoogleOutlined />}
               className={styles.socialBtn}
-              onClick={() => handleSocialLogin("google")}
+              onClick={handleGoogleLogin}
             >
               Continue with Google
             </Button>

@@ -1,5 +1,6 @@
-import { Layout, Typography } from 'antd'
-import { useState, useCallback } from 'react'
+import { Layout, Typography, Grid, Drawer, FloatButton } from 'antd'
+import { MenuOutlined } from '@ant-design/icons'
+import { useState, useCallback, useEffect } from 'react'
 import ChatBox from './ChatBox'
 import Header, { type HeaderProps } from './Header'
 import Sidebar from './Sidebar'
@@ -19,6 +20,7 @@ interface DashboardProps {
 }
 
 const { Content, Sider } = Layout
+const { useBreakpoint } = Grid
 
 const defaultHero = 'What Can I Do For You Today?'
 
@@ -32,11 +34,24 @@ export default function Dashboard({
   onLogout,
   user,
 }: DashboardProps) {
-  const [collapsed, setCollapsed] = useState(false)
+  const screens = useBreakpoint()
+  const isMobile = !screens.lg
+  const isTablet = screens.md && !screens.lg
+  const [collapsed, setCollapsed] = useState(isMobile || isTablet)
+  const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false)
   const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null)
   const [conversationsUpdateTrigger, setConversationsUpdateTrigger] = useState(0)
   const [isTyping, setIsTyping] = useState(false)
   const [hasMessages, setHasMessages] = useState(false)
+
+  // Update collapsed state when screen size changes
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      setCollapsed(true)
+    } else {
+      setCollapsed(false)
+    }
+  }, [isMobile, isTablet])
 
   const dashboardClass = `${styles.dashboard} ${
     background === 'light' ? styles.dashboardLight : ''
@@ -72,6 +87,21 @@ export default function Dashboard({
     setHasMessages(hasContent)
   }, [])
 
+  const handleToggleSidebar = useCallback(() => {
+    if (isMobile) {
+      setSidebarDrawerOpen((prev) => !prev)
+    } else {
+      setCollapsed((prev) => !prev)
+    }
+  }, [isMobile])
+
+  const handleConversationSelectWithClose = useCallback((conversationId: string | null) => {
+    handleConversationSelect(conversationId)
+    if (isMobile) {
+      setSidebarDrawerOpen(false)
+    }
+  }, [handleConversationSelect, isMobile])
+
   return (
     <Layout className={dashboardClass.trim()}>
       <Header
@@ -83,18 +113,19 @@ export default function Dashboard({
       />
       <Layout>
         {/* Sidebar with "Flippy chats" only shows when user is logged in */}
-        {isLoggedIn && (
+        {isLoggedIn && !isMobile && (
           <Sider
             width={360}
-            collapsedWidth={88}
+            collapsedWidth={isTablet ? 0 : 88}
             collapsed={collapsed}
             theme="light"
             trigger={null}
+            breakpoint="lg"
             className={styles.sider}
           >
             <Sidebar
               collapsed={collapsed}
-              onToggleSidebar={() => setCollapsed((prev) => !prev)}
+              onToggleSidebar={handleToggleSidebar}
               user={user}
               selectedConversationId={selectedConversationId}
               onConversationSelect={handleConversationSelect}
@@ -103,8 +134,28 @@ export default function Dashboard({
             />
           </Sider>
         )}
+        {isLoggedIn && isMobile && (
+          <Drawer
+            title="Flippy chats"
+            placement="left"
+            onClose={() => setSidebarDrawerOpen(false)}
+            open={sidebarDrawerOpen}
+            width={280}
+            className={styles.sidebarDrawer}
+          >
+            <Sidebar
+              collapsed={false}
+              onToggleSidebar={() => setSidebarDrawerOpen(false)}
+              user={user}
+              selectedConversationId={selectedConversationId}
+              onConversationSelect={handleConversationSelectWithClose}
+              onNewConversation={handleNewConversation}
+              conversationsUpdateTrigger={conversationsUpdateTrigger}
+            />
+          </Drawer>
+        )}
         <Content className={contentClass.trim()}>
-          {!isTyping && !hasMessages && (
+          {(!isMobile || !hasMessages) && (
             <Typography.Title level={1} className={styles.title}>
               {heroTitle}
             </Typography.Title>
@@ -117,6 +168,19 @@ export default function Dashboard({
           />
           {tagline && (
             <Typography.Paragraph className={styles.tagline}>{tagline}</Typography.Paragraph>
+          )}
+          {isLoggedIn && isMobile && (
+            <FloatButton
+              icon={<MenuOutlined />}
+              type="primary"
+              style={{
+                right: 16,
+                bottom: 16,
+                backgroundColor: '#AE906E',
+                borderColor: '#AE906E',
+              }}
+              onClick={() => setSidebarDrawerOpen(true)}
+            />
           )}
         </Content>
       </Layout>

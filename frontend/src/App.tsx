@@ -177,13 +177,8 @@ function App() {
     <ConfigProvider
       theme={{
         token: {
-          fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
-          colorBgBase: '#FAF9F4',
-          colorPrimary: '#AE906E',
-          colorText: '#908066',
-          colorTextSecondary: '#B1A285',
-          borderRadius: 12,
-          boxShadow: '0 2px 8px rgba(225, 219, 195, 0.3)',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          colorBgBase: '#f5f5f5',
         },
       }}
     >

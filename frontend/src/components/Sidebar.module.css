@@ -5,7 +5,6 @@
   height: 100%;
   gap: 24px;
   transition: padding 0.2s ease;
-  background-color: #FAF9F4;
 }
 
 .sidebarCollapsed {
@@ -21,26 +20,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.header :global(.ant-btn-text) {
-  color: #908066 !important;
-}
-
-.header :global(.ant-btn-text):hover {
-  color: #AE906E !important;
-  background-color: #FFF0D6 !important;
-}
-
-.menuButton {
-  background-color: #FFF4D5 !important;
-  border-color: #B0A996 !important;
-  color: #908066 !important;
-}
-
-.menuButton:hover {
-  background-color: #FFEFD5 !important;
-  border-color: #AE906E !important;
 }
 
 .headerRow {
@@ -59,29 +38,11 @@
 
 .searchInput :global(.ant-input) {
   border-radius: 9999px;
-  background-color: #FAF6EA !important;
-  border-color: #E1DBC3 !important;
-  color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
-}
-
-.searchInput :global(.ant-input::placeholder) {
-  color: #B1A285 !important;
-}
-
-.searchInput :global(.ant-input):focus {
-  border-color: #AE906E !important;
-  box-shadow: 0 0 0 2px rgba(174, 144, 110, 0.1) !important;
 }
 
 .sectionLabel {
   display: block;
   margin-bottom: 8px;
-}
-
-.sectionTitle {
-  color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
 }
 
 .chatList {
@@ -96,18 +57,35 @@
   transition: background-color 0.2s;
 }
 
-.chatItem :global(.ant-typography) {
-  color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
-}
-
 .chatItem:hover {
-  background-color: #FFF0D6;
+  background-color: #f0f0f0;
 }
 
 .chatItemActive {
-  background-color: #FFEFD5;
-  border: 1px solid #E1DBC3;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+}
+
+/* 手机端历史记录样式 */
+@media (max-width: 991px) {
+  .chatItem :global(.ant-typography) {
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+    color: #908066 !important;
+  }
+
+  .sectionTitle {
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+    color: #908066 !important;
+  }
+
+  .searchInput :global(.ant-input) {
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+    color: #908066 !important;
+  }
+
+  .searchInput :global(.ant-input::placeholder) {
+    color: #B1A285 !important;
+  }
 }
 
 .deleteButton {
@@ -124,16 +102,11 @@
 }
 
 .userSection {
-  border-top: 1px solid #E1DBC3;
+  border-top: 1px solid #e0e0e0;
   padding-top: 16px;
   display: flex;
   align-items: center;
   gap: 16px;
-}
-
-.userSection :global(.ant-typography) {
-  color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
 }
 
 .userSectionCollapsed {
@@ -141,9 +114,50 @@
   padding-top: 16px;
 }
 
-@media (max-width: 768px) {
+/* 手机端样式 */
+@media (max-width: 991px) {
   .sidebar {
-    height: auto;
+    height: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .topSection {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 100px; /* 增加底部 padding，避免被用户信息遮挡 */
+    min-height: 0; /* 允许 flex 子元素收缩 */
+  }
+
+  .chatsSection {
+    padding-bottom: 20px; /* 聊天区域额外 padding */
+  }
+
+  .userSection {
+    position: sticky;
+    bottom: 0;
+    background-color: #FAF9F4;
+    border-top: 1px solid #E1DBC3;
+    padding: 16px;
+    margin: 0;
+    margin-top: auto; /* 推到底部 */
+    flex-shrink: 0; /* 不允许收缩 */
+    box-shadow: 0 -2px 8px rgba(225, 219, 195, 0.2);
+    z-index: 10; /* 确保在最上层 */
+    width: 100%;
+  }
+
+  .userSection :global(.ant-typography) {
+    font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+    color: #908066 !important;
+    word-break: break-all; /* 长邮箱自动换行 */
+    overflow-wrap: break-word;
+  }
+
+  .userSection :global(.ant-avatar) {
+    flex-shrink: 0; /* 头像不收缩 */
   }
 }
 

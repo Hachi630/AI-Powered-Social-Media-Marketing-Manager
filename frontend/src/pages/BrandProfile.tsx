@@ -511,9 +511,10 @@ export default function BrandProfile({
           </div>
         </Card>
 
-        <div className={styles.gridContainer}>
+        <Row gutter={[24, 24]}>
           {/* Row 1: Basic Info + Company Description + Tone of Voice */}
-          <Card title="Basic Info" className={`${styles.card} ${styles.basicInfo}`}>
+          <Col xs={24} sm={12} md={8} lg={8}>
+            <Card title="Basic Info" className={`${styles.card} ${styles.basicInfo}`}>
             <Space direction="vertical" size="large" className={styles.fullWidth}>
               <div>
                 <Typography.Text className={styles.fieldLabel}>Brand Name</Typography.Text>
@@ -537,8 +538,10 @@ export default function BrandProfile({
               </div>
             </Space>
           </Card>
+          </Col>
 
-          <Card title="Company Description" className={`${styles.card} ${styles.companyDesc}`}>
+          <Col xs={24} sm={12} md={8} lg={8}>
+            <Card title="Company Description" className={`${styles.card} ${styles.companyDesc}`}>
             <Space direction="vertical" size="middle" className={styles.fullWidth}>
               <Typography.Text type="secondary">
                 Describe your company, products, services, and unique value proposition
@@ -555,11 +558,13 @@ export default function BrandProfile({
               />
             </Space>
           </Card>
+          </Col>
 
-          <Card
-            title="Tone of Voice"
-            className={`${styles.card} ${styles.toneOfVoice}`}
-          >
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <Card
+              title="Tone of Voice"
+              className={`${styles.card} ${styles.toneOfVoice}`}
+            >
             <Space direction="vertical" size="middle" className={styles.fullWidth}>
               <Typography.Text type="secondary">
                 How should the AI sound?
@@ -612,9 +617,11 @@ export default function BrandProfile({
               )}
             </Space>
           </Card>
+          </Col>
 
           {/* Row 2: Upload Database + Target Knowledge Base + Target Audience */}
-          <Card title="Upload Database" className={`${styles.card} ${styles.uploadDatabase}`}>
+          <Col xs={24} sm={12} md={8} lg={8}>
+            <Card title="Upload Database" className={`${styles.card} ${styles.uploadDatabase}`}>
             <Space direction="vertical" size="middle" className={styles.fullWidth}>
               <Typography.Text type="secondary">
                 Upload annual reports, financial data, product catalogs, or any business documents
@@ -662,8 +669,10 @@ export default function BrandProfile({
               )}
             </Space>
           </Card>
+          </Col>
 
-          <Card title="Target Knowledge Base" className={`${styles.card} ${styles.knowledgeBase}`}>
+          <Col xs={24} sm={12} md={8} lg={8}>
+            <Card title="Target Knowledge Base" className={`${styles.card} ${styles.knowledgeBase}`}>
             <Typography.Paragraph type="secondary">
               AI has learned about these products
             </Typography.Paragraph>
@@ -714,8 +723,10 @@ export default function BrandProfile({
               </Space>
             )}
           </Card>
+          </Col>
 
-          <Card title="Target Audience" className={`${styles.card} ${styles.targetAudience}`}>
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <Card title="Target Audience" className={`${styles.card} ${styles.targetAudience}`}>
             <Space direction="vertical" size="large" className={styles.fullWidth}>
               <Input
                 size="large"
@@ -736,20 +747,23 @@ export default function BrandProfile({
               </Button>
             </Space>
           </Card>
+          </Col>
 
           {/* Save Button */}
-          <div className={styles.saveButtonContainer}>
-            <Button
-              type="primary"
-              size="large"
-              onClick={handleSaveProfile}
-              loading={loading}
-              className={styles.saveButton}
-            >
-              Save Profile
-            </Button>
-          </div>
-        </div>
+          <Col span={24}>
+            <div className={styles.saveButtonContainer}>
+              <Button
+                type="primary"
+                size="large"
+                onClick={handleSaveProfile}
+                loading={loading}
+                className={styles.saveButton}
+              >
+                Save Profile
+              </Button>
+            </div>
+          </Col>
+        </Row>
       </Content>
     </Layout>
   )
