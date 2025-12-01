@@ -1,5 +1,5 @@
-import { ArrowUpOutlined, AudioOutlined, CodeOutlined, PictureOutlined, CalendarOutlined } from '@ant-design/icons'
-import { Button, Card, Input, Space, Tooltip, message, Spin } from 'antd'
+import { ArrowUpOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons'
+import { Button, Card, Input, Tooltip, message, Spin } from 'antd'
 import { useState, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -9,12 +9,6 @@ import ImageGenerationModal from './ImageGenerationModal'
 import ContentPlanModal from './ContentPlanModal'
 
 const { TextArea } = Input
-
-const toolbarActions = [
-  { key: 'image', icon: <PictureOutlined />, label: 'Insert image' },
-  { key: 'code', icon: <CodeOutlined />, label: 'Share code' },
-  { key: 'audio', icon: <AudioOutlined />, label: 'Use microphone' },
-]
 
 interface ChatBoxProps {
   conversationId?: string | null
@@ -283,43 +277,41 @@ export default function ChatBox({
       )}
 
       {/* Input area */}
-      <Card className={styles.chatCard} bodyStyle={{ padding: 24 }}>
-        <Space direction="vertical" size={24} className={styles.inner}>
-          <TextArea
-            autoSize={{ minRows: 2, maxRows: 4 }}
-            placeholder="What would you like to know?"
-            value={inputMessage}
-            onChange={(e) => handleInputChange(e.target.value)}
-            onKeyPress={handleKeyPress}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            disabled={loading}
-          />
-          <Space align="center" className={styles.toolbar}>
-            <Space size="middle">
-              {toolbarActions.map((action) => (
-                <Tooltip title={action.label} key={action.key}>
-                  <Button
-                    shape="circle"
-                    icon={action.icon}
-                    disabled={loading}
-                    onClick={action.key === 'image' ? handleImageGenerate : undefined}
-                  />
-                </Tooltip>
-              ))}
-            </Space>
-            <Tooltip title="Send message">
-              <Button
-                type="primary"
-                shape="circle"
-                disabled={isEmpty || loading}
-                icon={loading ? <Spin size="small" /> : <ArrowUpOutlined />}
-                onClick={handleSend}
-                loading={loading}
-              />
-            </Tooltip>
-          </Space>
-        </Space>
+      <Card className={styles.chatCard} styles={{ body: { padding: 24 } }}>
+        <div className={styles.inputRow}>
+          <Tooltip title="Generate image">
+            <Button
+              shape="circle"
+              icon={<PlusOutlined />}
+              disabled={loading}
+              onClick={handleImageGenerate}
+              className={styles.plusButton}
+            />
+          </Tooltip>
+          <div className={styles.inputWrapper}>
+            <TextArea
+              autoSize={{ minRows: 1, maxRows: 4 }}
+              placeholder="What would you like to know?"
+              value={inputMessage}
+              onChange={(e) => handleInputChange(e.target.value)}
+              onKeyPress={handleKeyPress}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              disabled={loading}
+            />
+          </div>
+          <Tooltip title="Send message">
+            <Button
+              type="primary"
+              shape="circle"
+              disabled={isEmpty || loading}
+              icon={loading ? <Spin size="small" /> : <ArrowUpOutlined />}
+              onClick={handleSend}
+              loading={loading}
+              className={styles.sendButton}
+            />
+          </Tooltip>
+        </div>
       </Card>
 
       {/* Image Generation Modal */}
