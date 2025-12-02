@@ -380,36 +380,25 @@
 
 .plusButton {
   flex-shrink: 0;
-  color: #667eea !important;
-  border-color: #667eea !important;
+  color: var(--accent-color, #667eea) !important;
+  border-color: var(--accent-color, #667eea) !important;
 }
 
 .plusButton:hover {
-  background-color: rgba(102, 126, 234, 0.1) !important;
-  border-color: #667eea !important;
-  color: #667eea !important;
+  background-color: var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+  border-color: var(--accent-color, #667eea) !important;
+  color: var(--accent-color, #667eea) !important;
 }
 
 .sendButton {
   flex-shrink: 0;
-  background-color: #667eea !important;
-  border-color: #667eea !important;
+  background-color: var(--accent-color, #667eea) !important;
+  border-color: var(--accent-color, #667eea) !important;
 }
 
 .sendButton:hover:not(:disabled) {
-  background-color: #5568d3 !important;
-  border-color: #5568d3 !important;
-}
-
-.plusButton {
-  color: #667eea !important;
-  border-color: #667eea !important;
-}
-
-.plusButton:hover {
-  background-color: rgba(102, 126, 234, 0.1) !important;
-  border-color: #667eea !important;
-  color: #667eea !important;
+  background-color: var(--accent-color-hover, #5568d3) !important;
+  border-color: var(--accent-color-hover, #5568d3) !important;
 }
 
 .messageImages {
@@ -429,8 +418,7 @@
 
 /* Input field styles */
 .chatCard :global(.ant-input),
-.chatCard :global(.ant-input:focus),
-.chatCard :global(.ant-input-focused) {
+.chatCard :global(textarea.ant-input) {
   background-color: #ffffff !important;
   border-color: var(--border-color, #e0e0e0) !important;
   color: var(--text-primary, #1e1e1e) !important;
@@ -440,13 +428,41 @@
   box-shadow: none !important;
 }
 
+.chatCard :global(.ant-input:focus),
+.chatCard :global(.ant-input-focused),
+.chatCard :global(.ant-input-affix-wrapper-focused),
+.chatCard :global(textarea.ant-input:focus),
+.chatCard :global(textarea.ant-input-focused) {
+  background-color: #ffffff !important;
+  border-color: var(--accent-color, #646cff) !important;
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--accent-color, #646cff) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(100, 108, 255, 0.1)) !important;
+  caret-color: var(--accent-color, #646cff) !important;
+}
+
 [data-theme="warm"] .chatCard :global(.ant-input),
-[data-theme="warm"] .chatCard :global(.ant-input:focus),
-[data-theme="warm"] .chatCard :global(.ant-input-focused) {
+[data-theme="warm"] .chatCard :global(textarea.ant-input) {
   background-color: #ffffff !important;
   border-color: #E1DBC3 !important;
   color: #908066 !important;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+[data-theme="warm"] .chatCard :global(.ant-input:focus),
+[data-theme="warm"] .chatCard :global(.ant-input-focused),
+[data-theme="warm"] .chatCard :global(.ant-input-affix-wrapper-focused),
+[data-theme="warm"] .chatCard :global(textarea.ant-input:focus),
+[data-theme="warm"] .chatCard :global(textarea.ant-input-focused) {
+  background-color: #ffffff !important;
+  border-color: var(--accent-color, #AE906E) !important;
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  border: 1px solid var(--accent-color, #AE906E) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
+  caret-color: var(--accent-color, #AE906E) !important;
 }
 
 .chatCard :global(.ant-input::placeholder) {
@@ -472,12 +488,12 @@
 
 .toolbar :global(.ant-btn-circle:hover) {
   background-color: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--primary-color, #646cff) !important;
+  border-color: var(--accent-color, #646cff) !important;
 }
 
 [data-theme="warm"] .toolbar :global(.ant-btn-circle:hover) {
   background-color: #FFEFD5 !important;
-  border-color: #AE906E !important;
+  border-color: var(--accent-color, #AE906E) !important;
 }
 
 .toolbar :global(.ant-btn-circle:disabled) {
@@ -494,26 +510,26 @@
 
 /* Send button styles */
 .toolbar :global(.ant-btn-primary) {
-  background-color: var(--primary-color, #646cff) !important;
-  border-color: var(--primary-color, #646cff) !important;
+  background-color: var(--accent-color, #646cff) !important;
+  border-color: var(--accent-color, #646cff) !important;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
 
 [data-theme="warm"] .toolbar :global(.ant-btn-primary) {
-  background-color: #AE906E !important;
-  border-color: #AE906E !important;
+  background-color: var(--accent-color, #AE906E) !important;
+  border-color: var(--accent-color, #AE906E) !important;
   box-shadow: 0 2px 4px rgba(174, 144, 110, 0.3) !important;
 }
 
 .toolbar :global(.ant-btn-primary:hover:not(:disabled)) {
-  background-color: var(--primary-hover, #535bf2) !important;
-  border-color: var(--primary-hover, #535bf2) !important;
+  background-color: var(--accent-color-hover, #535bf2) !important;
+  border-color: var(--accent-color-hover, #535bf2) !important;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
 }
 
 [data-theme="warm"] .toolbar :global(.ant-btn-primary:hover:not(:disabled)) {
-  background-color: #B98E6B !important;
-  border-color: #B98E6B !important;
+  background-color: var(--accent-color-hover, #B98E6B) !important;
+  border-color: var(--accent-color-hover, #B98E6B) !important;
   box-shadow: 0 4px 8px rgba(174, 144, 110, 0.4) !important;
 }
 

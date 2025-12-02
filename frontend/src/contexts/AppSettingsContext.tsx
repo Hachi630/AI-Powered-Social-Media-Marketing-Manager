@@ -47,6 +47,15 @@ const darkenColor = (color: string, amount: number): string => {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
 }
 
+// Helper function to convert hex to rgba
+const hexToRgba = (hex: string, alpha: number): string => {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.substr(0, 2), 16)
+  const g = parseInt(h.substr(2, 2), 16)
+  const b = parseInt(h.substr(4, 2), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
@@ -76,6 +85,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent-color', settings.accentColor)
     root.style.setProperty('--accent-color-hover', darkenColor(settings.accentColor, 20))
     root.style.setProperty('--accent-color-text', getContrastColor(settings.accentColor))
+    root.style.setProperty('--accent-color-rgba-08', hexToRgba(settings.accentColor, 0.08))
+    root.style.setProperty('--accent-color-rgba-10', hexToRgba(settings.accentColor, 0.1))
+    root.style.setProperty('--accent-color-rgba-12', hexToRgba(settings.accentColor, 0.12))
+    root.style.setProperty('--accent-color-rgba-15', hexToRgba(settings.accentColor, 0.15))
     
     // Apply to body
     document.body.style.fontSize = `${settings.fontSize}px`
@@ -106,6 +119,12 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       .ant-input-affix-wrapper textarea, textarea.ant-input {
         font-family: ${settings.fontFamily} !important;
         font-size: ${settings.fontSize}px !important;
+      }
+      
+      /* Apply accent color to input caret */
+      input:focus, textarea:focus, .ant-input:focus, 
+      .ant-input-affix-wrapper-focused input, textarea.ant-input:focus {
+        caret-color: ${settings.accentColor} !important;
       }
       
       /* Apply font to placeholder text */
