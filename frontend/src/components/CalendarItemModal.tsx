@@ -12,8 +12,10 @@ import {
   Descriptions,
   Tag,
   Typography,
+  Dropdown,
 } from 'antd'
-import { EditOutlined } from '@ant-design/icons'
+import { EditOutlined, ShareAltOutlined } from '@ant-design/icons'
+import type { MenuProps } from 'antd'
 import dayjs, { Dayjs } from 'dayjs'
 import { useEffect, useState } from 'react'
 import { CalendarItem, calendarService } from '../services/calendarService'
@@ -191,6 +193,64 @@ export default function CalendarItemModal({
     onClose()
   }
 
+  const handleShare = async (platform: string) => {
+    if (!item) {
+      message.error('No item to share')
+      return
+    }
+
+    try {
+      setLoading(true)
+      // TODO: Implement backend sharing logic
+      message.info(`Sharing to ${platform}... (Coming soon)`)
+      
+      // Placeholder for future implementation
+      // const response = await calendarService.shareToPlatform(item.id, platform)
+      // if (response.success) {
+      //   message.success(`Successfully shared to ${platform}`)
+      // } else {
+      //   message.error(response.message || `Failed to share to ${platform}`)
+      // }
+    } catch (error) {
+      message.error(`Failed to share to ${platform}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const shareMenuItems: MenuProps['items'] = [
+    {
+      key: 'instagram',
+      label: 'Instagram',
+      icon: <span>📷</span>,
+      onClick: () => handleShare('instagram'),
+    },
+    {
+      key: 'facebook',
+      label: 'Facebook',
+      icon: <span>👥</span>,
+      onClick: () => handleShare('facebook'),
+    },
+    {
+      key: 'xiaohongshu',
+      label: '小红书',
+      icon: <span>📕</span>,
+      onClick: () => handleShare('xiaohongshu'),
+    },
+    {
+      key: 'twitter',
+      label: 'Twitter/X',
+      icon: <span>🐦</span>,
+      onClick: () => handleShare('twitter'),
+    },
+    {
+      key: 'linkedin',
+      label: 'LinkedIn',
+      icon: <span>💼</span>,
+      onClick: () => handleShare('linkedin'),
+    },
+  ]
+
   const handleEdit = () => {
     setIsEditing(true)
   }
@@ -290,6 +350,11 @@ export default function CalendarItemModal({
                 Delete
               </Button>
               <Button onClick={handleClose}>Close</Button>
+              <Dropdown menu={{ items: shareMenuItems }} trigger={['click']}>
+                <Button icon={<ShareAltOutlined />} loading={loading}>
+                  Share
+                </Button>
+              </Dropdown>
               <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
                 Edit
               </Button>
