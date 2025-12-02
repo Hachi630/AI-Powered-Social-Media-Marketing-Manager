@@ -156,15 +156,99 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent-color-rgba-12', hexToRgba(accentColor, 0.12))
     root.style.setProperty('--accent-color-rgba-15', hexToRgba(accentColor, 0.15))
     
-    // Note: Don't apply to body directly as it affects entry page
-    // Settings are scoped to dashboard areas only via CSS selectors
-
     // Apply to main layout elements using CSS
     // Note: These styles are scoped to dashboard/app areas only, NOT the entry page
-    // We use [data-page="app"] attribute to identify non-entry pages
+    // We use .app class and exclude entry pages to identify non-entry pages
     const style = document.createElement('style')
     style.id = 'app-settings-style'
     style.textContent = `
+      /* Apply font settings to app areas (exclude entry pages) */
+      .app:not([data-entry-page]) body,
+      .app:not([data-entry-page]) .ant-layout,
+      .app:not([data-entry-page]) .ant-layout-content,
+      .app:not([data-entry-page]) p,
+      .app:not([data-entry-page]) span,
+      .app:not([data-entry-page]) div:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) h1:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) h2:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) h3:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) h4:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) h5:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) h6:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) a:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) li:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) td:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) th:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) label:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        font-family: ${settings.fontFamily} !important;
+      }
+      
+      /* Apply font size to common elements (but allow headings to scale) */
+      .app:not([data-entry-page]) p:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) span:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) div:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) a:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) li:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) td:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) th:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) label:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) input:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) textarea:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) select:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) button:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        font-size: ${settings.fontSize}px !important;
+      }
+      
+      /* Apply font to input and textarea elements specifically */
+      .app:not([data-entry-page]) input:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) textarea:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input-affix-wrapper input:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input-affix-wrapper textarea:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) textarea.ant-input:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        font-family: ${settings.fontFamily} !important;
+        font-size: ${settings.fontSize}px !important;
+      }
+      
+      /* Apply accent color to input caret */
+      .app:not([data-entry-page]) input:focus:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) textarea:focus:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input:focus:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input-affix-wrapper-focused input:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) textarea.ant-input:focus:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        caret-color: ${accentColor} !important;
+      }
+      
+      /* Apply font to placeholder text */
+      .app:not([data-entry-page]) input::placeholder:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) textarea::placeholder:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input::placeholder:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-input-affix-wrapper input::placeholder:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        font-family: ${settings.fontFamily} !important;
+      }
+      
+      /* Apply accent color to primary buttons */
+      .app:not([data-entry-page]) .ant-btn-primary:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-btn-primary:not(:disabled):not(.ant-btn-disabled):not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        background-color: ${accentColor} !important;
+        border-color: ${accentColor} !important;
+      }
+      
+      .app:not([data-entry-page]) .ant-btn-primary:hover:not(:disabled):not(.ant-btn-disabled):not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]),
+      .app:not([data-entry-page]) .ant-btn-primary:focus:not(:disabled):not(.ant-btn-disabled):not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        background-color: ${darkenColor(accentColor, 20)} !important;
+        border-color: ${darkenColor(accentColor, 20)} !important;
+      }
+      
+      /* Apply accent color to links */
+      .app:not([data-entry-page]) a:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        color: ${accentColor} !important;
+      }
+      
+      .app:not([data-entry-page]) a:hover:not([class*="HomePage"]):not([class*="PrivacyPolicy"]):not([class*="TermsOfService"]):not([class*="ContactUs"]) {
+        color: ${darkenColor(accentColor, 20)} !important;
+      }
+      
       /* Apply accent color to user message bubbles (ChatBox specific) */
       .userMessage .messageContent {
         background-color: ${accentColor} !important;
