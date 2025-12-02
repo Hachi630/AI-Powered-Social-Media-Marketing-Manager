@@ -17,9 +17,10 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **User Authentication**: Secure login and registration system with JWT authentication
 - **Dashboard**: Clean and intuitive interface for managing your marketing activities
 - **Brand Profile**: Configure your brand's tone of voice, target audience, and knowledge base
-- **Smart Calendar**: Schedule and manage your marketing campaigns
+- **Smart Calendar**: Schedule and manage your marketing campaigns with support for multiple platforms (Instagram Post/Story/Reels, TikTok, Facebook)
+- **Calendar Item Images**: Upload images or generate images using AI for calendar items, with support for both file upload and base64 encoding
 - **AI Chat Interface**: AI-powered chat interface for content creation and marketing assistance with conversation history
-- **Image Generation**: Generate images using AI based on text prompts
+- **Image Generation**: Generate images using AI based on text prompts (manual input or auto-generated from content)
 - **Conversation Management**: Save and manage chat conversations with message history
 - **Responsive Design**: Modern UI built with Ant Design, fully responsive across devices
 
@@ -41,6 +42,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **MongoDB** - Database (via Mongoose)
 - **JWT** - Authentication tokens
 - **dotenv** - Environment variable management
+- **multer** - File upload handling
 - **Google Gemini API** - AI chat and image generation
 
 ## 📁 Project Structure
@@ -55,13 +57,18 @@ Melo/
 │   │   │   ├── Sidebar.tsx
 │   │   │   ├── ChatBox.tsx
 │   │   │   ├── AuthModal.tsx
-│   │   │   └── ImageGenerationModal.tsx
+│   │   │   ├── ImageGenerationModal.tsx
+│   │   │   ├── CalendarItemModal.tsx
+│   │   │   └── ContentPlanModal.tsx
 │   │   ├── pages/           # Page components
 │   │   │   ├── BrandProfile.tsx
+│   │   │   ├── Calendar.tsx
 │   │   │   └── CalendarPlaceholder.tsx
 │   │   ├── services/        # API service layer
 │   │   │   ├── authService.ts
-│   │   │   └── chatService.ts
+│   │   │   ├── chatService.ts
+│   │   │   ├── calendarService.ts
+│   │   │   └── uploadService.ts
 │   │   ├── constants/       # Constants and assets
 │   │   │   └── assets.ts
 │   │   └── App.tsx          # Main app component
@@ -73,10 +80,13 @@ Melo/
 │   │   │   └── database.ts
 │   │   ├── models/          # MongoDB models
 │   │   │   ├── User.ts
-│   │   │   └── Conversation.ts
+│   │   │   ├── Conversation.ts
+│   │   │   └── CalendarItem.ts
 │   │   ├── routes/          # API routes
 │   │   │   ├── auth.ts
-│   │   │   └── chat.ts
+│   │   │   ├── chat.ts
+│   │   │   ├── calendar.ts
+│   │   │   └── upload.ts
 │   │   ├── services/        # Business logic services
 │   │   │   ├── geminiService.ts
 │   │   │   └── imageGenerationService.ts
@@ -550,6 +560,332 @@ Authorization: Bearer <token>
 
 ---
 
+### Upload Endpoints
+
+#### 1. Upload Image (Multipart)
+**POST** `/api/upload/image`
+
+Upload an image file using multipart/form-data.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Request Body:**
+- `image`: Image file (multipart/form-data)
+
+**Note:**
+- Only image files are allowed
+- Maximum file size: 10MB
+- Supported formats: All image types (JPEG, PNG, etc.)
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "imageUrl": "/uploads/images/1764196856532-abc123.jpg"
+}
+```
+
+**Error Responses:**
+- `400` - No image file provided or invalid file type
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error or upload failed
+
+---
+
+#### 2. Upload Image (Base64)
+**POST** `/api/upload/image-base64`
+
+Upload an image using base64 encoded data.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "imageData": "data:image/png;base64,iVBORw0KGgoAAAANS...",
+  "mimeType": "image/png"
+}
+```
+
+**Note:**
+- `imageData` is required - base64 encoded image data (with or without data URL prefix)
+- `mimeType` is optional - defaults to 'image/png' if not provided
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "imageUrl": "/uploads/images/1764196856532-abc123.png"
+}
+```
+
+**Error Responses:**
+- `400` - Image data is required
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error or upload failed
+
+---
+
+### Calendar Endpoints
+
+#### 1. Get Calendar Items
+**GET** `/api/calendar`
+
+Get calendar items for a date range.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Query Parameters:**
+- `startDate` (required) - Start date in YYYY-MM-DD format
+- `endDate` (required) - End date in YYYY-MM-DD format
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "items": [
+    {
+      "id": "507f1f77bcf86cd799439011",
+      "userId": "507f1f77bcf86cd799439012",
+      "campaignId": "507f1f77bcf86cd799439013",
+      "campaignName": "Summer Sale",
+      "platform": "instagram_post",
+      "date": "2024-01-01",
+      "time": "10:00",
+      "title": "New Product Launch",
+      "content": "Check out our new product!",
+      "imageUrl": "/uploads/images/1764196856532-abc123.jpg",
+      "variants": {},
+      "status": "draft",
+      "createdAt": "2024-01-01T00:00:00.000Z",
+      "updatedAt": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+**Error Responses:**
+- `400` - Missing startDate or endDate
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error
+
+---
+
+#### 2. Get Single Calendar Item
+**GET** `/api/calendar/:id`
+
+Get a specific calendar item by ID.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "item": {
+    "id": "507f1f77bcf86cd799439011",
+    "userId": "507f1f77bcf86cd799439012",
+    "campaignId": "507f1f77bcf86cd799439013",
+    "campaignName": "Summer Sale",
+    "platform": "instagram_post",
+    "date": "2024-01-01",
+    "time": "10:00",
+    "title": "New Product Launch",
+    "content": "Check out our new product!",
+    "imageUrl": "/uploads/images/1764196856532-abc123.jpg",
+    "variants": {},
+    "status": "draft",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- `401` - Not authorized
+- `404` - User not found or calendar item not found
+- `500` - Server error
+
+---
+
+#### 3. Create Calendar Item
+**POST** `/api/calendar`
+
+Create a new calendar item.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "platform": "instagram_post",
+  "date": "2024-01-01",
+  "time": "10:00",
+  "title": "New Product Launch",
+  "content": "Check out our new product!",
+  "imageUrl": "/uploads/images/1764196856532-abc123.jpg",
+  "status": "draft",
+  "campaignId": "507f1f77bcf86cd799439013",
+  "variants": {
+    "tiktok": "TikTok variant content",
+    "facebook": "Facebook variant content"
+  }
+}
+```
+
+**Note:**
+- `platform`, `date`, `title`, and `content` are required
+- `imageUrl` is optional
+- Supported platforms: `instagram_post`, `instagram_story`, `instagram_reels`, `tiktok`, `facebook`
+- `status` defaults to `'draft'` if not provided
+
+**Success Response (201):**
+```json
+{
+  "success": true,
+  "item": {
+    "id": "507f1f77bcf86cd799439011",
+    "userId": "507f1f77bcf86cd799439012",
+    "campaignId": "507f1f77bcf86cd799439013",
+    "platform": "instagram_post",
+    "date": "2024-01-01",
+    "time": "10:00",
+    "title": "New Product Launch",
+    "content": "Check out our new product!",
+    "imageUrl": "/uploads/images/1764196856532-abc123.jpg",
+    "variants": {},
+    "status": "draft",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- `400` - Missing required fields
+- `401` - Not authorized
+- `404` - User not found
+- `500` - Server error
+
+---
+
+#### 4. Update Calendar Item
+**PUT** `/api/calendar/:id`
+
+Update an existing calendar item.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "platform": "instagram_post",
+  "date": "2024-01-02",
+  "time": "11:00",
+  "title": "Updated Title",
+  "content": "Updated content",
+  "imageUrl": "/uploads/images/1764196856532-xyz789.jpg",
+  "status": "scheduled"
+}
+```
+
+**Note:**
+- All fields are optional - only provided fields will be updated
+- User can only update their own calendar items
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "item": {
+    "id": "507f1f77bcf86cd799439011",
+    "userId": "507f1f77bcf86cd799439012",
+    "campaignId": "507f1f77bcf86cd799439013",
+    "platform": "instagram_post",
+    "date": "2024-01-02",
+    "time": "11:00",
+    "title": "Updated Title",
+    "content": "Updated content",
+    "imageUrl": "/uploads/images/1764196856532-xyz789.jpg",
+    "variants": {},
+    "status": "scheduled",
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-02T00:00:00.000Z"
+  }
+}
+```
+
+**Error Responses:**
+- `401` - Not authorized
+- `404` - User not found or calendar item not found
+- `500` - Server error
+
+---
+
+#### 5. Delete Calendar Item
+**DELETE** `/api/calendar/:id`
+
+Delete a calendar item.
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Success Response (200):**
+```json
+{
+  "success": true,
+  "message": "Calendar item deleted successfully"
+}
+```
+
+**Error Responses:**
+- `401` - Not authorized
+- `404` - User not found or calendar item not found
+- `500` - Server error
+
+---
+
 ## 📊 Data Models
 
 ### User
@@ -619,6 +955,46 @@ Authorization: Bearer <token>
   images?: string[]          // Array of image URLs
   conversationId?: string    // Conversation ID
   message?: string          // Error message
+}
+```
+
+### CalendarItem
+```typescript
+{
+  id: string                    // MongoDB ObjectId (as string)
+  userId: string               // Reference to User
+  campaignId?: string | null   // Reference to Campaign (optional)
+  campaignName?: string | null // Campaign name (populated)
+  platform: string            // Platform: 'instagram_post', 'instagram_story', 'instagram_reels', 'tiktok', 'facebook'
+  date: string                // Date in YYYY-MM-DD format
+  time?: string | null        // Time in HH:mm format (optional)
+  title: string               // Calendar item title
+  content: string             // Main content text
+  imageUrl?: string | null    // Image URL (optional)
+  variants?: CalendarItemVariants // Platform-specific content variants
+  status: 'draft' | 'scheduled' | 'published' // Item status
+  createdAt: string          // ISO 8601 timestamp
+  updatedAt: string          // ISO 8601 timestamp
+}
+```
+
+### CalendarItemVariants
+```typescript
+{
+  tiktok?: string              // TikTok-specific content variant
+  instagram_post?: string  // Instagram Post variant
+  instagram_story?: string // Instagram Story variant
+  instagram_reels?: string // Instagram Reels variant
+  facebook?: string        // Facebook-specific content variant
+}
+```
+
+### UploadImageResponse
+```typescript
+{
+  success: boolean     // Request success status
+  imageUrl?: string    // Uploaded image URL
+  message?: string     // Error message
 }
 ```
 
@@ -723,6 +1099,53 @@ The frontend automatically handles:
 4. Click "Generate" or press Ctrl+Enter / Cmd+Enter
 5. The generated image should appear in the chat
 6. Images are saved to `backend/uploads/images/` directory
+
+### Image Upload Testing
+
+1. **File Upload (Multipart)**:
+   - Create or edit a calendar item
+   - Click "Upload Image" button
+   - Select an image file from your computer
+   - The image should be uploaded and displayed in the calendar item
+   - Image URL will be saved with the calendar item
+
+2. **Base64 Upload**:
+   - Use the upload service to convert a file to base64
+   - Send base64 data to `/api/upload/image-base64`
+   - Verify the image URL is returned and saved
+
+3. **AI Generate Image for Calendar Item**:
+   - Create or edit a calendar item
+   - Enter content text
+   - Click "AI Generate (Auto)" to automatically generate an image based on content
+   - Or click "AI Generate (Manual)" to enter a custom prompt
+   - Generated image will be saved to the calendar item
+
+### Calendar Item Testing
+
+1. **Create Calendar Item**:
+   - Navigate to the Calendar page
+   - Click the "+" button or select a date
+   - Fill in platform, date, title, and content
+   - Optionally upload or generate an image
+   - Select status (draft, scheduled, published)
+   - Save the calendar item
+
+2. **View Calendar Items**:
+   - Calendar items are displayed on the calendar grid
+   - Click on a calendar item to view details
+   - Images are displayed in the item details modal
+
+3. **Update Calendar Item**:
+   - Click on an existing calendar item
+   - Click "Edit" button
+   - Modify fields including image
+   - Save changes
+
+4. **Delete Calendar Item**:
+   - Open calendar item details
+   - Click "Delete" button
+   - Confirm deletion
 
 ---
 
