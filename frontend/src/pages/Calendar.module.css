@@ -637,3 +637,200 @@
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
 }
 
+/* Weekly Plan Styles */
+.weeklyTitle {
+  margin-bottom: 20px !important;
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, 'Inter', sans-serif) !important;
+}
+
+[data-theme="warm"] .weeklyTitle {
+  color: #908066 !important;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+}
+
+.weeklyPlan {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.weeklyDay {
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  padding-bottom: 16px;
+}
+
+.weeklyDay:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+[data-theme="warm"] .weeklyDay {
+  border-bottom: 1px solid #E1DBC3;
+}
+
+.weeklyDateHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.weeklyDate {
+  font-size: 16px;
+  color: var(--text-primary, #1e1e1e);
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .weeklyDate {
+  color: #908066;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.todayBadge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  background: var(--accent-color, #646cff);
+  color: #ffffff;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .todayBadge {
+  background: var(--accent-color, #AE906E);
+  color: #FAF9F4;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.weeklyItemCount {
+  font-size: 14px;
+  color: var(--text-secondary, #666666);
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .weeklyItemCount {
+  color: #B1A285;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.weeklyItems {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.weeklyItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-secondary, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .weeklyItem {
+  background: #FFF0D6;
+  border: 1px solid #E1DBC3;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.weeklyItem:hover {
+  background: var(--bg-secondary, #f5f5f5);
+  border-color: var(--accent-color, #646cff);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="warm"] .weeklyItem:hover {
+  background: #FFEFD5;
+  border-color: var(--accent-color, #AE906E);
+}
+
+.weeklyItemIcon {
+  flex-shrink: 0;
+  font-size: 18px;
+}
+
+.weeklyItemLabel {
+  flex-shrink: 0;
+  font-weight: 500;
+  color: var(--text-secondary, #666666);
+  font-size: 12px;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .weeklyItemLabel {
+  color: #B1A285;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.weeklyItemTitle {
+  flex: 1;
+  color: var(--text-primary, #1e1e1e);
+  font-size: 14px;
+  font-family: var(--font-family, 'Inter', sans-serif);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="warm"] .weeklyItemTitle {
+  color: #908066;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+.weeklyItemTime {
+  flex-shrink: 0;
+  color: var(--text-secondary, #999999);
+  font-size: 12px;
+  font-family: var(--font-family, 'Inter', sans-serif);
+}
+
+[data-theme="warm"] .weeklyItemTime {
+  color: #B1A285;
+  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif;
+}
+
+/* Responsive styles for weekly plan */
+@media (max-width: 767px) {
+  .weeklyTitle {
+    font-size: 18px !important;
+  }
+
+  .weeklyDate {
+    font-size: 14px;
+  }
+
+  .weeklyItem {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .weeklyItemIcon {
+    font-size: 16px;
+  }
+
+  .weeklyItemLabel {
+    font-size: 11px;
+  }
+
+  .weeklyItemTitle {
+    font-size: 12px;
+  }
+
+  .weeklyItemTime {
+    font-size: 11px;
+  }
+
+  .todayBadge {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+}
+
