@@ -36,7 +36,6 @@ export const PLATFORMS = {
   INSTAGRAM_STORY: 'instagram_story',
   INSTAGRAM_REELS: 'instagram_reels',
   TIKTOK: 'tiktok',
-  XIAOHONGSHU: 'xiaohongshu',
   FACEBOOK: 'facebook',
 } as const
 
@@ -45,7 +44,6 @@ const platformOptions = [
   { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
   { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
   { value: PLATFORMS.TIKTOK, label: 'TikTok' },
-  { value: PLATFORMS.XIAOHONGSHU, label: '小红书' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
 ]
 
@@ -240,12 +238,6 @@ export default function CalendarItemModal({
       label: 'Facebook',
       icon: <span>👥</span>,
       onClick: () => handleShare('facebook'),
-    },
-    {
-      key: 'xiaohongshu',
-      label: '小红书',
-      icon: <span>📕</span>,
-      onClick: () => handleShare('xiaohongshu'),
     },
     {
       key: 'twitter',

@@ -5,7 +5,6 @@ export interface ICalendarItemVariants {
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
-  xiaohongshu?: string
   facebook?: string
 }
 
@@ -30,7 +29,6 @@ const CalendarItemVariantsSchema: Schema = new Schema(
     instagram_post: { type: String, trim: true },
     instagram_story: { type: String, trim: true },
     instagram_reels: { type: String, trim: true },
-    xiaohongshu: { type: String, trim: true },
     facebook: { type: String, trim: true },
   },
   { _id: false }

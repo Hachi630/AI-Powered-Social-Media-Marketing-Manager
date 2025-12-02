@@ -6,7 +6,6 @@ export interface CalendarItemVariants {
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
-  xiaohongshu?: string
   facebook?: string
 }
 
