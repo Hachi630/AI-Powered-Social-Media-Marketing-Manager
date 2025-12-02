@@ -6,8 +6,8 @@
   --text-primary: #1e1e1e;
   --text-secondary: #666666;
   --border-color: #e0e0e0;
-  --primary-color: #667eea;
-  --primary-hover: #5568d3;
+  --primary-color: #646cff;
+  --primary-hover: #535bf2;
   --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   --bg-texture: none;
 }
@@ -18,8 +18,8 @@
   --text-primary: #1e1e1e;
   --text-secondary: #666666;
   --border-color: #e0e0e0;
-  --primary-color: #667eea;
-  --primary-hover: #5568d3;
+  --primary-color: #646cff;
+  --primary-hover: #535bf2;
   --font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   --bg-texture: none;
 }

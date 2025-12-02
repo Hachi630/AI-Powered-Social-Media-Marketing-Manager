@@ -6,7 +6,11 @@ import './App.css'
 import { DEFAULT_TAGLINE, MELO_LOGO } from './constants/assets'
 import BrandProfile from './pages/BrandProfile'
 import CalendarPage from './pages/Calendar'
+import Personal from './pages/Personal'
 import HomePage from './pages/HomePage'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import ContactUs from './pages/ContactUs'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
@@ -166,6 +170,20 @@ function AppContent() {
           />
         }
       />
+      <Route
+        path="/personal"
+        element={
+          <Personal
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            user={user}
+          />
+        }
+      />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/contact-us" element={<ContactUs />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
