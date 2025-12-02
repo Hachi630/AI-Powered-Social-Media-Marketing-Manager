@@ -20,6 +20,7 @@ export interface CalendarItem {
   time: string | null // HH:mm
   title: string
   content: string
+  imageUrl?: string | null
   variants?: CalendarItemVariants
   status: 'draft' | 'scheduled' | 'published'
   createdAt: string

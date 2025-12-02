@@ -53,6 +53,7 @@ router.get('/', protect, async (req: AuthRequest, res: Response) => {
         time: item.time || null,
         title: item.title,
         content: item.content,
+        imageUrl: item.imageUrl || null,
         variants: item.variants || {},
         status: item.status,
         createdAt: item.createdAt,
@@ -100,6 +101,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
         time: item.time || null,
         title: item.title,
         content: item.content,
+        imageUrl: item.imageUrl || null,
         variants: item.variants || {},
         status: item.status,
         createdAt: item.createdAt,
@@ -153,6 +155,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       time: time || null,
       title,
       content,
+      imageUrl: imageUrl || null,
       variants: variants || {},
       status: status || 'draft',
     })
@@ -210,6 +213,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
       time,
       title,
       content,
+      imageUrl,
       variants,
       status,
     } = req.body
@@ -221,6 +225,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
     if (time !== undefined) item.time = time || null
     if (title !== undefined) item.title = title
     if (content !== undefined) item.content = content
+    if (imageUrl !== undefined) item.imageUrl = imageUrl || null
     if (variants !== undefined) item.variants = variants || {}
     if (status !== undefined) item.status = status
 
@@ -237,6 +242,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
         time: item.time || null,
         title: item.title,
         content: item.content,
+        imageUrl: item.imageUrl || null,
         variants: item.variants || {},
         status: item.status,
         createdAt: item.createdAt,
@@ -314,6 +320,7 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
       time: item.time || null,
       title: item.title,
       content: item.content,
+      imageUrl: item.imageUrl || null,
       variants: item.variants || {},
       status: item.status || 'draft',
     }))
@@ -331,6 +338,7 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
         time: item.time || null,
         title: item.title,
         content: item.content,
+        imageUrl: item.imageUrl || null,
         variants: item.variants || {},
         status: item.status,
         createdAt: item.createdAt,

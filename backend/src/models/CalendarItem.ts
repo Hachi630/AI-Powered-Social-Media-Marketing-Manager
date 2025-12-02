@@ -17,6 +17,7 @@ export interface ICalendarItem extends Document {
   time?: string | null
   title: string
   content: string
+  imageUrl?: string | null
   variants?: ICalendarItemVariants
   status: 'draft' | 'scheduled' | 'published'
   createdAt: Date
@@ -73,6 +74,11 @@ const CalendarItemSchema: Schema = new Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    imageUrl: {
+      type: String,
+      trim: true,
+      default: null,
     },
     variants: {
       type: CalendarItemVariantsSchema,
