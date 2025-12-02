@@ -4,7 +4,6 @@ import {
   Col,
   DatePicker,
   Input,
-  Layout,
   Row,
   Select,
   Space,
@@ -19,20 +18,16 @@ import {
   EditOutlined,
   SaveOutlined,
   CloseOutlined,
-  UploadOutlined,
   UserOutlined,
   LockOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
 } from '@ant-design/icons'
-import Header from '../components/Header'
-import { MELO_LOGO } from '../constants/assets'
 import styles from './Personal.module.css'
 import { User, authService } from '../services/authService'
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface'
 import dayjs from 'dayjs'
 
-const { Content } = Layout
 const { TextArea } = Input
 
 const genderOptions = [
@@ -42,17 +37,17 @@ const genderOptions = [
 ]
 
 interface PersonalProps {
-  isLoggedIn: boolean
-  onLoginSuccess: (user: User) => void
-  onLogout: () => void
+  open: boolean
+  onClose: () => void
   user?: User | null
+  onLoginSuccess?: (user: User) => void
 }
 
 export default function Personal({
-  isLoggedIn,
-  onLoginSuccess,
-  onLogout,
+  open,
+  onClose,
   user: propUser,
+  onLoginSuccess,
 }: PersonalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -80,11 +75,11 @@ export default function Personal({
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  // Load user data on mount
+  // Load user data when modal opens
   useEffect(() => {
     const loadUser = async () => {
-      if (isLoggedIn) {
-        const currentUser = await authService.getCurrentUser()
+      if (open) {
+        const currentUser = propUser || await authService.getCurrentUser()
         if (currentUser) {
           setUser(currentUser)
           setFormData({
@@ -113,7 +108,7 @@ export default function Personal({
       }
     }
     loadUser()
-  }, [isLoggedIn, propUser])
+  }, [open, propUser])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -165,7 +160,7 @@ export default function Personal({
         setIsEditing(false)
         setAvatarBase64('')
         setAvatarFile([])
-        onLoginSuccess(response.user)
+        onLoginSuccess?.(response.user)
         message.success('Profile updated successfully')
       } else {
         message.error(response.message || 'Failed to update profile')
@@ -330,17 +325,29 @@ export default function Personal({
     )
   }
 
+  const handleModalClose = () => {
+    // Reset editing state when closing
+    if (isEditing) {
+      handleCancel()
+    }
+    onClose()
+  }
+
   return (
-    <Layout className={styles.layout}>
-      <Header
-        isLoggedIn={isLoggedIn}
-        showBrandName={false}
-        logoSrc={MELO_LOGO}
-        onLoginSuccess={onLoginSuccess}
-        onLogout={onLogout}
-        user={user}
-      />
-      <Content className={styles.content}>
+    <Modal
+      open={open}
+      onCancel={handleModalClose}
+      title={
+        <div className={styles.modalTitle}>
+          <UserOutlined /> Personal Profile
+        </div>
+      }
+      width={1000}
+      className={styles.personalModal}
+      footer={null}
+      centered
+    >
+      <div className={styles.modalContent}>
         <div className={styles.headerSection}>
           <div className={styles.userInfo}>
             <div className={styles.avatarSection}>
@@ -539,8 +546,8 @@ export default function Personal({
             </div>
           </Space>
         </Modal>
-      </Content>
-    </Layout>
+      </div>
+    </Modal>
   )
 }
 

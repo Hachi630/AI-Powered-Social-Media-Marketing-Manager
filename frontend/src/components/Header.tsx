@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
 import AppSettings from '../pages/AppSettings'
+import Personal from '../pages/Personal'
 import styles from './Header.module.css'
 import { UserOutlined, LogoutOutlined, MenuOutlined, SettingOutlined } from '@ant-design/icons'
 import { User } from '../services/authService'
@@ -44,6 +45,7 @@ export default function Header({
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
+  const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false)
 
   const isHomePage = location.pathname === '/' || location.pathname === '/home'
   
@@ -58,7 +60,7 @@ export default function Header({
   }
 
   const handlePersonalClick = () => {
-    navigate('/personal')
+    setIsPersonalModalOpen(true)
   }
 
   const handleSettingsClick = () => {
@@ -178,6 +180,12 @@ export default function Header({
       <AppSettings
         open={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+      />
+      <Personal
+        open={isPersonalModalOpen}
+        onClose={() => setIsPersonalModalOpen(false)}
+        user={user}
+        onLoginSuccess={onLoginSuccess}
       />
     </>
   )

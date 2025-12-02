@@ -6,7 +6,6 @@ import './App.css'
 import { DEFAULT_TAGLINE, MELO_LOGO } from './constants/assets'
 import BrandProfile from './pages/BrandProfile'
 import CalendarPage from './pages/Calendar'
-import Personal from './pages/Personal'
 import HomePage from './pages/HomePage'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
@@ -160,17 +159,6 @@ function AppContent() {
         path="/settings"
         element={
           <BrandProfile
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-          />
-        }
-      />
-      <Route
-        path="/personal"
-        element={
-          <Personal
             isLoggedIn={isLoggedIn}
             onLoginSuccess={handleLoginSuccess}
             onLogout={handleLogout}
