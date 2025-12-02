@@ -111,7 +111,7 @@ export default function Dashboard({
         user={user}
         {...headerOverrides}
       />
-      <Layout>
+      <Layout className={styles.dashboardLayout}>
         {/* Sidebar with "Flippy chats" only shows when user is logged in */}
         {isLoggedIn && !isMobile && (
           <Sider

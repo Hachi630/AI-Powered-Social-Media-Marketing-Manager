@@ -4,6 +4,7 @@ import {
   PlusOutlined,
   SearchOutlined,
   DeleteOutlined,
+  MessageOutlined,
 } from '@ant-design/icons'
 import { Avatar, Button, Input, List, Typography, Spin, Modal, message } from 'antd'
 import { useState, useEffect } from 'react'
@@ -33,6 +34,7 @@ export default function Sidebar({
   const [conversations, setConversations] = useState<ConversationListItem[]>([])
   const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState<string>('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   const loadConversations = async () => {
     if (!user) {
@@ -127,20 +129,42 @@ export default function Sidebar({
               <Typography.Title level={5} className={styles.title}>
                 Flippy chats
               </Typography.Title>
-              <Button type="text" icon={<PlusOutlined />} onClick={handleNewChat} />
+              <div className={styles.headerActions}>
+                <Button 
+                  type="text" 
+                  icon={<SearchOutlined />} 
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className={styles.searchIconButton}
+                />
+                <Button type="text" icon={<PlusOutlined />} onClick={handleNewChat} className={styles.newChatButton} />
+              </div>
             </>
           )}
         </div>
         {!collapsed && (
           <>
-            <Input
-              className={styles.searchInput}
-              placeholder="Search"
-              prefix={<SearchOutlined />}
-              allowClear
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
+            {isSearchOpen && (
+              <Input
+                className={styles.searchInput}
+                placeholder="Search"
+                prefix={<SearchOutlined />}
+                allowClear
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                autoFocus
+                onPressEnter={() => {
+                  // Keep search open when pressing enter
+                }}
+                onBlur={() => {
+                  // Keep search open if there's a keyword, close if empty
+                  if (!searchKeyword.trim()) {
+                    setTimeout(() => {
+                      setIsSearchOpen(false)
+                    }, 150)
+                  }
+                }}
+              />
+            )}
             <div className={styles.chatsSection}>
               <Typography.Text type="secondary" className={styles.sectionTitle}>
                 Chats
@@ -171,7 +195,12 @@ export default function Sidebar({
                         />,
                       ]}
                     >
-                      <Typography.Text ellipsis>{item.title}</Typography.Text>
+                      <div className={styles.chatItemContent}>
+                        <MessageOutlined className={styles.chatIcon} />
+                        <Typography.Text ellipsis className={styles.chatTitle}>
+                          {item.title}
+                        </Typography.Text>
+                      </div>
                     </List.Item>
                   )}
                 />
@@ -182,13 +211,24 @@ export default function Sidebar({
       </div>
       <div className={styles.userSection}>
         <Avatar
-          size={32}
+          size={36}
           src={user?.avatar}
           style={{ backgroundColor: '#87d068' }}
         >
           {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'G'}
         </Avatar>
-        {!collapsed && <Typography.Text>{user?.email || 'Guest'}</Typography.Text>}
+        {!collapsed && (
+          <div className={styles.userInfo}>
+            <Typography.Text className={styles.userName} ellipsis>
+              {user?.name || user?.brandName || 'Melo User'}
+            </Typography.Text>
+            {user?.email && (
+              <Typography.Text className={styles.userEmail} ellipsis>
+                {user.email}
+              </Typography.Text>
+            )}
+          </div>
+        )}
       </div>
     </aside>
   )

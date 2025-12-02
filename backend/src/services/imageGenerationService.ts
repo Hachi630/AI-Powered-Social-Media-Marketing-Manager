@@ -11,8 +11,8 @@ const ai = new GoogleGenAI({})
 export async function generateImage(prompt: string): Promise<string> {
   try {
     // Use a model that supports image generation
-    // Try gemini-2.5-flash-image or gemini-2.0-flash-exp
-    const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image'
+    // Using gemini-3-pro-image-preview
+    const model = process.env.GEMINI_IMAGE_MODEL || 'gemini-3-pro-image-preview'
 
     console.log('Generating image with prompt:', prompt)
     console.log('Using model:', model)

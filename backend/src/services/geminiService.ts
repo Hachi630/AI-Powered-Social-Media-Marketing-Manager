@@ -27,7 +27,7 @@ export const geminiService = {
    */
   async generateContent(request: ChatRequest): Promise<string> {
     try {
-      const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+      const model = process.env.GEMINI_MODEL || 'gemini-3-pro-preview'
 
       // Build system prompt from user context
       const systemPrompt = this.buildSystemPrompt(request.userContext)

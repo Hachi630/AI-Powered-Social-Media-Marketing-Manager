@@ -4,9 +4,10 @@ import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
-import ThemeToggle from './ThemeToggle'
+import AppSettings from '../pages/AppSettings'
+import Personal from '../pages/Personal'
 import styles from './Header.module.css'
-import { UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
+import { UserOutlined, LogoutOutlined, MenuOutlined, SettingOutlined } from '@ant-design/icons'
 import { User } from '../services/authService'
 import { Avatar } from 'antd'
 
@@ -24,7 +25,7 @@ export interface HeaderProps {
 const navItems: MenuProps['items'] = [
   { key: '/dashboard', label: 'Dashboard' },
   { key: '/calendar', label: 'Calendar' },
-  { key: '/settings', label: 'Settings' },
+  { key: '/settings', label: 'Brands' },
 ]
 
 const { Header: AntHeader } = Layout
@@ -43,6 +44,8 @@ export default function Header({
   const isMobile = !screens.lg
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
+  const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false)
 
   const isHomePage = location.pathname === '/' || location.pathname === '/home'
   
@@ -57,7 +60,11 @@ export default function Header({
   }
 
   const handlePersonalClick = () => {
-    navigate('/personal')
+    setIsPersonalModalOpen(true)
+  }
+
+  const handleSettingsClick = () => {
+    setIsSettingsModalOpen(true)
   }
 
   const handleLogoutClick = () => {
@@ -72,6 +79,12 @@ export default function Header({
         label: 'Personal',
         icon: <UserOutlined />,
         onClick: handlePersonalClick,
+      },
+      {
+        key: 'settings',
+        label: 'Settings',
+        icon: <SettingOutlined />,
+        onClick: handleSettingsClick,
       },
       {
         type: 'divider',
@@ -108,7 +121,6 @@ export default function Header({
           />
         )}
         <div className={styles.headerActions}>
-          {!isHomePage && <ThemeToggle />}
           {isLoggedIn && !isHomePage && isMobile && (
             <Button
               type="text"
@@ -164,6 +176,16 @@ export default function Header({
           onLoginSuccess?.(user)
           setIsAuthModalOpen(false)
         }}
+      />
+      <AppSettings
+        open={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+      />
+      <Personal
+        open={isPersonalModalOpen}
+        onClose={() => setIsPersonalModalOpen(false)}
+        user={user}
+        onLoginSuccess={onLoginSuccess}
       />
     </>
   )

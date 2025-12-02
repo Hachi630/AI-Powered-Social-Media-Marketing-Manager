@@ -1,57 +1,108 @@
 .dashboard {
   min-height: 100vh;
-  background-color: var(--bg-primary, #f5f5f5);
-  background-image: var(--bg-texture, none);
+  background-color: #FFFFFF !important;
+  background-image: none !important;
   background-size: 24px 24px;
 }
 
 [data-theme="warm"] .dashboard {
-  background-color: #FAF9F4;
-  background-image: radial-gradient(circle at 2px 2px, rgba(225, 219, 195, 0.12) 1px, transparent 0);
+  background-color: #FFFFFF !important;
+  background-image: none !important;
 }
 
 .dashboardLight {
-  background-color: var(--bg-primary, #f5f5f5);
-  background-image: var(--bg-texture, none);
+  background-color: #FFFFFF !important;
+  background-image: none !important;
   background-size: 24px 24px;
 }
 
 [data-theme="warm"] .dashboardLight {
-  background-color: #FAF9F4;
-  background-image: radial-gradient(circle at 2px 2px, rgba(225, 219, 195, 0.12) 1px, transparent 0);
+  background-color: #FFFFFF !important;
+  background-image: none !important;
+}
+
+.dashboardLayout {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+}
+
+.dashboardLayout :global(.ant-layout-content) {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
 }
 
 .sider {
-  background: var(--bg-primary, #f5f5f5) !important;
-  border-right: 1px solid var(--border-color, #e0e0e0);
-  padding: 24px 16px;
+  background: #F7F7F8 !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 24px;
 }
 
 [data-theme="warm"] .sider {
   background: #FAF9F4 !important;
-  border-right: 1px solid #E1DBC3;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .content {
-  background: var(--bg-primary, #f5f5f5);
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
   min-height: calc(100vh - 99px);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 32px;
   padding: 64px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Force white background for Ant Design Layout Content */
+:global(.ant-layout-content).content,
+.content:global(.ant-layout-content),
+:global(.ant-layout-content.content),
+.content {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+}
+
+/* Also target any nested content areas */
+.content :global(.ant-layout-content) {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+}
+
+/* Force white for Layout within Dashboard */
+.dashboard :global(.ant-layout-content) {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+}
+
+.dashboard :global(.ant-layout) {
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
+}
+
+.content::before {
+  display: none !important; /* Remove gradient background to unify color */
+}
+
+.content > * {
+  position: relative;
+  z-index: 1;
 }
 
 [data-theme="warm"] .content {
-  background: #FAF9F4;
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
 }
 
 .contentLight {
-  background: var(--bg-primary, #f5f5f5);
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
 }
 
 [data-theme="warm"] .contentLight {
-  background: #FAF9F4;
+  background: #FFFFFF !important;
+  background-color: #FFFFFF !important;
 }
 
 .title {
@@ -86,17 +137,17 @@
 }
 
 .sidebarDrawer :global(.ant-drawer-header) {
-  background-color: var(--bg-primary, #f5f5f5);
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background-color: #F7F7F8 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 [data-theme="warm"] .sidebarDrawer :global(.ant-drawer-header) {
-  background-color: #FAF9F4;
-  border-bottom: 1px solid #E1DBC3;
+  background-color: #FAF9F4 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
 .sidebarDrawer :global(.ant-drawer-body) {
-  background-color: var(--bg-primary, #f5f5f5);
+  background-color: #F7F7F8 !important;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -104,7 +155,7 @@
 }
 
 [data-theme="warm"] .sidebarDrawer :global(.ant-drawer-body) {
-  background-color: #FAF9F4;
+  background-color: #FAF9F4 !important;
 }
 
 /* Mobile Drawer body styles */
@@ -124,6 +175,8 @@
 
   .content {
     padding: 32px 16px;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
   }
 }
 
@@ -136,6 +189,8 @@
   .content {
     padding: 24px 12px !important;
     gap: 24px !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
   }
 }
 
@@ -150,6 +205,12 @@
     position: relative !important;
     display: flex !important;
     flex-direction: column !important;
+    background: #FFFFFF !important;
+    background-color: #FFFFFF !important;
+  }
+
+  .content::before {
+    display: none !important;
   }
 
   /* Mobile: Center title when no messages */
@@ -188,12 +249,12 @@
     padding-bottom: 32px !important; /* Increase bottom padding to ensure last message is fully displayed */
     max-height: none !important;
     z-index: 1 !important; /* Below chat box but content is visible */
-    background-color: var(--bg-primary, #f5f5f5) !important;
+    background-color: #FFFFFF !important;
     -webkit-overflow-scrolling: touch !important; /* iOS smooth scrolling */
   }
 
   [data-theme="warm"] .content :global(.messagesContainer) {
-    background-color: #FAF9F4 !important;
+    background-color: #FFFFFF !important;
   }
 
   /* Mobile: Chat box container fixed at bottom */
@@ -230,14 +291,14 @@
     color: var(--text-secondary, #666666) !important;
     text-transform: uppercase !important;
     letter-spacing: 0.08em !important;
-    background-color: var(--bg-primary, #f5f5f5) !important;
+    background-color: #F9FAFB !important;
     z-index: 11 !important;
     pointer-events: none !important;
   }
 
   [data-theme="warm"] .mobileTagline {
     color: #B1A285 !important;
-    background-color: #FAF9F4 !important;
+    background-color: #FFFFFF !important;
   }
 }
 
