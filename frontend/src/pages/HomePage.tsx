@@ -478,10 +478,18 @@ export default function HomePage({
             >
               Privacy Policy
             </Button>
-            <Button type="link" className={styles.footerLink}>
+            <Button
+              type="link"
+              className={styles.footerLink}
+              onClick={() => navigate("/terms-of-service")}
+            >
               Terms of Service
             </Button>
-            <Button type="link" className={styles.footerLink}>
+            <Button
+              type="link"
+              className={styles.footerLink}
+              onClick={() => navigate("/contact-us")}
+            >
               Contact Us
             </Button>
           </Space>

@@ -9,6 +9,8 @@ import CalendarPage from './pages/Calendar'
 import Personal from './pages/Personal'
 import HomePage from './pages/HomePage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import ContactUs from './pages/ContactUs'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 
@@ -179,6 +181,8 @@ function AppContent() {
         }
       />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/terms-of-service" element={<TermsOfService />} />
+      <Route path="/contact-us" element={<ContactUs />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
