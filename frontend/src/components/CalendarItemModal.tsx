@@ -13,13 +13,17 @@ import {
   Tag,
   Typography,
   Dropdown,
+  Upload,
 } from 'antd'
-import { EditOutlined, ShareAltOutlined } from '@ant-design/icons'
-import type { MenuProps } from 'antd'
+import { EditOutlined, ShareAltOutlined, UploadOutlined, DeleteOutlined, PictureOutlined, RobotOutlined } from '@ant-design/icons'
+import type { MenuProps, UploadProps } from 'antd'
 import dayjs, { Dayjs } from 'dayjs'
 import { useEffect, useState } from 'react'
 import { CalendarItem, calendarService } from '../services/calendarService'
 import { Campaign, campaignService } from '../services/campaignService'
+import { uploadService } from '../services/uploadService'
+import { chatService } from '../services/chatService'
+import ImageGenerationModal from './ImageGenerationModal'
 import styles from './CalendarItemModal.module.css'
 
 const { Text } = Typography
@@ -32,7 +36,6 @@ export const PLATFORMS = {
   INSTAGRAM_STORY: 'instagram_story',
   INSTAGRAM_REELS: 'instagram_reels',
   TIKTOK: 'tiktok',
-  XIAOHONGSHU: 'xiaohongshu',
   FACEBOOK: 'facebook',
 } as const
 
@@ -41,7 +44,6 @@ const platformOptions = [
   { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
   { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
   { value: PLATFORMS.TIKTOK, label: 'TikTok' },
-  { value: PLATFORMS.XIAOHONGSHU, label: '小红书' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
 ]
 
@@ -71,6 +73,9 @@ export default function CalendarItemModal({
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [activePlatformTab, setActivePlatformTab] = useState<string>('main')
   const [isEditing, setIsEditing] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imageGenModalOpen, setImageGenModalOpen] = useState(false)
 
   const isEditMode = !!item
   const isPreviewMode = isEditMode && !isEditing
@@ -90,6 +95,7 @@ export default function CalendarItemModal({
           campaignId: item.campaignId || undefined,
           variants: item.variants || {},
         })
+        setImageUrl(item.imageUrl || null)
         // Set active tab to main platform
         setActivePlatformTab(item.platform)
         // Preview mode by default for existing items
@@ -106,6 +112,7 @@ export default function CalendarItemModal({
           campaignId: undefined,
           variants: {},
         })
+        setImageUrl(null)
         setActivePlatformTab(PLATFORMS.INSTAGRAM_POST)
         // Create mode: always in editing state
         setIsEditing(true)
@@ -131,6 +138,7 @@ export default function CalendarItemModal({
         time: values.time ? values.time.format('HH:mm') : null,
         title: values.title,
         content: values.content,
+        imageUrl: imageUrl || null,
         status: values.status,
         campaignId: values.campaignId || null,
         variants: {
@@ -232,12 +240,6 @@ export default function CalendarItemModal({
       onClick: () => handleShare('facebook'),
     },
     {
-      key: 'xiaohongshu',
-      label: '小红书',
-      icon: <span>📕</span>,
-      onClick: () => handleShare('xiaohongshu'),
-    },
-    {
       key: 'twitter',
       label: 'Twitter/X',
       icon: <span>🐦</span>,
@@ -268,9 +270,113 @@ export default function CalendarItemModal({
         campaignId: item.campaignId || undefined,
         variants: item.variants || {},
       })
+      setImageUrl(item.imageUrl || null)
       setActivePlatformTab(item.platform)
     }
     setIsEditing(false)
+  }
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true)
+    try {
+      const response = await uploadService.uploadImage(file)
+      if (response.success && response.imageUrl) {
+        setImageUrl(response.imageUrl)
+        message.success('Image uploaded successfully')
+      } else {
+        message.error(response.message || 'Failed to upload image')
+      }
+    } catch (error) {
+      message.error('Failed to upload image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleImageUploadBase64 = async (file: File) => {
+    setUploadingImage(true)
+    try {
+      const base64 = await uploadService.convertToBase64(file)
+      const mimeType = file.type || 'image/png'
+      const response = await uploadService.uploadImageBase64(base64, mimeType)
+      if (response.success && response.imageUrl) {
+        setImageUrl(response.imageUrl)
+        message.success('Image uploaded successfully')
+      } else {
+        message.error(response.message || 'Failed to upload image')
+      }
+    } catch (error) {
+      message.error('Failed to upload image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleFileSelect: UploadProps['onChange'] = (info) => {
+    const file = info.file.originFileObj || (info.file as any).originFileObj || info.file
+    if (file && file instanceof File) {
+      // Validate file type
+      const isImage = file.type.startsWith('image/')
+      if (!isImage) {
+        message.error('Only image files are allowed')
+        return
+      }
+      // Validate file size (10MB)
+      const isLt10M = file.size / 1024 / 1024 < 10
+      if (!isLt10M) {
+        message.error('Image must be smaller than 10MB')
+        return
+      }
+      // Use file upload method
+      handleImageUpload(file)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setImageUrl(null)
+    message.success('Image removed')
+  }
+
+  const handleAIGenerateImage = () => {
+    setImageGenModalOpen(true)
+  }
+
+  const handleAIGenerateImageAuto = async () => {
+    const content = form.getFieldValue('content')
+    if (!content || !content.trim()) {
+      message.warning('Please enter content first to generate image automatically')
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      // Generate prompt from content
+      const prompt = `Create a professional social media image for: ${content.substring(0, 200)}`
+      const response = await chatService.generateImage(prompt)
+      if (response.success && response.imageUrl) {
+        setImageUrl(response.imageUrl)
+        message.success('Image generated successfully')
+      } else {
+        message.error(response.message || 'Failed to generate image')
+      }
+    } catch (error) {
+      message.error('Failed to generate image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleImageGenSuccess = (url: string) => {
+    setImageUrl(url)
+    setImageGenModalOpen(false)
+  }
+
+  const getImageUrl = (url: string | null | undefined): string => {
+    if (!url) return ''
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url
+    }
+    return url
   }
 
   const getPlatformLabel = (platform: string) => {
@@ -323,6 +429,13 @@ export default function CalendarItemModal({
             <Descriptions.Item label="Content">
               <div className={styles.contentPreview}>{item.content}</div>
             </Descriptions.Item>
+            {item.imageUrl && (
+              <Descriptions.Item label="Image">
+                <div className={styles.imagePreview}>
+                  <img src={getImageUrl(item.imageUrl)} alt="Calendar item" />
+                </div>
+              </Descriptions.Item>
+            )}
             <Descriptions.Item label="Status">
               <Tag color={getStatusColor(item.status)}>{item.status.toUpperCase()}</Tag>
             </Descriptions.Item>
@@ -414,6 +527,62 @@ export default function CalendarItemModal({
           />
         </Form.Item>
 
+        <Form.Item label="Image">
+          <div className={styles.imageContainer}>
+            {imageUrl ? (
+              <div className={styles.imagePreview}>
+                <img src={getImageUrl(imageUrl)} alt="Preview" />
+                <Button
+                  icon={<DeleteOutlined />}
+                  danger
+                  size="small"
+                  onClick={handleRemoveImage}
+                  className={styles.removeImageBtn}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className={styles.imageUploadArea}>
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={() => false}
+                    onChange={handleFileSelect}
+                    disabled={uploadingImage}
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={uploadingImage}
+                      block
+                    >
+                      Upload Image
+                    </Button>
+                  </Upload>
+                  <Space style={{ width: '100%', justifyContent: 'center' }}>
+                    <Button
+                      icon={<RobotOutlined />}
+                      onClick={handleAIGenerateImage}
+                      disabled={uploadingImage}
+                    >
+                      AI Generate (Manual)
+                    </Button>
+                    <Button
+                      icon={<PictureOutlined />}
+                      onClick={handleAIGenerateImageAuto}
+                      disabled={uploadingImage || !form.getFieldValue('content')}
+                      loading={uploadingImage}
+                    >
+                      AI Generate (Auto)
+                    </Button>
+                  </Space>
+                </Space>
+              </div>
+            )}
+          </div>
+        </Form.Item>
+
         <Tabs
           activeKey={activePlatformTab}
           onChange={setActivePlatformTab}
@@ -477,6 +646,11 @@ export default function CalendarItemModal({
           </Form.Item>
         </Form>
       )}
+      <ImageGenerationModal
+        open={imageGenModalOpen}
+        onCancel={() => setImageGenModalOpen(false)}
+        onSuccess={handleImageGenSuccess}
+      />
     </Modal>
   )
 }

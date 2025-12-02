@@ -20,7 +20,6 @@ const platformIcons: Record<string, string> = {
   instagram_story: '📸',
   instagram_reels: '🎬',
   tiktok: '🎵',
-  xiaohongshu: '📕',
   facebook: '📘',
 }
 
@@ -30,7 +29,6 @@ const platformLabels: Record<string, string> = {
   instagram_story: 'IG Story',
   instagram_reels: 'IG Reels',
   tiktok: 'TikTok',
-  xiaohongshu: '小红书',
   facebook: 'FB',
 }
 
