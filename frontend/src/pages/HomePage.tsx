@@ -471,7 +471,11 @@ export default function HomePage({
             © 2025 Melo. All rights reserved.
           </Paragraph>
           <Space size="large">
-            <Button type="link" className={styles.footerLink}>
+            <Button
+              type="link"
+              className={styles.footerLink}
+              onClick={() => navigate("/privacy-policy")}
+            >
               Privacy Policy
             </Button>
             <Button type="link" className={styles.footerLink}>
