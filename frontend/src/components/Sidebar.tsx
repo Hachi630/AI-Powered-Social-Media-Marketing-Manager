@@ -34,6 +34,7 @@ export default function Sidebar({
   const [conversations, setConversations] = useState<ConversationListItem[]>([])
   const [loading, setLoading] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState<string>('')
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   const loadConversations = async () => {
     if (!user) {
@@ -128,20 +129,42 @@ export default function Sidebar({
               <Typography.Title level={5} className={styles.title}>
                 Flippy chats
               </Typography.Title>
-              <Button type="text" icon={<PlusOutlined />} onClick={handleNewChat} className={styles.newChatButton} />
+              <div className={styles.headerActions}>
+                <Button 
+                  type="text" 
+                  icon={<SearchOutlined />} 
+                  onClick={() => setIsSearchOpen(!isSearchOpen)}
+                  className={styles.searchIconButton}
+                />
+                <Button type="text" icon={<PlusOutlined />} onClick={handleNewChat} className={styles.newChatButton} />
+              </div>
             </>
           )}
         </div>
         {!collapsed && (
           <>
-            <Input
-              className={styles.searchInput}
-              placeholder="Search"
-              prefix={<SearchOutlined />}
-              allowClear
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-            />
+            {isSearchOpen && (
+              <Input
+                className={styles.searchInput}
+                placeholder="Search"
+                prefix={<SearchOutlined />}
+                allowClear
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                autoFocus
+                onPressEnter={() => {
+                  // Keep search open when pressing enter
+                }}
+                onBlur={() => {
+                  // Keep search open if there's a keyword, close if empty
+                  if (!searchKeyword.trim()) {
+                    setTimeout(() => {
+                      setIsSearchOpen(false)
+                    }, 150)
+                  }
+                }}
+              />
+            )}
             <div className={styles.chatsSection}>
               <Typography.Text type="secondary" className={styles.sectionTitle}>
                 Chats

@@ -19,7 +19,15 @@
 .header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+  margin-bottom: 18px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .menuButton {
@@ -40,6 +48,25 @@
   background-color: var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
   color: var(--accent-color, #AE906E) !important;
   border-color: var(--accent-color, #AE906E) !important;
+}
+
+.searchIconButton {
+  color: var(--text-secondary, #8E8EA0) !important;
+  padding: 4px 8px !important;
+}
+
+.searchIconButton:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+  color: var(--text-primary, #40414F) !important;
+}
+
+[data-theme="warm"] .searchIconButton {
+  color: #B1A285 !important;
+}
+
+[data-theme="warm"] .searchIconButton:hover {
+  background-color: rgba(174, 144, 110, 0.08) !important;
+  color: #6B5A3C !important;
 }
 
 .newChatButton {
@@ -79,8 +106,26 @@
   color: #908066 !important;
 }
 
+.searchInput {
+  margin-bottom: 20px;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .searchInput :global(.ant-input) {
   border-radius: 9999px;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .sectionLabel {
