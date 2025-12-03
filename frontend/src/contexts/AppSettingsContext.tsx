@@ -155,71 +155,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent-color-rgba-12', hexToRgba(accentColor, 0.12))
     root.style.setProperty('--accent-color-rgba-15', hexToRgba(accentColor, 0.15))
     
-    // Apply to body
-    document.body.style.fontSize = `${settings.fontSize}px`
-    document.body.style.fontFamily = settings.fontFamily
-
     // Apply to main layout elements using CSS
+    // IMPORTANT: Only apply accent color to ChatBox, NOT entry pages
     const style = document.createElement('style')
     style.id = 'app-settings-style'
     style.textContent = `
-      /* Apply font settings to body and main content areas */
-      body {
-        font-size: ${settings.fontSize}px !important;
-        font-family: ${settings.fontFamily} !important;
-      }
-      
-      /* Apply font to common text elements */
-      p, span, div, h1, h2, h3, h4, h5, h6, a, li, td, th, label {
-        font-family: ${settings.fontFamily} !important;
-      }
-      
-      /* Apply font size to common elements (but allow headings to scale) */
-      p, span, div, a, li, td, th, label, input, textarea, select, button {
-        font-size: ${settings.fontSize}px !important;
-      }
-      
-      /* Apply font to input and textarea elements specifically */
-      input, textarea, .ant-input, .ant-input-affix-wrapper input, 
-      .ant-input-affix-wrapper textarea, textarea.ant-input {
-        font-family: ${settings.fontFamily} !important;
-        font-size: ${settings.fontSize}px !important;
-      }
-      
-      /* Apply accent color to input caret */
-      input:focus, textarea:focus, .ant-input:focus, 
-      .ant-input-affix-wrapper-focused input, textarea.ant-input:focus {
-        caret-color: ${accentColor} !important;
-      }
-      
-      /* Apply font to placeholder text */
-      input::placeholder, textarea::placeholder,
-      .ant-input::placeholder, .ant-input-affix-wrapper input::placeholder {
-        font-family: ${settings.fontFamily} !important;
-      }
-      
-      /* Apply accent color to primary buttons */
-      .ant-btn-primary,
-      .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
-        background-color: ${accentColor} !important;
-        border-color: ${accentColor} !important;
-      }
-      
-      .ant-btn-primary:hover:not(:disabled):not(.ant-btn-disabled),
-      .ant-btn-primary:focus:not(:disabled):not(.ant-btn-disabled) {
-        background-color: ${darkenColor(accentColor, 20)} !important;
-        border-color: ${darkenColor(accentColor, 20)} !important;
-      }
-      
-      /* Apply accent color to links */
-      a {
-        color: ${accentColor} !important;
-      }
-      
-      a:hover {
-        color: ${darkenColor(accentColor, 20)} !important;
-      }
-      
       /* Apply accent color to user message bubbles (ChatBox specific) */
       .userMessage .messageContent {
         background-color: ${accentColor} !important;
