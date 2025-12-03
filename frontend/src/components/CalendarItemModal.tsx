@@ -211,20 +211,10 @@ export default function CalendarItemModal({
 
     try {
       setLoading(true)
+      // TODO: Implement backend sharing logic
+      message.info(`Sharing to ${platform}... (Coming soon)`)
       
-      if (platform === 'twitter') {
-        message.info('Sharing to Twitter/X...')
-        const response = await calendarService.shareCalendarItem(item.id, platform)
-        if (response.success) {
-          message.success('Successfully posted to Twitter/X!')
-        } else {
-          message.error(response.message || 'Failed to post to Twitter/X')
-        }
-      } else {
-        // Placeholder for other platforms
-        message.info(`Sharing to ${platform}... (Coming soon)`)
-      }
-      
+      // Placeholder for future implementation
       // const response = await calendarService.shareToPlatform(item.id, platform)
       // if (response.success) {
       //   message.success(`Successfully shared to ${platform}`)
@@ -232,7 +222,6 @@ export default function CalendarItemModal({
       //   message.error(response.message || `Failed to share to ${platform}`)
       // }
     } catch (error) {
-      console.error('Share error:', error)
       message.error(`Failed to share to ${platform}`)
     } finally {
       setLoading(false)

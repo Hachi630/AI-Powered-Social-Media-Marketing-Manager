@@ -244,30 +244,128 @@ export const calendarService = {
   },
 
   /**
-   * Share a calendar item to a platform
+   * Share a calendar item to a platform (legacy method for backward compatibility)
    */
   async shareCalendarItem(id: string, platform: string): Promise<{ success: boolean; message?: string }> {
+    // Use the new shareToPlatform method internally
+    const result = await this.shareToPlatform(id, platform)
+    return {
+      success: result.success,
+      message: result.message,
+    }
+  },
+
+  /**
+   * Share calendar item to social media platform
+   */
+  async shareToPlatform(
+    calendarItemId: string,
+    platform: string,
+    options?: { imageUrl?: string }
+  ): Promise<{ success: boolean; message?: string; postId?: string; permalink?: string; requiresAuth?: boolean }> {
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
     }
 
     try {
-      const response = await fetch(`${API_URL}/${id}/share`, {
+      // Get calendar item first to get content
+      const itemResponse = await this.getCalendarItem(calendarItemId)
+      if (!itemResponse.success || !itemResponse.item) {
+        return { success: false, message: 'Calendar item not found' }
+      }
+
+      const item = itemResponse.item
+      const content = `${item.title}\n\n${item.content}`
+
+      // Map platform names to API endpoints
+      const platformMap: Record<string, string> = {
+        instagram: 'instagram',
+        facebook: 'facebook',
+        xiaohongshu: 'xiaohongshu',
+        twitter: 'twitter',
+        linkedin: 'linkedin',
+      }
+
+      const apiPlatform = platformMap[platform.toLowerCase()]
+      if (!apiPlatform) {
+        return { success: false, message: `Unsupported platform: ${platform}` }
+      }
+
+      // Call share API
+      const response = await fetch(`/api/social/${apiPlatform}/share`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ platform }),
+        body: JSON.stringify({
+          calendarItemId,
+          content,
+          imageUrl: options?.imageUrl,
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        return { success: false, message: data.message || 'Failed to share calendar item' }
+        return {
+          success: false,
+          message: data.message || `Failed to share to ${platform}`,
+          requiresAuth: data.requiresAuth || false,
+        }
       }
 
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
+  /**
+   * Get Instagram connection status
+   */
+  async getInstagramStatus(): Promise<{ success: boolean; connected: boolean; username?: string; requiresAuth?: boolean }> {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, connected: false }
+    }
+
+    try {
+      const response = await fetch('/api/social/instagram/status', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      return { success: false, connected: false }
+    }
+  },
+
+  /**
+   * Initiate Instagram OAuth flow
+   */
+  async initiateInstagramAuth(): Promise<{ success: boolean; authUrl?: string; message?: string }> {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch('/api/social/instagram/auth', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
       return data
     } catch (error) {
       return { success: false, message: 'Network error' }
