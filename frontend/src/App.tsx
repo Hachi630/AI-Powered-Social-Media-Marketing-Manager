@@ -14,6 +14,7 @@ import ContactUs from './pages/ContactUs'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
+import LinkedInDashboard from './components/LinkedInDashboard'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -167,6 +168,14 @@ function AppContent() {
             onLoginSuccess={handleLoginSuccess}
             onLogout={handleLogout}
             user={user}
+          />
+        }
+      />
+      <Route
+        path="/socialdashboard"
+        element={
+          <LinkedInDashboard
+            jwt={localStorage.getItem('token') || ''}
           />
         }
       />
