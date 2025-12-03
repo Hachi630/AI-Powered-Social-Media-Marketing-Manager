@@ -176,6 +176,7 @@ function AppContent() {
         element={
           <LinkedInDashboard
             jwt={localStorage.getItem('token') || ''}
+            userId={user?.id}
           />
         }
       />

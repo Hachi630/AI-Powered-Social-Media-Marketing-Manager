@@ -1,8 +1,13 @@
 import { Card, Statistic, Tag, Button, Space } from "antd";
-import { getLinkedInMetrics, linkedinAuthUrl } from "../services/linkedinService";
+import { getLinkedInMetrics, getLinkedInAuthUrl } from "../services/linkedinService";
 import { useState, useEffect } from "react";
 
-export default function LinkedInDashboard({ jwt }: { jwt: string }) {
+interface LinkedInDashboardProps {
+  jwt: string;
+  userId?: string;
+}
+
+export default function LinkedInDashboard({ jwt, userId }: LinkedInDashboardProps) {
   const [metrics, setMetrics] = useState<any>(null);
 
   useEffect(() => {
@@ -10,14 +15,19 @@ export default function LinkedInDashboard({ jwt }: { jwt: string }) {
     getLinkedInMetrics(jwt).then(setMetrics);
   }, [jwt]);
 
+  // Generate auth URL with userId for proper token association
+  const authUrl = userId ? getLinkedInAuthUrl(userId) : undefined;
+
   return (
     <Space wrap size="large">
       {/* Followers */}
       <Card title="LinkedIn Followers">
         {metrics?.followers?.available ? (
           <Statistic value={metrics.followers.value} />
+        ) : authUrl ? (
+          <Button href={authUrl}>Connect LinkedIn</Button>
         ) : (
-          <Button href={linkedinAuthUrl}>Connect LinkedIn</Button>
+          <Tag color="warning">Please log in to connect LinkedIn</Tag>
         )}
       </Card>
 
@@ -37,4 +47,3 @@ export default function LinkedInDashboard({ jwt }: { jwt: string }) {
     </Space>
   );
 }
-
