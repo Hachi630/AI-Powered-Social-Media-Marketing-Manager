@@ -176,6 +176,10 @@ function AppContent() {
         path="/socialdashboard"
         element={
           <LinkedInDashboard
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            user={user}
             jwt={localStorage.getItem('token') || ''}
             userId={user?.id}
           />
