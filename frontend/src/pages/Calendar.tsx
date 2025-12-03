@@ -20,7 +20,6 @@ const platformIcons: Record<string, string> = {
   instagram_story: '📸',
   instagram_reels: '🎬',
   tiktok: '🎵',
-  xiaohongshu: '📕',
   facebook: '📘',
 }
 
@@ -30,9 +29,9 @@ const platformLabels: Record<string, string> = {
   instagram_story: 'IG Story',
   instagram_reels: 'IG Reels',
   tiktok: 'TikTok',
-  xiaohongshu: '小红书',
   facebook: 'FB',
 }
+
 
 interface CalendarProps {
   isLoggedIn: boolean
@@ -106,6 +105,38 @@ export default function CalendarPage({
   const getItemsForDate = (date: Dayjs): CalendarItem[] => {
     const dateStr = date.format('YYYY-MM-DD')
     return calendarItems.filter((item) => item.date === dateStr)
+  }
+
+  // Get upcoming week items (next 7 days from today)
+  const getUpcomingWeekItems = (): CalendarItem[] => {
+    const today = dayjs().startOf('day')
+    const nextWeek = today.add(7, 'day')
+    
+    return calendarItems
+      .filter((item) => {
+        const itemDate = dayjs(item.date).startOf('day')
+        // Include today and next 6 days (total 7 days)
+        return (itemDate.isSame(today) || itemDate.isAfter(today)) && itemDate.isBefore(nextWeek)
+      })
+      .sort((a, b) => {
+        // Sort by date first, then by time
+        const dateCompare = a.date.localeCompare(b.date)
+        if (dateCompare !== 0) return dateCompare
+        const timeA = a.time || '00:00'
+        const timeB = b.time || '00:00'
+        return timeA.localeCompare(timeB)
+      })
+  }
+
+  // Group items by date
+  const groupItemsByDate = (items: CalendarItem[]): Record<string, CalendarItem[]> => {
+    return items.reduce((acc, item) => {
+      if (!acc[item.date]) {
+        acc[item.date] = []
+      }
+      acc[item.date].push(item)
+      return acc
+    }, {} as Record<string, CalendarItem[]>)
   }
 
   // Render calendar cell content
@@ -231,6 +262,67 @@ export default function CalendarPage({
               </Typography.Text>
             </Card>
           )}
+          {isLoggedIn && (() => {
+            const upcomingItems = getUpcomingWeekItems()
+            const groupedItems = groupItemsByDate(upcomingItems)
+            const dates = Object.keys(groupedItems).sort()
+
+            if (dates.length === 0) {
+              return null
+            }
+
+            return (
+              <Card className={styles.card}>
+                <Typography.Title level={4} className={styles.weeklyTitle}>
+                  Upcoming Week
+                </Typography.Title>
+                <div className={styles.weeklyPlan}>
+                  {dates.map((dateStr) => {
+                    const date = dayjs(dateStr)
+                    const items = groupedItems[dateStr]
+                    const isToday = date.isSame(dayjs(), 'day')
+                    
+                    return (
+                      <div key={dateStr} className={styles.weeklyDay}>
+                        <div className={styles.weeklyDateHeader}>
+                          <Typography.Text strong className={styles.weeklyDate}>
+                            {date.format('MMM DD')} {date.format('dddd')}
+                            {isToday && <span className={styles.todayBadge}>Today</span>}
+                          </Typography.Text>
+                          <Typography.Text type="secondary" className={styles.weeklyItemCount}>
+                            {items.length} {items.length === 1 ? 'item' : 'items'}
+                          </Typography.Text>
+                        </div>
+                        <div className={styles.weeklyItems}>
+                          {items.map((item) => {
+                            const icon = platformIcons[item.platform] || '📌'
+                            const label = platformLabels[item.platform] || item.platform
+                            return (
+                              <div
+                                key={item.id}
+                                className={styles.weeklyItem}
+                                onClick={() => {
+                                  setSelectedItem(item)
+                                  setModalOpen(true)
+                                }}
+                              >
+                                <span className={styles.weeklyItemIcon}>{icon}</span>
+                                <span className={styles.weeklyItemLabel}>{label}</span>
+                                <span className={styles.weeklyItemTitle}>{item.title}</span>
+                                {item.time && (
+                                  <span className={styles.weeklyItemTime}>{item.time}</span>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            )
+          })()}
         </Space>
       </Content>
       {isLoggedIn && (

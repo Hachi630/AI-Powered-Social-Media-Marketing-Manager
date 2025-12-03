@@ -44,7 +44,6 @@ export default function ContentPlanModal({
     { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
     { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
     { value: PLATFORMS.TIKTOK, label: 'TikTok' },
-    { value: PLATFORMS.XIAOHONGSHU, label: '小红书' },
     { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
   ]
 

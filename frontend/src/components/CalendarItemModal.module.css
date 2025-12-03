@@ -38,3 +38,46 @@
   border-top: 1px solid #f0f0f0;
 }
 
+.imageContainer {
+  width: 100%;
+}
+
+.imagePreview {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.imagePreview img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: 400px;
+  object-fit: contain;
+}
+
+.removeImageBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.imageUploadArea {
+  width: 100%;
+  padding: 16px;
+  border: 1px dashed #d9d9d9;
+  border-radius: 4px;
+  background: #fafafa;
+  text-align: center;
+}
+
+.imageUploadArea:hover {
+  border-color: #1890ff;
+}
+

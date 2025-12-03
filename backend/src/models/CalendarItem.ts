@@ -5,7 +5,6 @@ export interface ICalendarItemVariants {
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
-  xiaohongshu?: string
   facebook?: string
 }
 
@@ -17,6 +16,7 @@ export interface ICalendarItem extends Document {
   time?: string | null
   title: string
   content: string
+  imageUrl?: string | null
   variants?: ICalendarItemVariants
   status: 'draft' | 'scheduled' | 'published'
   createdAt: Date
@@ -29,7 +29,6 @@ const CalendarItemVariantsSchema: Schema = new Schema(
     instagram_post: { type: String, trim: true },
     instagram_story: { type: String, trim: true },
     instagram_reels: { type: String, trim: true },
-    xiaohongshu: { type: String, trim: true },
     facebook: { type: String, trim: true },
   },
   { _id: false }
@@ -73,6 +72,11 @@ const CalendarItemSchema: Schema = new Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    imageUrl: {
+      type: String,
+      trim: true,
+      default: null,
     },
     variants: {
       type: CalendarItemVariantsSchema,

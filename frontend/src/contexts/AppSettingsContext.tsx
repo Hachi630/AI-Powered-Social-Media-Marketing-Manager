@@ -27,95 +27,95 @@ const STORAGE_KEY = 'melo_app_settings'
 
 // Helper function to calculate text color based on background
 const getContrastColor = (bgColor: string): string => {
-  // Validate input
   if (!bgColor || typeof bgColor !== 'string') {
-    return '#1e1e1e' // Default to dark text
+    return '#1e1e1e'
   }
   
   try {
-    // Remove # if present
     const hex = bgColor.replace('#', '')
     if (hex.length !== 6) {
-      return '#1e1e1e' // Default to dark text for invalid hex
+      return '#1e1e1e'
     }
     
     const r = parseInt(hex.substr(0, 2), 16)
     const g = parseInt(hex.substr(2, 2), 16)
     const b = parseInt(hex.substr(4, 2), 16)
     
-    // Validate parsed values
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return '#1e1e1e' // Default to dark text
+      return '#1e1e1e'
     }
     
-    // Calculate luminance
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    // Return white for dark backgrounds, black for light backgrounds
     return luminance > 0.5 ? '#1e1e1e' : '#ffffff'
   } catch (error) {
     console.error('Error calculating contrast color:', error)
-    return '#1e1e1e' // Default to dark text on error
+    return '#1e1e1e'
   }
 }
 
 // Helper function to darken color for hover states
 const darkenColor = (color: string, amount: number): string => {
-  // Validate input
   if (!color || typeof color !== 'string') {
-    return DEFAULT_SETTINGS.accentColor // Return default color
+    return DEFAULT_SETTINGS.accentColor
   }
   
   try {
-    // Remove # if present
     const hex = color.replace('#', '')
     if (hex.length !== 6) {
-      return DEFAULT_SETTINGS.accentColor // Return default for invalid hex
+      return DEFAULT_SETTINGS.accentColor
     }
     
     const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - amount)
     const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - amount)
     const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - amount)
     
-    // Validate parsed values
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return DEFAULT_SETTINGS.accentColor // Return default on parse error
+      return DEFAULT_SETTINGS.accentColor
     }
     
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
   } catch (error) {
     console.error('Error darkening color:', error)
-    return DEFAULT_SETTINGS.accentColor // Return default on error
+    return DEFAULT_SETTINGS.accentColor
   }
 }
 
 // Helper function to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
-  // Validate input
   if (!hex || typeof hex !== 'string') {
-    // Return default rgba for default accent color
-    return 'rgba(186, 207, 101, ' + alpha + ')' // Default accent color #bacf65
+    return 'rgba(186, 207, 101, ' + alpha + ')'
   }
   
   try {
     const h = hex.replace('#', '')
     if (h.length !== 6) {
-      return 'rgba(186, 207, 101, ' + alpha + ')' // Default accent color
+      return 'rgba(186, 207, 101, ' + alpha + ')'
     }
     
     const r = parseInt(h.substr(0, 2), 16)
     const g = parseInt(h.substr(2, 2), 16)
     const b = parseInt(h.substr(4, 2), 16)
     
-    // Validate parsed values
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return 'rgba(186, 207, 101, ' + alpha + ')' // Default accent color
+      return 'rgba(186, 207, 101, ' + alpha + ')'
     }
     
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   } catch (error) {
     console.error('Error converting hex to rgba:', error)
-    return 'rgba(186, 207, 101, ' + alpha + ')' // Default accent color on error
+    return 'rgba(186, 207, 101, ' + alpha + ')'
   }
+}
+
+// Check if current page is an entry page
+const isEntryPage = (): boolean => {
+  const entryPagePaths = ['/home', '/privacy-policy', '/terms-of-service', '/contact-us', '/']
+  const pathname = window.location.pathname
+  return entryPagePaths.some(path => 
+    pathname === path || 
+    pathname === path + '/' ||
+    pathname.startsWith('/home')
+  )
 }
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
@@ -139,12 +139,11 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setPendingSettings(settings)
   }, [settings])
 
-  // Apply settings to DOM - comprehensive application
-  // Note: These styles should NOT affect the entry page (HomePage, PrivacyPolicy, TermsOfService, ContactUs)
+  // Apply settings to DOM
   useEffect(() => {
-    // Ensure accentColor exists, use default if not
     const accentColor = settings.accentColor || DEFAULT_SETTINGS.accentColor
     
+    // Set CSS variables on root
     const root = document.documentElement
     root.style.setProperty('--custom-font-size', `${settings.fontSize}px`)
     root.style.setProperty('--custom-font-family', settings.fontFamily)
@@ -156,30 +155,169 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent-color-rgba-12', hexToRgba(accentColor, 0.12))
     root.style.setProperty('--accent-color-rgba-15', hexToRgba(accentColor, 0.15))
     
-    // Note: Don't apply to body directly as it affects entry page
-    // Settings are scoped to dashboard areas only via CSS selectors
-
-    // Apply to main layout elements using CSS
-    // Note: These styles are scoped to dashboard/app areas only, NOT the entry page
-    // We use [data-page="app"] attribute to identify non-entry pages
-    const style = document.createElement('style')
-    style.id = 'app-settings-style'
-    style.textContent = `
-      /* Apply accent color to user message bubbles (ChatBox specific) */
-      .userMessage .messageContent {
-        background-color: ${accentColor} !important;
-        color: ${getContrastColor(accentColor)} !important;
-        border-color: ${accentColor} !important;
+    // Function to apply styles based on current page
+    const applyPageStyles = () => {
+      // Remove old style if exists
+      const oldStyle = document.getElementById('app-settings-style')
+      if (oldStyle) {
+        oldStyle.remove()
       }
-    `
-    
-    // Remove old style if exists
-    const oldStyle = document.getElementById('app-settings-style')
-    if (oldStyle) {
-      oldStyle.remove()
+      
+      const style = document.createElement('style')
+      style.id = 'app-settings-style'
+      
+      // If on entry page, only apply ChatBox accent color (no font/size changes)
+      if (isEntryPage()) {
+        style.textContent = `
+          /* Entry page - only apply ChatBox accent color */
+          .userMessage .messageContent {
+            background-color: ${accentColor} !important;
+            color: ${getContrastColor(accentColor)} !important;
+            border-color: ${accentColor} !important;
+          }
+        `
+      } else {
+        // Apply full settings to app pages (Dashboard, Calendar, etc.)
+        style.textContent = `
+          /* ===== FONT SETTINGS FOR APP PAGES ===== */
+          .ant-layout {
+            font-size: ${settings.fontSize}px !important;
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          .ant-layout p,
+          .ant-layout span,
+          .ant-layout div,
+          .ant-layout h1,
+          .ant-layout h2,
+          .ant-layout h3,
+          .ant-layout h4,
+          .ant-layout h5,
+          .ant-layout h6,
+          .ant-layout a,
+          .ant-layout li,
+          .ant-layout td,
+          .ant-layout th,
+          .ant-layout label {
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          .ant-layout p,
+          .ant-layout span,
+          .ant-layout div,
+          .ant-layout a,
+          .ant-layout li,
+          .ant-layout td,
+          .ant-layout th,
+          .ant-layout label,
+          .ant-layout input,
+          .ant-layout textarea,
+          .ant-layout select,
+          .ant-layout button {
+            font-size: ${settings.fontSize}px !important;
+          }
+          
+          .ant-layout input,
+          .ant-layout textarea,
+          .ant-layout .ant-input,
+          .ant-layout .ant-input-affix-wrapper input,
+          .ant-layout .ant-input-affix-wrapper textarea,
+          .ant-layout textarea.ant-input {
+            font-family: ${settings.fontFamily} !important;
+            font-size: ${settings.fontSize}px !important;
+          }
+          
+          .ant-layout input:focus,
+          .ant-layout textarea:focus,
+          .ant-layout .ant-input:focus,
+          .ant-layout .ant-input-affix-wrapper-focused input,
+          .ant-layout textarea.ant-input:focus {
+            caret-color: ${accentColor} !important;
+          }
+          
+          .ant-layout input::placeholder,
+          .ant-layout textarea::placeholder,
+          .ant-layout .ant-input::placeholder,
+          .ant-layout .ant-input-affix-wrapper input::placeholder {
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          /* ===== ACCENT COLOR FOR APP PAGES ===== */
+          .ant-layout .ant-btn-primary,
+          .ant-layout .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
+            background-color: ${accentColor} !important;
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-layout .ant-btn-primary:hover:not(:disabled):not(.ant-btn-disabled),
+          .ant-layout .ant-btn-primary:focus:not(:disabled):not(.ant-btn-disabled) {
+            background-color: ${darkenColor(accentColor, 20)} !important;
+            border-color: ${darkenColor(accentColor, 20)} !important;
+          }
+          
+          .ant-layout a {
+            color: ${accentColor} !important;
+          }
+          
+          .ant-layout a:hover {
+            color: ${darkenColor(accentColor, 20)} !important;
+          }
+          
+          /* ===== CHATBOX SPECIFIC ===== */
+          .userMessage .messageContent {
+            background-color: ${accentColor} !important;
+            color: ${getContrastColor(accentColor)} !important;
+            border-color: ${accentColor} !important;
+          }
+        `
+      }
+      
+      document.head.appendChild(style)
     }
     
-    document.head.appendChild(style)
+    // Apply styles initially
+    applyPageStyles()
+    
+    // Listen for route changes
+    const handleRouteChange = () => {
+      setTimeout(applyPageStyles, 50) // Small delay to ensure URL has updated
+    }
+    
+    window.addEventListener('popstate', handleRouteChange)
+    
+    // Override pushState and replaceState for SPA navigation
+    const originalPushState = history.pushState
+    const originalReplaceState = history.replaceState
+    
+    history.pushState = function(...args) {
+      originalPushState.apply(this, args)
+      handleRouteChange()
+    }
+    
+    history.replaceState = function(...args) {
+      originalReplaceState.apply(this, args)
+      handleRouteChange()
+    }
+    
+    // Backup: check periodically for route changes
+    const interval = setInterval(() => {
+      const styleEl = document.getElementById('app-settings-style')
+      if (styleEl) {
+        const onEntryPage = isEntryPage()
+        const hasAppStyles = styleEl.textContent?.includes('.ant-layout {')
+        
+        if ((onEntryPage && hasAppStyles) || (!onEntryPage && !hasAppStyles)) {
+          applyPageStyles()
+        }
+      }
+    }, 300)
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouteChange)
+      history.pushState = originalPushState
+      history.replaceState = originalReplaceState
+      clearInterval(interval)
+    }
   }, [settings])
 
   // Save to localStorage when settings change
@@ -195,7 +333,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setPendingSettings((prev) => ({ ...prev, ...newSettings }))
   }
 
-  const applySettings = () => {
+  const applySettingsFunc = () => {
     setSettings(pendingSettings)
   }
 
@@ -213,7 +351,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       settings, 
       pendingSettings,
       updatePendingSettings, 
-      applySettings,
+      applySettings: applySettingsFunc,
       resetSettings,
       resetPendingSettings
     }}>
@@ -229,4 +367,3 @@ export function useAppSettings() {
   }
   return context
 }
-
