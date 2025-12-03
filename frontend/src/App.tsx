@@ -1,4 +1,4 @@
-import { ConfigProvider, message } from 'antd'
+import { ConfigProvider, App as AntApp } from 'antd'
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useSearchParams, useLocation } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
@@ -46,6 +46,7 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { message } = AntApp.useApp()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -82,7 +83,7 @@ function AppContent() {
       // Clean up URL
       window.history.replaceState({}, '', location.pathname)
     }
-  }, [location])
+  }, [location, message])
 
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true)
@@ -225,11 +226,13 @@ function AppWithTheme() {
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <BrowserRouter>
-        <div className="app">
-          <AppContent />
-        </div>
-      </BrowserRouter>
+      <AntApp>
+        <BrowserRouter>
+          <div className="app">
+            <AppContent />
+          </div>
+        </BrowserRouter>
+      </AntApp>
     </ConfigProvider>
   )
 }
