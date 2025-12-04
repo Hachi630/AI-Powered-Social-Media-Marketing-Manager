@@ -20,7 +20,8 @@
     "mongoose": "^9.0.0",
     "multer": "^2.0.2",
     "react-markdown": "^10.1.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "twitter-api-v2": "^1.28.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

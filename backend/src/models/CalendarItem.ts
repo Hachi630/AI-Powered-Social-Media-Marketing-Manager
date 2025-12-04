@@ -6,6 +6,7 @@ export interface ICalendarItemVariants {
   instagram_story?: string
   instagram_reels?: string
   facebook?: string
+  twitter?: string
 }
 
 export interface ICalendarItem extends Document {
@@ -30,6 +31,7 @@ const CalendarItemVariantsSchema: Schema = new Schema(
     instagram_story: { type: String, trim: true },
     instagram_reels: { type: String, trim: true },
     facebook: { type: String, trim: true },
+    twitter: { type: String, trim: true },
   },
   { _id: false }
 )
