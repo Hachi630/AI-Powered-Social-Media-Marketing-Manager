@@ -23,7 +23,7 @@ dotenv.config()
 connectDB()
 
 const app = express()
-const PORT = process.env.PORT || 5001
+const PORT = process.env.PORT || 5000
 
 // CORS configuration - must be FIRST, before any other middleware
 // Allow all origins in development to avoid CORS issues
@@ -38,8 +38,9 @@ app.use(cors({
 }))
 
 // Body parsing middleware
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Increase limit to 250MB for video uploads (LinkedIn allows up to 200MB videos)
+app.use(express.json({ limit: '250mb' }))
+app.use(express.urlencoded({ extended: true, limit: '250mb' }))
 
 // Static file serving for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
