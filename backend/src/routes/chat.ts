@@ -7,6 +7,8 @@ import { generateImage } from '../services/imageGenerationService'
 import { saveImage } from '../utils/imageStorage'
 import { generateContentPlan } from '../services/contentPlanService'
 import CalendarItem from '../models/CalendarItem'
+import { readImageAsBase64 } from '../utils/imageReader'
+import { extractTextFromFile } from '../utils/fileContentExtractor'
 
 const router = express.Router()
 
@@ -91,13 +93,75 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     messages.push({
       role: 'user',
       content: userMessageContent,
+      images: images && Array.isArray(images) ? images : undefined,
+      files:
+        files && Array.isArray(files)
+          ? files.map((f: any) => ({
+              url: f.url,
+              name: f.name,
+              type: f.type,
+            }))
+          : undefined,
     })
 
-    // Call Gemini service
-    const aiResponse = await geminiService.generateContent({
-      messages,
-      userContext,
-    })
+    // Process images: read and convert to base64
+    const imageData: Array<{ base64: string; mimeType: string }> = []
+    if (images && Array.isArray(images) && images.length > 0) {
+      for (const imageUrl of images) {
+        try {
+          const imageResult = readImageAsBase64(imageUrl)
+          if (imageResult.success) {
+            imageData.push({
+              base64: imageResult.base64,
+              mimeType: imageResult.mimeType,
+            })
+          } else {
+            console.warn(`Failed to read image ${imageUrl}:`, imageResult.error)
+          }
+        } catch (error: any) {
+          console.error(`Error reading image ${imageUrl}:`, error)
+        }
+      }
+    }
+
+    // Process files: extract text content
+    const fileTexts: Array<{ name: string; text: string }> = []
+    if (files && Array.isArray(files) && files.length > 0) {
+      for (const file of files) {
+        try {
+          const extracted = await extractTextFromFile(file.url, file.type)
+          if (extracted.success && extracted.text) {
+            fileTexts.push({
+              name: file.name,
+              text: extracted.text,
+            })
+          } else {
+            // If extraction failed, add file info as text
+            console.warn(`Failed to extract text from file ${file.name}:`, extracted.error)
+            fileTexts.push({
+              name: file.name,
+              text: `[File: ${file.name}, Type: ${file.type}. Text extraction failed: ${extracted.error || 'Unknown error'}]`,
+            })
+          }
+        } catch (error: any) {
+          console.error(`Error extracting text from file ${file.name}:`, error)
+          fileTexts.push({
+            name: file.name,
+            text: `[File: ${file.name}, Type: ${file.type}. Error: ${error.message || 'Unknown error'}]`,
+          })
+        }
+      }
+    }
+
+    // Call Gemini service with images and file texts
+    const aiResponse = await geminiService.generateContent(
+      {
+        messages,
+        userContext,
+      },
+      imageData.length > 0 ? imageData : undefined,
+      fileTexts.length > 0 ? fileTexts : undefined
+    )
 
     // Create or update conversation
     if (!conversation) {
