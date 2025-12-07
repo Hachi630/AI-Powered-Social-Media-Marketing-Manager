@@ -11,6 +11,7 @@ import calendarRoutes from './routes/calendar'
 import campaignRoutes from './routes/campaign'
 import uploadRoutes from './routes/upload'
 import { errorHandler } from './middleware/errorHandler'
+import linkedinRoutes from "./routes/linkedin";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -49,6 +50,7 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use("/linkedin", linkedinRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })
