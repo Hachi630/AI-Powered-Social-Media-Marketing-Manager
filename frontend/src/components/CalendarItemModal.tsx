@@ -37,6 +37,7 @@ export const PLATFORMS = {
   INSTAGRAM_REELS: 'instagram_reels',
   TIKTOK: 'tiktok',
   FACEBOOK: 'facebook',
+  TWITTER: 'twitter',
 } as const
 
 const platformOptions = [
@@ -45,6 +46,7 @@ const platformOptions = [
   { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
   { value: PLATFORMS.TIKTOK, label: 'TikTok' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
+  { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
 ]
 
 const statusOptions = [
@@ -209,10 +211,20 @@ export default function CalendarItemModal({
 
     try {
       setLoading(true)
-      // TODO: Implement backend sharing logic
-      message.info(`Sharing to ${platform}... (Coming soon)`)
       
-      // Placeholder for future implementation
+      if (platform === 'twitter') {
+        message.info('Sharing to Twitter/X...')
+        const response = await calendarService.shareCalendarItem(item.id, platform)
+        if (response.success) {
+          message.success('Successfully posted to Twitter/X!')
+        } else {
+          message.error(response.message || 'Failed to post to Twitter/X')
+        }
+      } else {
+        // Placeholder for other platforms
+        message.info(`Sharing to ${platform}... (Coming soon)`)
+      }
+      
       // const response = await calendarService.shareToPlatform(item.id, platform)
       // if (response.success) {
       //   message.success(`Successfully shared to ${platform}`)
@@ -220,6 +232,7 @@ export default function CalendarItemModal({
       //   message.error(response.message || `Failed to share to ${platform}`)
       // }
     } catch (error) {
+      console.error('Share error:', error)
       message.error(`Failed to share to ${platform}`)
     } finally {
       setLoading(false)
