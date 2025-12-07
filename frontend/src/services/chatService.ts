@@ -1,10 +1,18 @@
 // API base URL - using Vite proxy (no CORS issues)
 const API_URL = '/api/chat'
 
+export interface ChatFile {
+  url: string
+  name: string
+  type: string
+  size: number
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   images?: string[]
+  files?: ChatFile[]
   timestamp?: Date | string
 }
 
@@ -45,7 +53,9 @@ export const chatService = {
    */
   async sendMessage(
     message: string,
-    conversationId?: string
+    conversationId?: string,
+    images?: string[],
+    files?: ChatFile[]
   ): Promise<ChatResponse> {
     const token = localStorage.getItem('token')
     if (!token) {
@@ -62,6 +72,8 @@ export const chatService = {
         body: JSON.stringify({
           message,
           conversationId,
+          images,
+          files,
         }),
       })
 

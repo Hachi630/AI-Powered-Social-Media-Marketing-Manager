@@ -33,11 +33,15 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    const { message, conversationId } = req.body
+    const { message, conversationId, images, files } = req.body
 
-    // Validate message
-    if (!message || !message.trim()) {
-      return res.status(400).json({ success: false, message: 'Message is required' })
+    // Validate message, images or files
+    if (
+      (!message || !message.trim()) &&
+      (!images || !Array.isArray(images) || images.length === 0) &&
+      (!files || !Array.isArray(files) || files.length === 0)
+    ) {
+      return res.status(400).json({ success: false, message: 'Message, images or files are required' })
     }
 
     let conversation = null
@@ -77,9 +81,16 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     }
 
     // Add current user message
+    const userMessageContent = message
+      ? message.trim()
+      : images && images.length > 0
+        ? `Uploaded ${images.length} image(s)`
+        : files && files.length > 0
+          ? `Uploaded ${files.length} file(s)`
+          : ''
     messages.push({
       role: 'user',
-      content: message.trim(),
+      content: userMessageContent,
     })
 
     // Call Gemini service
@@ -93,11 +104,21 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       // Create new conversation
       conversation = await Conversation.create({
         userId: user._id,
-        title: generateTitle(message.trim()),
+        title: generateTitle(userMessageContent),
         messages: [
           {
             role: 'user',
-            content: message.trim(),
+            content: userMessageContent,
+            images: images && Array.isArray(images) ? images : undefined,
+            files:
+              files && Array.isArray(files)
+                ? files.map((f: any) => ({
+                    url: f.url,
+                    name: f.name,
+                    type: f.type,
+                    size: f.size,
+                  }))
+                : undefined,
             timestamp: new Date(),
           },
           {
@@ -111,7 +132,17 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       // Update existing conversation
       conversation.messages.push({
         role: 'user',
-        content: message.trim(),
+        content: userMessageContent,
+        images: images && Array.isArray(images) ? images : undefined,
+        files:
+          files && Array.isArray(files)
+            ? files.map((f: any) => ({
+                url: f.url,
+                name: f.name,
+                type: f.type,
+                size: f.size,
+              }))
+            : undefined,
         timestamp: new Date(),
       })
       conversation.messages.push({
@@ -278,6 +309,7 @@ router.get('/:conversationId', protect, async (req: AuthRequest, res: Response) 
           role: msg.role,
           content: msg.content,
           images: msg.images,
+          files: msg.files,
           timestamp: msg.timestamp,
         })),
         createdAt: conversation.createdAt,
