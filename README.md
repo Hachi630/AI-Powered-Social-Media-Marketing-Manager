@@ -172,12 +172,19 @@ GEMINI_API_KEY=your_gemini_api_key_here
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
+
+# Twitter/X API Credentials (Required for X integration)
+TWITTER_API_KEY=your_twitter_api_key
+TWITTER_API_SECRET=your_twitter_api_secret
+TWITTER_ACCESS_TOKEN=your_twitter_access_token
+TWITTER_ACCESS_SECRET=your_twitter_access_secret
 ```
 
 **Note**: 
 - Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 - `GEMINI_IMAGE_MODEL` is optional, defaults to `gemini-2.5-flash-image` if not set
 - Make sure the `backend/uploads/images/` directory exists for image storage
+- Twitter/X credentials can be obtained from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
 
 ### Frontend
 

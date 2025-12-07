@@ -7,6 +7,7 @@ export interface CalendarItemVariants {
   instagram_story?: string
   instagram_reels?: string
   facebook?: string
+  twitter?: string
 }
 
 export interface CalendarItem {
@@ -234,6 +235,37 @@ export const calendarService = {
 
       if (!response.ok) {
         return { success: false, message: data.message || 'Failed to create calendar items' }
+      }
+
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
+  /**
+   * Share a calendar item to a platform
+   */
+  async shareCalendarItem(id: string, platform: string): Promise<{ success: boolean; message?: string }> {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/${id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ platform }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        return { success: false, message: data.message || 'Failed to share calendar item' }
       }
 
       return data
