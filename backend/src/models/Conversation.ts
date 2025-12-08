@@ -1,17 +1,9 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
 
-export interface IConversationFile {
-  url: string
-  name: string
-  type: string
-  size: number
-}
-
 export interface IConversationMessage {
   role: 'user' | 'assistant'
   content: string
   images?: string[]
-  files?: IConversationFile[]
   timestamp: Date
 }
 
@@ -22,28 +14,6 @@ export interface IConversation extends Document {
   createdAt: Date
   updatedAt: Date
 }
-
-const ConversationFileSchema: Schema = new Schema(
-  {
-    url: {
-      type: String,
-      required: true,
-    },
-    name: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: String,
-      required: true,
-    },
-    size: {
-      type: Number,
-      required: true,
-    },
-  },
-  { _id: false }
-)
 
 const ConversationMessageSchema: Schema = new Schema(
   {
@@ -58,10 +28,6 @@ const ConversationMessageSchema: Schema = new Schema(
     },
     images: {
       type: [String],
-      default: undefined,
-    },
-    files: {
-      type: [ConversationFileSchema],
       default: undefined,
     },
     timestamp: {

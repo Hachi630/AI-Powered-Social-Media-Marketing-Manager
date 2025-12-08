@@ -7,8 +7,6 @@ import { generateImage } from '../services/imageGenerationService'
 import { saveImage } from '../utils/imageStorage'
 import { generateContentPlan } from '../services/contentPlanService'
 import CalendarItem from '../models/CalendarItem'
-import { readImageAsBase64 } from '../utils/imageReader'
-import { extractTextFromFile } from '../utils/fileContentExtractor'
 
 const router = express.Router()
 
@@ -35,15 +33,11 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    const { message, conversationId, images, files } = req.body
+    const { message, conversationId } = req.body
 
-    // Validate message, images or files
-    if (
-      (!message || !message.trim()) &&
-      (!images || !Array.isArray(images) || images.length === 0) &&
-      (!files || !Array.isArray(files) || files.length === 0)
-    ) {
-      return res.status(400).json({ success: false, message: 'Message, images or files are required' })
+    // Validate message
+    if (!message || !message.trim()) {
+      return res.status(400).json({ success: false, message: 'Message is required' })
     }
 
     let conversation = null
@@ -83,106 +77,27 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     }
 
     // Add current user message
-    const userMessageContent = message
-      ? message.trim()
-      : images && images.length > 0
-        ? `Uploaded ${images.length} image(s)`
-        : files && files.length > 0
-          ? `Uploaded ${files.length} file(s)`
-          : ''
     messages.push({
       role: 'user',
-      content: userMessageContent,
-      images: images && Array.isArray(images) ? images : undefined,
-      files:
-        files && Array.isArray(files)
-          ? files.map((f: any) => ({
-              url: f.url,
-              name: f.name,
-              type: f.type,
-            }))
-          : undefined,
+      content: message.trim(),
     })
 
-    // Process images: read and convert to base64
-    const imageData: Array<{ base64: string; mimeType: string }> = []
-    if (images && Array.isArray(images) && images.length > 0) {
-      for (const imageUrl of images) {
-        try {
-          const imageResult = readImageAsBase64(imageUrl)
-          if (imageResult.success) {
-            imageData.push({
-              base64: imageResult.base64,
-              mimeType: imageResult.mimeType,
-            })
-          } else {
-            console.warn(`Failed to read image ${imageUrl}:`, imageResult.error)
-          }
-        } catch (error: any) {
-          console.error(`Error reading image ${imageUrl}:`, error)
-        }
-      }
-    }
-
-    // Process files: extract text content
-    const fileTexts: Array<{ name: string; text: string }> = []
-    if (files && Array.isArray(files) && files.length > 0) {
-      for (const file of files) {
-        try {
-          const extracted = await extractTextFromFile(file.url, file.type)
-          if (extracted.success && extracted.text) {
-            fileTexts.push({
-              name: file.name,
-              text: extracted.text,
-            })
-          } else {
-            // If extraction failed, add file info as text
-            console.warn(`Failed to extract text from file ${file.name}:`, extracted.error)
-            fileTexts.push({
-              name: file.name,
-              text: `[File: ${file.name}, Type: ${file.type}. Text extraction failed: ${extracted.error || 'Unknown error'}]`,
-            })
-          }
-        } catch (error: any) {
-          console.error(`Error extracting text from file ${file.name}:`, error)
-          fileTexts.push({
-            name: file.name,
-            text: `[File: ${file.name}, Type: ${file.type}. Error: ${error.message || 'Unknown error'}]`,
-          })
-        }
-      }
-    }
-
-    // Call Gemini service with images and file texts
-    const aiResponse = await geminiService.generateContent(
-      {
-        messages,
-        userContext,
-      },
-      imageData.length > 0 ? imageData : undefined,
-      fileTexts.length > 0 ? fileTexts : undefined
-    )
+    // Call Gemini service
+    const aiResponse = await geminiService.generateContent({
+      messages,
+      userContext,
+    })
 
     // Create or update conversation
     if (!conversation) {
       // Create new conversation
       conversation = await Conversation.create({
         userId: user._id,
-        title: generateTitle(userMessageContent),
+        title: generateTitle(message.trim()),
         messages: [
           {
             role: 'user',
-            content: userMessageContent,
-            images: images && Array.isArray(images) ? images : undefined,
-            files:
-              files && Array.isArray(files)
-                ? files.map((f: any) => ({
-                    url: f.url,
-                    name: f.name,
-                    type: f.type,
-                    size: f.size,
-                  }))
-                : undefined,
+            content: message.trim(),
             timestamp: new Date(),
           },
           {
@@ -196,17 +111,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       // Update existing conversation
       conversation.messages.push({
         role: 'user',
-        content: userMessageContent,
-        images: images && Array.isArray(images) ? images : undefined,
-        files:
-          files && Array.isArray(files)
-            ? files.map((f: any) => ({
-                url: f.url,
-                name: f.name,
-                type: f.type,
-                size: f.size,
-              }))
-            : undefined,
+        content: message.trim(),
         timestamp: new Date(),
       })
       conversation.messages.push({
@@ -373,7 +278,6 @@ router.get('/:conversationId', protect, async (req: AuthRequest, res: Response) 
           role: msg.role,
           content: msg.content,
           images: msg.images,
-          files: msg.files,
           timestamp: msg.timestamp,
         })),
         createdAt: conversation.createdAt,

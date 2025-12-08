@@ -6,8 +6,6 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
-  images?: string[] // Image URLs
-  files?: Array<{ url: string; name: string; type: string }> // File info
 }
 
 export interface UserContext {
@@ -26,15 +24,8 @@ export interface ChatRequest {
 export const geminiService = {
   /**
    * Generate content using Gemini API
-   * @param request Chat request with messages, images, and files
-   * @param imageData Array of base64 image data with mimeType (optional, for current message)
-   * @param fileTexts Array of extracted file texts (optional, for current message)
    */
-  async generateContent(
-    request: ChatRequest,
-    imageData?: Array<{ base64: string; mimeType: string }>,
-    fileTexts?: Array<{ name: string; text: string }>
-  ): Promise<string> {
+  async generateContent(request: ChatRequest): Promise<string> {
     try {
       const model = process.env.GEMINI_MODEL || 'gemini-3-pro-preview'
 
@@ -57,71 +48,12 @@ export const geminiService = {
         })
       }
 
-      // Add conversation history (all messages except the last one)
-      const historyMessages = request.messages.slice(0, -1)
-      for (const msg of historyMessages) {
+      // Add conversation history
+      for (const msg of request.messages) {
         if (msg.role === 'user' || msg.role === 'assistant') {
-          const parts: any[] = []
-
-          // Add text content if present
-          if (msg.content && msg.content.trim()) {
-            parts.push({ text: msg.content })
-          }
-
-          if (parts.length > 0) {
-            contents.push({
-              role: msg.role === 'user' ? 'user' : 'model',
-              parts,
-            })
-          }
-        }
-      }
-
-      // Add current message (last message) with images and files
-      const lastMessage = request.messages[request.messages.length - 1]
-      if (lastMessage && lastMessage.role === 'user') {
-        const currentParts: any[] = []
-
-        // Add text content
-        if (lastMessage.content && lastMessage.content.trim()) {
-          currentParts.push({ text: lastMessage.content })
-        }
-
-        // Add images as inlineData
-        if (imageData && imageData.length > 0) {
-          for (const img of imageData) {
-            currentParts.push({
-              inlineData: {
-                mimeType: img.mimeType,
-                data: img.base64,
-              },
-            })
-          }
-        }
-
-        // Add file texts
-        if (fileTexts && fileTexts.length > 0) {
-          for (const file of fileTexts) {
-            if (file.text && file.text.trim()) {
-              currentParts.push({
-                text: `\n\n[Content from file: ${file.name}]\n${file.text}`,
-              })
-            }
-          }
-        }
-
-        // Add current message with multimodal content
-        // Even if there's no text, we should add the message if there are images or files
-        if (currentParts.length > 0) {
           contents.push({
-            role: 'user',
-            parts: currentParts,
-          })
-        } else if (lastMessage.content && lastMessage.content.trim()) {
-          // Fallback: if no images/files but has text, add text only
-          contents.push({
-            role: 'user',
-            parts: [{ text: lastMessage.content }],
+            role: msg.role === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.content }],
           })
         }
       }

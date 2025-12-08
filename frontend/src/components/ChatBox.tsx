@@ -1,24 +1,10 @@
-import {
-  ArrowUpOutlined,
-  PlusOutlined,
-  CalendarOutlined,
-  PictureOutlined,
-  UploadOutlined,
-  CloseOutlined,
-  FilePdfOutlined,
-  FileWordOutlined,
-  FilePptOutlined,
-  FileExcelOutlined,
-  FileTextOutlined,
-  FileOutlined,
-} from '@ant-design/icons'
-import { Button, Card, Input, Tooltip, message, Spin, Dropdown, MenuProps } from 'antd'
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { ArrowUpOutlined, PlusOutlined, CalendarOutlined } from '@ant-design/icons'
+import { Button, Card, Input, Tooltip, message, Spin } from 'antd'
+import { useState, useEffect, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import styles from './ChatBox.module.css'
 import { chatService, ChatMessage } from '../services/chatService'
-import { uploadService } from '../services/uploadService'
 import ImageGenerationModal from './ImageGenerationModal'
 import ContentPlanModal from './ContentPlanModal'
 
@@ -44,11 +30,6 @@ export default function ChatBox({
   const [imageModalOpen, setImageModalOpen] = useState(false)
   const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false)
   const [lastUserMessage, setLastUserMessage] = useState<string>('')
-  const [uploadedImages, setUploadedImages] = useState<string[]>([])
-  const [uploadedFiles, setUploadedFiles] = useState<Array<{ url: string; name: string; type: string; size: number }>>([])
-  const [uploading, setUploading] = useState(false)
-  const [isDragOver, setIsDragOver] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Load conversation when conversationId changes
   useEffect(() => {
@@ -94,7 +75,7 @@ export default function ChatBox({
     }
   }
 
-  const isEmpty = !inputMessage.trim() && uploadedImages.length === 0 && uploadedFiles.length === 0
+  const isEmpty = !inputMessage.trim()
 
   // Check if message contains content plan intent
   const hasContentPlanIntent = (message: string): boolean => {
@@ -115,52 +96,24 @@ export default function ChatBox({
   }
 
   const handleSend = async () => {
-    // Allow sending if there's text or images
-    const hasContent = inputMessage.trim() || uploadedImages.length > 0
-    if (!hasContent || loading) return
+    if (isEmpty || loading) return
 
     const userMessage: ChatMessage = {
       role: 'user',
-      content:
-        inputMessage.trim() ||
-        (uploadedImages.length > 0 || uploadedFiles.length > 0
-          ? `Uploaded ${uploadedImages.length > 0 ? `${uploadedImages.length} image(s)` : ''}${uploadedImages.length > 0 && uploadedFiles.length > 0 ? ' and ' : ''}${uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s)` : ''}`
-          : ''),
-      images: uploadedImages.length > 0 ? [...uploadedImages] : undefined,
-      files:
-        uploadedFiles.length > 0
-          ? uploadedFiles.map((f) => ({
-              url: f.url,
-              name: f.name,
-              type: f.type,
-              size: f.size,
-            }))
-          : undefined,
+      content: inputMessage.trim(),
       timestamp: new Date(),
     }
 
     // Add user message to the list immediately
     setMessages((prev) => [...prev, userMessage])
     const currentInput = inputMessage.trim()
-    const currentImages = [...uploadedImages]
-    const currentFiles = [...uploadedFiles]
     setLastUserMessage(currentInput)
     setInputMessage('')
-    setUploadedImages([])
-    setUploadedFiles([])
     updateTypingStatus(false)
     setLoading(true)
 
     try {
-      const response = await chatService.sendMessage(
-        currentInput ||
-          (currentImages.length > 0 || currentFiles.length > 0
-            ? `Uploaded ${currentImages.length > 0 ? `${currentImages.length} image(s)` : ''}${currentImages.length > 0 && currentFiles.length > 0 ? ' and ' : ''}${currentFiles.length > 0 ? `${currentFiles.length} file(s)` : ''}`
-            : ''),
-        currentConversationId || undefined,
-        currentImages.length > 0 ? currentImages : undefined,
-        currentFiles.length > 0 ? currentFiles : undefined
-      )
+      const response = await chatService.sendMessage(currentInput, currentConversationId || undefined)
 
       if (response.success && response.response) {
         const assistantMessage: ChatMessage = {
@@ -181,17 +134,13 @@ export default function ChatBox({
         message.error(response.message || 'Failed to get response')
         // Remove the last user message if sending failed
         setMessages((prev) => prev.slice(0, -1))
-        // Restore input message, images and files
+        // Restore input message
         setInputMessage(currentInput)
-        setUploadedImages(currentImages)
-        setUploadedFiles(currentFiles)
       }
     } catch (error) {
       message.error('An error occurred while sending message')
       setMessages((prev) => prev.slice(0, -1))
       setInputMessage(currentInput)
-      setUploadedImages(currentImages)
-      setUploadedFiles(currentFiles)
     } finally {
       setLoading(false)
     }
@@ -237,207 +186,6 @@ export default function ChatBox({
   const handleImageGenerate = () => {
     setImageModalOpen(true)
   }
-
-  // File validation
-  const validateFile = (file: File): string | null => {
-    const isImage = file.type.startsWith('image/')
-    const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-    const allowedFileTypes = [
-      // PDF
-      'application/pdf',
-      // Word
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      // PowerPoint
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      // Excel
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      // Text
-      'text/plain',
-      // Other
-      'application/rtf',
-      'text/csv',
-    ]
-
-    if (isImage) {
-      if (!allowedImageTypes.includes(file.type)) {
-        return 'Only image files (JPG, PNG, GIF, WEBP) are allowed'
-      }
-      // Check file size (10MB limit for images)
-      const maxSize = 10 * 1024 * 1024 // 10MB
-      if (file.size > maxSize) {
-        return 'Image size must be less than 10MB'
-      }
-    } else {
-      if (!allowedFileTypes.includes(file.type)) {
-        return 'File type not supported. Allowed: PDF, Word, PPT, Excel, TXT, CSV, RTF'
-      }
-      // Check file size (50MB limit for documents)
-      const maxSize = 50 * 1024 * 1024 // 50MB
-      if (file.size > maxSize) {
-        return 'File size must be less than 50MB'
-      }
-    }
-
-    return null
-  }
-
-  // Handle file upload
-  const handleFileUpload = async (file: File) => {
-    // Validate file
-    const error = validateFile(file)
-    if (error) {
-      message.error(error)
-      return
-    }
-
-    const isImage = file.type.startsWith('image/')
-    const totalAttachments = uploadedImages.length + uploadedFiles.length
-
-    // Check max upload limit (10 total attachments)
-    if (totalAttachments >= 10) {
-      message.warning('Maximum 10 attachments allowed')
-      return
-    }
-
-    // Check individual limits
-    if (isImage && uploadedImages.length >= 5) {
-      message.warning('Maximum 5 images allowed')
-      return
-    }
-
-    if (!isImage && uploadedFiles.length >= 5) {
-      message.warning('Maximum 5 files allowed')
-      return
-    }
-
-    setUploading(true)
-    try {
-      if (isImage) {
-        const response = await uploadService.uploadImage(file)
-        if (response.success && response.imageUrl) {
-          setUploadedImages((prev) => [...prev, response.imageUrl!])
-          message.success('Image uploaded successfully')
-        } else {
-          message.error(response.message || 'Failed to upload image')
-        }
-      } else {
-        const response = await uploadService.uploadFile(file)
-        if (response.success && response.fileUrl && response.fileName && response.fileType && response.fileSize) {
-          setUploadedFiles((prev) => [
-            ...prev,
-            {
-              url: response.fileUrl!,
-              name: response.fileName!,
-              type: response.fileType!,
-              size: response.fileSize!,
-            },
-          ])
-          message.success('File uploaded successfully')
-        } else {
-          message.error(response.message || 'Failed to upload file')
-        }
-      }
-    } catch (error) {
-      message.error(isImage ? 'Failed to upload image' : 'Failed to upload file')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  // Handle file input change
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        handleFileUpload(file)
-      })
-    }
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
-  // Handle drag and drop
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragOver(false)
-
-    const files = e.dataTransfer.files
-    if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        handleFileUpload(file)
-      })
-    }
-  }
-
-  // Remove uploaded image
-  const handleRemoveImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  // Remove uploaded file
-  const handleRemoveFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  // Get file icon based on file type
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes('pdf')) {
-      return <FilePdfOutlined style={{ fontSize: 24, color: '#ff4d4f' }} />
-    } else if (fileType.includes('word') || fileType.includes('document')) {
-      return <FileWordOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-    } else if (fileType.includes('powerpoint') || fileType.includes('presentation')) {
-      return <FilePptOutlined style={{ fontSize: 24, color: '#ff9800' }} />
-    } else if (fileType.includes('excel') || fileType.includes('spreadsheet')) {
-      return <FileExcelOutlined style={{ fontSize: 24, color: '#52c41a' }} />
-    } else if (fileType.includes('text') || fileType.includes('plain')) {
-      return <FileTextOutlined style={{ fontSize: 24, color: '#1890ff' }} />
-    } else {
-      return <FileOutlined style={{ fontSize: 24, color: '#8c8c8c' }} />
-    }
-  }
-
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + ' B'
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
-  }
-
-  // Dropdown menu items
-  const menuItems: MenuProps['items'] = [
-    {
-      key: 'generate-image',
-      label: 'Generate Image',
-      icon: <PictureOutlined />,
-      onClick: handleImageGenerate,
-    },
-    {
-      key: 'upload-files',
-      label: 'Upload Files',
-      icon: <UploadOutlined />,
-      onClick: () => {
-        fileInputRef.current?.click()
-      },
-    },
-  ]
 
   const handleImageSuccess = async (imageUrl: string, newConversationId?: string) => {
     // Create assistant message with image
@@ -489,40 +237,17 @@ export default function ChatBox({
                       <img
                         key={imgIndex}
                         src={getImageUrl(img)}
-                        alt={msg.role === 'user' ? 'Uploaded' : 'Generated'}
+                        alt="Generated"
                         className={styles.generatedImage}
                       />
                     ))}
                   </div>
                 )}
-                {msg.files && msg.files.length > 0 && (
-                  <div className={styles.messageFiles}>
-                    {msg.files.map((file, fileIndex) => (
-                      <a
-                        key={fileIndex}
-                        href={getImageUrl(file.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.fileLink}
-                      >
-                        <div className={styles.fileItem}>
-                          {getFileIcon(file.type)}
-                          <div className={styles.fileInfo}>
-                            <div className={styles.fileName}>{file.name}</div>
-                            <div className={styles.fileSize}>{formatFileSize(file.size)}</div>
-                          </div>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                )}
-                {msg.content && (
-                  <div className={styles.markdownContent}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
-                )}
+                <div className={styles.markdownContent}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
                 {msg.role === 'assistant' &&
                   index === messages.length - 1 &&
                   hasContentPlanIntent(lastUserMessage) && (
@@ -553,92 +278,36 @@ export default function ChatBox({
 
       {/* Input area */}
       <Card className={styles.chatCard} styles={{ body: { padding: 24 } }}>
-        {/* Image preview */}
-        {uploadedImages.length > 0 && (
-          <div className={styles.imagePreviewContainer}>
-            {uploadedImages.map((imgUrl, index) => (
-              <div key={index} className={styles.imagePreviewItem}>
-                <img src={getImageUrl(imgUrl)} alt={`Preview ${index + 1}`} className={styles.previewImage} />
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={<CloseOutlined />}
-                  onClick={() => handleRemoveImage(index)}
-                  className={styles.removeImageButton}
-                  disabled={uploading}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* File preview */}
-        {uploadedFiles.length > 0 && (
-          <div className={styles.filePreviewContainer}>
-            {uploadedFiles.map((file, index) => (
-              <div key={index} className={styles.filePreviewItem}>
-                {getFileIcon(file.type)}
-                <div className={styles.filePreviewInfo}>
-                  <div className={styles.filePreviewName}>{file.name}</div>
-                  <div className={styles.filePreviewSize}>{formatFileSize(file.size)}</div>
-                </div>
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={<CloseOutlined />}
-                  onClick={() => handleRemoveFile(index)}
-                  className={styles.removeFileButton}
-                  disabled={uploading}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-
         <div className={styles.inputRow}>
-          <Dropdown menu={{ items: menuItems }} trigger={['click']} placement="topLeft">
-            <Tooltip title="More options">
-              <Button
-                shape="circle"
-                icon={<PlusOutlined />}
-                disabled={loading || uploading}
-                className={styles.plusButton}
-              />
-            </Tooltip>
-          </Dropdown>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,application/rtf,text/csv"
-            multiple
-            style={{ display: 'none' }}
-            onChange={handleFileInputChange}
-          />
-          <div
-            className={`${styles.inputWrapper} ${isDragOver ? styles.dragOver : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
+          <Tooltip title="Generate image">
+            <Button
+              shape="circle"
+              icon={<PlusOutlined />}
+              disabled={loading}
+              onClick={handleImageGenerate}
+              className={styles.plusButton}
+            />
+          </Tooltip>
+          <div className={styles.inputWrapper}>
             <TextArea
               autoSize={{ minRows: 1, maxRows: 4 }}
-              placeholder={isDragOver ? 'Drop files here' : 'What would you like to know?'}
+              placeholder="What would you like to know?"
               value={inputMessage}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyPress={handleKeyPress}
               onFocus={handleFocus}
               onBlur={handleBlur}
-              disabled={loading || uploading}
+              disabled={loading}
             />
           </div>
           <Tooltip title="Send message">
             <Button
               type="primary"
               shape="circle"
-              disabled={isEmpty || loading || uploading}
-              icon={loading || uploading ? <Spin size="small" /> : <ArrowUpOutlined />}
+              disabled={isEmpty || loading}
+              icon={loading ? <Spin size="small" /> : <ArrowUpOutlined />}
               onClick={handleSend}
-              loading={loading || uploading}
+              loading={loading}
               className={styles.sendButton}
             />
           </Tooltip>
