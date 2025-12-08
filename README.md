@@ -9,6 +9,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
+- [LinkedIn Integration](#-linkedin-integration)
 - [API Documentation](#api-documentation)
 - [Development](#development)
 
@@ -27,6 +28,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **React 18** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
@@ -36,6 +38,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **dayjs** - Date manipulation
 
 ### Backend
+
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **TypeScript** - Type safety
@@ -115,12 +118,14 @@ Melo/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd Melo
    ```
 
 2. **Install backend dependencies**
+
    ```bash
    cd backend
    npm install
@@ -135,12 +140,14 @@ Melo/
 ### Running the Application
 
 1. **Start MongoDB** (if running locally)
+
    ```bash
    # Make sure MongoDB is running on localhost:27017
    # Or update MONGODB_URI in backend/.env
    ```
 
 2. **Start the backend server**
+
    ```bash
    cd backend
    npm run dev
@@ -148,6 +155,7 @@ Melo/
    ```
 
 3. **Start the frontend development server**
+
    ```bash
    cd frontend
    npm run dev
@@ -180,7 +188,8 @@ TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_SECRET=your_twitter_access_secret
 ```
 
-**Note**: 
+**Note**:
+
 - Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 - `GEMINI_IMAGE_MODEL` is optional, defaults to `gemini-2.5-flash-image` if not set
 - Make sure the `backend/uploads/images/` directory exists for image storage
@@ -191,6 +200,7 @@ TWITTER_ACCESS_SECRET=your_twitter_access_secret
 The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to proxy API requests to the backend.
 
 ### Frontend(.env)
+
 ```env
 VITE_BACKEND_PORT=5000
 VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
@@ -198,15 +208,135 @@ VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleu
 # VITE_API_URL=http://localhost:5000
 ```
 
+### LinkedIn Integration (.env)
+
+For LinkedIn integration, add the following to `backend/.env`:
+
+```env
+# LinkedIn API Configuration
+LI_CLIENT_ID=your_linkedin_client_id
+LI_CLIENT_SECRET=your_linkedin_client_secret
+LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+CLIENT_URL=http://localhost:3000
+```
+
+**Note**:
+
+- Get your LinkedIn credentials from [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+- `LI_REDIRECT_URI` must match exactly what you set in LinkedIn Developer Portal
+- `CLIENT_URL` must match your frontend URL (default: `http://localhost:3000`)
+
+## 🔗 LinkedIn Integration
+
+### Overview
+
+The LinkedIn integration allows users to connect their LinkedIn accounts and manage LinkedIn posts, events, comments, and reactions directly from the Melo platform.
+
+### LinkedIn Connect Button Fix
+
+**Issue**: The "Connect LinkedIn" button was not redirecting properly when clicked.
+
+**Root Cause**: The button was using the `href` attribute, which would redirect to `"#"` when `authUrl` was `undefined`, preventing proper navigation to the LinkedIn OAuth page.
+
+**Solution**:
+
+1. **Replaced `href` with `onClick` handler**: Changed both Connect LinkedIn buttons (main button and metrics card button) from using `href={authUrl || "#"}` to using an `onClick` event handler.
+2. **Implemented proper redirect logic**: Used `window.location.href = authUrl` within the `onClick` handler to ensure reliable navigation.
+3. **Added error handling**: Included validation to check if `authUrl` exists before attempting redirect, with user-friendly error messages.
+
+**Code Changes**:
+
+```tsx
+// Before (Not Working)
+<Button href={authUrl || "#"} disabled={!authUrl}>
+  Connect LinkedIn
+</Button>
+
+// After (Fixed)
+<Button
+  disabled={!authUrl}
+  onClick={() => {
+    if (!authUrl) {
+      console.error("Cannot connect: userId not available");
+      alert("Please wait for user data to load, or try refreshing the page.");
+      return;
+    }
+    // Redirect to LinkedIn OAuth
+    window.location.href = authUrl;
+  }}
+>
+  Connect LinkedIn
+</Button>
+```
+
+**Files Modified**:
+
+- `frontend/src/components/LinkedInDashboard.tsx` - Fixed both Connect LinkedIn buttons
+
+**Why This Works**:
+
+- `onClick` handlers provide better control over navigation behavior
+- `window.location.href` ensures a full page navigation, which is required for OAuth flows
+- Error handling prevents silent failures and provides user feedback
+- The approach is consistent with OAuth best practices for redirect-based authentication
+
+### LinkedIn Setup
+
+#### Quick Setup Steps
+
+1. **Configure Environment Variables** (in `backend/.env`):
+
+   ```env
+   LI_CLIENT_ID=your_linkedin_client_id
+   LI_CLIENT_SECRET=your_linkedin_client_secret
+   LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+   CLIENT_URL=http://localhost:3000
+   ```
+
+2. **Configure LinkedIn Developer Portal**:
+
+   - Go to [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+   - Select your app → **"Auth"** tab → Add redirect URI: `http://localhost:5000/linkedin/callback`
+   - Go to **"Products"** tab → Enable:
+     - ✅ Sign In with LinkedIn using OpenID Connect
+     - ✅ Share on LinkedIn
+
+3. **Test the Connection**:
+   - Navigate to `http://localhost:3000/socialdashboard`
+   - Click "Connect LinkedIn" button
+   - Should redirect to LinkedIn authorization page
+
+#### Common Issues & Solutions
+
+| Issue                     | Solution                                                              |
+| ------------------------- | --------------------------------------------------------------------- |
+| Button doesn't redirect   | Ensure user is logged in, check backend is running                    |
+| "Invalid redirect_uri"    | Verify redirect URI in LinkedIn app matches `LI_REDIRECT_URI` exactly |
+| "Not enough permissions"  | Enable required products in LinkedIn Developer Portal                 |
+| Blank page after redirect | Check `CLIENT_URL` matches your frontend URL                          |
+
+#### Debugging
+
+- **Check backend logs**: Should see `LinkedIn OAuth redirect URL: ...` when clicking button
+- **Check browser console** (F12): Look for errors in Console and Network tabs
+- **Verify environment variables**:
+  ```bash
+  cd backend && cat .env | grep LI_
+  ```
+- **Verify services**: Backend on port 5000, Frontend on port 3000
+
 ## 📚 API Documentation
 
 ### Base URL
+
 ```
 http://localhost:5000/api
 ```
 
 ### Authentication
+
 Most endpoints require JWT authentication. Include the token in the request header:
+
 ```
 Authorization: Bearer <token>
 ```
@@ -216,11 +346,13 @@ Authorization: Bearer <token>
 ### General Endpoints
 
 #### 1. Health Check
+
 **GET** `/api/health`
 
 Check server running status.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -229,11 +361,13 @@ Check server running status.
 ```
 
 #### 2. API Welcome
+
 **GET** `/api`
 
 Get API welcome message.
 
 **Response:**
+
 ```json
 {
   "message": "Welcome to Melo API"
@@ -245,6 +379,7 @@ Get API welcome message.
 ### Authentication Endpoints
 
 #### 1. Register User
+
 **POST** `/api/auth/register`
 
 Register a new user account.
@@ -252,6 +387,7 @@ Register a new user account.
 **Access:** Public
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -260,6 +396,7 @@ Register a new user account.
 ```
 
 **Success Response (201):**
+
 ```json
 {
   "success": true,
@@ -273,12 +410,14 @@ Register a new user account.
 ```
 
 **Error Responses:**
+
 - `400` - Missing email/password or user already exists
 - `500` - Server error
 
 ---
 
 #### 2. Login User
+
 **POST** `/api/auth/login`
 
 Authenticate user and get access token.
@@ -286,6 +425,7 @@ Authenticate user and get access token.
 **Access:** Public
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -294,6 +434,7 @@ Authenticate user and get access token.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -307,6 +448,7 @@ Authenticate user and get access token.
 ```
 
 **Error Responses:**
+
 - `400` - Missing email/password
 - `401` - Invalid credentials
 - `500` - Server error
@@ -314,6 +456,7 @@ Authenticate user and get access token.
 ---
 
 #### 3. Get Current User
+
 **GET** `/api/auth/me`
 
 Get current authenticated user information.
@@ -321,11 +464,13 @@ Get current authenticated user information.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -338,6 +483,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found
 - `500` - Server error
@@ -345,6 +491,7 @@ Authorization: Bearer <token>
 ---
 
 #### 4. Logout User
+
 **POST** `/api/auth/logout`
 
 Logout user (client should remove token).
@@ -352,11 +499,13 @@ Logout user (client should remove token).
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -365,6 +514,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 
 ---
@@ -372,6 +522,7 @@ Authorization: Bearer <token>
 ### Chat Endpoints
 
 #### 1. Send Chat Message
+
 **POST** `/api/chat`
 
 Send a message to the AI chat and receive a response based on user's Brand Profile. Automatically manages conversation history.
@@ -379,12 +530,14 @@ Send a message to the AI chat and receive a response based on user's Brand Profi
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "message": "What marketing strategies work best for my brand?",
@@ -392,11 +545,13 @@ Content-Type: application/json
 }
 ```
 
-**Note:** 
+**Note:**
+
 - `conversationId` is optional. If provided, the message will be added to the existing conversation. If not provided, a new conversation will be created.
 - The API automatically maintains conversation history based on the conversation ID.
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -406,6 +561,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Message is required
 - `401` - Not authorized
 - `404` - User not found or conversation not found
@@ -414,6 +570,7 @@ Content-Type: application/json
 ---
 
 #### 2. Generate Image
+
 **POST** `/api/chat/generate-image`
 
 Generate an image using AI based on a text prompt.
@@ -421,12 +578,14 @@ Generate an image using AI based on a text prompt.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "prompt": "a cute little rabbit on the grass",
@@ -435,10 +594,12 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - `prompt` is required - the text description of the image to generate
 - `conversationId` is optional. If provided, the generated image will be added to the conversation. If not, a new conversation will be created.
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -449,6 +610,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Prompt is required
 - `401` - Not authorized
 - `404` - User not found
@@ -457,6 +619,7 @@ Content-Type: application/json
 ---
 
 #### 3. Get All Conversations
+
 **GET** `/api/chat`
 
 Get all conversations for the current user, sorted by most recent.
@@ -464,11 +627,13 @@ Get all conversations for the current user, sorted by most recent.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -484,6 +649,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found
 - `500` - Server error
@@ -491,6 +657,7 @@ Authorization: Bearer <token>
 ---
 
 #### 4. Get Single Conversation
+
 **GET** `/api/chat/:conversationId`
 
 Get a specific conversation with all its messages.
@@ -498,11 +665,13 @@ Get a specific conversation with all its messages.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -536,6 +705,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or conversation not found
 - `500` - Server error
@@ -543,6 +713,7 @@ Authorization: Bearer <token>
 ---
 
 #### 5. Delete Conversation
+
 **DELETE** `/api/chat/:conversationId`
 
 Delete a specific conversation.
@@ -550,11 +721,13 @@ Delete a specific conversation.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -563,6 +736,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or conversation not found
 - `500` - Server error
@@ -572,6 +746,7 @@ Authorization: Bearer <token>
 ### Upload Endpoints
 
 #### 1. Upload Image (Multipart)
+
 **POST** `/api/upload/image`
 
 Upload an image file using multipart/form-data.
@@ -579,20 +754,24 @@ Upload an image file using multipart/form-data.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
 
 **Request Body:**
+
 - `image`: Image file (multipart/form-data)
 
 **Note:**
+
 - Only image files are allowed
 - Maximum file size: 10MB
 - Supported formats: All image types (JPEG, PNG, etc.)
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -601,6 +780,7 @@ Content-Type: multipart/form-data
 ```
 
 **Error Responses:**
+
 - `400` - No image file provided or invalid file type
 - `401` - Not authorized
 - `404` - User not found
@@ -609,6 +789,7 @@ Content-Type: multipart/form-data
 ---
 
 #### 2. Upload Image (Base64)
+
 **POST** `/api/upload/image-base64`
 
 Upload an image using base64 encoded data.
@@ -616,12 +797,14 @@ Upload an image using base64 encoded data.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "imageData": "data:image/png;base64,iVBORw0KGgoAAAANS...",
@@ -630,10 +813,12 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - `imageData` is required - base64 encoded image data (with or without data URL prefix)
 - `mimeType` is optional - defaults to 'image/png' if not provided
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -642,6 +827,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Image data is required
 - `401` - Not authorized
 - `404` - User not found
@@ -652,6 +838,7 @@ Content-Type: application/json
 ### Calendar Endpoints
 
 #### 1. Get Calendar Items
+
 **GET** `/api/calendar`
 
 Get calendar items for a date range.
@@ -659,15 +846,18 @@ Get calendar items for a date range.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `startDate` (required) - Start date in YYYY-MM-DD format
 - `endDate` (required) - End date in YYYY-MM-DD format
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -693,6 +883,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `400` - Missing startDate or endDate
 - `401` - Not authorized
 - `404` - User not found
@@ -701,6 +892,7 @@ Authorization: Bearer <token>
 ---
 
 #### 2. Get Single Calendar Item
+
 **GET** `/api/calendar/:id`
 
 Get a specific calendar item by ID.
@@ -708,11 +900,13 @@ Get a specific calendar item by ID.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -736,6 +930,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
@@ -743,6 +938,7 @@ Authorization: Bearer <token>
 ---
 
 #### 3. Create Calendar Item
+
 **POST** `/api/calendar`
 
 Create a new calendar item.
@@ -750,12 +946,14 @@ Create a new calendar item.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "platform": "instagram_post",
@@ -774,12 +972,14 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - `platform`, `date`, `title`, and `content` are required
 - `imageUrl` is optional
 - Supported platforms: `instagram_post`, `instagram_story`, `instagram_reels`, `tiktok`, `facebook`
 - `status` defaults to `'draft'` if not provided
 
 **Success Response (201):**
+
 ```json
 {
   "success": true,
@@ -802,6 +1002,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Missing required fields
 - `401` - Not authorized
 - `404` - User not found
@@ -810,6 +1011,7 @@ Content-Type: application/json
 ---
 
 #### 4. Update Calendar Item
+
 **PUT** `/api/calendar/:id`
 
 Update an existing calendar item.
@@ -817,12 +1019,14 @@ Update an existing calendar item.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "platform": "instagram_post",
@@ -836,10 +1040,12 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - All fields are optional - only provided fields will be updated
 - User can only update their own calendar items
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -862,6 +1068,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
@@ -869,6 +1076,7 @@ Content-Type: application/json
 ---
 
 #### 5. Delete Calendar Item
+
 **DELETE** `/api/calendar/:id`
 
 Delete a calendar item.
@@ -876,11 +1084,13 @@ Delete a calendar item.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -889,6 +1099,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
@@ -898,6 +1109,7 @@ Authorization: Bearer <token>
 ## 📊 Data Models
 
 ### User
+
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -915,6 +1127,7 @@ Authorization: Bearer <token>
 ```
 
 ### Conversation
+
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -927,6 +1140,7 @@ Authorization: Bearer <token>
 ```
 
 ### ConversationMessage
+
 ```typescript
 {
   role: 'user' | 'assistant'   // Message role
@@ -937,6 +1151,7 @@ Authorization: Bearer <token>
 ```
 
 ### AuthResponse
+
 ```typescript
 {
   success: boolean     // Request success status
@@ -947,6 +1162,7 @@ Authorization: Bearer <token>
 ```
 
 ### ChatResponse
+
 ```typescript
 {
   success: boolean           // Request success status
@@ -957,6 +1173,7 @@ Authorization: Bearer <token>
 ```
 
 ### ImageGenerationResponse
+
 ```typescript
 {
   success: boolean           // Request success status
@@ -968,6 +1185,7 @@ Authorization: Bearer <token>
 ```
 
 ### CalendarItem
+
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -988,6 +1206,7 @@ Authorization: Bearer <token>
 ```
 
 ### CalendarItemVariants
+
 ```typescript
 {
   tiktok?: string              // TikTok-specific content variant
@@ -999,6 +1218,7 @@ Authorization: Bearer <token>
 ```
 
 ### UploadImageResponse
+
 ```typescript
 {
   success: boolean     // Request success status
@@ -1053,9 +1273,10 @@ npm run preview # Preview production build
 
 ## 🔒 Security Notes
 
-⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only. 
+⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only.
 
 **For production:**
+
 - Implement password hashing (bcrypt)
 - Use HTTPS
 - Add rate limiting
@@ -1070,14 +1291,14 @@ npm run preview # Preview production build
 
 ## 📝 HTTP Status Codes
 
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 404 | Not Found |
-| 500 | Internal Server Error |
+| Code | Description           |
+| ---- | --------------------- |
+| 200  | Success               |
+| 201  | Created               |
+| 400  | Bad Request           |
+| 401  | Unauthorized          |
+| 404  | Not Found             |
+| 500  | Internal Server Error |
 
 ---
 
@@ -1093,6 +1314,7 @@ npm run preview # Preview production build
 ### Frontend Testing
 
 The frontend automatically handles:
+
 - Token storage in `localStorage`
 - Token inclusion in authenticated requests
 - Automatic token validation on app load
@@ -1112,6 +1334,7 @@ The frontend automatically handles:
 ### Image Upload Testing
 
 1. **File Upload (Multipart)**:
+
    - Create or edit a calendar item
    - Click "Upload Image" button
    - Select an image file from your computer
@@ -1119,6 +1342,7 @@ The frontend automatically handles:
    - Image URL will be saved with the calendar item
 
 2. **Base64 Upload**:
+
    - Use the upload service to convert a file to base64
    - Send base64 data to `/api/upload/image-base64`
    - Verify the image URL is returned and saved
@@ -1133,6 +1357,7 @@ The frontend automatically handles:
 ### Calendar Item Testing
 
 1. **Create Calendar Item**:
+
    - Navigate to the Calendar page
    - Click the "+" button or select a date
    - Fill in platform, date, title, and content
@@ -1141,11 +1366,13 @@ The frontend automatically handles:
    - Save the calendar item
 
 2. **View Calendar Items**:
+
    - Calendar items are displayed on the calendar grid
    - Click on a calendar item to view details
    - Images are displayed in the item details modal
 
 3. **Update Calendar Item**:
+
    - Click on an existing calendar item
    - Click "Edit" button
    - Modify fields including image

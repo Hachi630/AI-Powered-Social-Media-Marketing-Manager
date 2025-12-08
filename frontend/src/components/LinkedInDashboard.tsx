@@ -1255,7 +1255,22 @@ export default function LinkedInDashboard({
                   {authUrl ? (
                     <Button
                       type="link"
-                      href={authUrl}
+                      onClick={() => {
+                        if (!authUrl) {
+                          console.error(
+                            "Cannot connect: userId not available. userId:",
+                            userId,
+                            "user:",
+                            user
+                          );
+                          alert(
+                            "Please wait for user data to load, or try refreshing the page."
+                          );
+                          return;
+                        }
+                        // Redirect to LinkedIn OAuth
+                        window.location.href = authUrl;
+                      }}
                       style={{ padding: 0, color: "#0077B5" }}
                     >
                       Connect now →
