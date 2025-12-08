@@ -13,21 +13,50 @@ export function getInstagramAuthUrl(state: string): string {
   }
 
   // For Instagram Graph API, we need permissions to access Facebook Pages
-  // IMPORTANT: These permissions may need to be requested in Facebook App Dashboard
-  // Go to: App Dashboard > App Review > Permissions and Features
-  // Request: pages_show_list, pages_read_engagement, pages_manage_posts
-  // For development/testing, try with minimal scopes first
+  // Based on Facebook Pages API official documentation:
+  // https://developers.facebook.com/docs/pages-api/getting-started
+  // 
+  // Required permissions according to official docs:
+  // - pages_manage_metadata: Manage page metadata
+  // - pages_manage_posts: Manage page posts (required for publishing)
+  // - pages_manage_read_engagement: Read page engagement data (required to list pages)
+  // - pages_show_list: List user's pages (may be deprecated but still in official docs)
+  // 
+  // For Instagram Business Account access, we specifically need:
+  // - pages_manage_read_engagement: To get list of pages and access Instagram account
+  // - pages_manage_posts: To publish content to Instagram
+  // 
+  // Using permissions for Pages API and Instagram API
+  // These permissions should be automatically configured when you select:
+  // - "Manage messaging & content on Instagram" use case
+  // - "Manage everything on your Page" use case
+  // 
+  // If you get "Invalid Scopes" error, check that these use cases are selected
+  // in your Facebook App Dashboard > Use Cases
   const scopes = [
-    'pages_show_list',  // List user's Facebook pages (may require review)
-  ].join(',')
+    'pages_read_engagement',  // Read page engagement (for getting Pages list)
+    'pages_manage_posts',     // Manage page posts (for publishing to Instagram)
+    'pages_show_list',        // List user's pages
+  ].filter(Boolean).join(',')
+  
+  // Alternative: If above doesn't work, try minimal set:
+  // const scopes = 'pages_read_engagement'
+  
+  // Fallback: Use empty scope (let Facebook use default permissions)
+  // const scopes = ''
 
   const params = new URLSearchParams({
     client_id: FACEBOOK_APP_ID,
     redirect_uri: FACEBOOK_REDIRECT_URI,
-    scope: scopes,
     response_type: 'code',
     state,
   })
+  
+  // Only add scope if we have permissions to request
+  // If empty, Facebook will use default permissions for the app
+  if (scopes) {
+    params.append('scope', scopes)
+  }
 
   return `https://www.facebook.com/v18.0/dialog/oauth?${params.toString()}`
 }
@@ -101,34 +130,107 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<{
 }
 
 /**
- * Get user's Instagram Business Account ID
+ * Get user's Facebook Pages list
  */
-export async function getInstagramAccountId(accessToken: string): Promise<{
-  instagramAccountId: string
-  username: string
-  accountType: 'BUSINESS' | 'CREATOR'
-}> {
+export async function getFacebookPages(accessToken: string): Promise<Array<{
+  id: string
+  name: string
+  category: string
+  accessToken: string
+  tasks: string[]
+  hasInstagramAccount?: boolean
+  instagramAccountId?: string
+  instagramUsername?: string
+}>> {
   try {
-    // First, get user's Facebook pages
     const pagesResponse = await axios.get(
       `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
     )
 
     if (!pagesResponse.data.data || pagesResponse.data.data.length === 0) {
-      throw new Error('No Facebook pages found. Please connect a Facebook page first.')
+      return []
     }
 
-    // Get Instagram account for the first page
-    const pageId = pagesResponse.data.data[0].id
-    const instagramResponse = await axios.get(
-      `https://graph.facebook.com/v18.0/${pageId}?fields=instagram_business_account&access_token=${accessToken}`
+    // Check each page for Instagram Business Account
+    const pagesWithInstagram = await Promise.all(
+      pagesResponse.data.data.map(async (page: any) => {
+        try {
+          const instagramResponse = await axios.get(
+            `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
+          )
+
+          if (instagramResponse.data.instagram_business_account) {
+            const instagramAccountId = instagramResponse.data.instagram_business_account.id
+            // Get Instagram account details
+            const accountDetailsResponse = await axios.get(
+              `https://graph.facebook.com/v18.0/${instagramAccountId}?fields=username,account_type&access_token=${page.access_token}`
+            )
+
+            return {
+              id: page.id,
+              name: page.name,
+              category: page.category || '',
+              accessToken: page.access_token,
+              tasks: page.tasks || [],
+              hasInstagramAccount: true,
+              instagramAccountId,
+              instagramUsername: accountDetailsResponse.data.username,
+            }
+          } else {
+            return {
+              id: page.id,
+              name: page.name,
+              category: page.category || '',
+              accessToken: page.access_token,
+              tasks: page.tasks || [],
+              hasInstagramAccount: false,
+            }
+          }
+        } catch (error) {
+          // If error checking Instagram, still return the page
+          return {
+            id: page.id,
+            name: page.name,
+            category: page.category || '',
+            accessToken: page.access_token,
+            tasks: page.tasks || [],
+            hasInstagramAccount: false,
+          }
+        }
+      })
     )
 
-    if (!instagramResponse.data.instagram_business_account) {
+    return pagesWithInstagram
+  } catch (error: any) {
+    console.error('Error getting Facebook pages:', error.response?.data || error.message)
+    throw new Error(`Failed to get Facebook pages: ${error.response?.data?.error?.message || error.message}`)
+  }
+}
+
+/**
+ * Get Instagram Business Account ID for a specific Facebook Page
+ */
+export async function getInstagramAccountIdForPage(
+  pageId: string,
+  accessToken: string
+): Promise<{
+  instagramAccountId: string
+  username: string
+  accountType: 'BUSINESS' | 'CREATOR'
+  facebookPageId: string
+  facebookPageName?: string
+}> {
+  try {
+    // Get page details
+    const pageResponse = await axios.get(
+      `https://graph.facebook.com/v18.0/${pageId}?fields=name,instagram_business_account&access_token=${accessToken}`
+    )
+
+    if (!pageResponse.data.instagram_business_account) {
       throw new Error('No Instagram Business Account found. Please connect an Instagram Business Account to your Facebook page.')
     }
 
-    const instagramAccountId = instagramResponse.data.instagram_business_account.id
+    const instagramAccountId = pageResponse.data.instagram_business_account.id
 
     // Get Instagram account details
     const accountDetailsResponse = await axios.get(
@@ -139,6 +241,8 @@ export async function getInstagramAccountId(accessToken: string): Promise<{
       instagramAccountId,
       username: accountDetailsResponse.data.username,
       accountType: accountDetailsResponse.data.account_type === 'BUSINESS' ? 'BUSINESS' : 'CREATOR',
+      facebookPageId: pageId,
+      facebookPageName: pageResponse.data.name,
     }
   } catch (error: any) {
     console.error('Error getting Instagram account:', error.response?.data || error.message)

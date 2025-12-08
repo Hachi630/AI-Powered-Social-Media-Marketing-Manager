@@ -19,6 +19,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
 
   try {
     const decoded = verifyToken(token)
+    // Mongoose will load all fields by default, but we ensure socialConnections is included
     const user = await User.findById(decoded.id)
 
     if (!user) {

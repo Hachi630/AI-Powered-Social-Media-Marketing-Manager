@@ -371,5 +371,79 @@ export const calendarService = {
       return { success: false, message: 'Network error' }
     }
   },
+
+  /**
+   * Get Facebook Pages list for selection
+   */
+  async getFacebookPages(tokenKey: string): Promise<{
+    success: boolean
+    pages?: Array<{
+      id: string
+      name: string
+      category: string
+      hasInstagramAccount: boolean
+      instagramUsername?: string
+    }>
+    tokenKey?: string
+    message?: string
+  }> {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch(`/api/social/pages?token_key=${tokenKey}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
+  /**
+   * Connect selected Facebook Page
+   */
+  async connectFacebookPage(pageId: string, tokenKey: string): Promise<{
+    success: boolean
+    message?: string
+    instagram?: {
+      userId: string
+      username: string
+      accountType: string
+    }
+    facebook?: {
+      pageId: string
+      pageName?: string
+    }
+  }> {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch('/api/social/connect-page', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ pageId, tokenKey }),
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
 }
 
