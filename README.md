@@ -10,6 +10,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [LinkedIn Integration](#-linkedin-integration)
+- [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
 
@@ -111,7 +112,9 @@ Melo/
 
 ### Prerequisites
 
-- Node.js (v18.16.1 or higher)
+- **Node.js** (v20.x or higher recommended, v18.16.1 minimum)
+  - The `pdf-parse` library used for file extraction requires Node.js 20+ for optimal compatibility
+  - Using Node.js 18 may cause `DOMMatrix is not defined` errors (see [Troubleshooting](#troubleshooting))
 - npm or yarn
 - MongoDB (local installation or MongoDB Atlas)
 
@@ -314,6 +317,7 @@ The LinkedIn integration allows users to connect their LinkedIn accounts and man
 | "Invalid redirect_uri"    | Verify redirect URI in LinkedIn app matches `LI_REDIRECT_URI` exactly |
 | "Not enough permissions"  | Enable required products in LinkedIn Developer Portal                 |
 | Blank page after redirect | Check `CLIENT_URL` matches your frontend URL                          |
+| `DOMMatrix is not defined` | Upgrade to Node.js 20+ or ensure `@napi-rs/canvas` is installed (see [Troubleshooting](#troubleshooting)) |
 
 #### Debugging
 
@@ -324,6 +328,46 @@ The LinkedIn integration allows users to connect their LinkedIn accounts and man
   cd backend && cat .env | grep LI_
   ```
 - **Verify services**: Backend on port 5000, Frontend on port 3000
+
+## 🔧 Troubleshooting
+
+### DOMMatrix is not defined Error
+
+**Error Message:**
+```
+ReferenceError: DOMMatrix is not defined
+```
+
+**Cause:**
+This error occurs when using the `pdf-parse` library in Node.js environments. The `pdf-parse` library requires `DOMMatrix`, which is a browser API that needs to be polyfilled in Node.js. The `@napi-rs/canvas` package provides this polyfill, but it may not be properly installed or your Node.js version may be incompatible.
+
+**Solutions:**
+
+1. **Upgrade Node.js (Recommended)**
+   - Upgrade to Node.js 20.x or higher for best compatibility
+   - The `pdf-parse` library and its dependencies work best with Node.js 20+
+
+2. **Ensure Dependencies are Installed**
+   ```bash
+   cd backend
+   npm install
+   ```
+   This should automatically install `@napi-rs/canvas` as a dependency of `pdf-parse`.
+
+3. **Reinstall pdf-parse (if issue persists)**
+   ```bash
+   cd backend
+   npm uninstall pdf-parse
+   npm install pdf-parse@^2.4.5
+   ```
+
+4. **Verify Installation**
+   ```bash
+   npm list @napi-rs/canvas
+   ```
+   You should see `@napi-rs/canvas` listed as a dependency of `pdf-parse`.
+
+**Note:** This error typically occurs when processing PDF files through the file upload feature. If you're not using PDF file extraction, you may not encounter this issue.
 
 ## 📚 API Documentation
 
