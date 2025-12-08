@@ -115,6 +115,10 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  font-family: inherit !important;
 }
 
 .gradientText2 {
@@ -122,6 +126,10 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  font-family: inherit !important;
 }
 
 .heroSubtitle {
@@ -139,11 +147,12 @@
 }
 
 .heroButtonPrimary {
-  height: 56px;
-  padding: 0 32px;
-  font-size: 16px;
-  font-weight: 600;
-  background: #ffffff !important;
+  height: 56px !important;
+  padding: 0 32px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  background: #c8d96f !important;
+  background-color: #c8d96f !important;
   color: #1a1a1a !important;
   border: none !important;
   border-radius: 12px !important;
@@ -151,9 +160,10 @@
 }
 
 .heroButtonPrimary:hover {
-  background: #f5f5f5 !important;
+  background: #d4e07a !important;
+  background-color: #d4e07a !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 24px rgba(200, 217, 111, 0.3);
 }
 
 .heroButtonSecondary {
