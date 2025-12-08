@@ -1,4 +1,4 @@
-import { ConfigProvider, message } from 'antd'
+import { ConfigProvider, App as AntApp } from 'antd'
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useSearchParams, useLocation } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
@@ -14,6 +14,7 @@ import ContactUs from './pages/ContactUs'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
+import LinkedInDashboard from './components/LinkedInDashboard'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -45,6 +46,7 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { message } = AntApp.useApp()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,7 +83,7 @@ function AppContent() {
       // Clean up URL
       window.history.replaceState({}, '', location.pathname)
     }
-  }, [location])
+  }, [location, message])
 
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true)
@@ -171,6 +173,19 @@ function AppContent() {
         }
       />
       <Route
+        path="/socialdashboard"
+        element={
+          <LinkedInDashboard
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            user={user}
+            jwt={localStorage.getItem('token') || ''}
+            userId={user?.id}
+          />
+        }
+      />
+      <Route
         path="/personal"
         element={
           <Personal
@@ -215,11 +230,13 @@ function AppWithTheme() {
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <BrowserRouter>
-        <div className="app">
-          <AppContent />
-        </div>
-      </BrowserRouter>
+      <AntApp>
+        <BrowserRouter>
+          <div className="app">
+            <AppContent />
+          </div>
+        </BrowserRouter>
+      </AntApp>
     </ConfigProvider>
   )
 }
