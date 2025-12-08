@@ -311,12 +311,12 @@ The LinkedIn integration allows users to connect their LinkedIn accounts and man
 
 #### Common Issues & Solutions
 
-| Issue                     | Solution                                                              |
-| ------------------------- | --------------------------------------------------------------------- |
-| Button doesn't redirect   | Ensure user is logged in, check backend is running                    |
-| "Invalid redirect_uri"    | Verify redirect URI in LinkedIn app matches `LI_REDIRECT_URI` exactly |
-| "Not enough permissions"  | Enable required products in LinkedIn Developer Portal                 |
-| Blank page after redirect | Check `CLIENT_URL` matches your frontend URL                          |
+| Issue                      | Solution                                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Button doesn't redirect    | Ensure user is logged in, check backend is running                                                        |
+| "Invalid redirect_uri"     | Verify redirect URI in LinkedIn app matches `LI_REDIRECT_URI` exactly                                     |
+| "Not enough permissions"   | Enable required products in LinkedIn Developer Portal                                                     |
+| Blank page after redirect  | Check `CLIENT_URL` matches your frontend URL                                                              |
 | `DOMMatrix is not defined` | Upgrade to Node.js 20+ or ensure `@napi-rs/canvas` is installed (see [Troubleshooting](#troubleshooting)) |
 
 #### Debugging
@@ -334,6 +334,7 @@ The LinkedIn integration allows users to connect their LinkedIn accounts and man
 ### DOMMatrix is not defined Error
 
 **Error Message:**
+
 ```
 ReferenceError: DOMMatrix is not defined
 ```
@@ -344,17 +345,21 @@ This error occurs when using the `pdf-parse` library in Node.js environments. Th
 **Solutions:**
 
 1. **Upgrade Node.js (Recommended)**
+
    - Upgrade to Node.js 20.x or higher for best compatibility
    - The `pdf-parse` library and its dependencies work best with Node.js 20+
 
 2. **Ensure Dependencies are Installed**
+
    ```bash
    cd backend
    npm install
    ```
+
    This should automatically install `@napi-rs/canvas` as a dependency of `pdf-parse`.
 
 3. **Reinstall pdf-parse (if issue persists)**
+
    ```bash
    cd backend
    npm uninstall pdf-parse
@@ -376,29 +381,35 @@ If you're experiencing issues with the Integrated Terminal in VS Code (or Cursor
 **Error: Terminal failed to launch**
 
 1. **Check VS Code Settings**
+
    - Open Settings (File > Preferences > Settings)
    - Search for `terminal.integrated` settings
    - Verify your default shell profile is correctly configured
    - On macOS/Linux, ensure the shell path is correct (e.g., `/bin/zsh`, `/bin/bash`)
 
 2. **Test Your Shell Directly**
+
    - Try running your shell outside VS Code/Cursor
    - Some terminal launch failures are due to shell installation issues, not the editor
 
 3. **Update VS Code/Cursor**
+
    - Ensure you're using the latest version
    - Each release includes terminal improvements and bug fixes
 
 4. **Check Node.js Version**
+
    - Verify Node.js is installed and accessible: `node --version`
    - Ensure Node.js is in your system PATH
 
 5. **Common Exit Codes**
+
    - **Exit code 1**: Usually indicates a shell configuration issue
    - **Exit code 259 (Windows)**: Process is still active, try killing unused processes
    - Search online for your specific shell and exit code for targeted solutions
 
 6. **macOS Specific**
+
    - Ensure your shell has proper permissions
    - Check if your shell is in `/etc/shells` (for non-standard shells)
 
