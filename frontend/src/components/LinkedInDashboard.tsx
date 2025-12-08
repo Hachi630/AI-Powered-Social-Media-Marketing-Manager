@@ -1,13 +1,68 @@
-import { Layout, Typography, Grid, Drawer, FloatButton, Card, Row, Col, Statistic, Tag, Button, Spin, Empty, Modal, Input, Upload, message, Progress, Select, Avatar, Space, List, DatePicker, Form, Segmented, Tooltip } from "antd";
-import { MenuOutlined, LinkedinOutlined, UserOutlined, TeamOutlined, EyeOutlined, SyncOutlined, DisconnectOutlined, ExclamationCircleOutlined, SendOutlined, PictureOutlined, DeleteOutlined, FileImageOutlined, BankOutlined, CalendarOutlined, PlusOutlined, EditOutlined, GlobalOutlined, EnvironmentOutlined, LinkOutlined, VideoCameraOutlined, LikeOutlined, HeartOutlined, TrophyOutlined, BulbOutlined, QuestionCircleOutlined, SmileOutlined, CommentOutlined } from "@ant-design/icons";
+import {
+  Layout,
+  Typography,
+  Grid,
+  Drawer,
+  FloatButton,
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Tag,
+  Button,
+  Spin,
+  Empty,
+  Modal,
+  Input,
+  Upload,
+  message,
+  Progress,
+  Select,
+  Avatar,
+  Space,
+  List,
+  DatePicker,
+  Form,
+  Segmented,
+  Tooltip,
+} from "antd";
+import {
+  MenuOutlined,
+  LinkedinOutlined,
+  UserOutlined,
+  TeamOutlined,
+  EyeOutlined,
+  SyncOutlined,
+  DisconnectOutlined,
+  ExclamationCircleOutlined,
+  SendOutlined,
+  PictureOutlined,
+  DeleteOutlined,
+  FileImageOutlined,
+  BankOutlined,
+  CalendarOutlined,
+  PlusOutlined,
+  EditOutlined,
+  GlobalOutlined,
+  EnvironmentOutlined,
+  LinkOutlined,
+  VideoCameraOutlined,
+  LikeOutlined,
+  HeartOutlined,
+  TrophyOutlined,
+  BulbOutlined,
+  QuestionCircleOutlined,
+  SmileOutlined,
+  CommentOutlined,
+} from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
 import Header from "./Header";
 import Sidebar from "./Sidebar";
 import styles from "./Dashboard.module.css";
-import { 
-  getLinkedInMetrics, 
-  getLinkedInAuthUrl, 
+import {
+  getLinkedInMetrics,
+  getLinkedInAuthUrl,
   disconnectLinkedIn,
   createLinkedInPost,
   initializeImageUpload,
@@ -57,12 +112,15 @@ export default function LinkedInDashboard({
   const isTablet = screens.md && !screens.lg;
   const [collapsed, setCollapsed] = useState(isMobile || isTablet);
   const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false);
-  const [selectedConversationId, setSelectedConversationId] = useState<string | null>(null);
-  const [conversationsUpdateTrigger, setConversationsUpdateTrigger] = useState(0);
+  const [selectedConversationId, setSelectedConversationId] = useState<
+    string | null
+  >(null);
+  const [conversationsUpdateTrigger, setConversationsUpdateTrigger] =
+    useState(0);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
-  
+
   // Post creation states
   const [postText, setPostText] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -70,20 +128,23 @@ export default function LinkedInDashboard({
   const [posting, setPosting] = useState(false);
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   // Enhanced post type states
-  const [postType, setPostType] = useState<"text" | "image" | "video" | "link">("text");
+  const [postType, setPostType] = useState<"text" | "image" | "video" | "link">(
+    "text"
+  );
   const [selectedVideo, setSelectedVideo] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState("");
   const [linkTitle, setLinkTitle] = useState("");
   const [linkDescription, setLinkDescription] = useState("");
-  
+
   // Organization/Company Page states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
-  const [selectedPostTarget, setSelectedPostTarget] = useState<string>("personal"); // "personal" or org ID
-  
+  const [selectedPostTarget, setSelectedPostTarget] =
+    useState<string>("personal"); // "personal" or org ID
+
   // Events states
   const [events, setEvents] = useState<LinkedInEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -125,7 +186,7 @@ export default function LinkedInDashboard({
   useEffect(() => {
     const loadOrganizations = async () => {
       if (!jwt || !metrics?.connected) return;
-      
+
       setLoadingOrgs(true);
       try {
         const result = await getAdministeredOrganizations(jwt);
@@ -145,7 +206,7 @@ export default function LinkedInDashboard({
   useEffect(() => {
     const loadEvents = async () => {
       if (!jwt || !metrics?.connected) return;
-      
+
       setLoadingEvents(true);
       try {
         const result = await getMyLinkedInEvents(jwt);
@@ -178,7 +239,8 @@ export default function LinkedInDashboard({
     Modal.confirm({
       title: "Disconnect LinkedIn",
       icon: <ExclamationCircleOutlined />,
-      content: "Are you sure you want to disconnect your LinkedIn account? You will need to reconnect to see your LinkedIn analytics again.",
+      content:
+        "Are you sure you want to disconnect your LinkedIn account? You will need to reconnect to see your LinkedIn analytics again.",
       okText: "Disconnect",
       okType: "danger",
       cancelText: "Cancel",
@@ -244,33 +306,50 @@ export default function LinkedInDashboard({
     setUploadProgress(0);
 
     // Determine if posting to organization or personal
-    const organizationId = selectedPostTarget !== "personal" ? selectedPostTarget : undefined;
-    const targetName = organizationId 
-      ? organizations.find(org => org.id === organizationId)?.name || "Company Page"
+    const organizationId =
+      selectedPostTarget !== "personal" ? selectedPostTarget : undefined;
+    const targetName = organizationId
+      ? organizations.find((org) => org.id === organizationId)?.name ||
+        "Company Page"
       : "Personal Profile";
 
     try {
       if (postType === "image" && selectedImage) {
         // Post with image
         setUploadProgress(10);
-        
+
         // Step 1: Initialize image upload (with organization if selected)
         const initResult = await initializeImageUpload(jwt, organizationId);
-        if (!initResult.success || !initResult.uploadUrl || !initResult.imageUrn) {
-          throw new Error(initResult.error || "Failed to initialize image upload");
+        if (
+          !initResult.success ||
+          !initResult.uploadUrl ||
+          !initResult.imageUrn
+        ) {
+          throw new Error(
+            initResult.error || "Failed to initialize image upload"
+          );
         }
         setUploadProgress(30);
 
         // Step 2: Convert image to base64 and upload
         const base64Data = await fileToBase64(selectedImage);
-        const uploadResult = await uploadImageToLinkedIn(jwt, initResult.uploadUrl, base64Data);
+        const uploadResult = await uploadImageToLinkedIn(
+          jwt,
+          initResult.uploadUrl,
+          base64Data
+        );
         if (!uploadResult.success) {
           throw new Error(uploadResult.error || "Failed to upload image");
         }
         setUploadProgress(70);
 
         // Step 3: Create post with image
-        const postResult = await createLinkedInPostWithImage(jwt, postText.trim(), initResult.imageUrn, organizationId);
+        const postResult = await createLinkedInPostWithImage(
+          jwt,
+          postText.trim(),
+          initResult.imageUrn,
+          organizationId
+        );
         if (!postResult.success) {
           throw new Error(postResult.error || "Failed to create post");
         }
@@ -280,24 +359,43 @@ export default function LinkedInDashboard({
       } else if (postType === "video" && selectedVideo) {
         // Post with video
         setUploadProgress(10);
-        
+
         // Step 1: Initialize video upload
-        const initResult = await initializeVideoUpload(jwt, selectedVideo.size, organizationId);
-        if (!initResult.success || !initResult.uploadUrl || !initResult.videoUrn) {
-          throw new Error(initResult.error || "Failed to initialize video upload");
+        const initResult = await initializeVideoUpload(
+          jwt,
+          selectedVideo.size,
+          organizationId
+        );
+        if (
+          !initResult.success ||
+          !initResult.uploadUrl ||
+          !initResult.videoUrn
+        ) {
+          throw new Error(
+            initResult.error || "Failed to initialize video upload"
+          );
         }
         setUploadProgress(30);
 
         // Step 2: Convert video to base64 and upload
         const base64Data = await videoFileToBase64(selectedVideo);
-        const uploadResult = await uploadVideo(jwt, initResult.uploadUrl, base64Data);
+        const uploadResult = await uploadVideo(
+          jwt,
+          initResult.uploadUrl,
+          base64Data
+        );
         if (!uploadResult.success) {
           throw new Error(uploadResult.error || "Failed to upload video");
         }
         setUploadProgress(70);
 
         // Step 3: Create post with video
-        const postResult = await createLinkedInPostWithVideo(jwt, postText.trim(), initResult.videoUrn, organizationId);
+        const postResult = await createLinkedInPostWithVideo(
+          jwt,
+          postText.trim(),
+          initResult.videoUrn,
+          organizationId
+        );
         if (!postResult.success) {
           throw new Error(postResult.error || "Failed to create post");
         }
@@ -308,8 +406,8 @@ export default function LinkedInDashboard({
         // Post with link
         setUploadProgress(50);
         const result = await createLinkedInPostWithLink(
-          jwt, 
-          postText.trim(), 
+          jwt,
+          postText.trim(),
           linkUrl.trim(),
           linkTitle.trim() || undefined,
           linkDescription.trim() || undefined,
@@ -323,7 +421,11 @@ export default function LinkedInDashboard({
       } else {
         // Text-only post
         setUploadProgress(50);
-        const result = await createLinkedInPost(jwt, postText.trim(), organizationId);
+        const result = await createLinkedInPost(
+          jwt,
+          postText.trim(),
+          organizationId
+        );
         if (!result.success) {
           throw new Error(result.error || "Failed to create post");
         }
@@ -344,7 +446,9 @@ export default function LinkedInDashboard({
       setPostModalOpen(false);
     } catch (error: any) {
       console.error("Failed to create LinkedIn post:", error);
-      message.error(error.message || "Failed to create post. Please try again.");
+      message.error(
+        error.message || "Failed to create post. Please try again."
+      );
     } finally {
       setPosting(false);
       setUploadProgress(0);
@@ -399,7 +503,7 @@ export default function LinkedInDashboard({
   // Create a new event
   const handleCreateEvent = async (values: any) => {
     if (!jwt) return;
-    
+
     setCreatingEvent(true);
     try {
       const result = await createLinkedInEvent(jwt, {
@@ -410,9 +514,9 @@ export default function LinkedInDashboard({
         endAt: values.endAt?.valueOf(),
         eventUrl: values.eventUrl,
         eventType: values.eventType,
-        locale: "en_US"
+        locale: "en_US",
       });
-      
+
       if (result.success) {
         message.success("Event created successfully!");
         setCreateEventModalOpen(false);
@@ -433,11 +537,12 @@ export default function LinkedInDashboard({
   // Delete an event
   const handleDeleteEvent = async (eventId: string) => {
     if (!jwt) return;
-    
+
     Modal.confirm({
       title: "Delete Event",
       icon: <ExclamationCircleOutlined />,
-      content: "Are you sure you want to delete this event? This action cannot be undone.",
+      content:
+        "Are you sure you want to delete this event? This action cannot be undone.",
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",
@@ -446,7 +551,7 @@ export default function LinkedInDashboard({
           const result = await deleteLinkedInEventService(jwt, eventId);
           if (result.success) {
             message.success("Event deleted successfully");
-            setEvents(events.filter(e => e.id !== eventId));
+            setEvents(events.filter((e) => e.id !== eventId));
           } else {
             message.error(result.error || "Failed to delete event");
           }
@@ -458,9 +563,12 @@ export default function LinkedInDashboard({
     });
   };
 
-  const handleConversationSelect = useCallback((conversationId: string | null) => {
-    setSelectedConversationId(conversationId);
-  }, []);
+  const handleConversationSelect = useCallback(
+    (conversationId: string | null) => {
+      setSelectedConversationId(conversationId);
+    },
+    []
+  );
 
   const handleNewConversation = useCallback(() => {
     setSelectedConversationId(null);
@@ -487,9 +595,16 @@ export default function LinkedInDashboard({
   // Generate auth URL with userId for proper token association
   // If userId is not available yet, we still show the button but it won't work until user data loads
   const authUrl = userId ? getLinkedInAuthUrl(userId) : undefined;
-  
+
   // Debug: Log what we have
-  console.log("LinkedInDashboard - userId:", userId, "isLoggedIn:", isLoggedIn, "user:", user);
+  console.log(
+    "LinkedInDashboard - userId:",
+    userId,
+    "isLoggedIn:",
+    isLoggedIn,
+    "user:",
+    user
+  );
 
   const renderMetricsContent = () => {
     if (loading) {
@@ -506,7 +621,9 @@ export default function LinkedInDashboard({
     if (!jwt || !isLoggedIn) {
       return (
         <Empty
-          image={<LinkedinOutlined style={{ fontSize: 64, color: "#0077B5" }} />}
+          image={
+            <LinkedinOutlined style={{ fontSize: 64, color: "#0077B5" }} />
+          }
           description={
             <Typography.Text type="secondary">
               Please log in to view your LinkedIn analytics
@@ -522,9 +639,26 @@ export default function LinkedInDashboard({
     return (
       <div style={{ width: "100%", maxWidth: 1200 }}>
         {/* Header Section */}
-        <div style={{ marginBottom: 32, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+        <div
+          style={{
+            marginBottom: 32,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
           <div>
-            <Typography.Title level={2} style={{ margin: 0, display: "flex", alignItems: "center", gap: 12 }}>
+            <Typography.Title
+              level={2}
+              style={{
+                margin: 0,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
               <LinkedinOutlined style={{ color: "#0077B5" }} />
               Social Dashboard
             </Typography.Title>
@@ -535,12 +669,16 @@ export default function LinkedInDashboard({
           <div style={{ display: "flex", gap: 12 }}>
             {isConnected && (
               <>
-                <Button icon={<SyncOutlined />} onClick={handleRefreshMetrics} loading={loading}>
+                <Button
+                  icon={<SyncOutlined />}
+                  onClick={handleRefreshMetrics}
+                  loading={loading}
+                >
                   Refresh
                 </Button>
-                <Button 
-                  icon={<DisconnectOutlined />} 
-                  onClick={handleDisconnect} 
+                <Button
+                  icon={<DisconnectOutlined />}
+                  onClick={handleDisconnect}
                   loading={disconnecting}
                   danger
                 >
@@ -549,23 +687,31 @@ export default function LinkedInDashboard({
               </>
             )}
             {!isConnected && (
-              <Button 
-                type="default" 
-                icon={<LinkedinOutlined style={{ color: "#ffffff" }} />} 
-                href={authUrl || "#"}
+              <Button
+                type="default"
+                icon={<LinkedinOutlined style={{ color: "#ffffff" }} />}
                 disabled={!authUrl}
-                onClick={(e) => {
+                onClick={() => {
                   if (!authUrl) {
-                    e.preventDefault();
-                    console.error("Cannot connect: userId not available. userId:", userId, "user:", user);
-                    alert("Please wait for user data to load, or try refreshing the page.");
+                    console.error(
+                      "Cannot connect: userId not available. userId:",
+                      userId,
+                      "user:",
+                      user
+                    );
+                    alert(
+                      "Please wait for user data to load, or try refreshing the page."
+                    );
+                    return;
                   }
+                  // Redirect to LinkedIn OAuth
+                  window.location.href = authUrl;
                 }}
-                style={{ 
-                  backgroundColor: "#0077B5", 
-                  borderColor: "#0077B5", 
+                style={{
+                  backgroundColor: "#0077B5",
+                  borderColor: "#0077B5",
                   color: "#ffffff",
-                  fontWeight: 500
+                  fontWeight: 500,
                 }}
               >
                 <span style={{ color: "#ffffff" }}>
@@ -578,20 +724,34 @@ export default function LinkedInDashboard({
 
         {/* Profile Card - Show when connected */}
         {isConnected && profile && (
-          <Card style={{ marginBottom: 24, borderRadius: 12 }} styles={{ body: { padding: 24 } }}>
+          <Card
+            style={{ marginBottom: 24, borderRadius: 12 }}
+            styles={{ body: { padding: 24 } }}
+          >
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               {profile.picture && (
-                <img 
-                  src={profile.picture} 
-                  alt={profile.name} 
-                  style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover" }}
+                <img
+                  src={profile.picture}
+                  alt={profile.name}
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
                 />
               )}
               <div>
-                <Typography.Title level={4} style={{ margin: 0 }}>{profile.name}</Typography.Title>
-                <Typography.Text type="secondary">{profile.email}</Typography.Text>
+                <Typography.Title level={4} style={{ margin: 0 }}>
+                  {profile.name}
+                </Typography.Title>
+                <Typography.Text type="secondary">
+                  {profile.email}
+                </Typography.Text>
                 <br />
-                <Tag color="success" style={{ marginTop: 8 }}>● Connected</Tag>
+                <Tag color="success" style={{ marginTop: 8 }}>
+                  ● Connected
+                </Tag>
               </div>
             </div>
           </Card>
@@ -599,32 +759,53 @@ export default function LinkedInDashboard({
 
         {/* Create Post Card - Show when connected */}
         {isConnected && (
-          <Card 
-            style={{ marginBottom: 24, borderRadius: 12, border: "2px dashed #0077B5" }} 
+          <Card
+            style={{
+              marginBottom: 24,
+              borderRadius: 12,
+              border: "2px dashed #0077B5",
+            }}
             styles={{ body: { padding: 24 } }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <div style={{ 
-                width: 48, 
-                height: 48, 
-                borderRadius: 12, 
-                background: "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+            <div
+              style={{
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "center"
-              }}>
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background:
+                    "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
               </div>
               <div>
-                <Typography.Text strong style={{ fontSize: 18 }}>Share on LinkedIn</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 18 }}>
+                  Share on LinkedIn
+                </Typography.Text>
                 <br />
-                <Typography.Text type="secondary">Create a post to share with your network</Typography.Text>
+                <Typography.Text type="secondary">
+                  Create a post to share with your network
+                </Typography.Text>
               </div>
             </div>
 
             {/* Post Target Selector (Personal vs Organization) */}
             <div style={{ marginBottom: 16 }}>
-              <Typography.Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
+              <Typography.Text
+                type="secondary"
+                style={{ display: "block", marginBottom: 8 }}
+              >
                 Post to:
               </Typography.Text>
               <Select
@@ -635,36 +816,58 @@ export default function LinkedInDashboard({
               >
                 <Select.Option value="personal">
                   <Space>
-                    <Avatar size="small" icon={<UserOutlined />} style={{ backgroundColor: "#0077B5" }} />
+                    <Avatar
+                      size="small"
+                      icon={<UserOutlined />}
+                      style={{ backgroundColor: "#0077B5" }}
+                    />
                     <span>Personal Profile</span>
-                    {profile && <Typography.Text type="secondary">({profile.name})</Typography.Text>}
+                    {profile && (
+                      <Typography.Text type="secondary">
+                        ({profile.name})
+                      </Typography.Text>
+                    )}
                   </Space>
                 </Select.Option>
-                {organizations.map(org => (
+                {organizations.map((org) => (
                   <Select.Option key={org.id} value={org.id}>
                     <Space>
                       {org.logoUrl ? (
                         <Avatar size="small" src={org.logoUrl} />
                       ) : (
-                        <Avatar size="small" icon={<BankOutlined />} style={{ backgroundColor: "#00A0DC" }} />
+                        <Avatar
+                          size="small"
+                          icon={<BankOutlined />}
+                          style={{ backgroundColor: "#00A0DC" }}
+                        />
                       )}
                       <span>{org.name}</span>
-                      <Tag color="blue" style={{ marginLeft: 4 }}>Company</Tag>
+                      <Tag color="blue" style={{ marginLeft: 4 }}>
+                        Company
+                      </Tag>
                     </Space>
                   </Select.Option>
                 ))}
               </Select>
               {organizations.length === 0 && !loadingOrgs && (
-                <Typography.Text type="secondary" style={{ display: "block", marginTop: 4, fontSize: 12 }}>
-                  <strong>Company pages not available:</strong> Posting to company pages requires <code>w_organization_social</code> scope 
-                  which needs LinkedIn app verification. You can post to your personal profile.
+                <Typography.Text
+                  type="secondary"
+                  style={{ display: "block", marginTop: 4, fontSize: 12 }}
+                >
+                  <strong>Company pages not available:</strong> Posting to
+                  company pages requires <code>w_organization_social</code>{" "}
+                  scope which needs LinkedIn app verification. You can post to
+                  your personal profile.
                 </Typography.Text>
               )}
             </div>
 
             {/* Post Type Selector */}
             <div style={{ marginBottom: 16 }}>
-              <Typography.Text type="secondary" style={{ display: "block", marginBottom: 8 }}>
+              <Typography.Text
+                type="secondary"
+                style={{ display: "block", marginBottom: 8 }}
+              >
                 Post type:
               </Typography.Text>
               <Segmented
@@ -672,20 +875,64 @@ export default function LinkedInDashboard({
                 onChange={(value) => {
                   setPostType(value as "text" | "image" | "video" | "link");
                   // Clear media when switching types
-                  if (value !== "image") { handleRemoveImage(); }
-                  if (value !== "video") { handleVideoClear(); }
-                  if (value !== "link") { setLinkUrl(""); setLinkTitle(""); setLinkDescription(""); }
+                  if (value !== "image") {
+                    handleRemoveImage();
+                  }
+                  if (value !== "video") {
+                    handleVideoClear();
+                  }
+                  if (value !== "link") {
+                    setLinkUrl("");
+                    setLinkTitle("");
+                    setLinkDescription("");
+                  }
                 }}
                 options={[
-                  { label: <Tooltip title="Text Post"><span><SendOutlined /> Text</span></Tooltip>, value: "text" },
-                  { label: <Tooltip title="Image Post"><span><PictureOutlined /> Image</span></Tooltip>, value: "image" },
-                  { label: <Tooltip title="Video Post"><span><VideoCameraOutlined /> Video</span></Tooltip>, value: "video" },
-                  { label: <Tooltip title="Link Post"><span><LinkOutlined /> Link</span></Tooltip>, value: "link" },
+                  {
+                    label: (
+                      <Tooltip title="Text Post">
+                        <span>
+                          <SendOutlined /> Text
+                        </span>
+                      </Tooltip>
+                    ),
+                    value: "text",
+                  },
+                  {
+                    label: (
+                      <Tooltip title="Image Post">
+                        <span>
+                          <PictureOutlined /> Image
+                        </span>
+                      </Tooltip>
+                    ),
+                    value: "image",
+                  },
+                  {
+                    label: (
+                      <Tooltip title="Video Post">
+                        <span>
+                          <VideoCameraOutlined /> Video
+                        </span>
+                      </Tooltip>
+                    ),
+                    value: "video",
+                  },
+                  {
+                    label: (
+                      <Tooltip title="Link Post">
+                        <span>
+                          <LinkOutlined /> Link
+                        </span>
+                      </Tooltip>
+                    ),
+                    value: "link",
+                  },
                 ]}
                 style={{ marginBottom: 8 }}
               />
             </div>
-            
+
             <Input.TextArea
               placeholder="What do you want to talk about?"
               value={postText}
@@ -725,16 +972,18 @@ export default function LinkedInDashboard({
             {postType === "image" && (
               <div style={{ marginBottom: 16 }}>
                 {imagePreview ? (
-                  <div style={{ position: "relative", display: "inline-block" }}>
-                    <img 
-                      src={imagePreview} 
-                      alt="Preview" 
-                      style={{ 
-                        maxWidth: "100%", 
-                        maxHeight: 200, 
+                  <div
+                    style={{ position: "relative", display: "inline-block" }}
+                  >
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 200,
                         borderRadius: 8,
-                        border: "1px solid #d9d9d9"
-                      }} 
+                        border: "1px solid #d9d9d9",
+                      }}
                     />
                     <Button
                       icon={<DeleteOutlined />}
@@ -742,11 +991,11 @@ export default function LinkedInDashboard({
                       danger
                       shape="circle"
                       onClick={handleRemoveImage}
-                      style={{ 
-                        position: "absolute", 
-                        top: 8, 
+                      style={{
+                        position: "absolute",
+                        top: 8,
                         right: 8,
-                        backgroundColor: "rgba(255,255,255,0.9)"
+                        backgroundColor: "rgba(255,255,255,0.9)",
                       }}
                     />
                   </div>
@@ -757,17 +1006,26 @@ export default function LinkedInDashboard({
                     beforeUpload={handleImageSelect}
                     disabled={posting}
                   >
-                    <div style={{ 
-                      border: "2px dashed #d9d9d9", 
-                      borderRadius: 8, 
-                      padding: 24, 
-                      textAlign: "center",
-                      cursor: "pointer",
-                      transition: "border-color 0.3s"
-                    }}>
-                      <PictureOutlined style={{ fontSize: 32, color: "#0077B5" }} />
-                      <div style={{ marginTop: 8 }}>Click or drag image to upload</div>
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    <div
+                      style={{
+                        border: "2px dashed #d9d9d9",
+                        borderRadius: 8,
+                        padding: 24,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "border-color 0.3s",
+                      }}
+                    >
+                      <PictureOutlined
+                        style={{ fontSize: 32, color: "#0077B5" }}
+                      />
+                      <div style={{ marginTop: 8 }}>
+                        Click or drag image to upload
+                      </div>
+                      <Typography.Text
+                        type="secondary"
+                        style={{ fontSize: 12 }}
+                      >
                         Supports: JPG, PNG, GIF (Max 8MB)
                       </Typography.Text>
                     </div>
@@ -780,16 +1038,18 @@ export default function LinkedInDashboard({
             {postType === "video" && (
               <div style={{ marginBottom: 16 }}>
                 {videoPreview ? (
-                  <div style={{ position: "relative", display: "inline-block" }}>
-                    <video 
-                      src={videoPreview} 
+                  <div
+                    style={{ position: "relative", display: "inline-block" }}
+                  >
+                    <video
+                      src={videoPreview}
                       controls
-                      style={{ 
-                        maxWidth: "100%", 
-                        maxHeight: 200, 
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 200,
                         borderRadius: 8,
-                        border: "1px solid #d9d9d9"
-                      }} 
+                        border: "1px solid #d9d9d9",
+                      }}
                     />
                     <Button
                       icon={<DeleteOutlined />}
@@ -797,15 +1057,19 @@ export default function LinkedInDashboard({
                       danger
                       shape="circle"
                       onClick={handleVideoClear}
-                      style={{ 
-                        position: "absolute", 
-                        top: 8, 
+                      style={{
+                        position: "absolute",
+                        top: 8,
                         right: 8,
-                        backgroundColor: "rgba(255,255,255,0.9)"
+                        backgroundColor: "rgba(255,255,255,0.9)",
                       }}
                     />
-                    <Typography.Text type="secondary" style={{ display: "block", marginTop: 8 }}>
-                      {selectedVideo?.name} ({(selectedVideo?.size || 0 / 1024 / 1024).toFixed(2)} MB)
+                    <Typography.Text
+                      type="secondary"
+                      style={{ display: "block", marginTop: 8 }}
+                    >
+                      {selectedVideo?.name} (
+                      {(selectedVideo?.size || 0 / 1024 / 1024).toFixed(2)} MB)
                     </Typography.Text>
                   </div>
                 ) : (
@@ -815,17 +1079,26 @@ export default function LinkedInDashboard({
                     beforeUpload={handleVideoSelect}
                     disabled={posting}
                   >
-                    <div style={{ 
-                      border: "2px dashed #d9d9d9", 
-                      borderRadius: 8, 
-                      padding: 24, 
-                      textAlign: "center",
-                      cursor: "pointer",
-                      transition: "border-color 0.3s"
-                    }}>
-                      <VideoCameraOutlined style={{ fontSize: 32, color: "#0077B5" }} />
-                      <div style={{ marginTop: 8 }}>Click or drag video to upload</div>
-                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                    <div
+                      style={{
+                        border: "2px dashed #d9d9d9",
+                        borderRadius: 8,
+                        padding: 24,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "border-color 0.3s",
+                      }}
+                    >
+                      <VideoCameraOutlined
+                        style={{ fontSize: 32, color: "#0077B5" }}
+                      />
+                      <div style={{ marginTop: 8 }}>
+                        Click or drag video to upload
+                      </div>
+                      <Typography.Text
+                        type="secondary"
+                        style={{ fontSize: 12 }}
+                      >
                         Supports: MP4, MOV (Max 200MB)
                       </Typography.Text>
                     </div>
@@ -836,46 +1109,78 @@ export default function LinkedInDashboard({
 
             {/* Upload Progress */}
             {posting && uploadProgress > 0 && (
-              <Progress 
-                percent={uploadProgress} 
-                status="active" 
-                strokeColor={{ from: '#0077B5', to: '#00A0DC' }}
+              <Progress
+                percent={uploadProgress}
+                status="active"
+                strokeColor={{ from: "#0077B5", to: "#00A0DC" }}
                 style={{ marginBottom: 16 }}
               />
             )}
 
             {/* Reactions Info */}
-            <div style={{ 
-              marginBottom: 16, 
-              padding: 12, 
-              backgroundColor: "rgba(0, 119, 181, 0.05)", 
-              borderRadius: 8,
-              border: "1px solid rgba(0, 119, 181, 0.1)"
-            }}>
+            <div
+              style={{
+                marginBottom: 16,
+                padding: 12,
+                backgroundColor: "rgba(0, 119, 181, 0.05)",
+                borderRadius: 8,
+                border: "1px solid rgba(0, 119, 181, 0.1)",
+              }}
+            >
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
                 <strong>Available with w_member_social:</strong>
               </Typography.Text>
-              <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-                <Tag icon={<LikeOutlined />} color="blue">Like</Tag>
-                <Tag icon={<TrophyOutlined />} color="gold">Celebrate</Tag>
-                <Tag icon={<HeartOutlined />} color="red">Love</Tag>
-                <Tag icon={<BulbOutlined />} color="green">Insightful</Tag>
-                <Tag icon={<QuestionCircleOutlined />} color="purple">Curious</Tag>
-                <Tag icon={<CommentOutlined />} color="cyan">Comment</Tag>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  marginTop: 8,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Tag icon={<LikeOutlined />} color="blue">
+                  Like
+                </Tag>
+                <Tag icon={<TrophyOutlined />} color="gold">
+                  Celebrate
+                </Tag>
+                <Tag icon={<HeartOutlined />} color="red">
+                  Love
+                </Tag>
+                <Tag icon={<BulbOutlined />} color="green">
+                  Insightful
+                </Tag>
+                <Tag icon={<QuestionCircleOutlined />} color="purple">
+                  Curious
+                </Tag>
+                <Tag icon={<CommentOutlined />} color="cyan">
+                  Comment
+                </Tag>
               </div>
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+              }}
+            >
               <Button
                 type="primary"
                 icon={<SendOutlined />}
                 onClick={handleCreatePost}
                 loading={posting}
-                disabled={!postText.trim() || (postType === "link" && !linkUrl.trim()) || (postType === "video" && !selectedVideo) || (postType === "image" && !selectedImage)}
-                style={{ 
+                disabled={
+                  !postText.trim() ||
+                  (postType === "link" && !linkUrl.trim()) ||
+                  (postType === "video" && !selectedVideo) ||
+                  (postType === "image" && !selectedImage)
+                }
+                style={{
                   borderRadius: 8,
                   backgroundColor: "#0077B5",
-                  borderColor: "#0077B5"
+                  borderColor: "#0077B5",
                 }}
               >
                 {posting ? "Publishing..." : "Post to LinkedIn"}
@@ -893,39 +1198,66 @@ export default function LinkedInDashboard({
               style={{ height: "100%", borderRadius: 12 }}
               styles={{ body: { padding: 24 } }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div style={{ 
-                  width: 48, 
-                  height: 48, 
-                  borderRadius: 12, 
-                  background: "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center"
-                }}>
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background:
+                      "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <UserOutlined style={{ fontSize: 24, color: "#fff" }} />
                 </div>
-                <Typography.Text strong style={{ fontSize: 16 }}>Followers</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 16 }}>
+                  Followers
+                </Typography.Text>
               </div>
               {metrics?.followers?.available ? (
                 <Statistic
                   value={metrics.followers.value}
-                  valueStyle={{ fontSize: 36, fontWeight: 700, color: "#0077B5" }}
+                  valueStyle={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    color: "#0077B5",
+                  }}
                 />
               ) : isConnected ? (
                 <div>
-                  <Typography.Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-                    {metrics?.followers?.reason || "Requires LinkedIn Marketing API permissions"}
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 12 }}
+                  >
+                    {metrics?.followers?.reason ||
+                      "Requires LinkedIn Marketing API permissions"}
                   </Typography.Text>
                   <Tag color="warning">API Limited</Tag>
                 </div>
               ) : (
                 <div>
-                  <Typography.Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 12 }}
+                  >
                     Connect LinkedIn to see your follower count
                   </Typography.Text>
                   {authUrl ? (
-                    <Button type="link" href={authUrl} style={{ padding: 0, color: "#0077B5" }}>
+                    <Button
+                      type="link"
+                      href={authUrl}
+                      style={{ padding: 0, color: "#0077B5" }}
+                    >
                       Connect now →
                     </Button>
                   ) : (
@@ -943,35 +1275,58 @@ export default function LinkedInDashboard({
               style={{ height: "100%", borderRadius: 12 }}
               styles={{ body: { padding: 24 } }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div style={{ 
-                  width: 48, 
-                  height: 48, 
-                  borderRadius: 12, 
-                  background: "linear-gradient(135deg, #00A0DC 0%, #0077B5 100%)",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center"
-                }}>
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background:
+                      "linear-gradient(135deg, #00A0DC 0%, #0077B5 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <TeamOutlined style={{ fontSize: 24, color: "#fff" }} />
                 </div>
-                <Typography.Text strong style={{ fontSize: 16 }}>Connections</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 16 }}>
+                  Connections
+                </Typography.Text>
               </div>
               {metrics?.connections?.available ? (
                 <Statistic
                   value={metrics.connections.value}
-                  valueStyle={{ fontSize: 36, fontWeight: 700, color: "#00A0DC" }}
+                  valueStyle={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    color: "#00A0DC",
+                  }}
                 />
               ) : isConnected ? (
                 <div>
-                  <Typography.Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
-                    {metrics?.connections?.reason || "Requires special LinkedIn API permissions"}
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 12 }}
+                  >
+                    {metrics?.connections?.reason ||
+                      "Requires special LinkedIn API permissions"}
                   </Typography.Text>
                   <Tag color="warning">API Limited</Tag>
                 </div>
               ) : (
                 <div>
-                  <Typography.Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 12 }}
+                  >
                     Your total network connections
                   </Typography.Text>
                   <Tag color="default">Not Connected</Tag>
@@ -987,22 +1342,37 @@ export default function LinkedInDashboard({
               style={{ height: "100%", borderRadius: 12 }}
               styles={{ body: { padding: 24 } }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-                <div style={{ 
-                  width: 48, 
-                  height: 48, 
-                  borderRadius: 12, 
-                  background: "linear-gradient(135deg, #86868B 0%, #636366 100%)",
+              <div
+                style={{
                   display: "flex",
                   alignItems: "center",
-                  justifyContent: "center"
-                }}>
+                  gap: 12,
+                  marginBottom: 16,
+                }}
+              >
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    background:
+                      "linear-gradient(135deg, #86868B 0%, #636366 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
                   <EyeOutlined style={{ fontSize: 24, color: "#fff" }} />
                 </div>
-                <Typography.Text strong style={{ fontSize: 16 }}>Profile Views</Typography.Text>
+                <Typography.Text strong style={{ fontSize: 16 }}>
+                  Profile Views
+                </Typography.Text>
               </div>
               <div>
-                <Typography.Text type="secondary" style={{ display: "block", marginBottom: 12 }}>
+                <Typography.Text
+                  type="secondary"
+                  style={{ display: "block", marginBottom: 12 }}
+                >
                   90-day profile view analytics
                 </Typography.Text>
                 <Tag color="warning">Not supported by LinkedIn API</Tag>
@@ -1012,7 +1382,10 @@ export default function LinkedInDashboard({
         </Row>
 
         {/* Connection Status */}
-        <Card style={{ marginTop: 24, borderRadius: 12 }} styles={{ body: { padding: 24 } }}>
+        <Card
+          style={{ marginTop: 24, borderRadius: 12 }}
+          styles={{ body: { padding: 24 } }}
+        >
           <Row align="middle" justify="space-between">
             <Col>
               <Typography.Text strong style={{ fontSize: 16 }}>
@@ -1020,18 +1393,24 @@ export default function LinkedInDashboard({
               </Typography.Text>
               <br />
               <Typography.Text type="secondary">
-                {isConnected 
-                  ? "Your LinkedIn account is connected and syncing data" 
+                {isConnected
+                  ? "Your LinkedIn account is connected and syncing data"
                   : "Connect your LinkedIn account to start tracking your social metrics"}
               </Typography.Text>
             </Col>
             <Col>
               {isConnected ? (
-                <Tag color="success" style={{ padding: "4px 12px", fontSize: 14 }}>
+                <Tag
+                  color="success"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
                   ● Connected
                 </Tag>
               ) : (
-                <Tag color="default" style={{ padding: "4px 12px", fontSize: 14 }}>
+                <Tag
+                  color="default"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
                   ○ Not Connected
                 </Tag>
               )}
@@ -1041,8 +1420,8 @@ export default function LinkedInDashboard({
 
         {/* Events Section */}
         {isConnected && (
-          <Card 
-            style={{ marginTop: 24, borderRadius: 12 }} 
+          <Card
+            style={{ marginTop: 24, borderRadius: 12 }}
             styles={{ body: { padding: 24 } }}
             title={
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1061,17 +1440,20 @@ export default function LinkedInDashboard({
                     loading={loadingOrgs}
                   >
                     <Select.Option value="all">All My Events</Select.Option>
-                    {organizations.map(org => (
+                    {organizations.map((org) => (
                       <Select.Option key={org.id} value={org.id}>
                         {org.name}
                       </Select.Option>
                     ))}
                   </Select>
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => setCreateEventModalOpen(true)}
-                    style={{ backgroundColor: "#0077B5", borderColor: "#0077B5" }}
+                    style={{
+                      backgroundColor: "#0077B5",
+                      borderColor: "#0077B5",
+                    }}
                   >
                     Create Event
                   </Button>
@@ -1081,61 +1463,100 @@ export default function LinkedInDashboard({
           >
             {/* Show API requirement notice */}
             {events.length === 0 && !loadingEvents && (
-              <div style={{ 
-                background: "linear-gradient(135deg, #fff7e6 0%, #fff2d9 100%)", 
-                padding: 20, 
-                borderRadius: 8, 
-                marginBottom: 16,
-                border: "1px solid #ffd591"
-              }}>
-                <Typography.Text strong style={{ display: "block", marginBottom: 8, color: "#d48806" }}>
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #fff7e6 0%, #fff2d9 100%)",
+                  padding: 20,
+                  borderRadius: 8,
+                  marginBottom: 16,
+                  border: "1px solid #ffd591",
+                }}
+              >
+                <Typography.Text
+                  strong
+                  style={{
+                    display: "block",
+                    marginBottom: 8,
+                    color: "#d48806",
+                  }}
+                >
                   ⚠️ LinkedIn API Access Required
                 </Typography.Text>
                 <Typography.Text type="secondary">
-                  To access LinkedIn Events, your app needs the <strong>Community Management API</strong> product enabled in the LinkedIn Developer Portal. 
-                  This product provides access to <code>r_events</code> and <code>rw_events</code> scopes.
+                  To access LinkedIn Events, your app needs the{" "}
+                  <strong>Community Management API</strong> product enabled in
+                  the LinkedIn Developer Portal. This product provides access to{" "}
+                  <code>r_events</code> and <code>rw_events</code> scopes.
                 </Typography.Text>
-                <br /><br />
+                <br />
+                <br />
                 <Typography.Text type="secondary">
                   <strong>To enable Events access:</strong>
                   <ol style={{ marginTop: 8, paddingLeft: 20 }}>
-                    <li>Go to <a href="https://www.linkedin.com/developers/apps" target="_blank" rel="noopener noreferrer">LinkedIn Developer Portal</a></li>
-                    <li>Select your app → <strong>Products</strong> tab</li>
-                    <li>Request access to <strong>"Community Management API"</strong></li>
+                    <li>
+                      Go to{" "}
+                      <a
+                        href="https://www.linkedin.com/developers/apps"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        LinkedIn Developer Portal
+                      </a>
+                    </li>
+                    <li>
+                      Select your app → <strong>Products</strong> tab
+                    </li>
+                    <li>
+                      Request access to{" "}
+                      <strong>"Community Management API"</strong>
+                    </li>
                     <li>Once approved, reconnect your LinkedIn account</li>
                   </ol>
                 </Typography.Text>
               </div>
             )}
-            
+
             {loadingEvents ? (
               <div style={{ textAlign: "center", padding: 40 }}>
                 <Spin />
-                <Typography.Text type="secondary" style={{ display: "block", marginTop: 12 }}>
+                <Typography.Text
+                  type="secondary"
+                  style={{ display: "block", marginTop: 12 }}
+                >
                   Loading events...
                 </Typography.Text>
               </div>
             ) : events.length === 0 ? (
-              <Empty 
-                image={<CalendarOutlined style={{ fontSize: 48, color: "#d9d9d9" }} />}
+              <Empty
+                image={
+                  <CalendarOutlined
+                    style={{ fontSize: 48, color: "#d9d9d9" }}
+                  />
+                }
                 description={
                   <div>
-                    <Typography.Text type="secondary">No events found</Typography.Text>
+                    <Typography.Text type="secondary">
+                      No events found
+                    </Typography.Text>
                     <br />
                     <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      {organizations.length > 0 
-                        ? "Create an event to get started" 
+                      {organizations.length > 0
+                        ? "Create an event to get started"
                         : "You need admin access to an organization to manage events"}
                     </Typography.Text>
                   </div>
                 }
               >
                 {organizations.length > 0 && (
-                  <Button 
-                    type="primary" 
+                  <Button
+                    type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => setCreateEventModalOpen(true)}
-                    style={{ backgroundColor: "#0077B5", borderColor: "#0077B5" }}
+                    style={{
+                      backgroundColor: "#0077B5",
+                      borderColor: "#0077B5",
+                    }}
                   >
                     Create Your First Event
                   </Button>
@@ -1147,38 +1568,51 @@ export default function LinkedInDashboard({
                 renderItem={(event) => (
                   <List.Item
                     actions={[
-                      <Button 
-                        key="delete" 
-                        type="text" 
-                        danger 
+                      <Button
+                        key="delete"
+                        type="text"
+                        danger
                         icon={<DeleteOutlined />}
                         onClick={() => handleDeleteEvent(event.id)}
                       >
                         Delete
-                      </Button>
+                      </Button>,
                     ]}
                   >
                     <List.Item.Meta
                       avatar={
-                        <div style={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 8,
-                          background: "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <CalendarOutlined style={{ fontSize: 24, color: "#fff" }} />
+                        <div
+                          style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 8,
+                            background:
+                              "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <CalendarOutlined
+                            style={{ fontSize: 24, color: "#fff" }}
+                          />
                         </div>
                       }
                       title={
                         <Space>
                           <Typography.Text strong>{event.name}</Typography.Text>
                           {event.eventType && (
-                            <Tag color={event.eventType === "ONLINE" ? "blue" : "green"}>
-                              {event.eventType === "ONLINE" ? <GlobalOutlined /> : <EnvironmentOutlined />}
-                              {" "}{event.eventType}
+                            <Tag
+                              color={
+                                event.eventType === "ONLINE" ? "blue" : "green"
+                              }
+                            >
+                              {event.eventType === "ONLINE" ? (
+                                <GlobalOutlined />
+                              ) : (
+                                <EnvironmentOutlined />
+                              )}{" "}
+                              {event.eventType}
                             </Tag>
                           )}
                         </Space>
@@ -1186,8 +1620,8 @@ export default function LinkedInDashboard({
                       description={
                         <div>
                           {event.description && (
-                            <Typography.Paragraph 
-                              ellipsis={{ rows: 2 }} 
+                            <Typography.Paragraph
+                              ellipsis={{ rows: 2 }}
                               style={{ margin: 0, marginBottom: 4 }}
                             >
                               {event.description}
@@ -1195,12 +1629,21 @@ export default function LinkedInDashboard({
                           )}
                           <Space size="middle">
                             {event.startAt && (
-                              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                                <CalendarOutlined /> {dayjs(event.startAt).format("MMM D, YYYY h:mm A")}
+                              <Typography.Text
+                                type="secondary"
+                                style={{ fontSize: 12 }}
+                              >
+                                <CalendarOutlined />{" "}
+                                {dayjs(event.startAt).format(
+                                  "MMM D, YYYY h:mm A"
+                                )}
                               </Typography.Text>
                             )}
                             {event.organizerName && (
-                              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                              <Typography.Text
+                                type="secondary"
+                                style={{ fontSize: 12 }}
+                              >
                                 <BankOutlined /> {event.organizerName}
                               </Typography.Text>
                             )}
@@ -1236,22 +1679,28 @@ export default function LinkedInDashboard({
             layout="vertical"
             onFinish={handleCreateEvent}
             initialValues={{
-              eventType: "ONLINE"
+              eventType: "ONLINE",
             }}
           >
             <Form.Item
               name="organizationId"
               label="Organization"
-              rules={[{ required: true, message: "Please select an organization" }]}
+              rules={[
+                { required: true, message: "Please select an organization" },
+              ]}
             >
               <Select placeholder="Select organization">
-                {organizations.map(org => (
+                {organizations.map((org) => (
                   <Select.Option key={org.id} value={org.id}>
                     <Space>
                       {org.logoUrl ? (
                         <Avatar size="small" src={org.logoUrl} />
                       ) : (
-                        <Avatar size="small" icon={<BankOutlined />} style={{ backgroundColor: "#00A0DC" }} />
+                        <Avatar
+                          size="small"
+                          icon={<BankOutlined />}
+                          style={{ backgroundColor: "#00A0DC" }}
+                        />
                       )}
                       {org.name}
                     </Space>
@@ -1268,12 +1717,9 @@ export default function LinkedInDashboard({
               <Input placeholder="Enter event name" maxLength={100} />
             </Form.Item>
 
-            <Form.Item
-              name="description"
-              label="Description"
-            >
-              <Input.TextArea 
-                placeholder="Describe your event..." 
+            <Form.Item name="description" label="Description">
+              <Input.TextArea
+                placeholder="Describe your event..."
                 maxLength={1000}
                 showCount
                 autoSize={{ minRows: 3, maxRows: 6 }}
@@ -1285,10 +1731,12 @@ export default function LinkedInDashboard({
                 <Form.Item
                   name="startAt"
                   label="Start Date & Time"
-                  rules={[{ required: true, message: "Please select start time" }]}
+                  rules={[
+                    { required: true, message: "Please select start time" },
+                  ]}
                 >
-                  <DatePicker 
-                    showTime 
+                  <DatePicker
+                    showTime
                     format="YYYY-MM-DD HH:mm"
                     style={{ width: "100%" }}
                     placeholder="Select start date/time"
@@ -1296,12 +1744,9 @@ export default function LinkedInDashboard({
                 </Form.Item>
               </Col>
               <Col span={12}>
-                <Form.Item
-                  name="endAt"
-                  label="End Date & Time"
-                >
-                  <DatePicker 
-                    showTime 
+                <Form.Item name="endAt" label="End Date & Time">
+                  <DatePicker
+                    showTime
                     format="YYYY-MM-DD HH:mm"
                     style={{ width: "100%" }}
                     placeholder="Select end date/time"
@@ -1310,38 +1755,38 @@ export default function LinkedInDashboard({
               </Col>
             </Row>
 
-            <Form.Item
-              name="eventType"
-              label="Event Type"
-            >
+            <Form.Item name="eventType" label="Event Type">
               <Select>
                 <Select.Option value="ONLINE">
-                  <Space><GlobalOutlined /> Online Event</Space>
+                  <Space>
+                    <GlobalOutlined /> Online Event
+                  </Space>
                 </Select.Option>
                 <Select.Option value="IN_PERSON">
-                  <Space><EnvironmentOutlined /> In-Person Event</Space>
+                  <Space>
+                    <EnvironmentOutlined /> In-Person Event
+                  </Space>
                 </Select.Option>
               </Select>
             </Form.Item>
 
-            <Form.Item
-              name="eventUrl"
-              label="Event URL"
-            >
+            <Form.Item name="eventUrl" label="Event URL">
               <Input placeholder="https://..." />
             </Form.Item>
 
             <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
               <Space>
-                <Button onClick={() => {
-                  setCreateEventModalOpen(false);
-                  eventForm.resetFields();
-                }}>
+                <Button
+                  onClick={() => {
+                    setCreateEventModalOpen(false);
+                    eventForm.resetFields();
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
+                <Button
+                  type="primary"
+                  htmlType="submit"
                   loading={creatingEvent}
                   style={{ backgroundColor: "#0077B5", borderColor: "#0077B5" }}
                 >
@@ -1406,7 +1851,10 @@ export default function LinkedInDashboard({
             />
           </Drawer>
         )}
-        <Content className={`${styles.content} ${styles.contentLight}`} style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}>
+        <Content
+          className={`${styles.content} ${styles.contentLight}`}
+          style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}
+        >
           {renderMetricsContent()}
           {isMobile && isLoggedIn && (
             <FloatButton
