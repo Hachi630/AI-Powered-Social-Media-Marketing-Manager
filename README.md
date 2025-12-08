@@ -369,6 +369,48 @@ This error occurs when using the `pdf-parse` library in Node.js environments. Th
 
 **Note:** This error typically occurs when processing PDF files through the file upload feature. If you're not using PDF file extraction, you may not encounter this issue.
 
+### VS Code Terminal Launch Issues
+
+If you're experiencing issues with the Integrated Terminal in VS Code (or Cursor), here are common solutions:
+
+**Error: Terminal failed to launch**
+
+1. **Check VS Code Settings**
+   - Open Settings (File > Preferences > Settings)
+   - Search for `terminal.integrated` settings
+   - Verify your default shell profile is correctly configured
+   - On macOS/Linux, ensure the shell path is correct (e.g., `/bin/zsh`, `/bin/bash`)
+
+2. **Test Your Shell Directly**
+   - Try running your shell outside VS Code/Cursor
+   - Some terminal launch failures are due to shell installation issues, not the editor
+
+3. **Update VS Code/Cursor**
+   - Ensure you're using the latest version
+   - Each release includes terminal improvements and bug fixes
+
+4. **Check Node.js Version**
+   - Verify Node.js is installed and accessible: `node --version`
+   - Ensure Node.js is in your system PATH
+
+5. **Common Exit Codes**
+   - **Exit code 1**: Usually indicates a shell configuration issue
+   - **Exit code 259 (Windows)**: Process is still active, try killing unused processes
+   - Search online for your specific shell and exit code for targeted solutions
+
+6. **macOS Specific**
+   - Ensure your shell has proper permissions
+   - Check if your shell is in `/etc/shells` (for non-standard shells)
+
+7. **Reinstall Dependencies**
+   ```bash
+   # Clean install
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
+
+**For more detailed troubleshooting**, refer to the [VS Code Terminal Troubleshooting Guide](https://aka.ms/vscode-troubleshoot-terminal-launch).
+
 ## 📚 API Documentation
 
 ### Base URL
