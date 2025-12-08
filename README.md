@@ -225,6 +225,8 @@ The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to 
 ```env
 VITE_BACKEND_PORT=5000
 VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
+# Optional: Set VITE_API_URL if not using vite proxy (default: empty string uses proxy)
+# VITE_API_URL=http://localhost:5000
 ```
 
 ## 📚 API Documentation
