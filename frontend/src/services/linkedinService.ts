@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL;
+// Use VITE_API_URL if set, otherwise use relative path (works with vite proxy)
+const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Bug 3 Fix: Check response status before parsing JSON
 export async function getLinkedInMetrics(token: string) {
