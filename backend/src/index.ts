@@ -13,6 +13,7 @@ import uploadRoutes from './routes/upload'
 import socialRoutes from './routes/social'
 import { errorHandler } from './middleware/errorHandler'
 import linkedinRoutes from "./routes/linkedin";
+import twitterRoutes from "./routes/twitter";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -52,6 +53,8 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use("/linkedin", linkedinRoutes);
+app.use("/api/twitter", twitterRoutes);
 app.use('/api/social', socialRoutes)
 app.use('/linkedin', linkedinRoutes)
 
