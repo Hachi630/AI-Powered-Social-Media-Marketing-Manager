@@ -146,7 +146,12 @@ export default function BrandProfile({
       // Clean up URL
       setSearchParams({}, { replace: true })
     } else if (noInstagramAccount === 'true') {
-      message.warning('No Instagram Business Account found. Please connect an Instagram Business Account to your Facebook Page first.')
+      const pages = searchParams.get('pages')
+      const pageList = pages ? ` (${pages})` : ''
+      message.warning({
+        content: `No Instagram Business Account found for your Facebook Page${pageList}. Please connect an Instagram Business Account to your Facebook Page first.`,
+        duration: 10,
+      })
       setSearchParams({}, { replace: true })
     } else if (error) {
       if (error === 'no_instagram_account') {

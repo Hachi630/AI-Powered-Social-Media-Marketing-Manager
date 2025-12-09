@@ -79,10 +79,17 @@ export default function FacebookPageSelector() {
         message.success(
           `Successfully connected! Instagram: @${response.instagram?.username}, Facebook Page: ${response.facebook?.pageName}`
         )
-        // Redirect to settings page
-        setTimeout(() => {
-          window.location.href = '/settings?instagram_connected=true'
-        }, 1500)
+        // Redirect to Facebook Page management page
+        if (response.redirectUrl) {
+          setTimeout(() => {
+            window.location.href = response.redirectUrl!
+          }, 1500)
+        } else {
+          // Fallback to settings page if no redirect URL
+          setTimeout(() => {
+            window.location.href = '/settings?instagram_connected=true'
+          }, 1500)
+        }
       } else {
         message.error(response.message || 'Failed to connect page')
       }

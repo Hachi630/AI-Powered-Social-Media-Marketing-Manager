@@ -414,6 +414,7 @@ export const calendarService = {
   async connectFacebookPage(pageId: string, tokenKey: string): Promise<{
     success: boolean
     message?: string
+    redirectUrl?: string
     instagram?: {
       userId: string
       username: string

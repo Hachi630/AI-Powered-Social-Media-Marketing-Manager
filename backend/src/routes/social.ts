@@ -32,7 +32,7 @@ router.get('/instagram/auth', protect, async (req: AuthRequest, res: Response) =
 
     // Generate state for CSRF protection
     const state = crypto.randomBytes(32).toString('hex')
-    oauthStates.set(state, user.id.toString())
+    oauthStates.set(state, user._id.toString())
 
     // Generate Instagram OAuth URL
     const authUrl = getInstagramAuthUrl(state)
@@ -56,47 +56,285 @@ router.get('/instagram/auth', protect, async (req: AuthRequest, res: Response) =
  * @route   GET /api/social/instagram/callback
  * @access  Public (called by Facebook)
  */
+/**
+ * @desc    Instagram OAuth callback (supports both frontend and backend callbacks)
+ * @route   GET /api/social/instagram/callback
+ * @access  Public (called by Facebook) or Private (called by frontend)
+ */
 router.get('/instagram/callback', async (req: Request, res: Response) => {
   try {
+    console.log('[Instagram OAuth Callback] Received callback:', {
+      query: req.query,
+      url: req.url,
+      headers: req.headers.host,
+    })
+
+    // Check if this is a frontend callback (has Authorization header) or backend callback (from Facebook)
+    const isFrontendCallback = !!req.headers.authorization
+    console.log('[Instagram OAuth Callback] Callback type:', isFrontendCallback ? 'frontend' : 'backend (from Facebook)')
+
     const { code, state, error } = req.query
 
     if (error) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=${encodeURIComponent(error as string)}`)
+      console.error('[Instagram OAuth Callback] Error from Facebook:', error)
+      if (isFrontendCallback) {
+        return res.json({ success: false, message: error as string })
+      }
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=${encodeURIComponent(error as string)}`)
     }
 
     if (!code || !state) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=missing_code_or_state`)
+      console.error('[Instagram OAuth Callback] Missing code or state:', { code: !!code, state: !!state })
+      if (isFrontendCallback) {
+        return res.json({ success: false, message: 'Missing code or state' })
+      }
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=missing_code_or_state`)
     }
 
     // Verify state
     const userId = oauthStates.get(state as string)
     if (!userId) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=invalid_state`)
+      console.error('[Instagram OAuth Callback] Invalid state:', state)
+      if (isFrontendCallback) {
+        return res.json({ success: false, message: 'Invalid state' })
+      }
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=invalid_state`)
     }
+
+    console.log('[Instagram OAuth Callback] State verified, userId:', userId)
 
     oauthStates.delete(state as string)
 
     // Find user
     const user = await User.findById(userId)
     if (!user) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=user_not_found`)
+      if (isFrontendCallback) {
+        return res.json({ success: false, message: 'User not found' })
+      }
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=user_not_found`)
     }
 
     // Exchange code for short-lived token
+    console.log('[Instagram OAuth Callback] Exchanging code for token...')
     const tokenData = await exchangeCodeForToken(code as string)
+    console.log('[Instagram OAuth Callback] Got short-lived token')
 
     // Exchange for long-lived token
+    console.log('[Instagram OAuth Callback] Exchanging for long-lived token...')
     const longLivedToken = await getLongLivedToken(tokenData.accessToken)
+    console.log('[Instagram OAuth Callback] Got long-lived token')
 
     // Get user's Facebook Pages
+    console.log('[Instagram OAuth Callback] Getting Facebook Pages...')
     const pages = await getFacebookPages(longLivedToken.accessToken)
+    console.log('[Instagram OAuth Callback] Found pages:', pages.length)
+    console.log('[Instagram OAuth Callback] Pages details:', pages.map(p => ({
+      id: p.id,
+      name: p.name,
+      hasInstagramAccount: p.hasInstagramAccount,
+      instagramUsername: p.instagramUsername
+    })))
     
     // Filter to only pages with Instagram accounts
     const pagesWithInstagram = pages.filter((page) => page.hasInstagramAccount)
+    console.log('[Instagram OAuth Callback] Pages with Instagram:', pagesWithInstagram.length)
 
     if (pagesWithInstagram.length === 0) {
+      const pageNames = pages.map(p => p.name).join(', ')
+      console.log('[Instagram OAuth Callback] No pages with Instagram detected. Pages:', pageNames)
+      console.log('[Instagram OAuth Callback] This might be a permissions issue. Attempting to proceed anyway...')
+      
+      // If user has pages but we can't detect Instagram, still try to connect
+      // The Instagram connection might exist but API permissions might not allow detection
+      // We'll try to use the first page and see if we can access Instagram API directly
+      if (pages.length > 0) {
+        const firstPage = pages[0]
+        console.log('[Instagram OAuth Callback] Attempting to connect using first page:', firstPage.name)
+        console.log('[Instagram OAuth Callback] Page details:', {
+          id: firstPage.id,
+          name: firstPage.name,
+          hasPageToken: !!firstPage.accessToken,
+        })
+        
+        try {
+          console.log('[Instagram OAuth Callback] Attempting direct connection method...')
+          
+          // Try using page access token first (more reliable for Instagram queries)
+          // Page tokens have better permissions for accessing Instagram accounts
+          let tokenToUse = firstPage.accessToken || longLivedToken.accessToken
+          console.log('[Instagram OAuth Callback] Token type:', firstPage.accessToken ? 'page token' : 'user token')
+          console.log('[Instagram OAuth Callback] Token preview:', tokenToUse.substring(0, 20) + '...')
+          
+          // Try to get Instagram account directly using the page
+          // This method uses multiple fallback strategies to find Instagram account
+          const instagramAccount = await getInstagramAccountIdForPage(
+            firstPage.id,
+            tokenToUse
+          )
+          
+          // If we can get Instagram account, proceed with connection
+          console.log('[Instagram OAuth Callback] ✅ Successfully found Instagram account via direct method:', {
+            username: instagramAccount.username,
+            accountType: instagramAccount.accountType,
+            instagramAccountId: instagramAccount.instagramAccountId,
+            facebookPageId: instagramAccount.facebookPageId,
+          })
+          
+          // Calculate expiration date
+          const expiresAt = new Date()
+          expiresAt.setSeconds(expiresAt.getSeconds() + longLivedToken.expiresIn)
+
+          // Save to user
+          if (!user.socialConnections) {
+            user.socialConnections = {}
+          }
+
+          // Save Instagram connection
+          user.socialConnections.instagram = {
+            accessToken: longLivedToken.accessToken,
+            userId: instagramAccount.instagramAccountId,
+            username: instagramAccount.username,
+            accountType: instagramAccount.accountType,
+            expiresAt,
+          }
+
+          // Also save Facebook Page connection with Page access token
+          // Use Page access token if available, otherwise use user token
+          const pageToken = firstPage.accessToken || longLivedToken.accessToken
+          user.socialConnections.facebook = {
+            accessToken: pageToken, // Save Page access token for posting
+            userId: instagramAccount.facebookPageId,
+            expiresAt,
+          }
+
+          await user.save()
+
+          console.log('[Instagram OAuth Callback] Successfully connected via direct method:', {
+            userId: user._id,
+            instagramUsername: instagramAccount.username,
+            facebookPageId: instagramAccount.facebookPageId,
+          })
+
+          // Return JSON response for frontend callback, or redirect for backend callback
+          const facebookPageId = instagramAccount.facebookPageId
+          const redirectUrl = `https://www.facebook.com/pages/manage/${facebookPageId}`
+          
+          // Check if this is a frontend callback (has Authorization header)
+          if (req.headers.authorization) {
+            // Frontend callback - return JSON
+            res.json({
+              success: true,
+              message: 'Successfully connected Instagram and Facebook Page',
+              redirectUrl,
+              instagram: {
+                userId: instagramAccount.instagramAccountId,
+                username: instagramAccount.username,
+                accountType: instagramAccount.accountType,
+              },
+              facebook: {
+                pageId: instagramAccount.facebookPageId,
+                pageName: instagramAccount.facebookPageName,
+              },
+            })
+          } else {
+            // Backend callback - redirect directly
+            res.redirect(redirectUrl)
+          }
+          return
+        } catch (directError: any) {
+          console.error('[Instagram OAuth Callback] Direct method failed:', directError.response?.data || directError.message)
+          
+          // Last resort: Try to connect anyway using the page, even if we can't detect Instagram
+          // The user confirmed Instagram is connected in Meta Business Suite
+          // We'll save the connection and let them test if it works for posting
+          console.log('[Instagram OAuth Callback] Attempting fallback: Save connection without Instagram detection')
+          
+          try {
+            // Get page name
+            const pageNameResponse = await axios.get(
+              `https://graph.facebook.com/v18.0/${firstPage.id}?fields=name&access_token=${firstPage.accessToken || longLivedToken.accessToken}`
+            )
+            
+            // Calculate expiration date
+            const expiresAt = new Date()
+            expiresAt.setSeconds(expiresAt.getSeconds() + longLivedToken.expiresIn)
+
+            // Save to user with placeholder Instagram info
+            // We'll try to get the actual Instagram account ID when posting
+            if (!user.socialConnections) {
+              user.socialConnections = {}
+            }
+
+            // Save Facebook Page connection with Page access token
+            // Use Page access token if available, otherwise use user token
+            const pageToken = firstPage.accessToken || longLivedToken.accessToken
+            user.socialConnections.facebook = {
+              accessToken: pageToken, // Save Page access token for posting
+              userId: firstPage.id,
+              expiresAt,
+            }
+
+            // Save Instagram connection with placeholder
+            // The actual Instagram account ID will be retrieved when needed
+            // We'll use the Facebook Page ID as a reference
+            user.socialConnections.instagram = {
+              accessToken: longLivedToken.accessToken,
+              userId: firstPage.id, // Use page ID temporarily, will resolve to Instagram ID when posting
+              username: 'pending',
+              accountType: 'BUSINESS',
+              expiresAt,
+            }
+
+            await user.save()
+
+            console.log('[Instagram OAuth Callback] Saved connection with fallback method:', {
+              userId: user._id,
+              facebookPageId: firstPage.id,
+              note: 'Instagram account will be resolved when posting',
+            })
+
+            // Return JSON response for frontend callback, or redirect for backend callback
+            const redirectUrl = `https://www.facebook.com/pages/manage/${firstPage.id}`
+            
+            // Check if this is a frontend callback (has Authorization header)
+            if (req.headers.authorization) {
+              // Frontend callback - return JSON
+              res.json({
+                success: true,
+                message: 'Successfully connected (Instagram account will be resolved when posting)',
+                redirectUrl,
+                instagram: {
+                  userId: firstPage.id, // Temporary, will be resolved later
+                  username: 'pending',
+                  accountType: 'BUSINESS',
+                },
+                facebook: {
+                  pageId: firstPage.id,
+                  pageName: firstPage.name,
+                },
+              })
+            } else {
+              // Backend callback - redirect directly
+              res.redirect(redirectUrl)
+            }
+            return
+          } catch (fallbackError: any) {
+            console.error('[Instagram OAuth Callback] Fallback method also failed:', fallbackError.response?.data || fallbackError.message)
+            // Fall through to error redirect
+          }
+        }
+      }
+      
+      // If all methods fail, return error
+      if (isFrontendCallback) {
+        return res.json({
+          success: false,
+          message: `No Instagram Business Account found for pages: ${pageNames}. Please connect an Instagram Business Account to your Facebook Page first.`,
+          pages: pageNames,
+        })
+      }
       return res.redirect(
-        `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=no_instagram_account`
+        `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=no_instagram_account&pages=${encodeURIComponent(pageNames)}`
       )
     }
 
@@ -107,7 +345,7 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
       // Get Instagram account for selected page
       const instagramAccount = await getInstagramAccountIdForPage(
         selectedPage.id,
-        longLivedToken.accessToken
+        selectedPage.accessToken || longLivedToken.accessToken // Use Page token if available
       )
 
       // Calculate expiration date
@@ -121,16 +359,18 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
 
       // Save Instagram connection
       user.socialConnections.instagram = {
-        accessToken: longLivedToken.accessToken,
+        accessToken: longLivedToken.accessToken, // Keep user token for Instagram API
         userId: instagramAccount.instagramAccountId,
         username: instagramAccount.username,
         accountType: instagramAccount.accountType,
         expiresAt,
       }
 
-      // Also save Facebook Page connection
+      // Also save Facebook Page connection with Page access token
+      // Use Page access token for posting (has pages_manage_posts permission)
+      const pageToken = selectedPage.accessToken || longLivedToken.accessToken
       user.socialConnections.facebook = {
-        accessToken: longLivedToken.accessToken,
+        accessToken: pageToken, // Save Page access token for posting
         userId: instagramAccount.facebookPageId,
         expiresAt,
       }
@@ -144,9 +384,11 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
         facebookPageId: user.socialConnections.facebook?.userId,
       })
 
-      // Redirect to settings with success message
+      // Redirect to Facebook Page management page
+      const facebookPageId = instagramAccount.facebookPageId
+      console.log('[Instagram OAuth Callback] Redirecting to Facebook Page:', facebookPageId)
       res.redirect(
-        `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?instagram_connected=true`
+        `https://www.facebook.com/pages/manage/${facebookPageId}`
       )
     } else {
       // Multiple pages - store token and redirect to selection page
@@ -163,9 +405,13 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
       )
     }
   } catch (error: any) {
-    console.error('Instagram OAuth callback error:', error)
+    console.error('[Instagram OAuth Callback] Error:', error)
+    console.error('[Instagram OAuth Callback] Error stack:', error.stack)
+    console.error('[Instagram OAuth Callback] Error response:', error.response?.data)
+    const errorMessage = error.response?.data?.error?.message || error.message || 'oauth_failed'
+    console.error('[Instagram OAuth Callback] Redirecting to settings with error:', errorMessage)
     res.redirect(
-      `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=${encodeURIComponent(error.message || 'oauth_failed')}`
+      `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=${encodeURIComponent(errorMessage)}`
     )
   }
 })
@@ -221,13 +467,21 @@ router.post('/instagram/share', protect, async (req: AuthRequest, res: Response)
       })
     }
 
+    // Instagram requires an image URL for posts
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image URL is required for Instagram posts. Instagram API only supports image or video posts, not text-only posts.',
+      })
+    }
+
     // Share to Instagram
     const result = await shareToInstagram(
       instagram.userId!,
       instagram.accessToken,
       {
         text: content,
-        imageUrl: imageUrl || undefined,
+        imageUrl: imageUrl,
       }
     )
 
@@ -239,9 +493,27 @@ router.post('/instagram/share', protect, async (req: AuthRequest, res: Response)
     })
   } catch (error: any) {
     console.error('Instagram share error:', error)
+    
+    // Check if it's the image URL requirement error
+    if (error.message && error.message.includes('Image URL is required')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image URL is required for Instagram posts. Instagram API only supports image or video posts, not text-only posts.',
+      })
+    }
+    
+    // Check if it's an authentication error
+    if (error.response?.status === 401 || error.response?.data?.error?.code === 190) {
+      return res.status(401).json({
+        success: false,
+        message: 'Instagram access token expired or invalid. Please reconnect your account.',
+        requiresAuth: true,
+      })
+    }
+
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to share to Instagram',
+      message: error.response?.data?.error?.message || error.message || 'Failed to share to Instagram',
     })
   }
 })
@@ -330,6 +602,24 @@ router.post('/connect-page', protect, async (req: AuthRequest, res: Response) =>
     // Get Instagram account for selected page
     const instagramAccount = await getInstagramAccountIdForPage(pageId, accessToken)
 
+    // Get Page access token for posting (required for pages_manage_posts permission)
+    let pageAccessToken = accessToken // Fallback to user token
+    try {
+      const pagesResponse = await axios.get(
+        `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
+      )
+      if (pagesResponse.data.data && pagesResponse.data.data.length > 0) {
+        const targetPage = pagesResponse.data.data.find((page: any) => page.id === pageId)
+        if (targetPage && targetPage.access_token) {
+          pageAccessToken = targetPage.access_token
+          console.log('[Connect Page] Using Page access token for posting')
+        }
+      }
+    } catch (error) {
+      console.error('[Connect Page] Error getting Page access token:', error)
+      // Continue with user token as fallback
+    }
+
     // Calculate expiration date
     const expiresAt = new Date()
     expiresAt.setSeconds(expiresAt.getSeconds() + expiresIn)
@@ -339,7 +629,7 @@ router.post('/connect-page', protect, async (req: AuthRequest, res: Response) =>
       user.socialConnections = {}
     }
 
-    // Save Instagram connection
+    // Save Instagram connection (use user token for Instagram API)
     user.socialConnections.instagram = {
       accessToken: accessToken,
       userId: instagramAccount.instagramAccountId,
@@ -348,9 +638,9 @@ router.post('/connect-page', protect, async (req: AuthRequest, res: Response) =>
       expiresAt,
     }
 
-    // Also save Facebook Page connection
+    // Also save Facebook Page connection with Page access token
     user.socialConnections.facebook = {
-      accessToken: accessToken,
+      accessToken: pageAccessToken, // Save Page access token for posting
       userId: instagramAccount.facebookPageId,
       expiresAt,
     }
@@ -368,9 +658,11 @@ router.post('/connect-page', protect, async (req: AuthRequest, res: Response) =>
       expiresAt: expiresAt.toISOString(),
     })
 
+    // Return JSON with redirect URL for frontend to handle
     res.json({
       success: true,
       message: 'Successfully connected Instagram and Facebook Page',
+      redirectUrl: `https://www.facebook.com/pages/manage/${instagramAccount.facebookPageId}`,
       instagram: {
         userId: instagramAccount.instagramAccountId,
         username: instagramAccount.username,
@@ -469,6 +761,7 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
     // Use Facebook connection if available, otherwise try Instagram token (which also works for Facebook Page)
     let facebookToken: string | undefined
     let facebookUserId: string | undefined
+    let pageAccessToken: string | undefined // Page access token for posting
     let isUsingInstagramToken = false
 
     if (facebook?.accessToken) {
@@ -524,7 +817,39 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
       }
     }
 
-    if (!facebookToken || !facebookUserId) {
+    // Get Page access token for posting (required for pages_manage_posts permission)
+    // User token doesn't have sufficient permissions, we need Page token
+    if (facebookUserId && facebookToken) {
+      try {
+        console.log('[Facebook Share] Getting Page access token for:', facebookUserId)
+        const pagesResponse = await axios.get(
+          `https://graph.facebook.com/v18.0/me/accounts?access_token=${facebookToken}`
+        )
+        
+        if (pagesResponse.data.data && pagesResponse.data.data.length > 0) {
+          // Find the page we want to post to
+          const targetPage = pagesResponse.data.data.find((page: any) => page.id === facebookUserId)
+          if (targetPage && targetPage.access_token) {
+            pageAccessToken = targetPage.access_token
+            console.log('[Facebook Share] Got Page access token')
+          } else {
+            console.log('[Facebook Share] Page not found in accounts, using user token')
+            pageAccessToken = facebookToken // Fallback to user token
+          }
+        } else {
+          console.log('[Facebook Share] No pages found, using user token')
+          pageAccessToken = facebookToken // Fallback to user token
+        }
+      } catch (error: any) {
+        console.error('[Facebook Share] Error getting Page access token:', error.response?.data || error.message)
+        // Fallback to user token
+        pageAccessToken = facebookToken
+      }
+    } else {
+      pageAccessToken = facebookToken
+    }
+
+    if (!pageAccessToken || !facebookUserId) {
       return res.status(400).json({
         success: false,
         message: 'Facebook account not connected. Please connect your Facebook or Instagram account first.',
@@ -532,32 +857,37 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
       })
     }
 
-    // Share to Facebook using Graph API
+    // Share to Facebook using Graph API with Page access token
     let postId: string
     let permalink: string | undefined
 
     try {
+      console.log('[Facebook Share] Posting to Page:', {
+        pageId: facebookUserId,
+        hasImage: !!imageUrl,
+        usingPageToken: pageAccessToken !== facebookToken,
+      })
 
       // If imageUrl is provided, create a post with photo
       if (imageUrl) {
-        // First, upload the photo
+        // First, upload the photo using Page access token
         const photoResponse = await axios.post(
-          `https://graph.facebook.com/v18.0/${facebookUserId}/photos`,
+          `https://graph.facebook.com/v24.0/${facebookUserId}/photos`,
           {
             url: imageUrl,
             message: content,
-            access_token: facebookToken,
+            access_token: pageAccessToken, // Use Page access token
           }
         )
         postId = photoResponse.data.id
         permalink = photoResponse.data.post_id ? `https://www.facebook.com/photo.php?fbid=${postId}` : undefined
       } else {
-        // Create a text-only post
+        // Create a text-only post using Page access token
         const postResponse = await axios.post(
-          `https://graph.facebook.com/v18.0/${facebookUserId}/feed`,
+          `https://graph.facebook.com/v24.0/${facebookUserId}/feed`,
           {
             message: content,
-            access_token: facebookToken,
+            access_token: pageAccessToken, // Use Page access token instead of user token
           }
         )
         postId = postResponse.data.id

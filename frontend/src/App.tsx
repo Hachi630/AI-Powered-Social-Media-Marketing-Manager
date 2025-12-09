@@ -12,6 +12,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import ContactUs from './pages/ContactUs'
 import FacebookPageSelector from './components/FacebookPageSelector'
+import InstagramCallback from './pages/InstagramCallback'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
@@ -104,6 +105,16 @@ function AppContent() {
       <Route
         path="/auth/callback"
         element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
+      />
+      <Route
+        path="/auth/instagram/callback"
+        element={
+          isLoggedIn ? (
+            <InstagramCallback />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
       />
       <Route
         path="/"

@@ -301,6 +301,13 @@ export default function CalendarItemModal({
         }
       }
       
+      // Check if image URL is required for Instagram
+      if (platform === 'instagram' && !item.imageUrl) {
+        message.error('Image URL is required for Instagram posts. Instagram only supports image or video posts, not text-only posts.')
+        setLoading(false)
+        return
+      }
+      
       const response = await calendarService.shareToPlatform(item.id, platform, {
         imageUrl: item.imageUrl || undefined,
       })
