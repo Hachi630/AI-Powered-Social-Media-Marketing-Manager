@@ -1,12 +1,13 @@
 import { Router, Request, Response } from "express";
 import { TwitterApi } from "twitter-api-v2";
 import TwitterToken from "../models/TwitterToken";
+import TwitterRequestToken from "../models/TwitterRequestToken";
 import { requireAuth } from "../middleware/auth";
 
 const router = Router();
 
 // STEP 1 — Redirect to Twitter OAuth
-router.get("/auth", (req, res) => {
+router.get("/auth", async (req, res) => {
   const userId = req.query.userId as string;
   
   if (!userId) {
@@ -15,10 +16,12 @@ router.get("/auth", (req, res) => {
 
   const appKey = process.env.TWITTER_API_KEY;
   const appSecret = process.env.TWITTER_API_SECRET;
-  const callbackUrl = process.env.TWITTER_CALLBACK_URL || 
-    `${process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`}/api/twitter/callback`;
+  const port = process.env.PORT || 5000;
+  const backendUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
+  const callbackUrl = process.env.TWITTER_CALLBACK_URL || `${backendUrl}/api/twitter/callback`;
 
   if (!appKey || !appSecret) {
+    console.error("Twitter API credentials missing:", { hasAppKey: !!appKey, hasAppSecret: !!appSecret });
     return res.status(500).json({ error: "Twitter API credentials are not configured" });
   }
 
@@ -29,31 +32,95 @@ router.get("/auth", (req, res) => {
       appSecret,
     });
 
-    // Encode userId in state so we can retrieve it in callback
-    const state = JSON.stringify({ userId, nonce: Math.random().toString(36) });
-    const encodedState = Buffer.from(state).toString('base64');
+    console.log("Generating Twitter OAuth link with callback URL:", callbackUrl);
+    console.log("Twitter API credentials check:", { 
+      hasAppKey: !!appKey, 
+      hasAppSecret: !!appSecret,
+      appKeyLength: appKey?.length,
+      appSecretLength: appSecret?.length
+    });
 
     // Generate OAuth 1.0a authorization link
-    const authLink = client.generateAuthLink(callbackUrl, {
-      linkMode: 'authorize', // Use 'authorize' to get user consent
-    });
+    let authLink;
+    try {
+      console.log("Attempting to generate Twitter Auth Link...");
+      // generateAuthLink performs a network request to Twitter to get a Request Token, so it MUST be awaited
+      authLink = await client.generateAuthLink(callbackUrl, {
+        linkMode: 'authorize', // Use 'authorize' to get user consent
+      });
+      
+      console.log("Auth link generated successfully");
+    } catch (linkError: any) {
+      console.error("Error generating auth link:", {
+        message: linkError.message,
+        code: linkError.code,
+        data: linkError.data,
+        error: linkError
+      });
+      
+      // Check specifically for 403 Callback URL error
+      if (linkError.code === 403 || (linkError.data && JSON.stringify(linkError.data).includes('Callback URL not approved'))) {
+        console.error(`
+================================================================================
+CRITICAL CONFIGURATION ERROR: Callback URL not approved
+--------------------------------------------------------------------------------
+Twitter refused the callback URL: ${callbackUrl}
 
-    // Store the oauth_token_secret temporarily (in a real app, you'd use Redis or session)
-    // For now, we'll encode it in the state parameter
-    const stateWithSecret = JSON.stringify({ 
-      userId, 
-      nonce: Math.random().toString(36),
-      oauthTokenSecret: authLink.oauth_token_secret 
+ACTION REQUIRED:
+1. Go to Twitter Developer Portal (https://developer.twitter.com/en/portal/dashboard)
+2. Select your App -> Settings -> User authentication settings
+3. Edit "Callback URLs"
+4. Add exactly this URL: ${callbackUrl}
+5. Save changes
+================================================================================
+        `);
+      }
+      throw linkError;
+    }
+
+    // Validate that we got the required tokens
+    // Check both possible return formats: { oauth_token, oauth_token_secret } or { url, oauth_token_secret }
+    const oauthToken = authLink.oauth_token || (authLink.url ? new URL(authLink.url).searchParams.get('oauth_token') : null);
+    const oauthTokenSecret = authLink.oauth_token_secret;
+
+    if (!oauthToken || !oauthTokenSecret) {
+      console.error("Invalid authLink response:", {
+        authLink,
+        hasOAuthToken: !!authLink?.oauth_token,
+        hasOAuthTokenSecret: !!authLink?.oauth_token_secret,
+        hasUrl: !!authLink?.url,
+        authLinkType: typeof authLink,
+        authLinkKeys: authLink ? Object.keys(authLink) : 'null',
+        extractedOAuthToken: oauthToken
+      });
+      throw new Error("Failed to generate OAuth tokens from Twitter API. Check your API credentials and callback URL configuration in Twitter Developer Portal.");
+    }
+
+    console.log("Twitter OAuth link generated successfully, oauth_token:", oauthToken.substring(0, 10) + "...");
+
+    // Store the oauth_token and secret in the database
+    // This is required because Twitter OAuth 1.0a callbacks don't guarantee returning the state parameter
+    await TwitterRequestToken.create({
+      oauthToken: oauthToken,
+      oauthTokenSecret: oauthTokenSecret,
+      userId: userId
     });
-    const finalState = Buffer.from(stateWithSecret).toString('base64');
 
     // Redirect to Twitter authorization page
-    const authUrl = `https://api.twitter.com/oauth/authorize?oauth_token=${authLink.oauth_token}&state=${finalState}`;
+    // We don't rely on state parameter for OAuth 1.0a flow anymore
+    const authUrl = `https://api.twitter.com/oauth/authorize?oauth_token=${oauthToken}`;
     
-    console.log("Twitter OAuth redirect URL:", authUrl);
+    console.log("Twitter OAuth redirect URL generated successfully");
+    console.log("Redirecting to:", authUrl.substring(0, 100) + "...");
     res.redirect(authUrl);
   } catch (error: any) {
-    console.error("Twitter OAuth error:", error);
+    console.error("Twitter OAuth error:", {
+      message: error.message,
+      code: error.code,
+      data: error.data,
+      response: error.response?.data,
+      stack: error.stack
+    });
     const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${clientUrl}/socialdashboard?twitter=error&reason=oauth_init_failed`);
   }
@@ -63,8 +130,13 @@ router.get("/auth", (req, res) => {
 router.get("/callback", async (req, res) => {
   const oauthToken = req.query.oauth_token as string;
   const oauthVerifier = req.query.oauth_verifier as string;
-  const stateParam = req.query.state as string;
   const denied = req.query.denied as string;
+
+  console.log("Twitter Callback Received:", {
+    oauthToken: oauthToken ? 'present' : 'missing',
+    oauthVerifier: oauthVerifier ? 'present' : 'missing',
+    denied
+  });
 
   // Handle user denial
   if (denied) {
@@ -80,20 +152,25 @@ router.get("/callback", async (req, res) => {
     return res.redirect(`${clientUrl}/socialdashboard?twitter=error&reason=missing_params`);
   }
 
-  // Decode userId and oauth_token_secret from state
-  let userId: string | undefined;
-  let oauthTokenSecret: string | undefined;
+  // Retrieve the request token from database
+  let requestTokenDoc;
   try {
-    const decodedState = Buffer.from(stateParam, 'base64').toString('utf-8');
-    const stateData = JSON.parse(decodedState);
-    userId = stateData.userId;
-    oauthTokenSecret = stateData.oauthTokenSecret;
-  } catch {
+    requestTokenDoc = await TwitterRequestToken.findOne({ oauthToken });
+    
+    if (!requestTokenDoc) {
+      console.error("Twitter OAuth: Invalid or expired oauth_token");
+      const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${clientUrl}/socialdashboard?twitter=error&reason=invalid_token`);
+    }
+  } catch (error) {
+    console.error("Database error retrieving request token:", error);
     const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
-    return res.redirect(`${clientUrl}/socialdashboard?twitter=error&reason=invalid_state`);
+    return res.redirect(`${clientUrl}/socialdashboard?twitter=error&reason=db_error`);
   }
 
-  if (!userId) {
+  const { userId, oauthTokenSecret } = requestTokenDoc;
+
+  if (!userId || !oauthTokenSecret) {
     const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
     return res.redirect(`${clientUrl}/socialdashboard?twitter=error&reason=missing_user`);
   }
@@ -112,7 +189,7 @@ router.get("/callback", async (req, res) => {
       appKey,
       appSecret,
       accessToken: oauthToken,
-      accessSecret: oauthTokenSecret!,
+      accessSecret: oauthTokenSecret,
     });
 
     // Exchange oauth_verifier for access tokens
@@ -135,6 +212,9 @@ router.get("/callback", async (req, res) => {
       },
       { upsert: true }
     );
+
+    // Clean up the used request token
+    await TwitterRequestToken.deleteOne({ _id: requestTokenDoc._id });
 
     const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5173';
     res.redirect(`${clientUrl}/socialdashboard?twitter=connected`);

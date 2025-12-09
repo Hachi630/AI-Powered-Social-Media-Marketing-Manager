@@ -228,7 +228,27 @@ export default function LinkedInDashboard({
       window.history.replaceState({}, '', '/socialdashboard');
     } else if (twitterParam === 'error') {
       const reason = params.get('reason');
-      message.error(`Twitter connection failed: ${reason || 'Unknown error'}`);
+      let errorMessage = 'Twitter connection failed';
+      
+      // Provide user-friendly error messages
+      switch (reason) {
+        case 'callback_url_not_approved':
+          errorMessage = 'Twitter connection failed: Callback URL not approved. Please configure the callback URL in your Twitter Developer Portal app settings.';
+          break;
+        case 'callback_url_error':
+          errorMessage = 'Twitter connection failed: Callback URL configuration error. Please check your TWITTER_CALLBACK_URL setting.';
+          break;
+        case 'api_credentials_error':
+          errorMessage = 'Twitter connection failed: API credentials error. Please check your TWITTER_API_KEY and TWITTER_API_SECRET in backend/.env';
+          break;
+        case 'oauth_init_failed':
+          errorMessage = 'Twitter connection failed: OAuth initialization failed. Please check your Twitter API credentials and callback URL configuration.';
+          break;
+        default:
+          errorMessage = `Twitter connection failed: ${reason || 'Unknown error'}`;
+      }
+      
+      message.error(errorMessage);
       // Clean up URL
       window.history.replaceState({}, '', '/socialdashboard');
     }
