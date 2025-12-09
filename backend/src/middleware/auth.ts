@@ -3,7 +3,7 @@ import { verifyToken } from '../utils/jwt'
 import User from '../models/User'
 import { AuthRequest } from '../types'
 
-export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   let token
 
   if (
@@ -32,3 +32,5 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 }
 
+// alias for backwards compatibility
+export const protect = requireAuth

@@ -21,6 +21,7 @@ const platformIcons: Record<string, string> = {
   instagram_reels: '🎬',
   tiktok: '🎵',
   facebook: '📘',
+  twitter: '🐦',
 }
 
 // Platform label mapping
@@ -30,6 +31,7 @@ const platformLabels: Record<string, string> = {
   instagram_reels: 'IG Reels',
   tiktok: 'TikTok',
   facebook: 'FB',
+  twitter: 'X',
 }
 
 
