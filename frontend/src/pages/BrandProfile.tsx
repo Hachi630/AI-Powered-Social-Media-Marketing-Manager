@@ -145,6 +145,35 @@ export default function BrandProfile({
     localStorage.setItem("melo_selected_company", defaultCompany.id);
   }, []);
 
+  // Handle OAuth callback messages
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const instagramConnected = searchParams.get('instagram_connected')
+    const noInstagramAccount = searchParams.get('no_instagram_account')
+    const error = searchParams.get('error')
+
+    if (instagramConnected === 'true') {
+      message.success('Instagram and Facebook Page connected successfully! You can now share posts to Instagram and Facebook.')
+      // Clean up URL
+      setSearchParams({}, { replace: true })
+    } else if (noInstagramAccount === 'true') {
+      const pages = searchParams.get('pages')
+      const pageList = pages ? ` (${pages})` : ''
+      message.warning({
+        content: `No Instagram Business Account found for your Facebook Page${pageList}. Please connect an Instagram Business Account to your Facebook Page first.`,
+        duration: 10,
+      })
+      setSearchParams({}, { replace: true })
+    } else if (error) {
+      if (error === 'no_instagram_account') {
+        message.warning('No Instagram Business Account found. Please connect an Instagram Business Account to your Facebook Page first.')
+      } else {
+        message.error(`Connection failed: ${error}`)
+      }
+      setSearchParams({}, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
+
   // Load user data on mount and when propUser changes
   useEffect(() => {
     const loadUser = async () => {

@@ -3,7 +3,7 @@ import { verifyToken } from '../utils/jwt'
 import User from '../models/User'
 import { AuthRequest } from '../types'
 
-export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   let token
 
   if (
@@ -19,6 +19,7 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
   try {
     const decoded = verifyToken(token)
+    // Mongoose will load all fields by default, but we ensure socialConnections is included
     const user = await User.findById(decoded.id)
 
     if (!user) {
@@ -32,5 +33,3 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
   }
 }
 
-// alias for backwards compatibility
-export const protect = requireAuth

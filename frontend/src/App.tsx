@@ -1,4 +1,4 @@
-import { ConfigProvider, App as AntApp } from 'antd'
+import { ConfigProvider, message } from 'antd'
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useSearchParams, useLocation } from 'react-router-dom'
 import Dashboard from './components/Dashboard'
@@ -11,10 +11,11 @@ import HomePage from './pages/HomePage'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import ContactUs from './pages/ContactUs'
+import FacebookPageSelector from './components/FacebookPageSelector'
+import InstagramCallback from './pages/InstagramCallback'
 import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
-import LinkedInDashboard from './components/LinkedInDashboard'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -46,7 +47,6 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { message } = AntApp.useApp()
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -83,7 +83,7 @@ function AppContent() {
       // Clean up URL
       window.history.replaceState({}, '', location.pathname)
     }
-  }, [location, message])
+  }, [location])
 
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true)
@@ -105,6 +105,16 @@ function AppContent() {
       <Route
         path="/auth/callback"
         element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
+      />
+      <Route
+        path="/auth/instagram/callback"
+        element={
+          isLoggedIn ? (
+            <InstagramCallback />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
       />
       <Route
         path="/"
@@ -173,16 +183,13 @@ function AppContent() {
         }
       />
       <Route
-        path="/socialdashboard"
+        path="/select-facebook-page"
         element={
-          <LinkedInDashboard
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-            jwt={localStorage.getItem('token') || ''}
-            userId={user?.id}
-          />
+          isLoggedIn ? (
+            <FacebookPageSelector />
+          ) : (
+            <Navigate to="/" replace />
+          )
         }
       />
       <Route
@@ -230,13 +237,11 @@ function AppWithTheme() {
 
   return (
     <ConfigProvider theme={themeConfig}>
-      <AntApp>
-        <BrowserRouter>
-          <div className="app">
-            <AppContent />
-          </div>
-        </BrowserRouter>
-      </AntApp>
+      <BrowserRouter>
+        <div className="app">
+          <AppContent />
+        </div>
+      </BrowserRouter>
     </ConfigProvider>
   )
 }
