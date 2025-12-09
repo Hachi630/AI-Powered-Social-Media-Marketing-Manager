@@ -4,7 +4,7 @@ import axios from "axios";
 
 import LinkedInToken from "../models/LinkedInToken";
 import { signToken } from "../utils/jwt";
-import { protect } from "../middleware/auth";
+import { requireAuth } from "../middleware/auth";
 import {
   getLinkedInMemberId,
   getTotalConnections,
@@ -149,7 +149,7 @@ router.get("/callback", async (req, res) => {
 });
 
 // STEP 3 — Disconnect LinkedIn account
-router.delete("/disconnect", protect, async (req: any, res) => {
+router.delete("/disconnect", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   
   try {
@@ -168,7 +168,7 @@ router.delete("/disconnect", protect, async (req: any, res) => {
 });
 
 // STEP 4 — Fetch metrics
-router.get("/metrics", protect, async (req: any, res) => {
+router.get("/metrics", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const token = await LinkedInToken.findOne({ userId });
 
@@ -204,7 +204,7 @@ router.get("/metrics", protect, async (req: any, res) => {
 // ============================================
 
 // STEP 5 — Get administered organizations (company pages)
-router.get("/organizations", protect, async (req: any, res) => {
+router.get("/organizations", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const token = await LinkedInToken.findOne({ userId });
 
@@ -221,7 +221,7 @@ router.get("/organizations", protect, async (req: any, res) => {
 // ============================================
 
 // STEP 6 — Create a text post on LinkedIn (supports personal and organization)
-router.post("/posts", protect, async (req: any, res) => {
+router.post("/posts", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { text, organizationId } = req.body;
 
@@ -253,7 +253,7 @@ router.post("/posts", protect, async (req: any, res) => {
 });
 
 // STEP 7 — Initialize image upload (supports personal and organization)
-router.post("/images/initialize", protect, async (req: any, res) => {
+router.post("/images/initialize", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { organizationId } = req.body;
   const token = await LinkedInToken.findOne({ userId });
@@ -276,7 +276,7 @@ router.post("/images/initialize", protect, async (req: any, res) => {
 });
 
 // STEP 7 — Upload image binary (proxy to LinkedIn)
-router.post("/images/upload", protect, async (req: any, res) => {
+router.post("/images/upload", requireAuth, async (req: any, res) => {
   const { uploadUrl } = req.body;
   
   if (!uploadUrl) {
@@ -309,7 +309,7 @@ router.post("/images/upload", protect, async (req: any, res) => {
 });
 
 // STEP 9 — Create post with image (supports personal and organization)
-router.post("/posts/with-image", protect, async (req: any, res) => {
+router.post("/posts/with-image", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { text, imageUrn, organizationId } = req.body;
 
@@ -341,7 +341,7 @@ router.post("/posts/with-image", protect, async (req: any, res) => {
 });
 
 // STEP 9 — Delete a post
-router.delete("/posts/:postUrn", protect, async (req: any, res) => {
+router.delete("/posts/:postUrn", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn } = req.params;
 
@@ -365,7 +365,7 @@ router.delete("/posts/:postUrn", protect, async (req: any, res) => {
 // ============================================
 
 // STEP 10 — Get my events (viewer's events)
-router.get("/events", protect, async (req: any, res) => {
+router.get("/events", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const token = await LinkedInToken.findOne({ userId });
 
@@ -378,7 +378,7 @@ router.get("/events", protect, async (req: any, res) => {
 });
 
 // STEP 11 — Get organization events
-router.get("/events/organization/:organizationId", protect, async (req: any, res) => {
+router.get("/events/organization/:organizationId", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { organizationId } = req.params;
   const token = await LinkedInToken.findOne({ userId });
@@ -392,7 +392,7 @@ router.get("/events/organization/:organizationId", protect, async (req: any, res
 });
 
 // STEP 12 — Get a single event by ID
-router.get("/events/:eventId", protect, async (req: any, res) => {
+router.get("/events/:eventId", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { eventId } = req.params;
   const token = await LinkedInToken.findOne({ userId });
@@ -406,7 +406,7 @@ router.get("/events/:eventId", protect, async (req: any, res) => {
 });
 
 // STEP 13 — Create a new event
-router.post("/events", protect, async (req: any, res) => {
+router.post("/events", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { organizationId, name, description, startAt, endAt, eventUrl, eventType, locale } = req.body;
 
@@ -446,7 +446,7 @@ router.post("/events", protect, async (req: any, res) => {
 });
 
 // STEP 14 — Update an event
-router.patch("/events/:eventId", protect, async (req: any, res) => {
+router.patch("/events/:eventId", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { eventId } = req.params;
   const { name, description, startAt, endAt, eventUrl, eventType, locale } = req.body;
@@ -475,7 +475,7 @@ router.patch("/events/:eventId", protect, async (req: any, res) => {
 });
 
 // STEP 15 — Delete an event
-router.delete("/events/:eventId", protect, async (req: any, res) => {
+router.delete("/events/:eventId", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { eventId } = req.params;
 
@@ -499,7 +499,7 @@ router.delete("/events/:eventId", protect, async (req: any, res) => {
 // ============================================
 
 // STEP 16 — Get comments on a post
-router.get("/posts/:postUrn/comments", protect, async (req: any, res) => {
+router.get("/posts/:postUrn/comments", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn } = req.params;
 
@@ -514,7 +514,7 @@ router.get("/posts/:postUrn/comments", protect, async (req: any, res) => {
 });
 
 // STEP 17 — Create a comment on a post
-router.post("/posts/:postUrn/comments", protect, async (req: any, res) => {
+router.post("/posts/:postUrn/comments", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn } = req.params;
   const { text, organizationId } = req.body;
@@ -549,7 +549,7 @@ router.post("/posts/:postUrn/comments", protect, async (req: any, res) => {
 });
 
 // STEP 18 — Edit a comment
-router.patch("/posts/:postUrn/comments/:commentUrn", protect, async (req: any, res) => {
+router.patch("/posts/:postUrn/comments/:commentUrn", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn, commentUrn } = req.params;
   const { text } = req.body;
@@ -579,7 +579,7 @@ router.patch("/posts/:postUrn/comments/:commentUrn", protect, async (req: any, r
 });
 
 // STEP 19 — Delete a comment
-router.delete("/posts/:postUrn/comments/:commentUrn", protect, async (req: any, res) => {
+router.delete("/posts/:postUrn/comments/:commentUrn", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn, commentUrn } = req.params;
 
@@ -607,7 +607,7 @@ router.delete("/posts/:postUrn/comments/:commentUrn", protect, async (req: any, 
 // ============================================
 
 // STEP 20 — Get reactions on a post
-router.get("/posts/:postUrn/reactions", protect, async (req: any, res) => {
+router.get("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn } = req.params;
 
@@ -622,7 +622,7 @@ router.get("/posts/:postUrn/reactions", protect, async (req: any, res) => {
 });
 
 // STEP 21 — Add a reaction to a post
-router.post("/posts/:postUrn/reactions", protect, async (req: any, res) => {
+router.post("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn } = req.params;
   const { reactionType, organizationId } = req.body;
@@ -662,7 +662,7 @@ router.post("/posts/:postUrn/reactions", protect, async (req: any, res) => {
 });
 
 // STEP 22 — Remove a reaction from a post
-router.delete("/posts/:postUrn/reactions", protect, async (req: any, res) => {
+router.delete("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { postUrn } = req.params;
   const { organizationId } = req.query;
@@ -696,7 +696,7 @@ router.delete("/posts/:postUrn/reactions", protect, async (req: any, res) => {
 // ============================================
 
 // STEP 23 — Initialize video upload
-router.post("/videos/initialize", protect, async (req: any, res) => {
+router.post("/videos/initialize", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { organizationId, fileSizeBytes } = req.body;
 
@@ -723,7 +723,7 @@ router.post("/videos/initialize", protect, async (req: any, res) => {
 });
 
 // STEP 24 — Upload video binary
-router.post("/videos/upload", protect, async (req: any, res) => {
+router.post("/videos/upload", requireAuth, async (req: any, res) => {
   const { uploadUrl, videoData } = req.body;
   
   if (!uploadUrl) {
@@ -749,7 +749,7 @@ router.post("/videos/upload", protect, async (req: any, res) => {
 });
 
 // STEP 25 — Create post with video
-router.post("/posts/with-video", protect, async (req: any, res) => {
+router.post("/posts/with-video", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { text, videoUrn, organizationId } = req.body;
 
@@ -780,7 +780,7 @@ router.post("/posts/with-video", protect, async (req: any, res) => {
 });
 
 // STEP 26 — Create post with link/article
-router.post("/posts/with-link", protect, async (req: any, res) => {
+router.post("/posts/with-link", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { text, linkUrl, linkTitle, linkDescription, organizationId } = req.body;
 
