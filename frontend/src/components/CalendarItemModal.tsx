@@ -38,6 +38,7 @@ export const PLATFORMS = {
   TIKTOK: 'tiktok',
   FACEBOOK: 'facebook',
   TWITTER: 'twitter',
+  LINKEDIN: 'linkedin',
 } as const
 
 const platformOptions = [
@@ -47,6 +48,7 @@ const platformOptions = [
   { value: PLATFORMS.TIKTOK, label: 'TikTok' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
   { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
+  { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
 ]
 
 const statusOptions = [
