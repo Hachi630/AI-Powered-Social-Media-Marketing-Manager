@@ -10,7 +10,6 @@ import chatRoutes from './routes/chat'
 import calendarRoutes from './routes/calendar'
 import campaignRoutes from './routes/campaign'
 import uploadRoutes from './routes/upload'
-import socialRoutes from './routes/social'
 import { errorHandler } from './middleware/errorHandler'
 import linkedinRoutes from "./routes/linkedin";
 import twitterRoutes from "./routes/twitter";
@@ -55,8 +54,6 @@ app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
-app.use('/api/social', socialRoutes)
-app.use('/linkedin', linkedinRoutes)
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })

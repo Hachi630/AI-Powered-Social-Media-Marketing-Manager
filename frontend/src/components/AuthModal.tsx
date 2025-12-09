@@ -9,10 +9,10 @@ import {
   WindowsFilled,
 } from "@ant-design/icons";
 import {
+  App,
   Button,
   Divider,
   Input,
-  message,
   Modal,
   Space,
   Typography,
@@ -32,6 +32,7 @@ export default function AuthModal({
   onCancel,
   onLoginSuccess,
 }: AuthModalProps) {
+  const { message } = App.useApp();
   const [step, setStep] = useState<
     "login" | "signup" | "phone" | "phone-verify"
   >("login");
@@ -335,7 +336,7 @@ export default function AuthModal({
           : 400
       }
       className={styles.authModal}
-      maskStyle={{ backgroundColor: "rgba(0, 0, 0, 0.05)" }}
+      styles={{ mask: { backgroundColor: "rgba(0, 0, 0, 0.05)" } }}
       closable={step === "login"}
     >
       {step === "phone" ? (
