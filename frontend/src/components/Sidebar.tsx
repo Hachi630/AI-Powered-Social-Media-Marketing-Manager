@@ -764,7 +764,7 @@ export default function Sidebar({
 
                   {/* Root conversations (no folder) */}
                   <div
-                    className={`${styles.rootDropZone} ${dragOverFolder === null ? styles.folderDragOver : ""}`}
+                    className={`${styles.rootDropZone} ${draggedItem && dragOverFolder === null ? styles.rootDropZoneDragOver : ""}`}
                     onDragOver={(e) => handleDragOver(e, null)}
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, null)}
