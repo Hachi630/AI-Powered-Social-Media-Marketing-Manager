@@ -2,6 +2,8 @@ import express, { Request, Response } from 'express'
 import { protect } from '../middleware/auth'
 import { AuthRequest } from '../types'
 import CalendarItem from '../models/CalendarItem'
+import { twitterService } from '../services/twitterService'
+import TwitterToken from '../models/TwitterToken'
 
 const router = express.Router()
 
@@ -357,3 +359,99 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
 
 export default router
 
+// @desc    Share calendar item to platform
+// @route   POST /api/calendar/:id/share
+// @access  Private
+router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    const { platform } = req.body
+
+    if (!platform) {
+      return res.status(400).json({ success: false, message: 'Platform is required' })
+    }
+
+    const item = await CalendarItem.findOne({
+      _id: req.params.id,
+      userId: user._id,
+    })
+
+    if (!item) {
+      return res.status(404).json({ success: false, message: 'Calendar item not found' })
+    }
+
+    // Currently only Twitter is supported for direct posting
+    if (platform === 'twitter') {
+      // Check if user has connected their Twitter account
+      const twitterToken = await TwitterToken.findOne({ userId: user._id });
+      
+      if (!twitterToken || !twitterToken.accessToken || !twitterToken.accessSecret) {
+        return res.status(401).json({
+          success: false,
+          message: 'Twitter account not connected. Please connect your Twitter account first.',
+          requiresAuth: true
+        });
+      }
+
+      // Check if item has content variant for Twitter
+      let content = item.variants?.twitter || item.content;
+      
+      // Post to Twitter using user's tokens
+      const result = await twitterService.postTweet(
+        content, 
+        item.imageUrl,
+        twitterToken.accessToken,
+        twitterToken.accessSecret
+      );
+      
+      if (result.success) {
+        // Update item status to published if successful
+        item.status = 'published';
+        await item.save();
+        
+        return res.json({
+          success: true,
+          message: 'Successfully posted to Twitter',
+          tweetId: result.tweetId
+        });
+      } else {
+        // Return detailed error information
+        const errorMessage = result.error?.data?.detail || 
+                            result.error?.errors?.[0]?.message || 
+                            result.error?.message || 
+                            'Failed to post to Twitter';
+        const errorCode = result.error?.code;
+        
+        console.error('Twitter posting failed:', {
+          message: errorMessage,
+          code: errorCode,
+          fullError: result.error
+        });
+        
+        return res.status(500).json({
+          success: false,
+          message: errorMessage,
+          code: errorCode,
+          details: result.error?.data || result.error?.errors
+        });
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: `Posting to ${platform} is not yet supported`
+      });
+    }
+
+  } catch (error: any) {
+    console.error('Share calendar item error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to share calendar item',
+    })
+  }
+})
