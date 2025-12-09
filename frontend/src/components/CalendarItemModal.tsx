@@ -214,6 +214,7 @@ export default function CalendarItemModal({
     try {
       setLoading(true)
       
+      // Use calendar share endpoint for Twitter
       if (platform === 'twitter') {
         message.info('Sharing to Twitter/X...')
         const response = await calendarService.shareCalendarItem(item.id, platform)
@@ -222,17 +223,66 @@ export default function CalendarItemModal({
         } else {
           message.error(response.message || 'Failed to post to Twitter/X')
         }
-      } else {
-        // Placeholder for other platforms
-        message.info(`Sharing to ${platform}... (Coming soon)`)
+        return
       }
       
-      // const response = await calendarService.shareToPlatform(item.id, platform)
-      // if (response.success) {
-      //   message.success(`Successfully shared to ${platform}`)
-      // } else {
-      //   message.error(response.message || `Failed to share to ${platform}`)
-      // }
+      // Use social API for Instagram and Facebook
+      if (platform === 'instagram' || platform === 'facebook') {
+        message.info(`Sharing to ${platform}...`)
+        
+        const token = localStorage.getItem('token')
+        if (!token) {
+          message.error('Not authenticated')
+          return
+        }
+
+        try {
+          const response = await fetch(`/api/social/${platform}/share`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              calendarItemId: item.id,
+              content: item.content,
+              imageUrl: item.imageUrl,
+            }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok && data.success) {
+            message.success(`Successfully shared to ${platform}!`)
+            onSave() // Refresh the calendar
+          } else {
+            if (data.requiresAuth) {
+              // Show modal to connect account
+              Modal.confirm({
+                title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
+                content: data.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
+                okText: 'Connect Now',
+                cancelText: 'Cancel',
+                onOk: () => {
+                  if (platform === 'instagram' || platform === 'facebook') {
+                    // Redirect to Instagram OAuth (which also connects Facebook)
+                    window.location.href = '/settings'
+                  }
+                },
+              })
+            } else {
+              message.error(data.message || `Failed to share to ${platform}`)
+            }
+          }
+        } catch (error) {
+          console.error('Share error:', error)
+          message.error(`Failed to share to ${platform}`)
+        }
+        return
+      }
+      
+      // For other platforms, show coming soon
+      message.info(`Sharing to ${platform}... (Coming soon)`)
     } catch (error) {
       console.error('Share error:', error)
       message.error(`Failed to share to ${platform}`)
