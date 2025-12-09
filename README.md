@@ -133,11 +133,32 @@ Melo/
    cd backend
    npm install
    ```
+   
+   This will install all required packages including:
+   - `axios` - For LinkedIn API HTTP requests
+   - `qs` - For OAuth query string encoding
+   - `express` - Web framework
+   - `mongoose` - MongoDB ODM
+   - All other backend dependencies
 
 3. **Install frontend dependencies**
    ```bash
    cd ../frontend
    npm install
+   ```
+   
+   This will install all frontend dependencies including React, Ant Design, and routing libraries.
+
+4. **Set up environment variables**
+   
+   Create a `.env` file in the `backend/` directory (see Environment Variables section below for required variables).
+   
+   **Important**: Make sure to add LinkedIn API credentials:
+   ```env
+   LI_CLIENT_ID=your_linkedin_client_id
+   LI_CLIENT_SECRET=your_linkedin_client_secret
+   LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+   CLIENT_URL=http://localhost:3000
    ```
 
 ### Running the Application
@@ -189,6 +210,12 @@ TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
 TWITTER_ACCESS_TOKEN=your_twitter_access_token
 TWITTER_ACCESS_SECRET=your_twitter_access_secret
+
+# LinkedIn API Credentials (Required for LinkedIn integration)
+LI_CLIENT_ID=your_linkedin_client_id
+LI_CLIENT_SECRET=your_linkedin_client_secret
+LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+CLIENT_URL=http://localhost:3000
 ```
 
 **Note**:
@@ -197,6 +224,10 @@ TWITTER_ACCESS_SECRET=your_twitter_access_secret
 - `GEMINI_IMAGE_MODEL` is optional, defaults to `gemini-2.5-flash-image` if not set
 - Make sure the `backend/uploads/images/` directory exists for image storage
 - Twitter/X credentials can be obtained from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+- LinkedIn API credentials can be obtained from the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+  - Create a LinkedIn app and get your Client ID and Client Secret
+  - Set the redirect URI to match `LI_REDIRECT_URI` in your `.env` file
+  - Enable required products: "Sign In with LinkedIn using OpenID Connect" and "Share on LinkedIn"
 
 ### Frontend
 

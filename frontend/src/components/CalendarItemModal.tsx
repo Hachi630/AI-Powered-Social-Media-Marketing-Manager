@@ -80,6 +80,9 @@ export default function CalendarItemModal({
   const [imageUrl, setImageUrl] = useState<string | null>(null)
   const [uploadingImage, setUploadingImage] = useState(false)
   const [imageGenModalOpen, setImageGenModalOpen] = useState(false)
+  // checkingConnection is used via setCheckingConnection in handleConnectAccount
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [checkingConnection, setCheckingConnection] = useState(false)
 
   const isEditMode = !!item
   const isPreviewMode = isEditMode && !isEditing
@@ -205,6 +208,71 @@ export default function CalendarItemModal({
     onClose()
   }
 
+  const handleConnectAccount = async (platform: string) => {
+    try {
+      setCheckingConnection(true)
+      if (platform === 'instagram' || platform === 'facebook') {
+        // Both Instagram and Facebook use the same OAuth (since they share Facebook API)
+        const response = await calendarService.initiateInstagramAuth()
+        if (response.success && response.authUrl) {
+          // Open OAuth URL in new window
+          const popup = window.open(
+            response.authUrl,
+            'oauth',
+            'width=600,height=700,scrollbars=yes,resizable=yes'
+          )
+          
+          // Monitor popup for completion
+          const checkPopup = setInterval(() => {
+            if (popup?.closed) {
+              clearInterval(checkPopup)
+              // Wait a bit longer for OAuth callback to complete
+              setTimeout(async () => {
+                try {
+                  // Check multiple times to ensure connection is saved
+                  let connected = false
+                  for (let i = 0; i < 5; i++) {
+                    const statusResponse = await calendarService.getInstagramStatus()
+                    if (statusResponse.connected) {
+                      connected = true
+                      message.success(
+                        platform === 'facebook' 
+                          ? 'Facebook and Instagram accounts connected successfully!'
+                          : 'Instagram account connected successfully!'
+                      )
+                      // Refresh the page to update connection state
+                      window.location.reload()
+                      break
+                    }
+                    // Wait 1 second before next check
+                    await new Promise(resolve => setTimeout(resolve, 1000))
+                  }
+                  
+                  if (!connected) {
+                    message.warning('Connection may not have completed. Please check if you completed the authorization and try again.')
+                  }
+                } catch (error) {
+                  console.error('Error checking connection status:', error)
+                  message.warning('Unable to verify connection status. Please refresh the page and try again.')
+                }
+              }, 2000) // Wait 2 seconds for OAuth callback to process
+            }
+          }, 500)
+          
+          message.info('Please complete the authentication in the popup window. This will connect both Instagram and Facebook.')
+        } else {
+          message.error(response.message || 'Failed to initiate authentication')
+        }
+      }
+    } catch (error: unknown) {
+      console.error('Connect account error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      message.error(`Failed to connect ${platform} account: ${errorMessage}`)
+    } finally {
+      setCheckingConnection(false)
+    }
+  }
+
   const handleShare = async (platform: string) => {
     if (!item) {
       message.error('No item to share')
@@ -214,28 +282,59 @@ export default function CalendarItemModal({
     try {
       setLoading(true)
       
-      if (platform === 'twitter') {
-        message.info('Sharing to Twitter/X...')
-        const response = await calendarService.shareCalendarItem(item.id, platform)
-        if (response.success) {
-          message.success('Successfully posted to Twitter/X!')
-        } else {
-          message.error(response.message || 'Failed to post to Twitter/X')
+      // First, check if account is connected before attempting to share
+      if (platform === 'instagram' || platform === 'facebook') {
+        const statusResponse = await calendarService.getInstagramStatus()
+        if (!statusResponse.connected) {
+          Modal.confirm({
+            title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
+            content: `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
+            okText: 'Connect Now',
+            cancelText: 'Cancel',
+            onOk: () => {
+              handleConnectAccount(platform)
+              setLoading(false)
+            },
+            onCancel: () => {
+              setLoading(false)
+            },
+          })
+          return
         }
-      } else {
-        // Placeholder for other platforms
-        message.info(`Sharing to ${platform}... (Coming soon)`)
       }
       
-      // const response = await calendarService.shareToPlatform(item.id, platform)
-      // if (response.success) {
-      //   message.success(`Successfully shared to ${platform}`)
-      // } else {
-      //   message.error(response.message || `Failed to share to ${platform}`)
-      // }
-    } catch (error) {
+      // Check if image URL is required for Instagram
+      if (platform === 'instagram' && !item.imageUrl) {
+        message.error('Image URL is required for Instagram posts. Instagram only supports image or video posts, not text-only posts.')
+        setLoading(false)
+        return
+      }
+      
+      const response = await calendarService.shareToPlatform(item.id, platform, {
+        imageUrl: item.imageUrl || undefined,
+      })
+      
+      if (response.success) {
+        message.success(`Successfully shared to ${platform}`)
+        onSave() // Refresh the calendar
+      } else {
+        if (response.requiresAuth) {
+          // Show modal to connect account
+          Modal.confirm({
+            title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
+            content: response.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
+            okText: 'Connect Now',
+            cancelText: 'Cancel',
+            onOk: () => handleConnectAccount(platform),
+          })
+        } else {
+          message.error(response.message || `Failed to share to ${platform}`)
+        }
+      }
+    } catch (error: unknown) {
       console.error('Share error:', error)
-      message.error(`Failed to share to ${platform}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      message.error(`Failed to share to ${platform}: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
@@ -301,13 +400,15 @@ export default function CalendarItemModal({
       } else {
         message.error(response.message || 'Failed to upload image')
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to upload image')
     } finally {
       setUploadingImage(false)
     }
   }
 
+  // Unused function - kept for potential future use
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleImageUploadBase64 = async (file: File) => {
     setUploadingImage(true)
     try {
@@ -320,7 +421,7 @@ export default function CalendarItemModal({
       } else {
         message.error(response.message || 'Failed to upload image')
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to upload image')
     } finally {
       setUploadingImage(false)
@@ -328,6 +429,7 @@ export default function CalendarItemModal({
   }
 
   const handleFileSelect: UploadProps['onChange'] = (info) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const file = info.file.originFileObj || (info.file as any).originFileObj || info.file
     if (file && file instanceof File) {
       // Validate file type
@@ -374,7 +476,7 @@ export default function CalendarItemModal({
       } else {
         message.error(response.message || 'Failed to generate image')
       }
-    } catch (error) {
+    } catch {
       message.error('Failed to generate image')
     } finally {
       setUploadingImage(false)
