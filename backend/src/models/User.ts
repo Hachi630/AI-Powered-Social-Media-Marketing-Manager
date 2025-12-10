@@ -17,6 +17,20 @@ export interface IUser extends Document {
   knowledgeProducts?: string[]
   targetAudience?: string[]
   authProvider: 'local' | 'google'
+  socialConnections?: {
+    instagram?: {
+      accessToken: string
+      userId?: string
+      username?: string
+      accountType?: string
+      expiresAt?: Date
+    }
+    facebook?: {
+      accessToken: string
+      userId?: string
+      expiresAt?: Date
+    }
+  }
   createdAt: Date
   updatedAt: Date
 }
@@ -99,6 +113,23 @@ const UserSchema: Schema = new Schema(
     targetAudience: {
       type: [String],
       default: [],
+    },
+    socialConnections: {
+      type: {
+        instagram: {
+          accessToken: String,
+          userId: String,
+          username: String,
+          accountType: String,
+          expiresAt: Date,
+        },
+        facebook: {
+          accessToken: String,
+          userId: String,
+          expiresAt: Date,
+        },
+      },
+      default: {},
     },
   },
   {

@@ -3,6 +3,7 @@ import { protect } from '../middleware/auth'
 import { AuthRequest } from '../types'
 import CalendarItem from '../models/CalendarItem'
 import { twitterService } from '../services/twitterService'
+import TwitterToken from '../models/TwitterToken'
 
 const router = express.Router()
 
@@ -386,11 +387,27 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
 
     // Currently only Twitter is supported for direct posting
     if (platform === 'twitter') {
+      // Check if user has connected their Twitter account
+      const twitterToken = await TwitterToken.findOne({ userId: user._id });
+      
+      if (!twitterToken || !twitterToken.accessToken || !twitterToken.accessSecret) {
+        return res.status(401).json({
+          success: false,
+          message: 'Twitter account not connected. Please connect your Twitter account first.',
+          requiresAuth: true
+        });
+      }
+
       // Check if item has content variant for Twitter
       let content = item.variants?.twitter || item.content;
       
-      // Post to Twitter
-      const result = await twitterService.postTweet(content, item.imageUrl);
+      // Post to Twitter using user's tokens
+      const result = await twitterService.postTweet(
+        content, 
+        item.imageUrl,
+        twitterToken.accessToken,
+        twitterToken.accessSecret
+      );
       
       if (result.success) {
         // Update item status to published if successful
@@ -438,4 +455,3 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
     })
   }
 })
-

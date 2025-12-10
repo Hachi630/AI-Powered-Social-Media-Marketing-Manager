@@ -45,6 +45,8 @@ export default function ContentPlanModal({
     { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
     { value: PLATFORMS.TIKTOK, label: 'TikTok' },
     { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
+    { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
+    { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
   ]
 
   const handleGenerate = async () => {
