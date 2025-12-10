@@ -11,6 +11,7 @@ import {
   FileExcelOutlined,
   FileTextOutlined,
   FileOutlined,
+  EditOutlined,
 } from '@ant-design/icons'
 import { Button, Card, Input, Tooltip, message, Spin, Dropdown, MenuProps } from 'antd'
 import { useState, useEffect, useCallback, useRef } from 'react'
@@ -49,6 +50,12 @@ export default function ChatBox({
   const [uploading, setUploading] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Edit message state
+  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null)
+  const [editingMessageContent, setEditingMessageContent] = useState<string>('')
+  const [editingMessageImages, setEditingMessageImages] = useState<string[]>([])
+  const [editingMessageFiles, setEditingMessageFiles] = useState<Array<{ url: string; name: string; type: string; size: number }>>([])
 
   // Load conversation when conversationId changes
   useEffect(() => {
@@ -470,6 +477,93 @@ export default function ChatBox({
     return imagePath
   }
 
+  // Handle edit message
+  const handleEditMessage = (index: number) => {
+    const msg = messages[index]
+    if (msg.role !== 'user') return
+
+    setEditingMessageIndex(index)
+    setEditingMessageContent(msg.content || '')
+    setEditingMessageImages(msg.images ? [...msg.images] : [])
+    setEditingMessageFiles(msg.files ? [...msg.files] : [])
+  }
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setEditingMessageIndex(null)
+    setEditingMessageContent('')
+    setEditingMessageImages([])
+    setEditingMessageFiles([])
+  }
+
+  // Handle save edit
+  const handleSaveEdit = async (index: number) => {
+    if (!currentConversationId) {
+      message.error('Conversation ID is required for editing messages')
+      return
+    }
+
+    const hasContent = editingMessageContent.trim() || editingMessageImages.length > 0 || editingMessageFiles.length > 0
+    if (!hasContent) {
+      message.error('Message content is required')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const response = await chatService.sendMessage(
+        editingMessageContent.trim() ||
+          (editingMessageImages.length > 0 || editingMessageFiles.length > 0
+            ? `Uploaded ${editingMessageImages.length > 0 ? `${editingMessageImages.length} image(s)` : ''}${editingMessageImages.length > 0 && editingMessageFiles.length > 0 ? ' and ' : ''}${editingMessageFiles.length > 0 ? `${editingMessageFiles.length} file(s)` : ''}`
+            : ''),
+        currentConversationId,
+        editingMessageImages.length > 0 ? editingMessageImages : undefined,
+        editingMessageFiles.length > 0 ? editingMessageFiles : undefined,
+        index
+      )
+
+      if (response.success && response.response) {
+        // Remove all messages after the edited message index
+        setMessages((prev) => {
+          const newMessages = prev.slice(0, index + 1)
+          // Update the edited message
+          newMessages[index] = {
+            role: 'user',
+            content: editingMessageContent.trim() ||
+              (editingMessageImages.length > 0 || editingMessageFiles.length > 0
+                ? `Uploaded ${editingMessageImages.length > 0 ? `${editingMessageImages.length} image(s)` : ''}${editingMessageImages.length > 0 && editingMessageFiles.length > 0 ? ' and ' : ''}${editingMessageFiles.length > 0 ? `${editingMessageFiles.length} file(s)` : ''}`
+                : ''),
+            images: editingMessageImages.length > 0 ? [...editingMessageImages] : undefined,
+            files: editingMessageFiles.length > 0 ? editingMessageFiles.map((f) => ({
+              url: f.url,
+              name: f.name,
+              type: f.type,
+              size: f.size,
+            })) : undefined,
+            timestamp: new Date(),
+          }
+          // Add new assistant response
+          newMessages.push({
+            role: 'assistant',
+            content: response.response!,
+            timestamp: new Date(),
+          })
+          return newMessages
+        })
+
+        // Reset edit state
+        handleCancelEdit()
+      } else {
+        message.error(response.message || 'Failed to update message')
+      }
+    } catch (error) {
+      message.error('An error occurred while updating message')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className={styles.chatContainer}>
       {/* Messages display area */}
@@ -483,60 +577,140 @@ export default function ChatBox({
               }`}
             >
               <div className={styles.messageContent}>
-                {msg.images && msg.images.length > 0 && (
-                  <div className={styles.messageImages}>
-                    {msg.images.map((img, imgIndex) => (
-                      <img
-                        key={imgIndex}
-                        src={getImageUrl(img)}
-                        alt={msg.role === 'user' ? 'Uploaded' : 'Generated'}
-                        className={styles.generatedImage}
-                      />
-                    ))}
-                  </div>
-                )}
-                {msg.files && msg.files.length > 0 && (
-                  <div className={styles.messageFiles}>
-                    {msg.files.map((file, fileIndex) => (
-                      <a
-                        key={fileIndex}
-                        href={getImageUrl(file.url)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.fileLink}
-                      >
-                        <div className={styles.fileItem}>
-                          {getFileIcon(file.type)}
-                          <div className={styles.fileInfo}>
-                            <div className={styles.fileName}>{file.name}</div>
-                            <div className={styles.fileSize}>{formatFileSize(file.size)}</div>
+                {editingMessageIndex === index ? (
+                  // Edit mode
+                  <div className={styles.editMessageContainer}>
+                    <TextArea
+                      value={editingMessageContent}
+                      onChange={(e) => setEditingMessageContent(e.target.value)}
+                      autoSize={{ minRows: 1, maxRows: 4 }}
+                      placeholder="Edit your message..."
+                      disabled={loading}
+                    />
+                    {editingMessageImages.length > 0 && (
+                      <div className={styles.imagePreviewContainer}>
+                        {editingMessageImages.map((imgUrl, imgIndex) => (
+                          <div key={imgIndex} className={styles.imagePreviewItem}>
+                            <img src={getImageUrl(imgUrl)} alt={`Preview ${imgIndex + 1}`} className={styles.previewImage} />
+                            <Button
+                              type="text"
+                              shape="circle"
+                              icon={<CloseOutlined />}
+                              onClick={() => setEditingMessageImages((prev) => prev.filter((_, i) => i !== imgIndex))}
+                              className={styles.removeImageButton}
+                              disabled={loading}
+                            />
                           </div>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                )}
-                {msg.content && (
-                  <div className={styles.markdownContent}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
-                )}
-                {msg.role === 'assistant' &&
-                  index === messages.length - 1 &&
-                  hasContentPlanIntent(lastUserMessage) && (
-                    <div className={styles.actionButtons}>
+                        ))}
+                      </div>
+                    )}
+                    {editingMessageFiles.length > 0 && (
+                      <div className={styles.filePreviewContainer}>
+                        {editingMessageFiles.map((file, fileIndex) => (
+                          <div key={fileIndex} className={styles.filePreviewItem}>
+                            {getFileIcon(file.type)}
+                            <div className={styles.filePreviewInfo}>
+                              <div className={styles.filePreviewName}>{file.name}</div>
+                              <div className={styles.filePreviewSize}>{formatFileSize(file.size)}</div>
+                            </div>
+                            <Button
+                              type="text"
+                              shape="circle"
+                              icon={<CloseOutlined />}
+                              onClick={() => setEditingMessageFiles((prev) => prev.filter((_, i) => i !== fileIndex))}
+                              className={styles.removeFileButton}
+                              disabled={loading}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className={styles.editActions}>
+                      <Button onClick={handleCancelEdit} disabled={loading}>
+                        Cancel
+                      </Button>
                       <Button
                         type="primary"
-                        icon={<CalendarOutlined />}
-                        onClick={handleOpenContentPlanModal}
-                        size="small"
+                        onClick={() => handleSaveEdit(index)}
+                        loading={loading}
+                        icon={<ArrowUpOutlined />}
                       >
-                        Send to Calendar
+                        Send
                       </Button>
                     </div>
-                  )}
+                  </div>
+                ) : (
+                  // Normal display mode
+                  <>
+                    {msg.images && msg.images.length > 0 && (
+                      <div className={styles.messageImages}>
+                        {msg.images.map((img, imgIndex) => (
+                          <img
+                            key={imgIndex}
+                            src={getImageUrl(img)}
+                            alt={msg.role === 'user' ? 'Uploaded' : 'Generated'}
+                            className={styles.generatedImage}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {msg.files && msg.files.length > 0 && (
+                      <div className={styles.messageFiles}>
+                        {msg.files.map((file, fileIndex) => (
+                          <a
+                            key={fileIndex}
+                            href={getImageUrl(file.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.fileLink}
+                          >
+                            <div className={styles.fileItem}>
+                              {getFileIcon(file.type)}
+                              <div className={styles.fileInfo}>
+                                <div className={styles.fileName}>{file.name}</div>
+                                <div className={styles.fileSize}>{formatFileSize(file.size)}</div>
+                              </div>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                    {msg.content && (
+                      <div className={styles.markdownContent}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
+                    {msg.role === 'user' && (
+                      <div className={styles.messageActions}>
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={() => handleEditMessage(index)}
+                          disabled={loading || editingMessageIndex !== null}
+                        >
+                          Edit
+                        </Button>
+                      </div>
+                    )}
+                    {msg.role === 'assistant' &&
+                      index === messages.length - 1 &&
+                      hasContentPlanIntent(lastUserMessage) && (
+                        <div className={styles.actionButtons}>
+                          <Button
+                            type="primary"
+                            icon={<CalendarOutlined />}
+                            onClick={handleOpenContentPlanModal}
+                            size="small"
+                          >
+                            Send to Calendar
+                          </Button>
+                        </div>
+                      )}
+                  </>
+                )}
               </div>
             </div>
           ))}
