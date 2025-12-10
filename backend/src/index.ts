@@ -53,10 +53,9 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
+app.use('/api/social', socialRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
-app.use('/api/social', socialRoutes)
-app.use('/linkedin', linkedinRoutes)
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })

@@ -17,13 +17,12 @@ export interface IUser extends Document {
   knowledgeProducts?: string[]
   targetAudience?: string[]
   authProvider: 'local' | 'google'
-  // Social media connections
   socialConnections?: {
     instagram?: {
       accessToken: string
       userId?: string
       username?: string
-      accountType?: 'BUSINESS' | 'CREATOR'
+      accountType?: string
       expiresAt?: Date
     }
     facebook?: {
@@ -121,10 +120,7 @@ const UserSchema: Schema = new Schema(
           accessToken: String,
           userId: String,
           username: String,
-          accountType: {
-            type: String,
-            enum: ['BUSINESS', 'CREATOR'],
-          },
+          accountType: String,
           expiresAt: Date,
         },
         facebook: {

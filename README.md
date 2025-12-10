@@ -145,13 +145,6 @@ Melo/
    cd backend
    npm install
    ```
-   
-   This will install all required packages including:
-   - `axios` - For LinkedIn API HTTP requests
-   - `qs` - For OAuth query string encoding
-   - `express` - Web framework
-   - `mongoose` - MongoDB ODM
-   - All other backend dependencies
 
 3. **Install frontend dependencies**
    ```bash

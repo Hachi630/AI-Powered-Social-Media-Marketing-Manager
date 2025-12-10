@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { TwitterApi } from "twitter-api-v2";
 import TwitterToken from "../models/TwitterToken";
 import TwitterRequestToken from "../models/TwitterRequestToken";
-import { requireAuth } from "../middleware/auth";
+import { protect } from "../middleware/auth";
 
 const router = Router();
 
@@ -226,8 +226,8 @@ router.get("/callback", async (req, res) => {
 });
 
 // STEP 3 — Disconnect Twitter account
-router.delete("/disconnect", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
+router.delete("/disconnect", protect, async (req: any, res) => {
+  const userId = req.user._id;
   
   try {
     const result = await TwitterToken.findOneAndDelete({ userId });
@@ -245,8 +245,8 @@ router.delete("/disconnect", requireAuth, async (req: any, res) => {
 });
 
 // STEP 4 — Check connection status
-router.get("/status", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
+router.get("/status", protect, async (req: any, res) => {
+  const userId = req.user._id;
   const token = await TwitterToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.accessSecret) {
