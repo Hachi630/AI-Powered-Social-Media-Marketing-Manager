@@ -734,16 +734,26 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
+    // IMPORTANT: Reload user from database to get latest socialConnections
+    // The req.user might be stale if it was loaded before OAuth callback
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
     const { calendarItemId, content, imageUrl } = req.body
 
     console.log('[Facebook Share] Request received:', {
-      userId: user._id,
+      userId: freshUser._id,
       calendarItemId,
       hasContent: !!content,
       hasImageUrl: !!imageUrl,
-      socialConnections: user.socialConnections ? 'exists' : 'null',
-      facebookToken: user.socialConnections?.facebook?.accessToken ? 'exists' : 'missing',
-      instagramToken: user.socialConnections?.instagram?.accessToken ? 'exists' : 'missing',
+      socialConnections: freshUser.socialConnections ? 'exists' : 'null',
+      facebookToken: freshUser.socialConnections?.facebook?.accessToken ? 'exists' : 'missing',
+      instagramToken: freshUser.socialConnections?.instagram?.accessToken ? 'exists' : 'missing',
+      facebookTokenPreview: freshUser.socialConnections?.facebook?.accessToken ? freshUser.socialConnections.facebook.accessToken.substring(0, 20) + '...' : 'N/A',
+      facebookUserId: freshUser.socialConnections?.facebook?.userId || 'N/A',
+      instagramUserId: freshUser.socialConnections?.instagram?.userId || 'N/A',
     })
 
     if (!calendarItemId || !content) {
@@ -755,8 +765,8 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
 
     // Check if user has Facebook connected (either directly or through Instagram)
     // Instagram connection also provides Facebook Page access with the same token
-    const facebook = user.socialConnections?.facebook
-    const instagram = user.socialConnections?.instagram
+    const facebook = freshUser.socialConnections?.facebook
+    const instagram = freshUser.socialConnections?.instagram
 
     // Use Facebook connection if available, otherwise try Instagram token (which also works for Facebook Page)
     let facebookToken: string | undefined
@@ -801,15 +811,15 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
           if (pagesResponse.data.data && pagesResponse.data.data.length > 0) {
             facebookUserId = pagesResponse.data.data[0].id
             // Save it for future use
-            if (!user.socialConnections) {
-              user.socialConnections = {}
+            if (!freshUser.socialConnections) {
+              freshUser.socialConnections = {}
             }
-            if (!user.socialConnections.facebook) {
-              user.socialConnections.facebook = { accessToken: facebookToken }
+            if (!freshUser.socialConnections.facebook) {
+              freshUser.socialConnections.facebook = { accessToken: facebookToken }
             }
-            user.socialConnections.facebook.userId = facebookUserId
-            user.socialConnections.facebook.expiresAt = instagram.expiresAt
-            await user.save()
+            freshUser.socialConnections.facebook.userId = facebookUserId
+            freshUser.socialConnections.facebook.expiresAt = instagram.expiresAt
+            await freshUser.save()
           }
         } catch (error) {
           console.error('Error fetching Facebook Page ID:', error)
@@ -937,7 +947,13 @@ router.get('/facebook/status', protect, async (req: AuthRequest, res: Response) 
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    const facebook = user.socialConnections?.facebook
+    // Reload user from database to get latest socialConnections
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    const facebook = freshUser.socialConnections?.facebook
 
     if (!facebook || !facebook.accessToken) {
       return res.json({
