@@ -14,6 +14,7 @@ import {
   Typography,
   Dropdown,
   Upload,
+  App,
 } from 'antd'
 import { EditOutlined, ShareAltOutlined, UploadOutlined, DeleteOutlined, PictureOutlined, RobotOutlined } from '@ant-design/icons'
 import type { MenuProps, UploadProps } from 'antd'
@@ -72,6 +73,7 @@ export default function CalendarItemModal({
   onClose,
   onSave,
 }: CalendarItemModalProps) {
+  const { modal } = App.useApp()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -181,7 +183,7 @@ export default function CalendarItemModal({
   const handleDelete = async () => {
     if (!item) return
 
-    Modal.confirm({
+    modal.confirm({
       title: 'Delete Calendar Item',
       content: 'Are you sure you want to delete this calendar item?',
       onOk: async () => {
@@ -258,7 +260,7 @@ export default function CalendarItemModal({
           } else {
             if (data.requiresAuth) {
               // Show modal to connect account
-              Modal.confirm({
+              modal.confirm({
                 title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
                 content: data.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
                 okText: 'Connect Now',
