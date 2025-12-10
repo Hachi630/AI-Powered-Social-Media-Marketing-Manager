@@ -9,6 +9,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
+- [Twitter/X Integration](#-twitterx-integration)
 - [LinkedIn Integration](#-linkedin-integration)
 - [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
@@ -19,7 +20,9 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **User Authentication**: Secure login and registration system with JWT authentication
 - **Dashboard**: Clean and intuitive interface for managing your marketing activities
 - **Brand Profile**: Configure your brand's tone of voice, target audience, and knowledge base
-- **Smart Calendar**: Schedule and manage your marketing campaigns with support for multiple platforms (Instagram Post/Story/Reels, TikTok, Facebook)
+- **Smart Calendar**: Schedule and manage your marketing campaigns with support for multiple platforms (Instagram Post/Story/Reels, TikTok, Facebook, Twitter/X, LinkedIn)
+- **Twitter/X Integration**: Connect your Twitter account via OAuth and share content directly to your Twitter profile
+- **LinkedIn Integration**: Connect your LinkedIn account and share content directly to your LinkedIn profile
 - **Calendar Item Images**: Upload images or generate images using AI for calendar items, with support for both file upload and base64 encoding
 - **AI Chat Interface**: AI-powered chat interface for content creation and marketing assistance with conversation history
 - **Image Generation**: Generate images using AI based on text prompts (manual input or auto-generated from content)
@@ -63,7 +66,8 @@ Melo/
 │   │   │   ├── AuthModal.tsx
 │   │   │   ├── ImageGenerationModal.tsx
 │   │   │   ├── CalendarItemModal.tsx
-│   │   │   └── ContentPlanModal.tsx
+│   │   │   ├── ContentPlanModal.tsx
+│   │   │   └── LinkedInDashboard.tsx
 │   │   ├── pages/           # Page components
 │   │   │   ├── BrandProfile.tsx
 │   │   │   ├── Calendar.tsx
@@ -72,7 +76,9 @@ Melo/
 │   │   │   ├── authService.ts
 │   │   │   ├── chatService.ts
 │   │   │   ├── calendarService.ts
-│   │   │   └── uploadService.ts
+│   │   │   ├── uploadService.ts
+│   │   │   ├── twitterService.ts
+│   │   │   └── linkedinService.ts
 │   │   ├── constants/       # Constants and assets
 │   │   │   └── assets.ts
 │   │   └── App.tsx          # Main app component
@@ -85,15 +91,21 @@ Melo/
 │   │   ├── models/          # MongoDB models
 │   │   │   ├── User.ts
 │   │   │   ├── Conversation.ts
-│   │   │   └── CalendarItem.ts
+│   │   │   ├── CalendarItem.ts
+│   │   │   ├── TwitterToken.ts
+│   │   │   └── TwitterRequestToken.ts
 │   │   ├── routes/          # API routes
 │   │   │   ├── auth.ts
 │   │   │   ├── chat.ts
 │   │   │   ├── calendar.ts
-│   │   │   └── upload.ts
+│   │   │   ├── upload.ts
+│   │   │   ├── twitter.ts
+│   │   │   └── linkedin.ts
 │   │   ├── services/        # Business logic services
 │   │   │   ├── geminiService.ts
-│   │   │   └── imageGenerationService.ts
+│   │   │   ├── imageGenerationService.ts
+│   │   │   ├── twitterService.ts
+│   │   │   └── linkedinService.ts
 │   │   ├── middleware/      # Express middleware
 │   │   │   ├── auth.ts
 │   │   │   └── errorHandler.ts
@@ -153,8 +165,14 @@ Melo/
    
    Create a `.env` file in the `backend/` directory (see Environment Variables section below for required variables).
    
-   **Important**: Make sure to add LinkedIn API credentials:
+   **Important**: Make sure to add Twitter and LinkedIn API credentials:
    ```env
+   # Twitter/X OAuth (Required for Twitter integration)
+   TWITTER_API_KEY=your_twitter_api_key
+   TWITTER_API_SECRET=your_twitter_api_secret
+   TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+   
+   # LinkedIn API (Required for LinkedIn integration)
    LI_CLIENT_ID=your_linkedin_client_id
    LI_CLIENT_SECRET=your_linkedin_client_secret
    LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
@@ -205,11 +223,12 @@ GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
 
-# Twitter/X API Credentials (Required for X integration)
+# Twitter/X OAuth Credentials (Required for Twitter integration)
 TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
-TWITTER_ACCESS_TOKEN=your_twitter_access_token
-TWITTER_ACCESS_SECRET=your_twitter_access_secret
+TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+# Optional: Backend URL (defaults to http://localhost:5000)
+BACKEND_URL=http://localhost:5000
 
 # LinkedIn API Credentials (Required for LinkedIn integration)
 LI_CLIENT_ID=your_linkedin_client_id
@@ -223,8 +242,11 @@ CLIENT_URL=http://localhost:3000
 - Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 - `GEMINI_IMAGE_MODEL` is optional, defaults to `gemini-2.5-flash-image` if not set
 - Make sure the `backend/uploads/images/` directory exists for image storage
-- Twitter/X credentials can be obtained from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
-- LinkedIn API credentials can be obtained from the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+- **Twitter/X OAuth credentials** can be obtained from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+  - Create a Twitter app and get your API Key and API Secret
+  - Set the callback URL to match `TWITTER_CALLBACK_URL` in your `.env` file
+  - Enable OAuth 1.0a authentication in your app settings
+- **LinkedIn API credentials** can be obtained from the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
   - Create a LinkedIn app and get your Client ID and Client Secret
   - Set the redirect URI to match `LI_REDIRECT_URI` in your `.env` file
   - Enable required products: "Sign In with LinkedIn using OpenID Connect" and "Share on LinkedIn"
@@ -259,6 +281,104 @@ CLIENT_URL=http://localhost:3000
 - Get your LinkedIn credentials from [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
 - `LI_REDIRECT_URI` must match exactly what you set in LinkedIn Developer Portal
 - `CLIENT_URL` must match your frontend URL (default: `http://localhost:3000`)
+
+### Twitter/X Integration (.env)
+
+For Twitter/X OAuth integration, add the following to `backend/.env`:
+
+```env
+# Twitter/X OAuth Configuration
+TWITTER_API_KEY=your_twitter_api_key
+TWITTER_API_SECRET=your_twitter_api_secret
+TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+BACKEND_URL=http://localhost:5000
+CLIENT_URL=http://localhost:3000
+```
+
+**Note**:
+
+- Get your Twitter credentials from [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+- `TWITTER_CALLBACK_URL` must match exactly what you set in Twitter Developer Portal
+- `CLIENT_URL` must match your frontend URL (default: `http://localhost:3000`)
+
+## 🐦 Twitter/X Integration
+
+### Overview
+
+The Twitter/X integration allows users to connect their Twitter accounts via OAuth 1.0a and share content directly to their Twitter profiles. Each user can connect their own Twitter account, and the platform will use their credentials for posting.
+
+### Features
+
+- **OAuth 1.0a Authentication**: Secure user authentication flow
+- **User-Specific Tokens**: Each user connects their own Twitter account
+- **Direct Posting**: Share calendar items directly to Twitter/X
+- **Connection Management**: Connect and disconnect Twitter accounts from the Social Dashboard
+
+### Twitter Setup
+
+#### Quick Setup Steps
+
+1. **Configure Environment Variables** (in `backend/.env`):
+
+   ```env
+   TWITTER_API_KEY=your_twitter_api_key
+   TWITTER_API_SECRET=your_twitter_api_secret
+   TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+   BACKEND_URL=http://localhost:5000
+   CLIENT_URL=http://localhost:3000
+   ```
+
+2. **Configure Twitter Developer Portal**:
+
+   - Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+   - Create a new app or select an existing app
+   - Go to **"Keys and tokens"** tab → Copy your **API Key** and **API Secret**
+   - Go to **"App settings"** → **"User authentication settings"**
+   - Enable **OAuth 1.0a**
+   - Set **Callback URI / Redirect URL** to: `http://localhost:5000/api/twitter/callback`
+   - Set **App permissions** to: **Read and write** (required for posting tweets)
+   - Save the changes
+
+3. **Test the Connection**:
+   - Navigate to `http://localhost:3000/socialdashboard`
+   - Click "Connect Twitter" button
+   - Should redirect to Twitter authorization page
+   - After authorization, you'll be redirected back to the dashboard
+
+#### How It Works
+
+1. **User Initiates Connection**: User clicks "Connect Twitter" button in Social Dashboard
+2. **OAuth Flow**: User is redirected to Twitter to authorize the application
+3. **Token Storage**: Twitter access tokens are stored securely in MongoDB (`TwitterToken` collection)
+4. **Posting Content**: When sharing calendar items, the system uses the user's stored tokens to post to their Twitter account
+
+#### Common Issues & Solutions
+
+| Issue                          | Solution                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| "Twitter API credentials are not configured" | Ensure `TWITTER_API_KEY` and `TWITTER_API_SECRET` are set in `backend/.env`                               |
+| "Callback URL not approved"    | Verify callback URL in Twitter Developer Portal matches `TWITTER_CALLBACK_URL` exactly                    |
+| "Invalid request token"        | Request tokens expire after 10 minutes. Try connecting again                                               |
+| "Twitter account not connected" | User must connect their Twitter account before sharing content                                            |
+| Button doesn't redirect        | Ensure user is logged in, check backend is running                                                       |
+
+#### Debugging
+
+- **Check backend logs**: Should see `Generating Twitter OAuth link with callback URL: ...` when clicking button
+- **Check browser console** (F12): Look for errors in Console and Network tabs
+- **Verify environment variables**:
+  ```bash
+  cd backend && cat .env | grep TWITTER_
+  ```
+- **Verify services**: Backend on port 5000, Frontend on port 3000
+- **Check MongoDB**: Verify `TwitterToken` collection exists and contains user tokens
+
+#### API Endpoints
+
+- `GET /api/twitter/auth?userId=<userId>` - Initiate OAuth flow
+- `GET /api/twitter/callback` - Handle OAuth callback
+- `GET /api/twitter/status` - Check connection status (requires authentication)
+- `DELETE /api/twitter/disconnect` - Disconnect Twitter account (requires authentication)
 
 ## 🔗 LinkedIn Integration
 
@@ -1103,7 +1223,7 @@ Content-Type: application/json
 
 - `platform`, `date`, `title`, and `content` are required
 - `imageUrl` is optional
-- Supported platforms: `instagram_post`, `instagram_story`, `instagram_reels`, `tiktok`, `facebook`
+- Supported platforms: `instagram_post`, `instagram_story`, `instagram_reels`, `tiktok`, `facebook`, `twitter`, `linkedin`
 - `status` defaults to `'draft'` if not provided
 
 **Success Response (201):**
@@ -1231,6 +1351,54 @@ Authorization: Bearer <token>
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
+
+---
+
+#### 6. Share Calendar Item
+
+**POST** `/api/calendar/:id/share`
+
+Share a calendar item to a social media platform (currently supports Twitter/X).
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "platform": "twitter"
+}
+```
+
+**Note:**
+
+- `platform` is required - currently only `"twitter"` is supported
+- User must have connected their Twitter account before sharing
+- The calendar item's content and image (if available) will be posted to the user's Twitter account
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Calendar item shared to Twitter successfully",
+  "tweetId": "1234567890123456789"
+}
+```
+
+**Error Responses:**
+
+- `400` - Platform is required, or platform not supported, or Twitter account not connected
+- `401` - Not authorized
+- `404` - User not found or calendar item not found
+- `500` - Server error or Twitter API error
 
 ---
 
