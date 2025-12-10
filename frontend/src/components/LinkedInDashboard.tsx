@@ -2,8 +2,6 @@ import {
   Layout,
   Typography,
   Grid,
-  Drawer,
-  FloatButton,
   Card,
   Row,
   Col,
@@ -27,7 +25,6 @@ import {
   Tooltip,
 } from "antd";
 import {
-  MenuOutlined,
   LinkedinOutlined,
   UserOutlined,
   TeamOutlined,
@@ -59,7 +56,6 @@ import {
 import { useState, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
 import Header from "./Header";
-import Sidebar from "./Sidebar";
 import styles from "./Dashboard.module.css";
 import {
   getLinkedInMetrics,
@@ -102,7 +98,7 @@ interface LinkedInDashboardProps {
   userId?: string;
 }
 
-const { Content, Sider } = Layout;
+const { Content } = Layout;
 const { useBreakpoint } = Grid;
 
 export default function LinkedInDashboard({
@@ -115,18 +111,10 @@ export default function LinkedInDashboard({
 }: LinkedInDashboardProps) {
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
-  const isTablet = screens.md && !screens.lg;
-  const [collapsed, setCollapsed] = useState(isMobile || isTablet);
-  const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false);
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
-  const [conversationsUpdateTrigger, setConversationsUpdateTrigger] =
-    useState(0);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
-  
+
   // Twitter states
   const [twitterStatus, setTwitterStatus] = useState<any>(null);
   const [loadingTwitter, setLoadingTwitter] = useState(true);
@@ -163,15 +151,6 @@ export default function LinkedInDashboard({
   const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [eventForm] = Form.useForm();
-
-  // Update collapsed state when screen size changes
-  useEffect(() => {
-    if (isMobile || isTablet) {
-      setCollapsed(true);
-    } else {
-      setCollapsed(false);
-    }
-  }, [isMobile, isTablet]);
 
   // Load LinkedIn metrics
   useEffect(() => {
@@ -216,41 +195,45 @@ export default function LinkedInDashboard({
   // Handle Twitter OAuth callback
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const twitterParam = params.get('twitter');
-    
-    if (twitterParam === 'connected') {
-      message.success('Twitter account connected successfully!');
+    const twitterParam = params.get("twitter");
+
+    if (twitterParam === "connected") {
+      message.success("Twitter account connected successfully!");
       // Reload Twitter status
       if (jwt) {
         getTwitterStatus(jwt).then(setTwitterStatus);
       }
       // Clean up URL
-      window.history.replaceState({}, '', '/socialdashboard');
-    } else if (twitterParam === 'error') {
-      const reason = params.get('reason');
-      let errorMessage = 'Twitter connection failed';
-      
+      window.history.replaceState({}, "", "/socialdashboard");
+    } else if (twitterParam === "error") {
+      const reason = params.get("reason");
+      let errorMessage = "Twitter connection failed";
+
       // Provide user-friendly error messages
       switch (reason) {
-        case 'callback_url_not_approved':
-          errorMessage = 'Twitter connection failed: Callback URL not approved. Please configure the callback URL in your Twitter Developer Portal app settings.';
+        case "callback_url_not_approved":
+          errorMessage =
+            "Twitter connection failed: Callback URL not approved. Please configure the callback URL in your Twitter Developer Portal app settings.";
           break;
-        case 'callback_url_error':
-          errorMessage = 'Twitter connection failed: Callback URL configuration error. Please check your TWITTER_CALLBACK_URL setting.';
+        case "callback_url_error":
+          errorMessage =
+            "Twitter connection failed: Callback URL configuration error. Please check your TWITTER_CALLBACK_URL setting.";
           break;
-        case 'api_credentials_error':
-          errorMessage = 'Twitter connection failed: API credentials error. Please check your TWITTER_API_KEY and TWITTER_API_SECRET in backend/.env';
+        case "api_credentials_error":
+          errorMessage =
+            "Twitter connection failed: API credentials error. Please check your TWITTER_API_KEY and TWITTER_API_SECRET in backend/.env";
           break;
-        case 'oauth_init_failed':
-          errorMessage = 'Twitter connection failed: OAuth initialization failed. Please check your Twitter API credentials and callback URL configuration.';
+        case "oauth_init_failed":
+          errorMessage =
+            "Twitter connection failed: OAuth initialization failed. Please check your Twitter API credentials and callback URL configuration.";
           break;
         default:
-          errorMessage = `Twitter connection failed: ${reason || 'Unknown error'}`;
+          errorMessage = `Twitter connection failed: ${reason || "Unknown error"}`;
       }
-      
+
       message.error(errorMessage);
       // Clean up URL
-      window.history.replaceState({}, '', '/socialdashboard');
+      window.history.replaceState({}, "", "/socialdashboard");
     }
   }, [jwt]);
 
@@ -666,35 +649,6 @@ export default function LinkedInDashboard({
     });
   };
 
-  const handleConversationSelect = useCallback(
-    (conversationId: string | null) => {
-      setSelectedConversationId(conversationId);
-    },
-    []
-  );
-
-  const handleNewConversation = useCallback(() => {
-    setSelectedConversationId(null);
-  }, []);
-
-  const handleToggleSidebar = useCallback(() => {
-    if (isMobile) {
-      setSidebarDrawerOpen((prev) => !prev);
-    } else {
-      setCollapsed((prev) => !prev);
-    }
-  }, [isMobile]);
-
-  const handleConversationSelectWithClose = useCallback(
-    (conversationId: string | null) => {
-      handleConversationSelect(conversationId);
-      if (isMobile) {
-        setSidebarDrawerOpen(false);
-      }
-    },
-    [handleConversationSelect, isMobile]
-  );
-
   // Generate auth URL with userId for proper token association
   // If userId is not available yet, we still show the button but it won't work until user data loads
   const authUrl = userId ? getLinkedInAuthUrl(userId) : undefined;
@@ -741,7 +695,14 @@ export default function LinkedInDashboard({
     const profile = metrics?.profile;
 
     return (
-      <div style={{ width: "100%", maxWidth: 1200 }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "0 16px" : screens.xl ? "0 32px" : "0 24px",
+        }}
+      >
         {/* Header Section */}
         <div
           style={{
@@ -915,7 +876,7 @@ export default function LinkedInDashboard({
               <Select
                 value={selectedPostTarget}
                 onChange={setSelectedPostTarget}
-                style={{ width: "100%", maxWidth: 300 }}
+                style={{ width: "100%", maxWidth: isMobile ? "100%" : 300 }}
                 loading={loadingOrgs}
               >
                 <Select.Option value="personal">
@@ -1582,7 +1543,10 @@ export default function LinkedInDashboard({
                         setTwitterStatus(data);
                         message.success("Twitter status refreshed");
                       } catch (error) {
-                        console.error("Failed to refresh Twitter status:", error);
+                        console.error(
+                          "Failed to refresh Twitter status:",
+                          error
+                        );
                         message.error("Failed to refresh Twitter status");
                       } finally {
                         setLoadingTwitter(false);
@@ -1641,7 +1605,11 @@ export default function LinkedInDashboard({
           {/* Twitter Profile Card - Show when connected */}
           {twitterStatus?.connected && twitterStatus?.profile && (
             <Card
-              style={{ marginBottom: 24, borderRadius: 12, backgroundColor: "#f8f9fa" }}
+              style={{
+                marginBottom: 24,
+                borderRadius: 12,
+                backgroundColor: "#f8f9fa",
+              }}
               styles={{ body: { padding: 24 } }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
@@ -1650,7 +1618,8 @@ export default function LinkedInDashboard({
                     width: 64,
                     height: 64,
                     borderRadius: "50%",
-                    background: "linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%)",
+                    background:
+                      "linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -2015,8 +1984,8 @@ export default function LinkedInDashboard({
               />
             </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={24} md={12}>
                 <Form.Item
                   name="startAt"
                   label="Start Date & Time"
@@ -2032,7 +2001,7 @@ export default function LinkedInDashboard({
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={24} md={12}>
                 <Form.Item name="endAt" label="End Date & Time">
                   <DatePicker
                     showTime
@@ -2098,66 +2067,16 @@ export default function LinkedInDashboard({
         user={user}
       />
       <Layout className={styles.dashboardLayout}>
-        {/* Sidebar - same as Dashboard */}
-        {isLoggedIn && !isMobile && (
-          <Sider
-            width={360}
-            collapsedWidth={isTablet ? 0 : 88}
-            collapsed={collapsed}
-            theme="light"
-            trigger={null}
-            breakpoint="lg"
-            className={styles.sider}
-          >
-            <Sidebar
-              collapsed={collapsed}
-              onToggleSidebar={handleToggleSidebar}
-              user={user}
-              selectedConversationId={selectedConversationId}
-              onConversationSelect={handleConversationSelect}
-              onNewConversation={handleNewConversation}
-              conversationsUpdateTrigger={conversationsUpdateTrigger}
-            />
-          </Sider>
-        )}
-        {isLoggedIn && isMobile && (
-          <Drawer
-            title="Flippy chats"
-            placement="left"
-            onClose={() => setSidebarDrawerOpen(false)}
-            open={sidebarDrawerOpen}
-            width={280}
-            className={styles.sidebarDrawer}
-          >
-            <Sidebar
-              collapsed={false}
-              onToggleSidebar={() => setSidebarDrawerOpen(false)}
-              user={user}
-              selectedConversationId={selectedConversationId}
-              onConversationSelect={handleConversationSelectWithClose}
-              onNewConversation={handleNewConversation}
-              conversationsUpdateTrigger={conversationsUpdateTrigger}
-            />
-          </Drawer>
-        )}
         <Content
-          className={`${styles.content} ${styles.contentLight}`}
-          style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}
+          className={`${styles.content} ${styles.contentLight} ${styles.socialDashboardContent}`}
+          style={{
+            padding: isMobile ? "24px 0" : "32px 0",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+          }}
         >
           {renderMetricsContent()}
-          {isMobile && isLoggedIn && (
-            <FloatButton
-              icon={<MenuOutlined />}
-              type="primary"
-              style={{
-                right: 16,
-                bottom: 16,
-                backgroundColor: "#0077B5",
-                borderColor: "#0077B5",
-              }}
-              onClick={() => setSidebarDrawerOpen(true)}
-            />
-          )}
         </Content>
       </Layout>
     </Layout>
