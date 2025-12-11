@@ -2069,12 +2069,7 @@ export default function LinkedInDashboard({
       <Layout className={styles.dashboardLayout}>
         <Content
           className={`${styles.content} ${styles.contentLight} ${styles.socialDashboardContent}`}
-          style={{
-            padding: isMobile ? "24px 0" : "32px 0",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-start",
-          }}
+          style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}
         >
           {renderMetricsContent()}
         </Content>
