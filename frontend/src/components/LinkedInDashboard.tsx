@@ -1867,7 +1867,7 @@ export default function LinkedInDashboard({
           </Drawer>
         )}
         <Content
-          className={`${styles.content} ${styles.contentLight}`}
+          className={`${styles.content} ${styles.contentLight} ${styles.socialDashboardContent}`}
           style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}
         >
           {renderMetricsContent()}

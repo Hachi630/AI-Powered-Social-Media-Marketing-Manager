@@ -300,5 +300,16 @@
     color: #B1A285 !important;
     background-color: #FFFFFF !important;
   }
+
+  /* Mobile: Social Dashboard - Allow scrolling */
+  .socialDashboardContent {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important; /* iOS smooth scrolling */
+    height: auto !important;
+    min-height: calc(100vh - 99px) !important;
+    padding: 16px !important;
+    gap: 24px !important;
+  }
 }
 
