@@ -182,6 +182,35 @@
   list-style: none !important;
   width: 100%;
   box-sizing: border-box;
+  background-color: transparent !important;
+}
+
+.chatItemRow:hover {
+  background-color: var(
+    --accent-color-rgba-08,
+    rgba(102, 126, 234, 0.08)
+  ) !important;
+}
+
+[data-theme="warm"] .chatItemRow:hover {
+  background-color: var(
+    --accent-color-rgba-12,
+    rgba(174, 144, 110, 0.12)
+  ) !important;
+}
+
+.chatItemRow.chatItemActive {
+  background-color: var(
+    --accent-color-rgba-12,
+    rgba(102, 126, 234, 0.12)
+  ) !important;
+}
+
+[data-theme="warm"] .chatItemRow.chatItemActive {
+  background-color: var(
+    --accent-color-rgba-15,
+    rgba(174, 144, 110, 0.15)
+  ) !important;
 }
 
 .chatItem:hover {
@@ -578,21 +607,19 @@
   padding: 4px 0;
 }
 
-.rootDropZone.folderDragOver {
+.rootDropZoneDragOver {
   background-color: var(
     --accent-color-rgba-10,
     rgba(102, 126, 234, 0.1)
   ) !important;
-  border: 2px dashed var(--accent-color, #667eea) !important;
   padding: 8px;
 }
 
-[data-theme="warm"] .rootDropZone.folderDragOver {
+[data-theme="warm"] .rootDropZoneDragOver {
   background-color: var(
     --accent-color-rgba-12,
     rgba(174, 144, 110, 0.12)
   ) !important;
-  border: 2px dashed var(--accent-color, #ae906e) !important;
 }
 
 .moreButton {
