@@ -79,7 +79,7 @@
 
   .chatCard {
     position: fixed !important;
-    bottom: 60px !important; /* Reserve more space for tagline */
+    bottom: 0 !important; /* Fixed at bottom, no tagline space needed */
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;

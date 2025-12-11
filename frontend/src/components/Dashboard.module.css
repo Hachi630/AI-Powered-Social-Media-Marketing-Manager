@@ -242,7 +242,7 @@
     top: 0 !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 220px !important; /* Reserve enough space for chat box (~160px) and tagline (~60px) */
+    bottom: 160px !important; /* Reserve space for chat box (~160px), no tagline space needed */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     padding: 16px !important;
@@ -260,7 +260,7 @@
   /* Mobile: Chat box container fixed at bottom */
   .mobileChatWrapper {
     position: fixed !important;
-    bottom: 60px !important; /* Reserve more space for tagline */
+    bottom: 0 !important; /* Fixed at bottom, no tagline space needed */
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
@@ -278,6 +278,7 @@
 
   /* Mobile: Tagline fixed at the very bottom of the page */
   .mobileTagline {
+    display: none !important; /* Hide tagline on mobile */
     position: fixed !important;
     bottom: 0 !important;
     left: 0 !important;
