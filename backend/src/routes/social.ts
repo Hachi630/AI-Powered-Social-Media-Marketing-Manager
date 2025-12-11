@@ -325,16 +325,81 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
         }
       }
       
-      // If all methods fail, return error
+      // If all methods fail, still allow Facebook-only connection
+      // This allows users with personal accounts to use Facebook sharing
+      // Instagram sharing will require Business Account (checked separately)
+      if (pages.length > 0) {
+        const firstPage = pages[0]
+        console.log('[Instagram OAuth Callback] All Instagram detection methods failed, but allowing Facebook-only connection')
+        
+        try {
+          // Get page name
+          const pageNameResponse = await axios.get(
+            `https://graph.facebook.com/v18.0/${firstPage.id}?fields=name&access_token=${firstPage.accessToken || longLivedToken.accessToken}`
+          )
+          
+          // Calculate expiration date
+          const expiresAt = new Date()
+          expiresAt.setSeconds(expiresAt.getSeconds() + longLivedToken.expiresIn)
+
+          // Save to user - Facebook only (no Instagram)
+          if (!user.socialConnections) {
+            user.socialConnections = {}
+          }
+
+          // Save Facebook Page connection with Page access token
+          const pageToken = firstPage.accessToken || longLivedToken.accessToken
+          user.socialConnections.facebook = {
+            accessToken: pageToken,
+            userId: firstPage.id,
+            expiresAt,
+          }
+
+          // Don't save Instagram connection if we can't detect it
+          // User can still use Facebook sharing
+          // Instagram sharing will show an error when they try to use it
+
+          await user.save()
+
+          console.log('[Instagram OAuth Callback] Saved Facebook-only connection:', {
+            userId: user._id,
+            facebookPageId: firstPage.id,
+            note: 'Instagram not connected - user can use Facebook sharing only',
+          })
+
+          const redirectUrl = `https://www.facebook.com/pages/manage/${firstPage.id}`
+          
+          if (isFrontendCallback) {
+            return res.json({
+              success: true,
+              message: 'Successfully connected Facebook Page. Note: Instagram sharing requires a Business/Creator account connected to your Facebook Page.',
+              redirectUrl,
+              facebook: {
+                pageId: firstPage.id,
+                pageName: pageNameResponse.data.name,
+              },
+              instagram: null,
+              warning: 'Instagram not connected. To use Instagram sharing, please connect an Instagram Business/Creator account to your Facebook Page.',
+            })
+          } else {
+            return res.redirect(redirectUrl)
+          }
+        } catch (saveError: any) {
+          console.error('[Instagram OAuth Callback] Failed to save Facebook connection:', saveError.response?.data || saveError.message)
+          // Fall through to error
+        }
+      }
+      
+      // If we can't even save Facebook connection, return error
       if (isFrontendCallback) {
         return res.json({
           success: false,
-          message: `No Instagram Business Account found for pages: ${pageNames}. Please connect an Instagram Business Account to your Facebook Page first.`,
+          message: `Failed to connect. Please ensure you have a Facebook Page. Instagram sharing requires a Business/Creator account connected to your Facebook Page.`,
           pages: pageNames,
         })
       }
       return res.redirect(
-        `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=no_instagram_account&pages=${encodeURIComponent(pageNames)}`
+        `${process.env.FRONTEND_URL || 'http://localhost:3000'}/settings?error=connection_failed&pages=${encodeURIComponent(pageNames)}`
       )
     }
 
@@ -451,8 +516,9 @@ router.post('/instagram/share', protect, async (req: AuthRequest, res: Response)
       console.log('[Instagram Share] Instagram not connected for user:', user._id)
       return res.status(400).json({
         success: false,
-        message: 'Instagram account not connected. Please connect your Instagram account first.',
+        message: 'Instagram account not connected. Instagram sharing requires a Business or Creator account connected to your Facebook Page. Please connect your Instagram Business/Creator account first.',
         requiresAuth: true,
+        helpText: 'To use Instagram sharing: 1) Switch your Instagram account to Business or Creator in Instagram settings, 2) Connect it to your Facebook Page, 3) Reconnect in this app.',
       })
     }
 
@@ -734,16 +800,26 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
+    // IMPORTANT: Reload user from database to get latest socialConnections
+    // The req.user might be stale if it was loaded before OAuth callback
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
     const { calendarItemId, content, imageUrl } = req.body
 
     console.log('[Facebook Share] Request received:', {
-      userId: user._id,
+      userId: freshUser._id,
       calendarItemId,
       hasContent: !!content,
       hasImageUrl: !!imageUrl,
-      socialConnections: user.socialConnections ? 'exists' : 'null',
-      facebookToken: user.socialConnections?.facebook?.accessToken ? 'exists' : 'missing',
-      instagramToken: user.socialConnections?.instagram?.accessToken ? 'exists' : 'missing',
+      socialConnections: freshUser.socialConnections ? 'exists' : 'null',
+      facebookToken: freshUser.socialConnections?.facebook?.accessToken ? 'exists' : 'missing',
+      instagramToken: freshUser.socialConnections?.instagram?.accessToken ? 'exists' : 'missing',
+      facebookTokenPreview: freshUser.socialConnections?.facebook?.accessToken ? freshUser.socialConnections.facebook.accessToken.substring(0, 20) + '...' : 'N/A',
+      facebookUserId: freshUser.socialConnections?.facebook?.userId || 'N/A',
+      instagramUserId: freshUser.socialConnections?.instagram?.userId || 'N/A',
     })
 
     if (!calendarItemId || !content) {
@@ -755,8 +831,8 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
 
     // Check if user has Facebook connected (either directly or through Instagram)
     // Instagram connection also provides Facebook Page access with the same token
-    const facebook = user.socialConnections?.facebook
-    const instagram = user.socialConnections?.instagram
+    const facebook = freshUser.socialConnections?.facebook
+    const instagram = freshUser.socialConnections?.instagram
 
     // Use Facebook connection if available, otherwise try Instagram token (which also works for Facebook Page)
     let facebookToken: string | undefined
@@ -801,15 +877,15 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
           if (pagesResponse.data.data && pagesResponse.data.data.length > 0) {
             facebookUserId = pagesResponse.data.data[0].id
             // Save it for future use
-            if (!user.socialConnections) {
-              user.socialConnections = {}
+            if (!freshUser.socialConnections) {
+              freshUser.socialConnections = {}
             }
-            if (!user.socialConnections.facebook) {
-              user.socialConnections.facebook = { accessToken: facebookToken }
+            if (!freshUser.socialConnections.facebook) {
+              freshUser.socialConnections.facebook = { accessToken: facebookToken }
             }
-            user.socialConnections.facebook.userId = facebookUserId
-            user.socialConnections.facebook.expiresAt = instagram.expiresAt
-            await user.save()
+            freshUser.socialConnections.facebook.userId = facebookUserId
+            freshUser.socialConnections.facebook.expiresAt = instagram.expiresAt
+            await freshUser.save()
           }
         } catch (error) {
           console.error('Error fetching Facebook Page ID:', error)
@@ -926,7 +1002,7 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
 })
 
 /**
- * @desc    Get Facebook connection status
+ * @desc    Get Facebook connection status with detailed debug info
  * @route   GET /api/social/facebook/status
  * @access  Private
  */
@@ -937,12 +1013,54 @@ router.get('/facebook/status', protect, async (req: AuthRequest, res: Response) 
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    const facebook = user.socialConnections?.facebook
+    // Reload user from database to get latest socialConnections
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    const facebook = freshUser.socialConnections?.facebook
+    const instagram = freshUser.socialConnections?.instagram
+
+    // Detailed debug info
+    const debugInfo = {
+      userId: freshUser._id.toString(),
+      hasSocialConnections: !!freshUser.socialConnections,
+      facebook: {
+        exists: !!facebook,
+        hasAccessToken: !!facebook?.accessToken,
+        hasUserId: !!facebook?.userId,
+        tokenPreview: facebook?.accessToken ? facebook.accessToken.substring(0, 20) + '...' : 'N/A',
+        userId: facebook?.userId || 'N/A',
+        expiresAt: facebook?.expiresAt || 'N/A',
+        isExpired: facebook?.expiresAt ? new Date() > facebook.expiresAt : 'N/A',
+      },
+      instagram: {
+        exists: !!instagram,
+        hasAccessToken: !!instagram?.accessToken,
+        hasUserId: !!instagram?.userId,
+        tokenPreview: instagram?.accessToken ? instagram.accessToken.substring(0, 20) + '...' : 'N/A',
+        userId: instagram?.userId || 'N/A',
+        username: instagram?.username || 'N/A',
+        expiresAt: instagram?.expiresAt || 'N/A',
+        isExpired: instagram?.expiresAt ? new Date() > instagram.expiresAt : 'N/A',
+      },
+      envCheck: {
+        hasFacebookAppId: !!process.env.FACEBOOK_APP_ID,
+        hasFacebookAppSecret: !!process.env.FACEBOOK_APP_SECRET,
+        hasRedirectUri: !!process.env.FACEBOOK_REDIRECT_URI,
+        redirectUri: process.env.FACEBOOK_REDIRECT_URI || 'N/A',
+      },
+    }
+
+    console.log('[Facebook Status] Debug info:', debugInfo)
 
     if (!facebook || !facebook.accessToken) {
       return res.json({
         success: true,
         connected: false,
+        debug: debugInfo,
+        message: 'Facebook account not connected. Please connect your Facebook or Instagram account first.',
       })
     }
 
@@ -954,6 +1072,7 @@ router.get('/facebook/status', protect, async (req: AuthRequest, res: Response) 
       connected: !isExpired,
       userId: facebook.userId,
       expiresAt: facebook.expiresAt,
+      debug: debugInfo,
     })
   } catch (error: any) {
     console.error('Facebook status error:', error)
