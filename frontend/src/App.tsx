@@ -15,6 +15,7 @@ import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
 import LinkedInDashboard from './components/LinkedInDashboard'
+import InstagramCallback from './pages/InstagramCallback'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -105,6 +106,10 @@ function AppContent() {
       <Route
         path="/auth/callback"
         element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
+      />
+      <Route
+        path="/auth/instagram/callback"
+        element={<InstagramCallback />}
       />
       <Route
         path="/"
