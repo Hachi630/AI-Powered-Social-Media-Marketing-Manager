@@ -19,7 +19,42 @@ const router = express.Router()
 const oauthStates = new Map<string, string>()
 
 /**
- * @desc    Initiate Instagram OAuth flow
+ * @desc    Initiate Facebook OAuth flow (for Facebook sharing only)
+ * @route   GET /api/social/facebook/auth
+ * @access  Private
+ */
+router.get('/facebook/auth', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Generate state for CSRF protection
+    // Store connection type in state: 'facebook_only' means only connect Facebook, don't try Instagram
+    const state = crypto.randomBytes(32).toString('hex')
+    oauthStates.set(state, JSON.stringify({ userId: user._id.toString(), type: 'facebook_only' }))
+
+    // Generate Facebook OAuth URL (without business_management scope)
+    // This allows personal accounts to connect and use Facebook sharing
+    const authUrl = getInstagramAuthUrl(state, false) // false = don't require business_management
+
+    res.json({
+      success: true,
+      authUrl,
+      state,
+    })
+  } catch (error: any) {
+    console.error('Facebook OAuth initiation error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to initiate Facebook OAuth',
+    })
+  }
+})
+
+/**
+ * @desc    Initiate Instagram OAuth flow (requires Facebook Page, includes business_management)
  * @route   GET /api/social/instagram/auth
  * @access  Private
  */
@@ -31,11 +66,13 @@ router.get('/instagram/auth', protect, async (req: AuthRequest, res: Response) =
     }
 
     // Generate state for CSRF protection
+    // Store connection type in state: 'instagram' means connect both Facebook and Instagram
     const state = crypto.randomBytes(32).toString('hex')
-    oauthStates.set(state, user._id.toString())
+    oauthStates.set(state, JSON.stringify({ userId: user._id.toString(), type: 'instagram' }))
 
-    // Generate Instagram OAuth URL
-    const authUrl = getInstagramAuthUrl(state)
+    // Generate Instagram OAuth URL (with business_management scope for Instagram Business Account)
+    // Instagram requires Facebook Page, so this will also connect Facebook
+    const authUrl = getInstagramAuthUrl(state, true) // true = include business_management for Instagram
 
     res.json({
       success: true,
@@ -91,19 +128,49 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=missing_code_or_state`)
     }
 
-    // Verify state
-    const userId = oauthStates.get(state as string)
-    if (!userId) {
-      console.error('[Instagram OAuth Callback] Invalid state:', state)
+    // Verify state and get connection type
+    const stateString = state as string
+    const stateData = oauthStates.get(stateString)
+    if (!stateData) {
+      console.error('[Instagram OAuth Callback] Invalid state - state not found:', {
+        state: stateString?.substring(0, 20) + '...',
+        stateLength: stateString?.length,
+        oauthStatesSize: oauthStates.size,
+      })
+      // Silently redirect without error (invalid state is common during OAuth flow)
+      // This can happen if:
+      // 1. User refreshes the callback page
+      // 2. OAuth callback is called multiple times
+      // 3. State was already used and deleted (connection might already be successful)
+      console.log('[Instagram OAuth Callback] Invalid state - but connection may already be successful, redirecting silently')
       if (isFrontendCallback) {
-        return res.json({ success: false, message: 'Invalid state' })
+        // Return success: true to avoid showing error, since connection might already be successful
+        // Frontend will check the actual connection status on the social dashboard
+        return res.json({ success: true, message: 'Redirecting to social dashboard', redirectUrl: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'}/socialdashboard` })
       }
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=invalid_state`)
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/socialdashboard`)
     }
 
-    console.log('[Instagram OAuth Callback] State verified, userId:', userId)
+    // Parse state data (we always store it as JSON string)
+    let userId: string
+    let connectionType: 'facebook_only' | 'instagram' = 'instagram' // Default to instagram for backward compatibility
+    
+    try {
+      // stateData is always a string (we store it as JSON.stringify)
+      const parsed = JSON.parse(stateData as string)
+      userId = parsed.userId || parsed // Support both old format (just userId) and new format
+      connectionType = parsed.type || 'instagram' // Default to instagram if not specified
+    } catch (e) {
+      // Backward compatibility: if stateData is just a userId string (shouldn't happen with new code)
+      console.warn('[Instagram OAuth Callback] State data is not JSON, treating as userId string')
+      userId = stateData as string
+      connectionType = 'instagram'
+    }
 
-    oauthStates.delete(state as string)
+    console.log('[Instagram OAuth Callback] State verified, userId:', userId, 'connectionType:', connectionType)
+
+    // Delete state AFTER successful parsing to prevent reuse
+    oauthStates.delete(stateString)
 
     // Find user
     const user = await User.findById(userId)
@@ -135,7 +202,98 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
       instagramUsername: p.instagramUsername
     })))
     
-    // Filter to only pages with Instagram accounts
+    // If this is a Facebook-only connection, skip Instagram detection and just save Facebook
+    if (connectionType === 'facebook_only') {
+      console.log('[Instagram OAuth Callback] Facebook-only connection requested, skipping Instagram detection')
+      
+      if (pages.length > 0) {
+        const firstPage = pages[0]
+        console.log('[Instagram OAuth Callback] Saving Facebook-only connection for page:', firstPage.name)
+        
+        try {
+          // Get page name
+          const pageNameResponse = await axios.get(
+            `https://graph.facebook.com/v18.0/${firstPage.id}?fields=name&access_token=${firstPage.accessToken || longLivedToken.accessToken}`
+          )
+          
+          // Calculate expiration date
+          const expiresAt = new Date()
+          expiresAt.setSeconds(expiresAt.getSeconds() + longLivedToken.expiresIn)
+
+          // Save to user - Facebook only (no Instagram)
+          if (!user.socialConnections) {
+            user.socialConnections = {}
+          }
+
+          // Save Facebook Page connection with Page access token
+          const pageToken = firstPage.accessToken || longLivedToken.accessToken
+          user.socialConnections.facebook = {
+            accessToken: pageToken,
+            userId: firstPage.id,
+            expiresAt,
+          }
+
+          // CRITICAL: Explicitly remove Instagram connection if it exists (to ensure clean state)
+          // This ensures Facebook and Instagram are completely independent
+          if (user.socialConnections.instagram) {
+            console.log('[Instagram OAuth Callback] Removing existing Instagram connection for Facebook-only connection')
+            delete user.socialConnections.instagram
+          }
+
+          await user.save()
+
+          // CRITICAL: Verify Instagram was removed (reload from DB to ensure it's gone)
+          const verifyUser = await User.findById(user._id)
+          if (verifyUser?.socialConnections?.instagram) {
+            console.error('[Instagram OAuth Callback] WARNING: Instagram connection still exists after deletion! Force removing...')
+            delete verifyUser.socialConnections.instagram
+            await verifyUser.save()
+            console.log('[Instagram OAuth Callback] Instagram connection force removed and verified')
+          } else {
+            console.log('[Instagram OAuth Callback] Verified: Instagram connection successfully removed')
+          }
+
+          console.log('[Instagram OAuth Callback] Saved Facebook-only connection:', {
+            userId: user._id,
+            facebookPageId: firstPage.id,
+            note: 'Instagram not connected - Facebook-only connection',
+          })
+
+          const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
+          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected`
+          
+          if (isFrontendCallback) {
+            return res.json({
+              success: true,
+              message: 'Successfully connected Facebook Page',
+              redirectUrl,
+              facebook: {
+                pageId: firstPage.id,
+                pageName: pageNameResponse.data.name,
+              },
+              instagram: null,
+            })
+          } else {
+            return res.redirect(redirectUrl)
+          }
+        } catch (saveError: any) {
+          console.error('[Instagram OAuth Callback] Failed to save Facebook-only connection:', saveError.response?.data || saveError.message)
+          // Fall through to error
+        }
+      } else {
+        // No pages found for Facebook-only connection
+        if (isFrontendCallback) {
+          return res.json({
+            success: false,
+            message: 'No Facebook Pages found. Please create a Facebook Page first.',
+          })
+        } else {
+          return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=no_pages`)
+        }
+      }
+    }
+    
+    // Filter to only pages with Instagram accounts (only for Instagram connection type)
     const pagesWithInstagram = pages.filter((page) => page.hasInstagramAccount)
     console.log('[Instagram OAuth Callback] Pages with Instagram:', pagesWithInstagram.length)
 
@@ -216,16 +374,16 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
           })
 
           // Return JSON response for frontend callback, or redirect for backend callback
-          const facebookPageId = instagramAccount.facebookPageId
-          const redirectUrl = `https://www.facebook.com/pages/manage/${facebookPageId}`
+          const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
+          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`
           
           // Check if this is a frontend callback (has Authorization header)
           if (req.headers.authorization) {
-            // Frontend callback - return JSON
+            // Frontend callback - return JSON (frontend will handle redirect)
             res.json({
               success: true,
               message: 'Successfully connected Instagram and Facebook Page',
-              redirectUrl,
+              redirectUrl, // Redirect to social dashboard like Twitter
               instagram: {
                 userId: instagramAccount.instagramAccountId,
                 username: instagramAccount.username,
@@ -237,7 +395,7 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
               },
             })
           } else {
-            // Backend callback - redirect directly
+            // Backend callback - redirect to social dashboard
             res.redirect(redirectUrl)
           }
           return
@@ -294,15 +452,16 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
             })
 
             // Return JSON response for frontend callback, or redirect for backend callback
-            const redirectUrl = `https://www.facebook.com/pages/manage/${firstPage.id}`
+            const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
+            const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`
             
             // Check if this is a frontend callback (has Authorization header)
             if (req.headers.authorization) {
-              // Frontend callback - return JSON
+              // Frontend callback - return JSON (frontend will handle redirect)
               res.json({
                 success: true,
                 message: 'Successfully connected (Instagram account will be resolved when posting)',
-                redirectUrl,
+                redirectUrl, // Redirect to social dashboard like Twitter
                 instagram: {
                   userId: firstPage.id, // Temporary, will be resolved later
                   username: 'pending',
@@ -355,11 +514,22 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
             expiresAt,
           }
 
-          // Don't save Instagram connection if we can't detect it
-          // User can still use Facebook sharing
-          // Instagram sharing will show an error when they try to use it
+          // CRITICAL: Don't save Instagram connection if we can't detect it
+          // Also remove any existing Instagram connection to ensure clean state
+          if (user.socialConnections.instagram) {
+            console.log('[Instagram OAuth Callback] Removing existing Instagram connection (fallback Facebook-only connection)')
+            delete user.socialConnections.instagram
+          }
 
           await user.save()
+          
+          // Verify Instagram was removed
+          const verifyUser2 = await User.findById(user._id)
+          if (verifyUser2?.socialConnections?.instagram) {
+            console.error('[Instagram OAuth Callback] WARNING: Instagram connection still exists in fallback method! Force removing...')
+            delete verifyUser2.socialConnections.instagram
+            await verifyUser2.save()
+          }
 
           console.log('[Instagram OAuth Callback] Saved Facebook-only connection:', {
             userId: user._id,
@@ -367,13 +537,14 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
             note: 'Instagram not connected - user can use Facebook sharing only',
           })
 
-          const redirectUrl = `https://www.facebook.com/pages/manage/${firstPage.id}`
+          const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
+          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected`
           
           if (isFrontendCallback) {
             return res.json({
               success: true,
               message: 'Successfully connected Facebook Page. Note: Instagram sharing requires a Business/Creator account connected to your Facebook Page.',
-              redirectUrl,
+              redirectUrl, // Redirect to social dashboard like Twitter
               facebook: {
                 pageId: firstPage.id,
                 pageName: pageNameResponse.data.name,
@@ -725,10 +896,11 @@ router.post('/connect-page', protect, async (req: AuthRequest, res: Response) =>
     })
 
     // Return JSON with redirect URL for frontend to handle
+    const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
     res.json({
       success: true,
       message: 'Successfully connected Instagram and Facebook Page',
-      redirectUrl: `https://www.facebook.com/pages/manage/${instagramAccount.facebookPageId}`,
+      redirectUrl: `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`, // Redirect to social dashboard like Twitter
       instagram: {
         userId: instagramAccount.instagramAccountId,
         username: instagramAccount.username,
@@ -755,14 +927,43 @@ router.post('/connect-page', protect, async (req: AuthRequest, res: Response) =>
  */
 router.get('/instagram/status', protect, async (req: AuthRequest, res: Response) => {
   try {
+    // IMPORTANT: Reload user from database to get latest socialConnections
+    // The req.user might be stale if it was loaded before OAuth callback
     const user = req.user
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
-    const instagram = user.socialConnections?.instagram
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
 
-    if (!instagram || !instagram.accessToken) {
+    const instagram = freshUser.socialConnections?.instagram
+
+    // IMPORTANT: Only check Instagram connection, not Facebook
+    // Instagram connection must have accessToken AND userId (not just Facebook token)
+    // Also check that userId is not the same as Facebook userId (to ensure it's a real Instagram account)
+    const facebook = freshUser.socialConnections?.facebook
+    const isInstagramUserIdSameAsFacebook = instagram?.userId && facebook?.userId && instagram.userId === facebook.userId
+    
+    console.log('[Instagram Status] Checking Instagram connection:', {
+      hasInstagram: !!instagram,
+      hasAccessToken: !!instagram?.accessToken,
+      hasUserId: !!instagram?.userId,
+      instagramUserId: instagram?.userId,
+      facebookUserId: facebook?.userId,
+      isSameAsFacebook: isInstagramUserIdSameAsFacebook,
+      hasUsername: !!instagram?.username,
+      username: instagram?.username,
+    })
+
+    if (!instagram || !instagram.accessToken || !instagram.userId || isInstagramUserIdSameAsFacebook) {
+      // If Instagram userId is the same as Facebook userId, it's likely a leftover from Facebook-only connection
+      // or a placeholder value, not a real Instagram account
+      if (isInstagramUserIdSameAsFacebook) {
+        console.log('[Instagram Status] Instagram userId matches Facebook userId - this is not a real Instagram connection')
+      }
       return res.json({
         success: true,
         connected: false,
@@ -1080,6 +1281,60 @@ router.get('/facebook/status', protect, async (req: AuthRequest, res: Response) 
       success: false,
       message: error.message || 'Failed to get Facebook status',
     })
+  }
+})
+
+/**
+ * @desc    Disconnect Facebook account
+ * @route   DELETE /api/social/facebook/disconnect
+ * @access  Private
+ */
+router.delete('/facebook/disconnect', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Remove Facebook connection
+    if (user.socialConnections?.facebook) {
+      delete user.socialConnections.facebook
+      await user.save()
+      console.log(`[Facebook Disconnect] Disconnected Facebook for user ${user._id}`)
+      return res.json({ success: true, message: 'Facebook account disconnected successfully' })
+    }
+
+    return res.json({ success: true, message: 'No Facebook account was connected' })
+  } catch (error: any) {
+    console.error('[Facebook Disconnect] Error:', error)
+    res.status(500).json({ success: false, message: error.message || 'Failed to disconnect Facebook account' })
+  }
+})
+
+/**
+ * @desc    Disconnect Instagram account
+ * @route   DELETE /api/social/instagram/disconnect
+ * @access  Private
+ */
+router.delete('/instagram/disconnect', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
+    // Remove Instagram connection
+    if (user.socialConnections?.instagram) {
+      delete user.socialConnections.instagram
+      await user.save()
+      console.log(`[Instagram Disconnect] Disconnected Instagram for user ${user._id}`)
+      return res.json({ success: true, message: 'Instagram account disconnected successfully' })
+    }
+
+    return res.json({ success: true, message: 'No Instagram account was connected' })
+  } catch (error: any) {
+    console.error('[Instagram Disconnect] Error:', error)
+    res.status(500).json({ success: false, message: error.message || 'Failed to disconnect Instagram account' })
   }
 })
 
