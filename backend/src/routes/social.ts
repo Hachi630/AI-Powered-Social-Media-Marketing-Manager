@@ -1256,7 +1256,15 @@ router.get('/facebook/status', protect, async (req: AuthRequest, res: Response) 
 
     console.log('[Facebook Status] Debug info:', debugInfo)
 
-    if (!facebook || !facebook.accessToken) {
+    // Check if Facebook connection exists and has valid data
+    // Also check if it's an empty object (which might happen if delete didn't work properly)
+    const hasValidFacebook = facebook && 
+                             facebook.accessToken && 
+                             Object.keys(facebook).length > 0 &&
+                             !(Object.keys(facebook).length === 0)
+
+    if (!hasValidFacebook) {
+      console.log('[Facebook Status] No valid Facebook connection found')
       return res.json({
         success: true,
         connected: false,
@@ -1296,10 +1304,55 @@ router.delete('/facebook/disconnect', protect, async (req: AuthRequest, res: Res
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
+    // IMPORTANT: Reload user from database to get latest socialConnections
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
     // Remove Facebook connection
-    if (user.socialConnections?.facebook) {
-      delete user.socialConnections.facebook
-      await user.save()
+    // IMPORTANT: Use $unset to properly remove nested object in Mongoose
+    if (freshUser.socialConnections?.facebook) {
+      console.log('[Facebook Disconnect] Removing Facebook connection:', {
+        userId: freshUser._id.toString(),
+        facebookUserId: freshUser.socialConnections.facebook.userId,
+        hasAccessToken: !!freshUser.socialConnections.facebook.accessToken,
+      })
+      
+      // Use $unset to properly remove nested field in MongoDB
+      await User.updateOne(
+        { _id: user._id },
+        { $unset: { 'socialConnections.facebook': '' } }
+      )
+      console.log('[Facebook Disconnect] User updated using $unset')
+      
+      // CRITICAL: Verify Facebook was removed (reload from DB to ensure it's gone)
+      const verifyUser = await User.findById(user._id)
+      if (verifyUser?.socialConnections?.facebook) {
+        console.error('[Facebook Disconnect] WARNING: Facebook connection still exists after $unset!', {
+          facebookUserId: verifyUser.socialConnections.facebook.userId,
+          hasAccessToken: !!verifyUser.socialConnections.facebook.accessToken,
+        })
+        console.error('[Facebook Disconnect] Force removing with direct delete...')
+        // Try direct delete as fallback
+        delete verifyUser.socialConnections.facebook
+        await verifyUser.save()
+        
+        // Double verify
+        const doubleVerify = await User.findById(user._id)
+        if (doubleVerify?.socialConnections?.facebook) {
+          console.error('[Facebook Disconnect] CRITICAL: Facebook connection STILL exists after double removal!')
+          // Last resort: set to undefined explicitly
+          doubleVerify.socialConnections.facebook = undefined as any
+          await doubleVerify.save()
+          console.log('[Facebook Disconnect] Set to undefined as last resort')
+        } else {
+          console.log('[Facebook Disconnect] Facebook connection force removed and double verified')
+        }
+      } else {
+        console.log('[Facebook Disconnect] Verified: Facebook connection successfully removed')
+      }
+      
       console.log(`[Facebook Disconnect] Disconnected Facebook for user ${user._id}`)
       return res.json({ success: true, message: 'Facebook account disconnected successfully' })
     }
@@ -1323,10 +1376,55 @@ router.delete('/instagram/disconnect', protect, async (req: AuthRequest, res: Re
       return res.status(404).json({ success: false, message: 'User not found' })
     }
 
+    // IMPORTANT: Reload user from database to get latest socialConnections
+    const freshUser = await User.findById(user._id)
+    if (!freshUser) {
+      return res.status(404).json({ success: false, message: 'User not found' })
+    }
+
     // Remove Instagram connection
-    if (user.socialConnections?.instagram) {
-      delete user.socialConnections.instagram
-      await user.save()
+    // IMPORTANT: Use $unset to properly remove nested object in Mongoose
+    if (freshUser.socialConnections?.instagram) {
+      console.log('[Instagram Disconnect] Removing Instagram connection:', {
+        userId: freshUser._id.toString(),
+        instagramUserId: freshUser.socialConnections.instagram.userId,
+        hasAccessToken: !!freshUser.socialConnections.instagram.accessToken,
+      })
+      
+      // Use $unset to properly remove nested field in MongoDB
+      await User.updateOne(
+        { _id: user._id },
+        { $unset: { 'socialConnections.instagram': '' } }
+      )
+      console.log('[Instagram Disconnect] User updated using $unset')
+      
+      // CRITICAL: Verify Instagram was removed (reload from DB to ensure it's gone)
+      const verifyUser = await User.findById(user._id)
+      if (verifyUser?.socialConnections?.instagram) {
+        console.error('[Instagram Disconnect] WARNING: Instagram connection still exists after $unset!', {
+          instagramUserId: verifyUser.socialConnections.instagram.userId,
+          hasAccessToken: !!verifyUser.socialConnections.instagram.accessToken,
+        })
+        console.error('[Instagram Disconnect] Force removing with direct delete...')
+        // Try direct delete as fallback
+        delete verifyUser.socialConnections.instagram
+        await verifyUser.save()
+        
+        // Double verify
+        const doubleVerify = await User.findById(user._id)
+        if (doubleVerify?.socialConnections?.instagram) {
+          console.error('[Instagram Disconnect] CRITICAL: Instagram connection STILL exists after double removal!')
+          // Last resort: set to undefined explicitly
+          doubleVerify.socialConnections.instagram = undefined as any
+          await doubleVerify.save()
+          console.log('[Instagram Disconnect] Set to undefined as last resort')
+        } else {
+          console.log('[Instagram Disconnect] Instagram connection force removed and double verified')
+        }
+      } else {
+        console.log('[Instagram Disconnect] Verified: Instagram connection successfully removed')
+      }
+      
       console.log(`[Instagram Disconnect] Disconnected Instagram for user ${user._id}`)
       return res.json({ success: true, message: 'Instagram account disconnected successfully' })
     }

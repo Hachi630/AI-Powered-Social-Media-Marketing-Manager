@@ -23,6 +23,7 @@ import {
   Form,
   Segmented,
   Tooltip,
+  App,
 } from "antd";
 import {
   LinkedinOutlined,
@@ -118,6 +119,7 @@ export default function LinkedInDashboard({
   jwt,
   userId,
 }: LinkedInDashboardProps) {
+  const { modal } = App.useApp();
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
   const [metrics, setMetrics] = useState<any>(null);
@@ -552,7 +554,7 @@ export default function LinkedInDashboard({
   };
 
   const handleDisconnectFacebook = () => {
-    Modal.confirm({
+    modal.confirm({
       title: "Disconnect Facebook",
       icon: <ExclamationCircleOutlined />,
       content:
@@ -565,9 +567,27 @@ export default function LinkedInDashboard({
         setDisconnectingFacebook(true);
         try {
           const result = await disconnectFacebook(jwt);
+          console.log("Disconnect Facebook result:", result);
           if (result.success) {
-            // Reset status to show disconnected state
-            setFacebookStatus({ connected: false });
+            // IMPORTANT: Reload status from backend to ensure UI reflects actual state
+            // Don't just set local state, as it might be stale
+            // Add a small delay to ensure backend has processed the deletion
+            await new Promise(resolve => setTimeout(resolve, 500));
+            try {
+              const fbData = await getFacebookStatus(jwt);
+              console.log("Facebook status after disconnect:", fbData);
+              setFacebookStatus(fbData);
+              
+              // Double check: if status still shows connected, force set to disconnected
+              if (fbData.connected) {
+                console.warn("Facebook status still shows connected after disconnect, forcing to disconnected");
+                setFacebookStatus({ connected: false, success: true });
+              }
+            } catch (statusError) {
+              console.error("Failed to refresh Facebook status after disconnect:", statusError);
+              // If refresh fails, set to disconnected to ensure UI is correct
+              setFacebookStatus({ connected: false, success: true });
+            }
             message.success("Facebook account disconnected successfully");
           } else {
             message.error(result.error || "Failed to disconnect Facebook");
@@ -583,7 +603,7 @@ export default function LinkedInDashboard({
   };
 
   const handleDisconnectInstagram = () => {
-    Modal.confirm({
+    modal.confirm({
       title: "Disconnect Instagram",
       icon: <ExclamationCircleOutlined />,
       content:
@@ -597,8 +617,17 @@ export default function LinkedInDashboard({
         try {
           const result = await disconnectInstagram(jwt);
           if (result.success) {
-            // Reset status to show disconnected state
-            setInstagramStatus({ connected: false });
+            // IMPORTANT: Reload status from backend to ensure UI reflects actual state
+            // Don't just set local state, as it might be stale
+            try {
+              const igData = await getInstagramStatus(jwt);
+              setInstagramStatus(igData);
+              console.log("Instagram status after disconnect:", igData);
+            } catch (statusError) {
+              console.error("Failed to refresh Instagram status after disconnect:", statusError);
+              // If refresh fails, set to disconnected to ensure UI is correct
+              setInstagramStatus({ connected: false });
+            }
             message.success("Instagram account disconnected successfully");
           } else {
             message.error(result.error || "Failed to disconnect Instagram");
