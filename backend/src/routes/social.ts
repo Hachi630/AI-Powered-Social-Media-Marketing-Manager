@@ -225,11 +225,13 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
             user.socialConnections = {}
           }
 
-          // Save Facebook Page connection with Page access token
-          const pageToken = firstPage.accessToken || longLivedToken.accessToken
+          // Save Facebook connection
+          // CRITICAL: Save User token, not Page token
+          // Page token may not have permissions to access /me/accounts API
+          // We'll get Page token when needed during sharing using User token
           user.socialConnections.facebook = {
-            accessToken: pageToken,
-            userId: firstPage.id,
+            accessToken: longLivedToken.accessToken, // Save User token (can access /me/accounts)
+            userId: firstPage.id, // Save Page ID
             expiresAt,
           }
 
@@ -256,6 +258,9 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
           console.log('[Instagram OAuth Callback] Saved Facebook-only connection:', {
             userId: user._id,
             facebookPageId: firstPage.id,
+            pageName: firstPage.name,
+            hasPageToken: !!firstPage.accessToken,
+            tokenType: 'User token (with Page token as fallback)',
             note: 'Instagram not connected - Facebook-only connection',
           })
 
@@ -282,13 +287,87 @@ router.get('/instagram/callback', async (req: Request, res: Response) => {
         }
       } else {
         // No pages found for Facebook-only connection
-        if (isFrontendCallback) {
-          return res.json({
-            success: false,
-            message: 'No Facebook Pages found. Please create a Facebook Page first.',
+        // Still allow connection with user token, but warn user that they need a Page to share
+        console.log('[Instagram OAuth Callback] No Facebook Pages found, but allowing connection with user token')
+        console.log('[Instagram OAuth Callback] User will need to create a Page to share content')
+        
+        try {
+          // Get user's Facebook profile info
+          const userInfoResponse = await axios.get(
+            `https://graph.facebook.com/v18.0/me?fields=id,name&access_token=${longLivedToken.accessToken}`
+          )
+          
+          // Calculate expiration date
+          const expiresAt = new Date()
+          expiresAt.setSeconds(expiresAt.getSeconds() + longLivedToken.expiresIn)
+
+          // Save to user - Facebook connection with user token (no Page yet)
+          if (!user.socialConnections) {
+            user.socialConnections = {}
+          }
+
+          // Save Facebook connection with user token (user doesn't have a Page yet)
+          // Note: User will need to create a Page to share content
+          user.socialConnections.facebook = {
+            accessToken: longLivedToken.accessToken,
+            userId: userInfoResponse.data.id, // User's Facebook profile ID (not a Page ID)
+            expiresAt,
+          }
+
+          // CRITICAL: Explicitly remove Instagram connection if it exists
+          if (user.socialConnections.instagram) {
+            console.log('[Instagram OAuth Callback] Removing existing Instagram connection for Facebook-only connection')
+            delete user.socialConnections.instagram
+          }
+
+          await user.save()
+
+          // CRITICAL: Verify Instagram was removed
+          const verifyUser = await User.findById(user._id)
+          if (verifyUser?.socialConnections?.instagram) {
+            console.error('[Instagram OAuth Callback] WARNING: Instagram connection still exists after deletion! Force removing...')
+            delete verifyUser.socialConnections.instagram
+            await verifyUser.save()
+            console.log('[Instagram OAuth Callback] Instagram connection force removed and verified')
+          } else {
+            console.log('[Instagram OAuth Callback] Verified: Instagram connection successfully removed')
+          }
+
+          console.log('[Instagram OAuth Callback] Saved Facebook connection (no Page):', {
+            userId: user._id,
+            facebookUserId: userInfoResponse.data.id,
+            note: 'User connected but has no Page. They need to create a Page to share content.',
           })
-        } else {
-          return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=no_pages`)
+
+          const clientUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
+          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&warning=no_page`
+          
+          if (isFrontendCallback) {
+            return res.json({
+              success: true,
+              message: 'Facebook account connected successfully. However, you need to create a Facebook Page to share content. Please create a Page and reconnect.',
+              redirectUrl,
+              facebook: {
+                userId: userInfoResponse.data.id,
+                userName: userInfoResponse.data.name,
+                hasPage: false,
+                warning: 'You need to create a Facebook Page to share content. Please create a Page at https://www.facebook.com/pages/create and reconnect.',
+              },
+              instagram: null,
+            })
+          } else {
+            return res.redirect(redirectUrl)
+          }
+        } catch (saveError: any) {
+          console.error('[Instagram OAuth Callback] Failed to save Facebook connection (no Page):', saveError.response?.data || saveError.message)
+          if (isFrontendCallback) {
+            return res.json({
+              success: false,
+              message: 'Failed to save Facebook connection. Please try again.',
+            })
+          } else {
+            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/instagram/callback?error=save_failed`)
+          }
         }
       }
     }
@@ -1096,32 +1175,117 @@ router.post('/facebook/share', protect, async (req: AuthRequest, res: Response) 
 
     // Get Page access token for posting (required for pages_manage_posts permission)
     // User token doesn't have sufficient permissions, we need Page token
+    // Facebook Graph API only allows posting to Pages, not personal profiles
     if (facebookUserId && facebookToken) {
       try {
         console.log('[Facebook Share] Getting Page access token for:', facebookUserId)
+        console.log('[Facebook Share] Token type:', isUsingInstagramToken ? 'Instagram token' : 'Facebook token')
+        console.log('[Facebook Share] Token preview:', facebookToken.substring(0, 20) + '...')
+        console.log('[Facebook Share] Saved Page ID:', facebookUserId)
+        
+        // CRITICAL: Use User token to get pages list
+        // User token has permissions to access /me/accounts API
+        // Page token may not have this permission
         const pagesResponse = await axios.get(
           `https://graph.facebook.com/v18.0/me/accounts?access_token=${facebookToken}`
         )
         
+        console.log('[Facebook Share] Pages API response:', {
+          hasData: !!pagesResponse.data.data,
+          pagesCount: pagesResponse.data.data?.length || 0,
+          pageIds: pagesResponse.data.data?.map((p: any) => p.id) || [],
+          targetPageId: facebookUserId,
+        })
+        
         if (pagesResponse.data.data && pagesResponse.data.data.length > 0) {
           // Find the page we want to post to
           const targetPage = pagesResponse.data.data.find((page: any) => page.id === facebookUserId)
+          
           if (targetPage && targetPage.access_token) {
             pageAccessToken = targetPage.access_token
-            console.log('[Facebook Share] Got Page access token')
+            console.log('[Facebook Share] ✅ Found target Page and got Page access token:', {
+              pageId: targetPage.id,
+              pageName: targetPage.name,
+            })
           } else {
-            console.log('[Facebook Share] Page not found in accounts, using user token')
-            pageAccessToken = facebookToken // Fallback to user token
+            // Target page not found in the list, but user has pages
+            // Try using the first available page as fallback
+            console.log('[Facebook Share] ⚠️ Target Page ID not found in accounts list, but user has pages')
+            console.log('[Facebook Share] Available pages:', pagesResponse.data.data.map((p: any) => ({ id: p.id, name: p.name })))
+            console.log('[Facebook Share] Saved Page ID:', facebookUserId)
+            console.log('[Facebook Share] Trying to use first available page as fallback...')
+            
+            const firstPage = pagesResponse.data.data[0]
+            if (firstPage && firstPage.access_token) {
+              pageAccessToken = firstPage.access_token
+              // Update saved Page ID to match the one we're using
+              facebookUserId = firstPage.id
+              console.log('[Facebook Share] ✅ Using first available page as fallback:', {
+                pageId: firstPage.id,
+                pageName: firstPage.name,
+              })
+              
+              // Update the saved Page ID in database for future use
+              try {
+                if (!freshUser.socialConnections) {
+                  freshUser.socialConnections = {}
+                }
+                if (!freshUser.socialConnections.facebook) {
+                  freshUser.socialConnections.facebook = { accessToken: facebookToken }
+                }
+                freshUser.socialConnections.facebook.userId = firstPage.id
+                await freshUser.save()
+                console.log('[Facebook Share] Updated saved Page ID in database')
+              } catch (updateError) {
+                console.error('[Facebook Share] Failed to update Page ID in database:', updateError)
+                // Continue anyway, the share should still work
+              }
+            } else {
+              // No valid page found
+              console.error('[Facebook Share] ❌ No valid page found in accounts list')
+              return res.status(400).json({
+                success: false,
+                message: 'Unable to access your Facebook Page. Please reconnect your Facebook account in the Social Dashboard.',
+                requiresAuth: true,
+              })
+            }
           }
         } else {
-          console.log('[Facebook Share] No pages found, using user token')
-          pageAccessToken = facebookToken // Fallback to user token
+          // No pages found
+          console.error('[Facebook Share] ❌ No pages found in accounts list')
+          console.error('[Facebook Share] This might mean:')
+          console.error('  1. User does not have any Facebook Pages')
+          console.error('  2. Token does not have pages_show_list permission')
+          console.error('  3. Token is invalid or expired')
+          return res.status(400).json({
+            success: false,
+            message: 'No Facebook Pages found. Please make sure you have a Facebook Page and reconnect your account in the Social Dashboard.',
+            requiresAuth: true,
+          })
         }
-      } catch (error: any) {
-        console.error('[Facebook Share] Error getting Page access token:', error.response?.data || error.message)
-        // Fallback to user token
-        pageAccessToken = facebookToken
-      }
+        } catch (error: any) {
+          console.error('[Facebook Share] ❌ Error getting Page access token:', {
+            error: error.message,
+            response: error.response?.data,
+            status: error.response?.status,
+            code: error.response?.data?.error?.code,
+          })
+          
+          // Check if it's a permissions error (token might be a Page token, not User token)
+          if (error.response?.data?.error?.code === 200 || error.response?.status === 400) {
+            console.log('[Facebook Share] Token might be a Page token (cannot access /me/accounts)')
+            console.log('[Facebook Share] Trying to use saved token directly as Page token...')
+            
+            // If saved token is a Page token, try using it directly
+            // Page token should work for posting to the specific page
+            pageAccessToken = facebookToken
+            console.log('[Facebook Share] Using saved token as Page token for direct posting')
+          } else {
+            // For other errors, try using the saved token directly (might be a Page token already)
+            console.log('[Facebook Share] Trying to use saved token directly as fallback...')
+            pageAccessToken = facebookToken
+          }
+        }
     } else {
       pageAccessToken = facebookToken
     }
