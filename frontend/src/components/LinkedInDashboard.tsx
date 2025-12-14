@@ -335,15 +335,24 @@ export default function LinkedInDashboard({
     const params = new URLSearchParams(window.location.search);
     const facebookParam = params.get("facebook");
     const instagramParam = params.get("instagram");
+    const warning = params.get("warning");
     
     if (facebookParam === "connected" || instagramParam === "connected") {
-      message.success(
-        facebookParam === "connected" && instagramParam === "connected"
-          ? "Successfully connected Facebook and Instagram!"
-          : facebookParam === "connected"
-          ? "Successfully connected Facebook!"
-          : "Successfully connected Instagram!"
-      );
+      // Check for warning about no Page
+      if (warning === "no_page" && facebookParam === "connected") {
+        message.warning(
+          "Facebook account connected successfully! However, you need to create a Facebook Page to share content. Facebook does not allow posting to personal profiles via API. Please create a Page at https://www.facebook.com/pages/create and reconnect.",
+          12
+        );
+      } else {
+        message.success(
+          facebookParam === "connected" && instagramParam === "connected"
+            ? "Successfully connected Facebook and Instagram!"
+            : facebookParam === "connected"
+            ? "Successfully connected Facebook!"
+            : "Successfully connected Instagram!"
+        );
+      }
       
       // Reload Facebook/Instagram status
       if (jwt) {
@@ -372,6 +381,7 @@ export default function LinkedInDashboard({
       const newParams = new URLSearchParams(params);
       newParams.delete("facebook");
       newParams.delete("instagram");
+      newParams.delete("warning");
       const newUrl = newParams.toString()
         ? `${window.location.pathname}?${newParams.toString()}`
         : window.location.pathname;
@@ -421,22 +431,6 @@ export default function LinkedInDashboard({
         ? `${window.location.pathname}?${newParams.toString()}`
         : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
-    }
-
-    if (facebookParam === "connected" || instagramParam === "connected") {
-      message.success("Facebook/Instagram account connected successfully!");
-      // Reload status
-      if (jwt) {
-        getFacebookStatus(jwt).then(setFacebookStatus);
-        getInstagramStatus(jwt).then(setInstagramStatus);
-      }
-      // Clean up URL
-      window.history.replaceState({}, "", "/socialdashboard");
-    } else if (facebookParam === "error" || instagramParam === "error") {
-      const reason = params.get("reason");
-      message.error(`Facebook/Instagram connection failed: ${reason || "Unknown error"}`);
-      // Clean up URL
-      window.history.replaceState({}, "", "/socialdashboard");
     }
   }, [jwt]);
 
