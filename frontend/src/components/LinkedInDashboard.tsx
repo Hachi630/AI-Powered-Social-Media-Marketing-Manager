@@ -4099,7 +4099,7 @@ export default function LinkedInDashboard({
         {isLoggedIn && !isMobile && (
           <Sider
             width={280}
-            collapsedWidth={isTablet ? 0 : 80}
+            collapsedWidth={isTablet ? 0 : 96}
             collapsed={sidebarCollapsed}
             theme="light"
             trigger={null}
@@ -4206,8 +4206,11 @@ export default function LinkedInDashboard({
                             loading={loading}
                             size={isMobile ? "middle" : "default"}
                             style={{
-                              width: 120,
-                              height: 40,
+                              width: 150,
+                              height: 44,
+                              display: "inline-flex",
+                              justifyContent: "center",
+                              alignItems: "center",
                             }}
                           >
                             Refresh
@@ -4219,8 +4222,11 @@ export default function LinkedInDashboard({
                             danger
                             size={isMobile ? "middle" : "default"}
                             style={{
-                              width: 120,
-                              height: 40,
+                              width: 150,
+                              height: 44,
+                              display: "inline-flex",
+                              justifyContent: "center",
+                              alignItems: "center",
                             }}
                           >
                             Disconnect

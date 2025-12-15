@@ -23,6 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Cursor IDE files
+.cursor/
+
 # Environment variables
 .env
 .env.local
