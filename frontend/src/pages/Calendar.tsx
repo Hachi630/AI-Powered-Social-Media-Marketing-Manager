@@ -1,5 +1,5 @@
-import { Card, Calendar, Layout, Typography, Button, Space, message, Grid } from 'antd'
-import { PlusOutlined } from '@ant-design/icons'
+import { Card, Calendar, Layout, Typography, Button, Space, message, Grid, Select } from 'antd'
+import { PlusOutlined, FilterOutlined } from '@ant-design/icons'
 import dayjs, { Dayjs } from 'dayjs'
 import { useState, useEffect, useCallback } from 'react'
 import Header from '../components/Header'
@@ -7,9 +7,10 @@ import { MELO_LOGO } from '../constants/assets'
 import styles from './Calendar.module.css'
 import { User } from '../services/authService'
 import { CalendarItem, calendarService } from '../services/calendarService'
-import CalendarItemModal from '../components/CalendarItemModal'
+import CalendarItemModal, { PLATFORMS } from '../components/CalendarItemModal'
 
 const { useBreakpoint } = Grid
+const { Option } = Select
 
 const { Content } = Layout
 
@@ -57,6 +58,7 @@ export default function CalendarPage({
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null)
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null)
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]) // Platform filter
 
   // Load calendar items for the current month
   const loadCalendarItems = useCallback(async () => {
@@ -103,31 +105,44 @@ export default function CalendarPage({
     setSelectedValue(newValue)
   }
 
-  // Get items for a specific date
+  // Get items for a specific date (with platform filter)
   const getItemsForDate = (date: Dayjs): CalendarItem[] => {
     const dateStr = date.format('YYYY-MM-DD')
-    return calendarItems.filter((item) => item.date === dateStr)
+    let items = calendarItems.filter((item) => item.date === dateStr)
+    
+    // Apply platform filter if any platforms are selected
+    if (selectedPlatforms.length > 0) {
+      items = items.filter((item) => selectedPlatforms.includes(item.platform))
+    }
+    
+    return items
   }
 
-  // Get upcoming week items (next 7 days from today)
+  // Get upcoming week items (next 7 days from today) with platform filter
   const getUpcomingWeekItems = (): CalendarItem[] => {
     const today = dayjs().startOf('day')
     const nextWeek = today.add(7, 'day')
     
-    return calendarItems
+    let items = calendarItems
       .filter((item) => {
         const itemDate = dayjs(item.date).startOf('day')
         // Include today and next 6 days (total 7 days)
         return (itemDate.isSame(today) || itemDate.isAfter(today)) && itemDate.isBefore(nextWeek)
       })
-      .sort((a, b) => {
-        // Sort by date first, then by time
-        const dateCompare = a.date.localeCompare(b.date)
-        if (dateCompare !== 0) return dateCompare
-        const timeA = a.time || '00:00'
-        const timeB = b.time || '00:00'
-        return timeA.localeCompare(timeB)
-      })
+    
+    // Apply platform filter if any platforms are selected
+    if (selectedPlatforms.length > 0) {
+      items = items.filter((item) => selectedPlatforms.includes(item.platform))
+    }
+    
+    return items.sort((a, b) => {
+      // Sort by date first, then by time
+      const dateCompare = a.date.localeCompare(b.date)
+      if (dateCompare !== 0) return dateCompare
+      const timeA = a.time || '00:00'
+      const timeB = b.time || '00:00'
+      return timeA.localeCompare(timeB)
+    })
   }
 
   // Group items by date
@@ -230,16 +245,38 @@ export default function CalendarPage({
             <Typography.Title level={2} className={styles.title}>
               Smart Calendar
             </Typography.Title>
-            {isLoggedIn && (
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleNewItem}
-                size="large"
-              >
-                Add Post
-              </Button>
-            )}
+            <Space>
+              {isLoggedIn && (
+                <Select
+                  mode="multiple"
+                  placeholder="Filter by platform"
+                  allowClear
+                  style={{ minWidth: 200 }}
+                  value={selectedPlatforms}
+                  onChange={setSelectedPlatforms}
+                  suffixIcon={<FilterOutlined />}
+                  maxTagCount="responsive"
+                >
+                  <Option value={PLATFORMS.INSTAGRAM_POST}>Instagram Post</Option>
+                  <Option value={PLATFORMS.INSTAGRAM_STORY}>Instagram Story</Option>
+                  <Option value={PLATFORMS.INSTAGRAM_REELS}>Instagram Reels</Option>
+                  <Option value={PLATFORMS.TIKTOK}>TikTok</Option>
+                  <Option value={PLATFORMS.FACEBOOK}>Facebook</Option>
+                  <Option value={PLATFORMS.TWITTER}>Twitter/X</Option>
+                  <Option value={PLATFORMS.LINKEDIN}>LinkedIn</Option>
+                </Select>
+              )}
+              {isLoggedIn && (
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={handleNewItem}
+                  size="large"
+                >
+                  Add Post
+                </Button>
+              )}
+            </Space>
           </div>
           <Card className={styles.card} loading={loading}>
             <Calendar
