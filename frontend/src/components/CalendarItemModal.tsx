@@ -62,6 +62,7 @@ interface CalendarItemModalProps {
   open: boolean
   item?: CalendarItem | null
   defaultDate?: Dayjs
+  defaultTime?: string
   onClose: () => void
   onSave: () => void
 }
@@ -70,6 +71,7 @@ export default function CalendarItemModal({
   open,
   item,
   defaultDate,
+  defaultTime,
   onClose,
   onSave,
 }: CalendarItemModalProps) {
@@ -111,7 +113,7 @@ export default function CalendarItemModal({
         form.setFieldsValue({
           platform: PLATFORMS.INSTAGRAM_POST,
           date: defaultDate || dayjs(),
-          time: null,
+          time: defaultTime ? dayjs(defaultTime, 'HH:mm') : null,
           title: '',
           content: '',
           status: 'draft',
@@ -124,7 +126,7 @@ export default function CalendarItemModal({
         setIsEditing(true)
       }
     }
-  }, [open, item, defaultDate, form])
+  }, [open, item, defaultDate, defaultTime, form])
 
   const loadCampaigns = async () => {
     const response = await campaignService.getCampaigns()
