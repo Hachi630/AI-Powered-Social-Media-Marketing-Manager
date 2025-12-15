@@ -117,7 +117,18 @@
   overflow: hidden;
   min-height: 0; /* Important for flex children to shrink */
   height: 100%;
-  min-width: 600px;
+  min-width: 0; /* Allow shrinking on small screens */
+  width: 100%;
+}
+
+.calendarSection.yearViewSection {
+  overflow: visible;
+}
+
+@media (min-width: 768px) {
+  .calendarSection {
+    min-width: 600px;
+  }
 }
 
 .detailPanelSection {
@@ -136,16 +147,53 @@
 /* Custom Calendar Styles */
 .calendarContainer {
   height: 100%;
-  padding: 24px;
+  padding: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.monthHeader {
+  padding: 20px 24px 12px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.monthTitle {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
 }
 
 :global(.ant-picker-calendar) {
-  background: white !important;
+  background: #FFFFFF !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 :global(.ant-picker-calendar-header) {
   display: none !important; /* Hide default header */
+}
+
+:global(.ant-picker-panel) {
+  border: none !important;
+  background: #FFFFFF !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+:global(.ant-picker-body) {
+  flex: 1;
+  padding: 0 24px 24px 24px;
+  background: #FFFFFF !important;
+}
+
+:global(.ant-picker-content) {
+  height: 100%;
 }
 
 :global(.ant-picker-cell) {
@@ -153,76 +201,138 @@
   border-right: 1px solid #f0f0f0 !important;
   vertical-align: top !important;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  height: 120px !important;
+  padding: 0 !important;
+  background: #FFFFFF !important;
 }
 
 :global(.ant-picker-cell:hover) {
-  background: #fafafa !important;
+  background: transparent !important;
 }
 
 :global(.ant-picker-calendar-date) {
   margin: 0 !important;
-  border-top: 2px solid transparent !important;
+  border: none !important;
   height: 100% !important;
-  padding: 8px !important;
-  transition: all 0.2s ease;
-  border-radius: 4px;
+  padding: 6px 8px !important;
+  transition: none !important;
+  border-radius: 0 !important;
+  background: #FFFFFF !important;
 }
 
 :global(.ant-picker-cell-selected .ant-picker-calendar-date) {
-  background: #f5f9ff !important;
+  background: transparent !important;
 }
 
 :global(.ant-picker-calendar-date-value) {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1d1d1f;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  display: none !important;
 }
 
-:global(.ant-picker-calendar-date-today .ant-picker-calendar-date-value) {
-  color: #1d1d1f;
-}
-
-:global(.ant-picker-calendar-date-today) {
-  background: #fff !important;
-}
-
-:global(.ant-picker-cell-today .ant-picker-calendar-date)::before {
-  display: none;
-}
-
-/* Apple-style red circle for today */
-:global(.ant-picker-cell-today .ant-picker-calendar-date-value) {
-  position: relative;
-}
-
-:global(.ant-picker-cell-today .ant-picker-calendar-date-value::after) {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background-color: #ff3b30;
-  z-index: -1;
-}
-
-:global(.ant-picker-cell-today .ant-picker-calendar-date-value) {
-  color: white;
-  font-weight: 600;
-  z-index: 1;
+:global(.ant-picker-calendar-date-content) {
+  height: 100% !important;
+  padding: 0 !important;
 }
 
 .dateCellContent {
   height: 100%;
   position: relative;
-  }
+  display: flex;
+  flex-direction: column;
+  padding: 6px 8px;
+}
+
+/* Month View Date Cell */
+.monthDateCell {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.monthDateNumber {
+  display: flex;
+  align-items: center;
+  height: 24px;
+}
+
+.monthDateText {
+  font-size: 13px;
+  font-weight: 400;
+  color: #1d1d1f;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+}
+
+.monthTodayCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #ff3b30;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+}
+
+.monthEventsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.monthEventLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: #ffffff;
+  border-left: 3px solid #0071e3;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 18px;
+}
+
+.monthEventLabel:hover {
+  background: #f5f5f7;
+  transform: translateX(2px);
+}
+
+.eventDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.eventLabelText {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 400;
+}
+
+.monthMoreIndicator {
+  font-size: 10px;
+  color: #86868b;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.monthMoreIndicator:hover {
+  color: #0071e3;
+}
 
 .dayNumber {
   display: inline-flex;

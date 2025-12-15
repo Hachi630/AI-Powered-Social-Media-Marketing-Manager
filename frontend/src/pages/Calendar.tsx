@@ -33,18 +33,40 @@ interface CalendarProps {
 }
 
 // Draggable Item Component
-function DraggableCalendarItem({ item, onClick }: { item: CalendarItem, onClick: (e: React.MouseEvent) => void }) {
+function DraggableCalendarItem({ item, onClick, isMonthView = false }: { item: CalendarItem, onClick: (e: React.MouseEvent) => void, isMonthView?: boolean }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: item.id || '',
     data: item,
   });
 
-  const platformIcons: Record<string, string> = {
-    instagram: '🟣', instagram_post: '🟣', instagram_story: '📸', instagram_reels: '🎬',
-    tiktok: '🎵', facebook: '📘', twitter: '🐦', linkedin: '💼'
+  const platformColors: Record<string, string> = {
+    instagram_post: '#E1306C',
+    instagram_story: '#F77737',
+    instagram_reels: '#833AB4',
+    tiktok: '#000000',
+    facebook: '#1877F2',
+    twitter: '#1DA1F2',
+    linkedin: '#0077B5',
   };
 
+  const color = platformColors[item.platform] || '#0071e3';
   const style = isDragging ? { opacity: 0.5 } : undefined;
+
+  if (isMonthView) {
+    return (
+      <div
+        ref={setNodeRef}
+        {...listeners}
+        {...attributes}
+        className={styles.monthEventLabel}
+        onClick={onClick}
+        style={{ ...style, borderLeftColor: color }}
+      >
+        <span className={styles.eventDot} style={{ backgroundColor: color }} />
+        <span className={styles.eventLabelText}>{item.title}</span>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -55,7 +77,7 @@ function DraggableCalendarItem({ item, onClick }: { item: CalendarItem, onClick:
       onClick={onClick}
       style={style}
     >
-      <span className={styles.itemIcon}>{platformIcons[item.platform]}</span>
+      <span className={styles.platformDot} style={{ backgroundColor: color }} />
       <span className={styles.itemTitle}>{item.title}</span>
     </div>
   );
@@ -234,53 +256,39 @@ export default function CalendarPage({
   const dateCellRender = (date: Dayjs) => {
     const items = getItemsForDate(date);
     const isToday = date.isSame(dayjs(), 'day');
-    const maxDisplay = 2;
+    const maxDisplay = 3;
     const displayItems = items.slice(0, maxDisplay);
     const remainingCount = items.length - maxDisplay;
 
     return (
       <DroppableDateCell date={date} isToday={isToday} onDateClick={() => setSelectedValue(date)}>
-        <div className={styles.dateCellHeader}>
-          <span className={`${styles.dayNumber} ${isToday ? styles.todayNumber : ''}`}>
-            {date.date()}
-          </span>
-          {items.length > 0 && (
-            <span className={styles.itemCountBadge}>{items.length}</span>
-          )}
-        </div>
-        <div className={styles.cellItemsList}>
-          {displayItems.map(item => (
-            <DraggableCalendarItem 
-              key={item.id} 
-              item={item} 
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedItem(item);
-                setModalOpen(true);
-              }} 
-            />
-          ))}
-          {remainingCount > 0 && (
-            <Popover 
-              title={`${date.format('MMM D')} Posts`}
-              content={
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 200 }}>
-                  {items.slice(maxDisplay).map(item => (
-                    <div 
-                      key={item.id} 
-                      className={styles.itemChip}
-                      onClick={() => { setSelectedItem(item); setModalOpen(true); }}
-                    >
-                      <span className={styles.itemTitle}>{item.title}</span>
-                    </div>
-                  ))}
-                  <Button type="link" size="small" onClick={() => setSelectedValue(date)}>View Details</Button>
-                </div>
-              }
-            >
-              <div className={styles.moreItemsBtn}>+{remainingCount} more</div>
-            </Popover>
-          )}
+        <div className={styles.monthDateCell}>
+          <div className={styles.monthDateNumber}>
+            {isToday ? (
+              <span className={styles.monthTodayCircle}>{date.date()}</span>
+            ) : (
+              <span className={styles.monthDateText}>{date.date()}</span>
+            )}
+          </div>
+          <div className={styles.monthEventsList}>
+            {displayItems.map(item => (
+              <DraggableCalendarItem 
+                key={item.id} 
+                item={item} 
+                isMonthView={true}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedItem(item);
+                  setModalOpen(true);
+                }} 
+              />
+            ))}
+            {remainingCount > 0 && (
+              <div className={styles.monthMoreIndicator}>
+                {remainingCount} →
+              </div>
+            )}
+          </div>
         </div>
       </DroppableDateCell>
     );
@@ -412,7 +420,7 @@ export default function CalendarPage({
             />
           </div>
         ) : viewMode === 'Year' ? (
-          <div className={styles.calendarSection}>
+          <div className={`${styles.calendarSection} ${styles.yearViewSection}`}>
             <YearView
               currentDate={value}
               items={getFilteredItems(calendarItems)}
@@ -427,6 +435,9 @@ export default function CalendarPage({
           <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className={styles.calendarSection}>
               <div className={styles.calendarContainer}>
+                <div className={styles.monthHeader}>
+                  <h2 className={styles.monthTitle}>{value.format('MMMM YYYY')}</h2>
+                </div>
                 <Calendar
                   fullscreen={!isMobile}
                   headerRender={() => null} // Custom header used above
@@ -439,9 +450,9 @@ export default function CalendarPage({
             </div>
             <DragOverlay>
               {activeDragItem ? (
-                <div className={styles.itemChip} style={{ transform: 'scale(1.05)', boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}>
-                  <span className={styles.itemIcon}>📌</span>
-                  <span className={styles.itemTitle}>{activeDragItem.title}</span>
+                <div className={styles.monthEventLabel} style={{ transform: 'scale(1.05)', boxShadow: '0 8px 16px rgba(0,0,0,0.1)' }}>
+                  <span className={styles.eventDot} />
+                  <span className={styles.eventLabelText}>{activeDragItem.title}</span>
                 </div>
               ) : null}
             </DragOverlay>
