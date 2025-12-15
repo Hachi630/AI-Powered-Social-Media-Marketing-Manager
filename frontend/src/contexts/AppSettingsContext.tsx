@@ -263,6 +263,27 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             color: ${darkenColor(accentColor, 20)} !important;
           }
           
+          /* ===== BRAND PROFILE COMPANY SELECTOR ===== */
+          .ant-layout [class*="companyItemActive"] {
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-layout [class*="companyItem"]:hover {
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-layout [class*="addCompanyBtn"]:hover {
+            border-color: ${accentColor} !important;
+            color: ${accentColor} !important;
+          }
+          
+          .ant-layout [class*="addCompanyBtn"]:focus,
+          .ant-layout [class*="addCompanyBtn"]:focus-visible {
+            border-color: ${accentColor} !important;
+            color: ${accentColor} !important;
+            box-shadow: 0 0 0 2px ${hexToRgba(accentColor, 0.1)} !important;
+          }
+          
           /* ===== CHATBOX SPECIFIC ===== */
           .userMessage .messageContent {
             background-color: ${accentColor} !important;
@@ -344,6 +365,21 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
           .ant-modal .ant-btn-primary:focus:not(:disabled):not(.ant-btn-disabled) {
             background-color: ${darkenColor(accentColor, 20)} !important;
             border-color: ${darkenColor(accentColor, 20)} !important;
+          }
+          
+          /* ===== ACCENT COLOR FOR MODAL TABS ===== */
+          .ant-modal .ant-tabs-tab.ant-tabs-tab-active,
+          .ant-modal .ant-tabs-tab-active,
+          .ant-modal .ant-tabs-tab-active .ant-tabs-tab-btn {
+            color: ${accentColor} !important;
+          }
+          
+          .ant-modal .ant-tabs-ink-bar {
+            background: ${accentColor} !important;
+          }
+          
+          .ant-modal .ant-tabs-tab:hover {
+            color: ${accentColor} !important;
           }
         `
       }
