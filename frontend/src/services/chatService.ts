@@ -63,7 +63,8 @@ export const chatService = {
     message: string,
     conversationId?: string,
     images?: string[],
-    files?: ChatFile[]
+    files?: ChatFile[],
+    editMessageIndex?: number
   ): Promise<ChatResponse> {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -82,6 +83,7 @@ export const chatService = {
           conversationId,
           images,
           files,
+          editMessageIndex,
         }),
       });
 
