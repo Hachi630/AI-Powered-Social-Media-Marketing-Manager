@@ -78,27 +78,6 @@ export default function WeekView({ currentDate, items, onTimeSlotClick, onItemCl
         })}
       </div>
 
-      {/* All-day Section */}
-      <div className={styles.allDaySection}>
-        <div className={styles.allDayLabel}>all-day</div>
-        <div className={styles.allDayGrid}>
-          {weekDays.map((day) => (
-            <div key={day.toString()} className={styles.allDayCell}>
-              {getItemsForDay(day).filter(i => !i.time).map(item => (
-                <div 
-                  key={item.id} 
-                  className={`${styles.eventCard} ${styles[`event_${item.platform}`]}`}
-                  style={{ position: 'relative', marginBottom: 4 }}
-                  onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
-                >
-                  <div className={styles.eventTitle}>{item.title}</div>
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Scrollable Main Grid */}
       <div className={styles.scrollArea} ref={scrollRef}>
         {/* Time Axis */}

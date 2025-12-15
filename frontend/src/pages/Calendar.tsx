@@ -1,4 +1,4 @@
-import { Calendar, Layout, Button, Space, message, Grid, Segmented, Select, Input, Dropdown, MenuProps, Popover, Badge } from 'antd';
+import { Calendar, Layout, Button, Space, message, Grid, Segmented, Select, Input, Popover, Badge } from 'antd';
 import { 
   PlusOutlined, 
   LeftOutlined, 
@@ -294,16 +294,6 @@ export default function CalendarPage({
     );
   };
 
-  const addPostMenu: MenuProps = {
-    items: [
-      { key: 'post', label: 'Post', icon: '📝', onClick: () => handleNewItem('instagram_post') },
-      { key: 'story', label: 'Story', icon: '📸', onClick: () => handleNewItem('instagram_story') },
-      { key: 'reels', label: 'Reels', icon: '🎬', onClick: () => handleNewItem('instagram_reels') },
-      { key: 'tiktok', label: 'TikTok', icon: '🎵', onClick: () => handleNewItem('tiktok') },
-      { key: 'twitter', label: 'X (Twitter)', icon: '🐦', onClick: () => handleNewItem('twitter') },
-    ]
-  };
-
   return (
     <Layout className={styles.layout}>
       <Header
@@ -361,11 +351,15 @@ export default function CalendarPage({
           </div>
 
           <div className={styles.headerRight}>
-            <Dropdown menu={addPostMenu} placement="bottomRight">
-              <Button type="primary" size="large" icon={<PlusOutlined />} className={styles.addPostBtn}>
-                Add Post
-              </Button>
-            </Dropdown>
+            <Button
+              type="primary"
+              size="large"
+              icon={<PlusOutlined />}
+              className={styles.addPostBtn}
+              onClick={() => handleNewItem()}
+            >
+              Add Post
+            </Button>
           </div>
         </div>
       </div>
