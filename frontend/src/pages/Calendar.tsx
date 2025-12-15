@@ -344,7 +344,17 @@ export default function CalendarPage({
                 setValue(newValue);
               }}
             />
-            <Button size="small" onClick={() => setValue(dayjs())}>Today</Button>
+            <Button
+              size="small"
+              onClick={() => {
+                const today = dayjs();
+                setValue(today);
+                setSelectedValue(today);
+                setViewMode('Day');
+              }}
+            >
+              Today
+            </Button>
             <Segmented 
               options={['Day', 'Week', 'Month', 'Year']} 
               value={viewMode} 
