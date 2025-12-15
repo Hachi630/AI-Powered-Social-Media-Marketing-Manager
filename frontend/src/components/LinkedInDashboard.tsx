@@ -38,6 +38,7 @@ import {
   DeleteOutlined,
   FileImageOutlined,
   BankOutlined,
+  InstagramOutlined,
   CalendarOutlined,
   PlusOutlined,
   EditOutlined,
@@ -1421,12 +1422,6 @@ export default function LinkedInDashboard({
 
             {/* Post Type Selector */}
             <div style={{ marginBottom: 16 }}>
-              <Typography.Text
-                type="secondary"
-                style={{ display: "block", marginBottom: 8 }}
-              >
-                Post type:
-              </Typography.Text>
               <Segmented
                 value={postType}
                 onChange={(value) => {
@@ -2021,7 +2016,9 @@ export default function LinkedInDashboard({
                       gap: 12,
                     }}
                   >
-                    <TwitterOutlined style={{ color: "#1DA1F2" }} />
+                    <TwitterOutlined
+                      style={{ color: "#1DA1F2", fontSize: 22 }}
+                    />
                     Twitter/X Connection
                   </Typography.Title>
                   <Typography.Text type="secondary">
@@ -2060,8 +2057,11 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingTwitter}
                         style={{
-                          width: 120,
-                          height: 40,
+                          width: 150,
+                          height: 44,
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         Refresh
@@ -2072,8 +2072,11 @@ export default function LinkedInDashboard({
                         loading={disconnectingTwitter}
                         danger
                         style={{
-                          width: 120,
-                          height: 40,
+                          width: 150,
+                          height: 44,
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         Disconnect
@@ -2195,12 +2198,6 @@ export default function LinkedInDashboard({
 
                 {/* Post Type Selector */}
                 <div style={{ marginBottom: 16 }}>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 8 }}
-                  >
-                    Post type:
-                  </Typography.Text>
                   <Segmented
                     value={twitterPostType}
                     onChange={(value) => {
@@ -2513,7 +2510,9 @@ export default function LinkedInDashboard({
                       gap: 12,
                     }}
                   >
-                    <FacebookOutlined style={{ color: "#1877F2" }} />
+                    <FacebookOutlined
+                      style={{ color: "#1877F2", fontSize: 22 }}
+                    />
                     Facebook Connection
                   </Typography.Title>
                   <Typography.Text type="secondary">
@@ -2552,8 +2551,11 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingFacebook}
                         style={{
-                          width: 120,
-                          height: 40,
+                          width: 150,
+                          height: 44,
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         Refresh
@@ -2564,8 +2566,11 @@ export default function LinkedInDashboard({
                         loading={disconnectingFacebook}
                         danger
                         style={{
-                          width: 120,
-                          height: 40,
+                          width: 150,
+                          height: 44,
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         Disconnect
@@ -2719,12 +2724,6 @@ export default function LinkedInDashboard({
 
                 {/* Post Type Selector */}
                 <div style={{ marginBottom: 16 }}>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 8 }}
-                  >
-                    Post type:
-                  </Typography.Text>
                   <Segmented
                     value={facebookPostType}
                     onChange={(value) => {
@@ -3039,7 +3038,9 @@ export default function LinkedInDashboard({
                       gap: 12,
                     }}
                   >
-                    <span style={{ fontSize: 20, color: "#E4405F" }}>📷</span>
+                    <InstagramOutlined
+                      style={{ fontSize: 22, color: "#E4405F" }}
+                    />
                     Instagram Connection
                   </Typography.Title>
                   <Typography.Text type="secondary">
@@ -3078,8 +3079,11 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingInstagram}
                         style={{
-                          width: 120,
-                          height: 40,
+                          width: 150,
+                          height: 44,
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         Refresh
@@ -3090,8 +3094,11 @@ export default function LinkedInDashboard({
                         loading={disconnectingInstagram}
                         danger
                         style={{
-                          width: 120,
-                          height: 40,
+                          width: 150,
+                          height: 44,
+                          display: "inline-flex",
+                          justifyContent: "center",
+                          alignItems: "center",
                         }}
                       >
                         Disconnect
@@ -3244,12 +3251,6 @@ export default function LinkedInDashboard({
 
                 {/* Post Type Selector */}
                 <div style={{ marginBottom: 16 }}>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 8 }}
-                  >
-                    Post type:
-                  </Typography.Text>
                   <Segmented
                     value={instagramPostType}
                     onChange={(value) => {
