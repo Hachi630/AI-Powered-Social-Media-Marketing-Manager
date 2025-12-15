@@ -482,6 +482,7 @@ export default function LinkedInDashboard({
       const newParams = new URLSearchParams(params);
       newParams.delete("facebook");
       newParams.delete("instagram");
+      newParams.delete("warning");
       const newUrl = newParams.toString()
         ? `${window.location.pathname}?${newParams.toString()}`
         : window.location.pathname;

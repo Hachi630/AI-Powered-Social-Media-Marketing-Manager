@@ -288,8 +288,8 @@ router.get("/instagram/callback", async (req: Request, res: Response) => {
           // Save Facebook Page connection with Page access token
           const pageToken = firstPage.accessToken || longLivedToken.accessToken;
           user.socialConnections.facebook = {
-            accessToken: pageToken,
-            userId: firstPage.id,
+            accessToken: longLivedToken.accessToken, // Save User token (can access /me/accounts)
+            userId: firstPage.id, // Save Page ID
             expiresAt,
           };
 
