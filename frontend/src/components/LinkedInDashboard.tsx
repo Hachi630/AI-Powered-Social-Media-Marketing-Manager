@@ -222,7 +222,6 @@ export default function LinkedInDashboard({
   const [facebookLinkDescription, setFacebookLinkDescription] = useState("");
   const [facebookPosting, setFacebookPosting] = useState(false);
 
->>>>>>> 4e48c1e (feat: Implement Twitter text and image posting functionality)
   // Organization/Company Page states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -1080,7 +1079,6 @@ export default function LinkedInDashboard({
     setFacebookVideoPreview(null);
   };
 
->>>>>>> 4e48c1e (feat: Implement Twitter text and image posting functionality)
   // Load events for a specific organization
   const handleLoadOrgEvents = async (orgId: string) => {
     if (!jwt) return;
@@ -2383,8 +2381,6 @@ export default function LinkedInDashboard({
             </div>
           </Card>
         )}
-      </>
-    )}
 
         {/* Facebook Connection Section */}
         <Card
