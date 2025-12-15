@@ -88,6 +88,7 @@ import {
   getTwitterStatus,
   getTwitterAuthUrl,
   disconnectTwitter,
+  createTwitterPost,
 } from "../services/twitterService";
 import {
   getFacebookStatus,
@@ -159,6 +160,69 @@ export default function LinkedInDashboard({
   const [linkTitle, setLinkTitle] = useState("");
   const [linkDescription, setLinkDescription] = useState("");
 
+  // Twitter/X Post states
+  const [twitterPostText, setTwitterPostText] = useState("");
+  const [twitterPostType, setTwitterPostType] = useState<
+    "text" | "image"
+  >("text");
+  const [twitterSelectedImage, setTwitterSelectedImage] = useState<File | null>(
+    null
+  );
+  const [twitterImagePreview, setTwitterImagePreview] = useState<string | null>(
+    null
+  );
+  const [twitterSelectedVideo, setTwitterSelectedVideo] = useState<File | null>(
+    null
+  );
+  const [twitterVideoPreview, setTwitterVideoPreview] = useState<string | null>(
+    null
+  );
+  const [twitterLinkUrl, setTwitterLinkUrl] = useState("");
+  const [twitterLinkTitle, setTwitterLinkTitle] = useState("");
+  const [twitterLinkDescription, setTwitterLinkDescription] = useState("");
+  const [twitterPosting, setTwitterPosting] = useState(false);
+
+  // Instagram Post states
+  const [instagramPostText, setInstagramPostText] = useState("");
+  const [instagramPostType, setInstagramPostType] = useState<
+    "text" | "image" | "video" | "link"
+  >("text");
+  const [instagramSelectedImage, setInstagramSelectedImage] =
+    useState<File | null>(null);
+  const [instagramImagePreview, setInstagramImagePreview] = useState<
+    string | null
+  >(null);
+  const [instagramSelectedVideo, setInstagramSelectedVideo] =
+    useState<File | null>(null);
+  const [instagramVideoPreview, setInstagramVideoPreview] = useState<
+    string | null
+  >(null);
+  const [instagramLinkUrl, setInstagramLinkUrl] = useState("");
+  const [instagramLinkTitle, setInstagramLinkTitle] = useState("");
+  const [instagramLinkDescription, setInstagramLinkDescription] = useState("");
+  const [instagramPosting, setInstagramPosting] = useState(false);
+
+  // Facebook Post states
+  const [facebookPostText, setFacebookPostText] = useState("");
+  const [facebookPostType, setFacebookPostType] = useState<
+    "text" | "image" | "video" | "link"
+  >("text");
+  const [facebookSelectedImage, setFacebookSelectedImage] =
+    useState<File | null>(null);
+  const [facebookImagePreview, setFacebookImagePreview] = useState<
+    string | null
+  >(null);
+  const [facebookSelectedVideo, setFacebookSelectedVideo] =
+    useState<File | null>(null);
+  const [facebookVideoPreview, setFacebookVideoPreview] = useState<
+    string | null
+  >(null);
+  const [facebookLinkUrl, setFacebookLinkUrl] = useState("");
+  const [facebookLinkTitle, setFacebookLinkTitle] = useState("");
+  const [facebookLinkDescription, setFacebookLinkDescription] = useState("");
+  const [facebookPosting, setFacebookPosting] = useState(false);
+
+>>>>>>> 4e48c1e (feat: Implement Twitter text and image posting functionality)
   // Organization/Company Page states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
@@ -854,6 +918,169 @@ export default function LinkedInDashboard({
     setVideoPreview(null);
   };
 
+  // Twitter/X Image handlers
+  const handleTwitterImageSelect = (file: File) => {
+    // Check file size (max 5MB for Twitter)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Image must be smaller than 5MB for Twitter");
+      return false;
+    }
+    setTwitterSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTwitterImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleTwitterRemoveImage = () => {
+    setTwitterSelectedImage(null);
+    setTwitterImagePreview(null);
+  };
+
+  // Twitter/X Video handlers
+  const handleTwitterVideoSelect = (file: File) => {
+    if (file.size > 200 * 1024 * 1024) {
+      message.error("Video must be smaller than 200MB");
+      return false;
+    }
+    setTwitterSelectedVideo(file);
+    setTwitterVideoPreview(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleTwitterVideoClear = () => {
+    if (twitterVideoPreview) {
+      URL.revokeObjectURL(twitterVideoPreview);
+    }
+    setTwitterSelectedVideo(null);
+    setTwitterVideoPreview(null);
+  };
+
+  // Twitter/X Post handler
+  const handleTwitterPost = async () => {
+    if (!jwt) {
+      message.error("Please log in to post tweets");
+      return;
+    }
+
+    // Validate text content
+    if (!twitterPostText.trim()) {
+      message.error("Please enter tweet text");
+      return;
+    }
+
+    if (twitterPostText.length > 280) {
+      message.error("Tweet text cannot exceed 280 characters");
+      return;
+    }
+
+    // Validate image if post type is image
+    if (twitterPostType === "image" && !twitterSelectedImage) {
+      message.error("Please select an image for your image post");
+      return;
+    }
+
+    setTwitterPosting(true);
+
+    try {
+      const result = await createTwitterPost(
+        jwt,
+        twitterPostText.trim(),
+        twitterPostType === "image" ? twitterSelectedImage : null
+      );
+
+      if (result.success) {
+        message.success("🎉 Tweet posted successfully!");
+        
+        // Reset form
+        setTwitterPostText("");
+        setTwitterSelectedImage(null);
+        setTwitterImagePreview(null);
+        setTwitterPostType("text");
+      } else {
+        message.error(result.error || "Failed to post tweet. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Failed to create Twitter post:", error);
+      message.error(error.message || "Failed to post tweet. Please try again.");
+    } finally {
+      setTwitterPosting(false);
+    }
+  };
+
+  // Instagram Image handlers
+  const handleInstagramImageSelect = (file: File) => {
+    setInstagramSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setInstagramImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleInstagramRemoveImage = () => {
+    setInstagramSelectedImage(null);
+    setInstagramImagePreview(null);
+  };
+
+  // Instagram Video handlers
+  const handleInstagramVideoSelect = (file: File) => {
+    if (file.size > 200 * 1024 * 1024) {
+      message.error("Video must be smaller than 200MB");
+      return false;
+    }
+    setInstagramSelectedVideo(file);
+    setInstagramVideoPreview(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleInstagramVideoClear = () => {
+    if (instagramVideoPreview) {
+      URL.revokeObjectURL(instagramVideoPreview);
+    }
+    setInstagramSelectedVideo(null);
+    setInstagramVideoPreview(null);
+  };
+
+  // Facebook Image handlers
+  const handleFacebookImageSelect = (file: File) => {
+    setFacebookSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFacebookImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleFacebookRemoveImage = () => {
+    setFacebookSelectedImage(null);
+    setFacebookImagePreview(null);
+  };
+
+  // Facebook Video handlers
+  const handleFacebookVideoSelect = (file: File) => {
+    if (file.size > 200 * 1024 * 1024) {
+      message.error("Video must be smaller than 200MB");
+      return false;
+    }
+    setFacebookSelectedVideo(file);
+    setFacebookVideoPreview(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleFacebookVideoClear = () => {
+    if (facebookVideoPreview) {
+      URL.revokeObjectURL(facebookVideoPreview);
+    }
+    setFacebookSelectedVideo(null);
+    setFacebookVideoPreview(null);
+  };
+
+>>>>>>> 4e48c1e (feat: Implement Twitter text and image posting functionality)
   // Load events for a specific organization
   const handleLoadOrgEvents = async (orgId: string) => {
     if (!jwt) return;
@@ -1967,6 +2194,197 @@ export default function LinkedInDashboard({
             </Col>
           </Row>
         </Card>
+
+        {/* Twitter Post Box - Show when connected */}
+        {twitterStatus?.connected && (
+          <Card
+            style={{
+              marginTop: 24,
+              marginBottom: 24,
+              borderRadius: 12,
+              border: "2px dashed #1DA1F2",
+            }}
+            styles={{ body: { padding: 24 } }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background:
+                    "linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
+              </div>
+              <div>
+                <Typography.Text strong style={{ fontSize: 18 }}>
+                  Share on Twitter/X
+                </Typography.Text>
+                <br />
+                <Typography.Text type="secondary">
+                  Create a post to share with your followers
+                </Typography.Text>
+              </div>
+            </div>
+
+            {/* Post Type Selector */}
+            <div style={{ marginBottom: 16 }}>
+              <Segmented
+                value={twitterPostType}
+                onChange={(value) => {
+                  setTwitterPostType(
+                    value as "text" | "image"
+                  );
+                  if (value !== "image") {
+                    handleTwitterRemoveImage();
+                  }
+                }}
+                options={[
+                  {
+                    label: (
+                      <Tooltip title="Text Post">
+                        <span>
+                          <SendOutlined /> Text
+                        </span>
+                      </Tooltip>
+                    ),
+                    value: "text",
+                  },
+                  {
+                    label: (
+                      <Tooltip title="Image Post">
+                        <span>
+                          <PictureOutlined /> Image
+                        </span>
+                      </Tooltip>
+                    ),
+                    value: "image",
+                  },
+                ]}
+                style={{ marginBottom: 8 }}
+              />
+            </div>
+
+            <Input.TextArea
+              placeholder="What's happening?"
+              value={twitterPostText}
+              onChange={(e) => setTwitterPostText(e.target.value)}
+              maxLength={280}
+              showCount
+              autoSize={{ minRows: 3, maxRows: 6 }}
+              style={{ marginBottom: 16, borderRadius: 8 }}
+            />
+
+            {/* Image Upload Section */}
+            {twitterPostType === "image" && (
+              <div style={{ marginBottom: 16 }}>
+                {twitterImagePreview ? (
+                  <div
+                    style={{
+                      position: "relative",
+                      display: "inline-block",
+                    }}
+                  >
+                    <img
+                      src={twitterImagePreview}
+                      alt="Preview"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: 200,
+                        borderRadius: 8,
+                        border: "1px solid #d9d9d9",
+                      }}
+                    />
+                    <Button
+                      icon={<DeleteOutlined />}
+                      size="small"
+                      danger
+                      shape="circle"
+                      onClick={handleTwitterRemoveImage}
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        backgroundColor: "rgba(255,255,255,0.9)",
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={handleTwitterImageSelect}
+                    disabled={twitterPosting}
+                  >
+                    <div
+                      style={{
+                        border: "2px dashed #d9d9d9",
+                        borderRadius: 8,
+                        padding: 24,
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "border-color 0.3s",
+                      }}
+                    >
+                      <PictureOutlined
+                        style={{ fontSize: 32, color: "#1DA1F2" }}
+                      />
+                      <div style={{ marginTop: 8 }}>
+                        Click or drag image to upload
+                      </div>
+                      <Typography.Text
+                        type="secondary"
+                        style={{ fontSize: 12 }}
+                      >
+                        Supports: JPG, PNG, GIF (Max 5MB)
+                      </Typography.Text>
+                    </div>
+                  </Upload>
+                )}
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                alignItems: "center",
+              }}
+            >
+              <Button
+                type="primary"
+                icon={<SendOutlined />}
+                onClick={handleTwitterPost}
+                loading={twitterPosting}
+                disabled={
+                  !twitterPostText.trim() ||
+                  (twitterPostType === "image" && !twitterSelectedImage)
+                }
+                style={{
+                  borderRadius: 8,
+                  backgroundColor: "#1DA1F2",
+                  borderColor: "#1DA1F2",
+                }}
+              >
+                {twitterPosting ? "Publishing..." : "Post to Twitter"}
+              </Button>
+            </div>
+          </Card>
+        )}
+      </>
+    )}
 
         {/* Facebook Connection Section */}
         <Card
