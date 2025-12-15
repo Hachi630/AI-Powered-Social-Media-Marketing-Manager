@@ -94,6 +94,33 @@
   flex-shrink: 0;
 }
 
+/* Remove inner border/outline for the search input */
+.filterBar :global(.ant-input-affix-wrapper.ant-input-borderless) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.filterBar :global(.ant-input-affix-wrapper.ant-input-borderless:focus),
+.filterBar :global(.ant-input-affix-wrapper.ant-input-borderless:focus-within) {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove inner input border/background inside search */
+.filterBar :global(.ant-input-affix-wrapper.ant-input-borderless .ant-input) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.filterBar :global(.ant-input-affix-wrapper.ant-input-borderless .ant-input:focus),
+.filterBar :global(.ant-input-affix-wrapper.ant-input-borderless .ant-input:focus-within) {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
 .mainContent {
   flex: 1;
   display: flex;

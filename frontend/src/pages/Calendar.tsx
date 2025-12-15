@@ -317,10 +317,7 @@ export default function CalendarPage({
       {/* Sticky Header */}
       <div className={styles.headerBar}>
         <div className={styles.headerContent}>
-          <div className={styles.headerLeft}>
-            <h1 className={styles.pageTitle}>Smart Calendar</h1>
-            <span className={styles.pageSubtitle}>Plan & publish across platforms</span>
-          </div>
+          <div className={styles.headerLeft} />
           
           <div className={styles.headerCenter}>
             <Button 
