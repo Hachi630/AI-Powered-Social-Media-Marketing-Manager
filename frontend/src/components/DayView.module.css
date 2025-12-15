@@ -1,4 +1,4 @@
-.weekViewContainer {
+.dayViewContainer {
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -7,70 +7,42 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
 }
 
-/* Header with days */
-.headerRow {
-  display: flex;
+/* Header */
+.header {
+  padding: 24px 24px 16px 24px;
   border-bottom: 1px solid #e5e5e5;
-  padding-left: 60px; /* Space for time axis */
   background: #ffffff;
-  z-index: 10;
-  position: relative;
   flex-shrink: 0;
 }
 
-.dayColumnHeader {
-  flex: 1;
-  text-align: center;
-  padding: 12px 0;
-  border-right: 1px solid #f0f0f0;
+.dateInfo {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 4px;
 }
 
-.dayColumnHeader:last-child {
-  border-right: none;
+.dateTitle {
+  font-size: 32px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .dayName {
-  font-size: 11px;
-  font-weight: 500;
+  font-size: 16px;
   color: #86868b;
-  text-transform: uppercase;
-}
-
-.dayNumber {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
   font-weight: 400;
-  color: #1d1d1f;
-  transition: all 0.2s ease;
-}
-
-.todayColumn .dayName {
-  color: #ff3b30;
-  font-weight: 600;
-}
-
-.todayColumn .dayNumber {
-  background-color: #ff3b30;
-  color: white;
-  font-weight: 600;
 }
 
 /* All-day section */
 .allDaySection {
   display: flex;
-  padding-left: 60px;
+  padding: 8px 0;
   border-bottom: 1px solid #e5e5e5;
-  min-height: 30px;
+  min-height: 40px;
   flex-shrink: 0;
+  padding-left: 60px;
 }
 
 .allDayLabel {
@@ -84,17 +56,12 @@
   border-right: 1px solid #e5e5e5;
 }
 
-.allDayGrid {
+.allDayContent {
+  flex: 1;
   display: flex;
-  flex: 1;
-  width: 100%;
-}
-
-.allDayCell {
-  flex: 1;
-  border-right: 1px solid #f0f0f0;
-  padding: 2px;
-  min-height: 28px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
 }
 
 /* Main scrollable area */
@@ -117,7 +84,7 @@
 }
 
 .timeSlot {
-  height: 60px; /* 1 hour height */
+  height: 60px;
   position: relative;
   text-align: right;
   padding-right: 8px;
@@ -132,22 +99,11 @@
   font-weight: 500;
 }
 
-/* Main grid */
-.gridContainer {
+/* Main day column */
+.dayColumn {
   flex: 1;
-  display: flex;
   position: relative;
-}
-
-.gridColumn {
-  flex: 1;
-  border-right: 1px solid #f0f0f0;
-  position: relative;
-  min-width: 100px;
-}
-
-.gridColumn:last-child {
-  border-right: none;
+  min-width: 200px;
 }
 
 /* Horizontal grid lines */
@@ -244,7 +200,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: 30px; /* 30 min slot */
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,7 +210,7 @@
   cursor: pointer;
 }
 
-.gridColumn:hover .addSlotButton:hover {
+.dayColumn:hover .addSlotButton:hover {
   opacity: 1;
   background-color: rgba(0, 113, 227, 0.05);
 }

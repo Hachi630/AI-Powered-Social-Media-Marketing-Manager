@@ -19,6 +19,8 @@ import { CalendarItem, calendarService } from '../services/calendarService';
 import CalendarItemModal, { PLATFORMS } from '../components/CalendarItemModal';
 import CalendarDetailPanel from '../components/CalendarDetailPanel';
 import WeekView from '../components/WeekView';
+import DayView from '../components/DayView';
+import YearView from '../components/YearView';
 
 const { useBreakpoint } = Grid;
 const { Option } = Select;
@@ -391,12 +393,33 @@ export default function CalendarPage({
       </div>
 
       <div className={styles.mainContent}>
-        {viewMode === 'Week' || viewMode === 'Day' ? (
+        {viewMode === 'Day' ? (
+          <div className={styles.calendarSection}>
+            <DayView 
+              currentDate={value}
+              items={getFilteredItems(calendarItems)}
+              onTimeSlotClick={handleTimeSlotClick}
+              onItemClick={(item) => { setSelectedItem(item); setModalOpen(true); }}
+            />
+          </div>
+        ) : viewMode === 'Week' ? (
           <div className={styles.calendarSection}>
             <WeekView 
               currentDate={value}
               items={getFilteredItems(calendarItems)}
               onTimeSlotClick={handleTimeSlotClick}
+              onItemClick={(item) => { setSelectedItem(item); setModalOpen(true); }}
+            />
+          </div>
+        ) : viewMode === 'Year' ? (
+          <div className={styles.calendarSection}>
+            <YearView
+              currentDate={value}
+              items={getFilteredItems(calendarItems)}
+              onMonthClick={(date) => {
+                setValue(date);
+                setViewMode('Month');
+              }}
               onItemClick={(item) => { setSelectedItem(item); setModalOpen(true); }}
             />
           </div>
@@ -425,17 +448,19 @@ export default function CalendarPage({
           </DndContext>
         )}
 
-        <CalendarDetailPanel 
-          selectedDate={selectedValue}
-          items={getItemsForDate(selectedValue)}
-          upcomingItems={getUpcomingWeekItems()}
-          onAddItem={() => handleNewItem()}
-          onEditItem={(item) => { setSelectedItem(item); setModalOpen(true); }}
-          onDeleteItem={async (id) => {
-            await calendarService.deleteCalendarItem(id);
-            loadCalendarItems();
-          }}
-        />
+        {viewMode !== 'Year' && (
+          <CalendarDetailPanel 
+            selectedDate={selectedValue}
+            items={getItemsForDate(selectedValue)}
+            upcomingItems={getUpcomingWeekItems()}
+            onAddItem={() => handleNewItem()}
+            onEditItem={(item) => { setSelectedItem(item); setModalOpen(true); }}
+            onDeleteItem={async (id) => {
+              await calendarService.deleteCalendarItem(id);
+              loadCalendarItems();
+            }}
+          />
+        )}
       </div>
 
       {/* Modals */}

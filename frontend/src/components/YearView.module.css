@@ -1,0 +1,191 @@
+.yearViewContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #ffffff;
+  overflow-y: auto;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+}
+
+.yearHeader {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.yearTitle {
+  font-size: 48px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.monthsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 24px;
+  flex: 1;
+}
+
+.monthCell {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+
+.monthCell:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.monthHeader {
+  margin-bottom: 12px;
+}
+
+.monthName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ff3b30;
+  text-transform: capitalize;
+}
+
+.weekdayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.weekdayHeader {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: #86868b;
+  padding: 4px 0;
+}
+
+.dateGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  flex: 1;
+}
+
+.dateCell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  position: relative;
+  min-height: 32px;
+}
+
+.dateCell:hover {
+  background-color: #f5f5f7;
+}
+
+.dateCell.otherMonth {
+  opacity: 0.3;
+}
+
+.dateNumber {
+  font-size: 12px;
+  font-weight: 400;
+  color: #1d1d1f;
+  margin-bottom: 2px;
+}
+
+.dateCell.today .dateNumber {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: #ff3b30;
+  color: white;
+  font-weight: 600;
+  z-index: 1;
+}
+
+.eventIndicator {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.eventDot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.moreEvents {
+  font-size: 8px;
+  color: #86868b;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* Platform specific event dot colors */
+.event_instagram_post { background-color: #E1306C; }
+.event_instagram_story { background-color: #F77737; }
+.event_instagram_reels { background-color: #833AB4; }
+.event_tiktok { background-color: #000000; }
+.event_twitter { background-color: #1DA1F2; }
+.event_facebook { background-color: #1877F2; }
+.event_linkedin { background-color: #0077B5; }
+
+/* Responsive design */
+@media (max-width: 1400px) {
+  .monthsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .monthsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(6, 1fr);
+  }
+  
+  .yearTitle {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 768px) {
+  .monthsGrid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  
+  .yearTitle {
+    font-size: 32px;
+  }
+  
+  .yearViewContainer {
+    padding: 16px;
+  }
+}
+
