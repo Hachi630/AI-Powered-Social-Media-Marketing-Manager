@@ -9,8 +9,10 @@ const FACEBOOK_REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI ||
 
 /**
  * Generate Instagram OAuth authorization URL
+ * @param state - OAuth state parameter
+ * @param includeBusinessManagement - Whether to include business_management scope (required for Instagram, but not for basic Facebook sharing)
  */
-export function getInstagramAuthUrl(state: string): string {
+export function getInstagramAuthUrl(state: string, includeBusinessManagement: boolean = true): string {
   if (!FACEBOOK_APP_ID) {
     throw new Error('FACEBOOK_APP_ID is not configured')
   }
@@ -40,16 +42,20 @@ export function getInstagramAuthUrl(state: string): string {
   // - pages_read_engagement: Read page engagement data (required to list pages and access Instagram)
   // - pages_manage_posts: Manage page posts (required for publishing to Instagram)
   // - pages_show_list: List user's pages (required)
-  // - business_management: Manage business assets (required)
+  // - business_management: Manage business assets (required for Instagram, but NOT required for basic Facebook Page sharing)
   //
+  // NOTE: business_management scope may only be available for Business Accounts.
+  // For personal accounts that just want to share to Facebook Pages, we can omit this scope.
   // The Instagram permissions (instagram_basic, instagram_content_publishing) are configured
   // in Facebook App Dashboard > Products > Instagram > API setup with Facebook login,
   // but are NOT requested in OAuth scope.
   const scopes = [
     'pages_read_engagement',  // Read page engagement (for getting Pages list and Instagram access)
-    'pages_manage_posts',     // Manage page posts (required for publishing to Instagram)
+    'pages_manage_posts',     // Manage page posts (required for publishing to Facebook/Instagram)
     'pages_show_list',        // List user's pages (required)
-    'business_management',    // Manage business assets (required)
+    // business_management is only needed for Instagram Business Account access
+    // It may not be available for personal accounts, so make it optional
+    ...(includeBusinessManagement ? ['business_management'] : []),
   ].filter(Boolean).join(',')
   
   // Alternative: If above doesn't work, try minimal set:
