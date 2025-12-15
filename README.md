@@ -9,6 +9,9 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
+- [Twitter/X Integration](#-twitterx-integration)
+- [LinkedIn Integration](#-linkedin-integration)
+- [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
 
@@ -17,7 +20,9 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **User Authentication**: Secure login and registration system with JWT authentication
 - **Dashboard**: Clean and intuitive interface for managing your marketing activities
 - **Brand Profile**: Configure your brand's tone of voice, target audience, and knowledge base
-- **Smart Calendar**: Schedule and manage your marketing campaigns with support for multiple platforms (Instagram Post/Story/Reels, TikTok, Facebook)
+- **Smart Calendar**: Schedule and manage your marketing campaigns with support for multiple platforms (Instagram Post/Story/Reels, TikTok, Facebook, Twitter/X, LinkedIn)
+- **Twitter/X Integration**: Connect your Twitter account via OAuth and share content directly to your Twitter profile
+- **LinkedIn Integration**: Connect your LinkedIn account and share content directly to your LinkedIn profile
 - **Calendar Item Images**: Upload images or generate images using AI for calendar items, with support for both file upload and base64 encoding
 - **AI Chat Interface**: AI-powered chat interface for content creation and marketing assistance with conversation history
 - **Image Generation**: Generate images using AI based on text prompts (manual input or auto-generated from content)
@@ -27,6 +32,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **React 18** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
@@ -36,6 +42,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **dayjs** - Date manipulation
 
 ### Backend
+
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **TypeScript** - Type safety
@@ -59,7 +66,8 @@ Melo/
 │   │   │   ├── AuthModal.tsx
 │   │   │   ├── ImageGenerationModal.tsx
 │   │   │   ├── CalendarItemModal.tsx
-│   │   │   └── ContentPlanModal.tsx
+│   │   │   ├── ContentPlanModal.tsx
+│   │   │   └── LinkedInDashboard.tsx
 │   │   ├── pages/           # Page components
 │   │   │   ├── BrandProfile.tsx
 │   │   │   ├── Calendar.tsx
@@ -68,7 +76,9 @@ Melo/
 │   │   │   ├── authService.ts
 │   │   │   ├── chatService.ts
 │   │   │   ├── calendarService.ts
-│   │   │   └── uploadService.ts
+│   │   │   ├── uploadService.ts
+│   │   │   ├── twitterService.ts
+│   │   │   └── linkedinService.ts
 │   │   ├── constants/       # Constants and assets
 │   │   │   └── assets.ts
 │   │   └── App.tsx          # Main app component
@@ -81,15 +91,21 @@ Melo/
 │   │   ├── models/          # MongoDB models
 │   │   │   ├── User.ts
 │   │   │   ├── Conversation.ts
-│   │   │   └── CalendarItem.ts
+│   │   │   ├── CalendarItem.ts
+│   │   │   ├── TwitterToken.ts
+│   │   │   └── TwitterRequestToken.ts
 │   │   ├── routes/          # API routes
 │   │   │   ├── auth.ts
 │   │   │   ├── chat.ts
 │   │   │   ├── calendar.ts
-│   │   │   └── upload.ts
+│   │   │   ├── upload.ts
+│   │   │   ├── twitter.ts
+│   │   │   └── linkedin.ts
 │   │   ├── services/        # Business logic services
 │   │   │   ├── geminiService.ts
-│   │   │   └── imageGenerationService.ts
+│   │   │   ├── imageGenerationService.ts
+│   │   │   ├── twitterService.ts
+│   │   │   └── linkedinService.ts
 │   │   ├── middleware/      # Express middleware
 │   │   │   ├── auth.ts
 │   │   │   └── errorHandler.ts
@@ -108,19 +124,23 @@ Melo/
 
 ### Prerequisites
 
-- Node.js (v18.16.1 or higher)
+- **Node.js** (v20.x or higher recommended, v18.16.1 minimum)
+  - The `pdf-parse` library used for file extraction requires Node.js 20+ for optimal compatibility
+  - Using Node.js 18 may cause `DOMMatrix is not defined` errors (see [Troubleshooting](#troubleshooting))
 - npm or yarn
 - MongoDB (local installation or MongoDB Atlas)
 
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd Melo
    ```
 
 2. **Install backend dependencies**
+
    ```bash
    cd backend
    npm install
@@ -131,16 +151,38 @@ Melo/
    cd ../frontend
    npm install
    ```
+   
+   This will install all frontend dependencies including React, Ant Design, and routing libraries.
+
+4. **Set up environment variables**
+   
+   Create a `.env` file in the `backend/` directory (see Environment Variables section below for required variables).
+   
+   **Important**: Make sure to add Twitter and LinkedIn API credentials:
+   ```env
+   # Twitter/X OAuth (Required for Twitter integration)
+   TWITTER_API_KEY=your_twitter_api_key
+   TWITTER_API_SECRET=your_twitter_api_secret
+   TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+   
+   # LinkedIn API (Required for LinkedIn integration)
+   LI_CLIENT_ID=your_linkedin_client_id
+   LI_CLIENT_SECRET=your_linkedin_client_secret
+   LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+   CLIENT_URL=http://localhost:3000
+   ```
 
 ### Running the Application
 
 1. **Start MongoDB** (if running locally)
+
    ```bash
    # Make sure MongoDB is running on localhost:27017
    # Or update MONGODB_URI in backend/.env
    ```
 
 2. **Start the backend server**
+
    ```bash
    cd backend
    npm run dev
@@ -148,6 +190,7 @@ Melo/
    ```
 
 3. **Start the frontend development server**
+
    ```bash
    cd frontend
    npm run dev
@@ -173,24 +216,40 @@ GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
 
-# Twitter/X API Credentials (Required for X integration)
+# Twitter/X OAuth Credentials (Required for Twitter integration)
 TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
-TWITTER_ACCESS_TOKEN=your_twitter_access_token
-TWITTER_ACCESS_SECRET=your_twitter_access_secret
+TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+# Optional: Backend URL (defaults to http://localhost:5000)
+BACKEND_URL=http://localhost:5000
+
+# LinkedIn API Credentials (Required for LinkedIn integration)
+LI_CLIENT_ID=your_linkedin_client_id
+LI_CLIENT_SECRET=your_linkedin_client_secret
+LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+CLIENT_URL=http://localhost:3000
 ```
 
-**Note**: 
+**Note**:
+
 - Get your Gemini API key from [Google AI Studio](https://aistudio.google.com/)
 - `GEMINI_IMAGE_MODEL` is optional, defaults to `gemini-2.5-flash-image` if not set
 - Make sure the `backend/uploads/images/` directory exists for image storage
-- Twitter/X credentials can be obtained from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+- **Twitter/X OAuth credentials** can be obtained from the [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+  - Create a Twitter app and get your API Key and API Secret
+  - Set the callback URL to match `TWITTER_CALLBACK_URL` in your `.env` file
+  - Enable OAuth 1.0a authentication in your app settings
+- **LinkedIn API credentials** can be obtained from the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+  - Create a LinkedIn app and get your Client ID and Client Secret
+  - Set the redirect URI to match `LI_REDIRECT_URI` in your `.env` file
+  - Enable required products: "Sign In with LinkedIn using OpenID Connect" and "Share on LinkedIn"
 
 ### Frontend
 
 The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to proxy API requests to the backend.
 
 ### Frontend(.env)
+
 ```env
 VITE_BACKEND_PORT=5000
 VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
@@ -198,15 +257,327 @@ VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleu
 # VITE_API_URL=http://localhost:5000
 ```
 
+### LinkedIn Integration (.env)
+
+For LinkedIn integration, add the following to `backend/.env`:
+
+```env
+# LinkedIn API Configuration
+LI_CLIENT_ID=your_linkedin_client_id
+LI_CLIENT_SECRET=your_linkedin_client_secret
+LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+CLIENT_URL=http://localhost:3000
+```
+
+**Note**:
+
+- Get your LinkedIn credentials from [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+- `LI_REDIRECT_URI` must match exactly what you set in LinkedIn Developer Portal
+- `CLIENT_URL` must match your frontend URL (default: `http://localhost:3000`)
+
+### Twitter/X Integration (.env)
+
+For Twitter/X OAuth integration, add the following to `backend/.env`:
+
+```env
+# Twitter/X OAuth Configuration
+TWITTER_API_KEY=your_twitter_api_key
+TWITTER_API_SECRET=your_twitter_api_secret
+TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+BACKEND_URL=http://localhost:5000
+CLIENT_URL=http://localhost:3000
+```
+
+**Note**:
+
+- Get your Twitter credentials from [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+- `TWITTER_CALLBACK_URL` must match exactly what you set in Twitter Developer Portal
+- `CLIENT_URL` must match your frontend URL (default: `http://localhost:3000`)
+
+## 🐦 Twitter/X Integration
+
+### Overview
+
+The Twitter/X integration allows users to connect their Twitter accounts via OAuth 1.0a and share content directly to their Twitter profiles. Each user can connect their own Twitter account, and the platform will use their credentials for posting.
+
+### Features
+
+- **OAuth 1.0a Authentication**: Secure user authentication flow
+- **User-Specific Tokens**: Each user connects their own Twitter account
+- **Direct Posting**: Share calendar items directly to Twitter/X
+- **Connection Management**: Connect and disconnect Twitter accounts from the Social Dashboard
+
+### Twitter Setup
+
+#### Quick Setup Steps
+
+1. **Configure Environment Variables** (in `backend/.env`):
+
+   ```env
+   TWITTER_API_KEY=your_twitter_api_key
+   TWITTER_API_SECRET=your_twitter_api_secret
+   TWITTER_CALLBACK_URL=http://localhost:5000/api/twitter/callback
+   BACKEND_URL=http://localhost:5000
+   CLIENT_URL=http://localhost:3000
+   ```
+
+2. **Configure Twitter Developer Portal**:
+
+   - Go to [Twitter Developer Portal](https://developer.twitter.com/en/portal/dashboard)
+   - Create a new app or select an existing app
+   - Go to **"Keys and tokens"** tab → Copy your **API Key** and **API Secret**
+   - Go to **"App settings"** → **"User authentication settings"**
+   - Enable **OAuth 1.0a**
+   - Set **Callback URI / Redirect URL** to: `http://localhost:5000/api/twitter/callback`
+   - Set **App permissions** to: **Read and write** (required for posting tweets)
+   - Save the changes
+
+3. **Test the Connection**:
+   - Navigate to `http://localhost:3000/socialdashboard`
+   - Click "Connect Twitter" button
+   - Should redirect to Twitter authorization page
+   - After authorization, you'll be redirected back to the dashboard
+
+#### How It Works
+
+1. **User Initiates Connection**: User clicks "Connect Twitter" button in Social Dashboard
+2. **OAuth Flow**: User is redirected to Twitter to authorize the application
+3. **Token Storage**: Twitter access tokens are stored securely in MongoDB (`TwitterToken` collection)
+4. **Posting Content**: When sharing calendar items, the system uses the user's stored tokens to post to their Twitter account
+
+#### Common Issues & Solutions
+
+| Issue                          | Solution                                                                                                  |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| "Twitter API credentials are not configured" | Ensure `TWITTER_API_KEY` and `TWITTER_API_SECRET` are set in `backend/.env`                               |
+| "Callback URL not approved"    | Verify callback URL in Twitter Developer Portal matches `TWITTER_CALLBACK_URL` exactly                    |
+| "Invalid request token"        | Request tokens expire after 10 minutes. Try connecting again                                               |
+| "Twitter account not connected" | User must connect their Twitter account before sharing content                                            |
+| Button doesn't redirect        | Ensure user is logged in, check backend is running                                                       |
+
+#### Debugging
+
+- **Check backend logs**: Should see `Generating Twitter OAuth link with callback URL: ...` when clicking button
+- **Check browser console** (F12): Look for errors in Console and Network tabs
+- **Verify environment variables**:
+  ```bash
+  cd backend && cat .env | grep TWITTER_
+  ```
+- **Verify services**: Backend on port 5000, Frontend on port 3000
+- **Check MongoDB**: Verify `TwitterToken` collection exists and contains user tokens
+
+#### API Endpoints
+
+- `GET /api/twitter/auth?userId=<userId>` - Initiate OAuth flow
+- `GET /api/twitter/callback` - Handle OAuth callback
+- `GET /api/twitter/status` - Check connection status (requires authentication)
+- `DELETE /api/twitter/disconnect` - Disconnect Twitter account (requires authentication)
+
+## 🔗 LinkedIn Integration
+
+### Overview
+
+The LinkedIn integration allows users to connect their LinkedIn accounts and manage LinkedIn posts, events, comments, and reactions directly from the Melo platform.
+
+### LinkedIn Connect Button Fix
+
+**Issue**: The "Connect LinkedIn" button was not redirecting properly when clicked.
+
+**Root Cause**: The button was using the `href` attribute, which would redirect to `"#"` when `authUrl` was `undefined`, preventing proper navigation to the LinkedIn OAuth page.
+
+**Solution**:
+
+1. **Replaced `href` with `onClick` handler**: Changed both Connect LinkedIn buttons (main button and metrics card button) from using `href={authUrl || "#"}` to using an `onClick` event handler.
+2. **Implemented proper redirect logic**: Used `window.location.href = authUrl` within the `onClick` handler to ensure reliable navigation.
+3. **Added error handling**: Included validation to check if `authUrl` exists before attempting redirect, with user-friendly error messages.
+
+**Code Changes**:
+
+```tsx
+// Before (Not Working)
+<Button href={authUrl || "#"} disabled={!authUrl}>
+  Connect LinkedIn
+</Button>
+
+// After (Fixed)
+<Button
+  disabled={!authUrl}
+  onClick={() => {
+    if (!authUrl) {
+      console.error("Cannot connect: userId not available");
+      alert("Please wait for user data to load, or try refreshing the page.");
+      return;
+    }
+    // Redirect to LinkedIn OAuth
+    window.location.href = authUrl;
+  }}
+>
+  Connect LinkedIn
+</Button>
+```
+
+**Files Modified**:
+
+- `frontend/src/components/LinkedInDashboard.tsx` - Fixed both Connect LinkedIn buttons
+
+**Why This Works**:
+
+- `onClick` handlers provide better control over navigation behavior
+- `window.location.href` ensures a full page navigation, which is required for OAuth flows
+- Error handling prevents silent failures and provides user feedback
+- The approach is consistent with OAuth best practices for redirect-based authentication
+
+### LinkedIn Setup
+
+#### Quick Setup Steps
+
+1. **Configure Environment Variables** (in `backend/.env`):
+
+   ```env
+   LI_CLIENT_ID=your_linkedin_client_id
+   LI_CLIENT_SECRET=your_linkedin_client_secret
+   LI_REDIRECT_URI=http://localhost:5000/linkedin/callback
+   CLIENT_URL=http://localhost:3000
+   ```
+
+2. **Configure LinkedIn Developer Portal**:
+
+   - Go to [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps)
+   - Select your app → **"Auth"** tab → Add redirect URI: `http://localhost:5000/linkedin/callback`
+   - Go to **"Products"** tab → Enable:
+     - ✅ Sign In with LinkedIn using OpenID Connect
+     - ✅ Share on LinkedIn
+
+3. **Test the Connection**:
+   - Navigate to `http://localhost:3000/socialdashboard`
+   - Click "Connect LinkedIn" button
+   - Should redirect to LinkedIn authorization page
+
+#### Common Issues & Solutions
+
+| Issue                      | Solution                                                                                                  |
+| -------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Button doesn't redirect    | Ensure user is logged in, check backend is running                                                        |
+| "Invalid redirect_uri"     | Verify redirect URI in LinkedIn app matches `LI_REDIRECT_URI` exactly                                     |
+| "Not enough permissions"   | Enable required products in LinkedIn Developer Portal                                                     |
+| Blank page after redirect  | Check `CLIENT_URL` matches your frontend URL                                                              |
+| `DOMMatrix is not defined` | Upgrade to Node.js 20+ or ensure `@napi-rs/canvas` is installed (see [Troubleshooting](#troubleshooting)) |
+
+#### Debugging
+
+- **Check backend logs**: Should see `LinkedIn OAuth redirect URL: ...` when clicking button
+- **Check browser console** (F12): Look for errors in Console and Network tabs
+- **Verify environment variables**:
+  ```bash
+  cd backend && cat .env | grep LI_
+  ```
+- **Verify services**: Backend on port 5000, Frontend on port 3000
+
+## 🔧 Troubleshooting
+
+### DOMMatrix is not defined Error
+
+**Error Message:**
+
+```
+ReferenceError: DOMMatrix is not defined
+```
+
+**Cause:**
+This error occurs when using the `pdf-parse` library in Node.js environments. The `pdf-parse` library requires `DOMMatrix`, which is a browser API that needs to be polyfilled in Node.js. The `@napi-rs/canvas` package provides this polyfill, but it may not be properly installed or your Node.js version may be incompatible.
+
+**Solutions:**
+
+1. **Upgrade Node.js (Recommended)**
+
+   - Upgrade to Node.js 20.x or higher for best compatibility
+   - The `pdf-parse` library and its dependencies work best with Node.js 20+
+
+2. **Ensure Dependencies are Installed**
+
+   ```bash
+   cd backend
+   npm install
+   ```
+
+   This should automatically install `@napi-rs/canvas` as a dependency of `pdf-parse`.
+
+3. **Reinstall pdf-parse (if issue persists)**
+
+   ```bash
+   cd backend
+   npm uninstall pdf-parse
+   npm install pdf-parse@^2.4.5
+   ```
+
+4. **Verify Installation**
+   ```bash
+   npm list @napi-rs/canvas
+   ```
+   You should see `@napi-rs/canvas` listed as a dependency of `pdf-parse`.
+
+**Note:** This error typically occurs when processing PDF files through the file upload feature. If you're not using PDF file extraction, you may not encounter this issue.
+
+### VS Code Terminal Launch Issues
+
+If you're experiencing issues with the Integrated Terminal in VS Code (or Cursor), here are common solutions:
+
+**Error: Terminal failed to launch**
+
+1. **Check VS Code Settings**
+
+   - Open Settings (File > Preferences > Settings)
+   - Search for `terminal.integrated` settings
+   - Verify your default shell profile is correctly configured
+   - On macOS/Linux, ensure the shell path is correct (e.g., `/bin/zsh`, `/bin/bash`)
+
+2. **Test Your Shell Directly**
+
+   - Try running your shell outside VS Code/Cursor
+   - Some terminal launch failures are due to shell installation issues, not the editor
+
+3. **Update VS Code/Cursor**
+
+   - Ensure you're using the latest version
+   - Each release includes terminal improvements and bug fixes
+
+4. **Check Node.js Version**
+
+   - Verify Node.js is installed and accessible: `node --version`
+   - Ensure Node.js is in your system PATH
+
+5. **Common Exit Codes**
+
+   - **Exit code 1**: Usually indicates a shell configuration issue
+   - **Exit code 259 (Windows)**: Process is still active, try killing unused processes
+   - Search online for your specific shell and exit code for targeted solutions
+
+6. **macOS Specific**
+
+   - Ensure your shell has proper permissions
+   - Check if your shell is in `/etc/shells` (for non-standard shells)
+
+7. **Reinstall Dependencies**
+   ```bash
+   # Clean install
+   rm -rf node_modules package-lock.json
+   npm install
+   ```
+
+**For more detailed troubleshooting**, refer to the [VS Code Terminal Troubleshooting Guide](https://aka.ms/vscode-troubleshoot-terminal-launch).
+
 ## 📚 API Documentation
 
 ### Base URL
+
 ```
 http://localhost:5000/api
 ```
 
 ### Authentication
+
 Most endpoints require JWT authentication. Include the token in the request header:
+
 ```
 Authorization: Bearer <token>
 ```
@@ -216,11 +587,13 @@ Authorization: Bearer <token>
 ### General Endpoints
 
 #### 1. Health Check
+
 **GET** `/api/health`
 
 Check server running status.
 
 **Response:**
+
 ```json
 {
   "status": "ok",
@@ -229,11 +602,13 @@ Check server running status.
 ```
 
 #### 2. API Welcome
+
 **GET** `/api`
 
 Get API welcome message.
 
 **Response:**
+
 ```json
 {
   "message": "Welcome to Melo API"
@@ -245,6 +620,7 @@ Get API welcome message.
 ### Authentication Endpoints
 
 #### 1. Register User
+
 **POST** `/api/auth/register`
 
 Register a new user account.
@@ -252,6 +628,7 @@ Register a new user account.
 **Access:** Public
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -260,6 +637,7 @@ Register a new user account.
 ```
 
 **Success Response (201):**
+
 ```json
 {
   "success": true,
@@ -273,12 +651,14 @@ Register a new user account.
 ```
 
 **Error Responses:**
+
 - `400` - Missing email/password or user already exists
 - `500` - Server error
 
 ---
 
 #### 2. Login User
+
 **POST** `/api/auth/login`
 
 Authenticate user and get access token.
@@ -286,6 +666,7 @@ Authenticate user and get access token.
 **Access:** Public
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -294,6 +675,7 @@ Authenticate user and get access token.
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -307,6 +689,7 @@ Authenticate user and get access token.
 ```
 
 **Error Responses:**
+
 - `400` - Missing email/password
 - `401` - Invalid credentials
 - `500` - Server error
@@ -314,6 +697,7 @@ Authenticate user and get access token.
 ---
 
 #### 3. Get Current User
+
 **GET** `/api/auth/me`
 
 Get current authenticated user information.
@@ -321,11 +705,13 @@ Get current authenticated user information.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -338,6 +724,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found
 - `500` - Server error
@@ -345,6 +732,7 @@ Authorization: Bearer <token>
 ---
 
 #### 4. Logout User
+
 **POST** `/api/auth/logout`
 
 Logout user (client should remove token).
@@ -352,11 +740,13 @@ Logout user (client should remove token).
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -365,6 +755,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 
 ---
@@ -372,6 +763,7 @@ Authorization: Bearer <token>
 ### Chat Endpoints
 
 #### 1. Send Chat Message
+
 **POST** `/api/chat`
 
 Send a message to the AI chat and receive a response based on user's Brand Profile. Automatically manages conversation history.
@@ -379,12 +771,14 @@ Send a message to the AI chat and receive a response based on user's Brand Profi
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "message": "What marketing strategies work best for my brand?",
@@ -392,11 +786,13 @@ Content-Type: application/json
 }
 ```
 
-**Note:** 
+**Note:**
+
 - `conversationId` is optional. If provided, the message will be added to the existing conversation. If not provided, a new conversation will be created.
 - The API automatically maintains conversation history based on the conversation ID.
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -406,6 +802,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Message is required
 - `401` - Not authorized
 - `404` - User not found or conversation not found
@@ -414,6 +811,7 @@ Content-Type: application/json
 ---
 
 #### 2. Generate Image
+
 **POST** `/api/chat/generate-image`
 
 Generate an image using AI based on a text prompt.
@@ -421,12 +819,14 @@ Generate an image using AI based on a text prompt.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "prompt": "a cute little rabbit on the grass",
@@ -435,10 +835,12 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - `prompt` is required - the text description of the image to generate
 - `conversationId` is optional. If provided, the generated image will be added to the conversation. If not, a new conversation will be created.
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -449,6 +851,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Prompt is required
 - `401` - Not authorized
 - `404` - User not found
@@ -457,6 +860,7 @@ Content-Type: application/json
 ---
 
 #### 3. Get All Conversations
+
 **GET** `/api/chat`
 
 Get all conversations for the current user, sorted by most recent.
@@ -464,11 +868,13 @@ Get all conversations for the current user, sorted by most recent.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -484,6 +890,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found
 - `500` - Server error
@@ -491,6 +898,7 @@ Authorization: Bearer <token>
 ---
 
 #### 4. Get Single Conversation
+
 **GET** `/api/chat/:conversationId`
 
 Get a specific conversation with all its messages.
@@ -498,11 +906,13 @@ Get a specific conversation with all its messages.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -536,6 +946,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or conversation not found
 - `500` - Server error
@@ -543,6 +954,7 @@ Authorization: Bearer <token>
 ---
 
 #### 5. Delete Conversation
+
 **DELETE** `/api/chat/:conversationId`
 
 Delete a specific conversation.
@@ -550,11 +962,13 @@ Delete a specific conversation.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -563,6 +977,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or conversation not found
 - `500` - Server error
@@ -572,6 +987,7 @@ Authorization: Bearer <token>
 ### Upload Endpoints
 
 #### 1. Upload Image (Multipart)
+
 **POST** `/api/upload/image`
 
 Upload an image file using multipart/form-data.
@@ -579,20 +995,24 @@ Upload an image file using multipart/form-data.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: multipart/form-data
 ```
 
 **Request Body:**
+
 - `image`: Image file (multipart/form-data)
 
 **Note:**
+
 - Only image files are allowed
 - Maximum file size: 10MB
 - Supported formats: All image types (JPEG, PNG, etc.)
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -601,6 +1021,7 @@ Content-Type: multipart/form-data
 ```
 
 **Error Responses:**
+
 - `400` - No image file provided or invalid file type
 - `401` - Not authorized
 - `404` - User not found
@@ -609,6 +1030,7 @@ Content-Type: multipart/form-data
 ---
 
 #### 2. Upload Image (Base64)
+
 **POST** `/api/upload/image-base64`
 
 Upload an image using base64 encoded data.
@@ -616,12 +1038,14 @@ Upload an image using base64 encoded data.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "imageData": "data:image/png;base64,iVBORw0KGgoAAAANS...",
@@ -630,10 +1054,12 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - `imageData` is required - base64 encoded image data (with or without data URL prefix)
 - `mimeType` is optional - defaults to 'image/png' if not provided
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -642,6 +1068,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Image data is required
 - `401` - Not authorized
 - `404` - User not found
@@ -652,6 +1079,7 @@ Content-Type: application/json
 ### Calendar Endpoints
 
 #### 1. Get Calendar Items
+
 **GET** `/api/calendar`
 
 Get calendar items for a date range.
@@ -659,15 +1087,18 @@ Get calendar items for a date range.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Query Parameters:**
+
 - `startDate` (required) - Start date in YYYY-MM-DD format
 - `endDate` (required) - End date in YYYY-MM-DD format
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -693,6 +1124,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `400` - Missing startDate or endDate
 - `401` - Not authorized
 - `404` - User not found
@@ -701,6 +1133,7 @@ Authorization: Bearer <token>
 ---
 
 #### 2. Get Single Calendar Item
+
 **GET** `/api/calendar/:id`
 
 Get a specific calendar item by ID.
@@ -708,11 +1141,13 @@ Get a specific calendar item by ID.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -736,6 +1171,7 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
@@ -743,6 +1179,7 @@ Authorization: Bearer <token>
 ---
 
 #### 3. Create Calendar Item
+
 **POST** `/api/calendar`
 
 Create a new calendar item.
@@ -750,12 +1187,14 @@ Create a new calendar item.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "platform": "instagram_post",
@@ -774,12 +1213,14 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - `platform`, `date`, `title`, and `content` are required
 - `imageUrl` is optional
-- Supported platforms: `instagram_post`, `instagram_story`, `instagram_reels`, `tiktok`, `facebook`
+- Supported platforms: `instagram_post`, `instagram_story`, `instagram_reels`, `tiktok`, `facebook`, `twitter`, `linkedin`
 - `status` defaults to `'draft'` if not provided
 
 **Success Response (201):**
+
 ```json
 {
   "success": true,
@@ -802,6 +1243,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `400` - Missing required fields
 - `401` - Not authorized
 - `404` - User not found
@@ -810,6 +1252,7 @@ Content-Type: application/json
 ---
 
 #### 4. Update Calendar Item
+
 **PUT** `/api/calendar/:id`
 
 Update an existing calendar item.
@@ -817,12 +1260,14 @@ Update an existing calendar item.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "platform": "instagram_post",
@@ -836,10 +1281,12 @@ Content-Type: application/json
 ```
 
 **Note:**
+
 - All fields are optional - only provided fields will be updated
 - User can only update their own calendar items
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -862,6 +1309,7 @@ Content-Type: application/json
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
@@ -869,6 +1317,7 @@ Content-Type: application/json
 ---
 
 #### 5. Delete Calendar Item
+
 **DELETE** `/api/calendar/:id`
 
 Delete a calendar item.
@@ -876,11 +1325,13 @@ Delete a calendar item.
 **Access:** Private (Requires authentication)
 
 **Request Headers:**
+
 ```
 Authorization: Bearer <token>
 ```
 
 **Success Response (200):**
+
 ```json
 {
   "success": true,
@@ -889,15 +1340,65 @@ Authorization: Bearer <token>
 ```
 
 **Error Responses:**
+
 - `401` - Not authorized
 - `404` - User not found or calendar item not found
 - `500` - Server error
 
 ---
 
+#### 6. Share Calendar Item
+
+**POST** `/api/calendar/:id/share`
+
+Share a calendar item to a social media platform (currently supports Twitter/X).
+
+**Access:** Private (Requires authentication)
+
+**Request Headers:**
+
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+
+```json
+{
+  "platform": "twitter"
+}
+```
+
+**Note:**
+
+- `platform` is required - currently only `"twitter"` is supported
+- User must have connected their Twitter account before sharing
+- The calendar item's content and image (if available) will be posted to the user's Twitter account
+
+**Success Response (200):**
+
+```json
+{
+  "success": true,
+  "message": "Calendar item shared to Twitter successfully",
+  "tweetId": "1234567890123456789"
+}
+```
+
+**Error Responses:**
+
+- `400` - Platform is required, or platform not supported, or Twitter account not connected
+- `401` - Not authorized
+- `404` - User not found or calendar item not found
+- `500` - Server error or Twitter API error
+
+---
+
 ## 📊 Data Models
 
 ### User
+
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -915,6 +1416,7 @@ Authorization: Bearer <token>
 ```
 
 ### Conversation
+
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -927,6 +1429,7 @@ Authorization: Bearer <token>
 ```
 
 ### ConversationMessage
+
 ```typescript
 {
   role: 'user' | 'assistant'   // Message role
@@ -937,6 +1440,7 @@ Authorization: Bearer <token>
 ```
 
 ### AuthResponse
+
 ```typescript
 {
   success: boolean     // Request success status
@@ -947,6 +1451,7 @@ Authorization: Bearer <token>
 ```
 
 ### ChatResponse
+
 ```typescript
 {
   success: boolean           // Request success status
@@ -957,6 +1462,7 @@ Authorization: Bearer <token>
 ```
 
 ### ImageGenerationResponse
+
 ```typescript
 {
   success: boolean           // Request success status
@@ -968,6 +1474,7 @@ Authorization: Bearer <token>
 ```
 
 ### CalendarItem
+
 ```typescript
 {
   id: string                    // MongoDB ObjectId (as string)
@@ -988,6 +1495,7 @@ Authorization: Bearer <token>
 ```
 
 ### CalendarItemVariants
+
 ```typescript
 {
   tiktok?: string              // TikTok-specific content variant
@@ -999,6 +1507,7 @@ Authorization: Bearer <token>
 ```
 
 ### UploadImageResponse
+
 ```typescript
 {
   success: boolean     // Request success status
@@ -1053,9 +1562,10 @@ npm run preview # Preview production build
 
 ## 🔒 Security Notes
 
-⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only. 
+⚠️ **Important**: This project currently stores passwords in **plain text** for demonstration purposes only.
 
 **For production:**
+
 - Implement password hashing (bcrypt)
 - Use HTTPS
 - Add rate limiting
@@ -1070,14 +1580,14 @@ npm run preview # Preview production build
 
 ## 📝 HTTP Status Codes
 
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 404 | Not Found |
-| 500 | Internal Server Error |
+| Code | Description           |
+| ---- | --------------------- |
+| 200  | Success               |
+| 201  | Created               |
+| 400  | Bad Request           |
+| 401  | Unauthorized          |
+| 404  | Not Found             |
+| 500  | Internal Server Error |
 
 ---
 
@@ -1093,6 +1603,7 @@ npm run preview # Preview production build
 ### Frontend Testing
 
 The frontend automatically handles:
+
 - Token storage in `localStorage`
 - Token inclusion in authenticated requests
 - Automatic token validation on app load
@@ -1112,6 +1623,7 @@ The frontend automatically handles:
 ### Image Upload Testing
 
 1. **File Upload (Multipart)**:
+
    - Create or edit a calendar item
    - Click "Upload Image" button
    - Select an image file from your computer
@@ -1119,6 +1631,7 @@ The frontend automatically handles:
    - Image URL will be saved with the calendar item
 
 2. **Base64 Upload**:
+
    - Use the upload service to convert a file to base64
    - Send base64 data to `/api/upload/image-base64`
    - Verify the image URL is returned and saved
@@ -1133,6 +1646,7 @@ The frontend automatically handles:
 ### Calendar Item Testing
 
 1. **Create Calendar Item**:
+
    - Navigate to the Calendar page
    - Click the "+" button or select a date
    - Fill in platform, date, title, and content
@@ -1141,11 +1655,13 @@ The frontend automatically handles:
    - Save the calendar item
 
 2. **View Calendar Items**:
+
    - Calendar items are displayed on the calendar grid
    - Click on a calendar item to view details
    - Images are displayed in the item details modal
 
 3. **Update Calendar Item**:
+
    - Click on an existing calendar item
    - Click "Edit" button
    - Modify fields including image

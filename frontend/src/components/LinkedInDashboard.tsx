@@ -2,8 +2,6 @@ import {
   Layout,
   Typography,
   Grid,
-  Drawer,
-  FloatButton,
   Card,
   Row,
   Col,
@@ -25,9 +23,9 @@ import {
   Form,
   Segmented,
   Tooltip,
+  App,
 } from "antd";
 import {
-  MenuOutlined,
   LinkedinOutlined,
   UserOutlined,
   TeamOutlined,
@@ -54,11 +52,12 @@ import {
   QuestionCircleOutlined,
   SmileOutlined,
   CommentOutlined,
+  TwitterOutlined,
+  FacebookOutlined,
 } from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
 import Header from "./Header";
-import Sidebar from "./Sidebar";
 import styles from "./Dashboard.module.css";
 import {
   getLinkedInMetrics,
@@ -85,6 +84,19 @@ import {
   videoFileToBase64,
   ReactionType,
 } from "../services/linkedinService";
+import {
+  getTwitterStatus,
+  getTwitterAuthUrl,
+  disconnectTwitter,
+} from "../services/twitterService";
+import {
+  getFacebookStatus,
+  getInstagramStatus,
+  getFacebookAuthUrl,
+  getInstagramAuthUrl,
+  disconnectFacebook,
+  disconnectInstagram,
+} from "../services/socialService";
 import { User } from "../services/authService";
 
 interface LinkedInDashboardProps {
@@ -96,7 +108,7 @@ interface LinkedInDashboardProps {
   userId?: string;
 }
 
-const { Content, Sider } = Layout;
+const { Content } = Layout;
 const { useBreakpoint } = Grid;
 
 export default function LinkedInDashboard({
@@ -107,19 +119,27 @@ export default function LinkedInDashboard({
   jwt,
   userId,
 }: LinkedInDashboardProps) {
+  const { modal } = App.useApp();
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
-  const isTablet = screens.md && !screens.lg;
-  const [collapsed, setCollapsed] = useState(isMobile || isTablet);
-  const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false);
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
-  const [conversationsUpdateTrigger, setConversationsUpdateTrigger] =
-    useState(0);
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  // Twitter states
+  const [twitterStatus, setTwitterStatus] = useState<any>(null);
+  const [loadingTwitter, setLoadingTwitter] = useState(true);
+  const [disconnectingTwitter, setDisconnectingTwitter] = useState(false);
+
+  // Facebook/Instagram states
+  const [facebookStatus, setFacebookStatus] = useState<any>(null);
+  const [instagramStatus, setInstagramStatus] = useState<any>(null);
+  const [loadingFacebook, setLoadingFacebook] = useState(true);
+  const [loadingInstagram, setLoadingInstagram] = useState(true);
+  const [facebookAuthUrl, setFacebookAuthUrl] = useState<string | null>(null);
+  const [instagramAuthUrl, setInstagramAuthUrl] = useState<string | null>(null);
+  const [disconnectingFacebook, setDisconnectingFacebook] = useState(false);
+  const [disconnectingInstagram, setDisconnectingInstagram] = useState(false);
 
   // Post creation states
   const [postText, setPostText] = useState("");
@@ -153,15 +173,6 @@ export default function LinkedInDashboard({
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [eventForm] = Form.useForm();
 
-  // Update collapsed state when screen size changes
-  useEffect(() => {
-    if (isMobile || isTablet) {
-      setCollapsed(true);
-    } else {
-      setCollapsed(false);
-    }
-  }, [isMobile, isTablet]);
-
   // Load LinkedIn metrics
   useEffect(() => {
     const loadMetrics = async () => {
@@ -180,6 +191,247 @@ export default function LinkedInDashboard({
       }
     };
     loadMetrics();
+  }, [jwt]);
+
+  // Load Twitter status
+  useEffect(() => {
+    const loadTwitterStatus = async () => {
+      if (!jwt) {
+        setLoadingTwitter(false);
+        return;
+      }
+      setLoadingTwitter(true);
+      try {
+        const data = await getTwitterStatus(jwt);
+        setTwitterStatus(data);
+      } catch (error) {
+        console.error("Failed to load Twitter status:", error);
+      } finally {
+        setLoadingTwitter(false);
+      }
+    };
+    loadTwitterStatus();
+  }, [jwt]);
+
+  // Handle Twitter OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const twitterParam = params.get("twitter");
+
+    if (twitterParam === "connected") {
+      const note = params.get("note");
+      if (note === "rate_limited") {
+        message.warning("Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets.", 8);
+      } else {
+        message.success("Twitter account connected successfully!");
+      }
+      // Reload Twitter status
+      if (jwt) {
+        getTwitterStatus(jwt).then(setTwitterStatus);
+      }
+      // Clean up URL
+      const newParams = new URLSearchParams(params);
+      newParams.delete("twitter");
+      newParams.delete("note");
+      const newUrl = newParams.toString()
+        ? `${window.location.pathname}?${newParams.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    } else if (twitterParam === "error") {
+      const reason = params.get("reason");
+      const resetTimestamp = params.get("reset");
+      let errorMessage = "Twitter connection failed";
+
+      // Provide user-friendly error messages
+      switch (reason) {
+        case "rate_limited":
+          const resetTime = resetTimestamp ? new Date(parseInt(resetTimestamp) * 1000) : null;
+          const resetTimeStr = resetTime ? resetTime.toLocaleString() : "24 hours";
+          errorMessage = `Twitter API rate limit reached (25 requests per 24 hours). This is a Twitter API limitation, not a code issue. Please wait until ${resetTimeStr} and try again. Your tokens are saved and will work once the rate limit resets.`;
+          message.warning(errorMessage, 10); // Show for 10 seconds
+          break;
+        case "callback_url_not_approved":
+          errorMessage =
+            "Twitter connection failed: Callback URL not approved. Please configure the callback URL in your Twitter Developer Portal app settings.";
+          message.error(errorMessage);
+          break;
+        case "callback_url_error":
+          errorMessage =
+            "Twitter connection failed: Callback URL configuration error. Please check your TWITTER_CALLBACK_URL setting.";
+          message.error(errorMessage);
+          break;
+        case "api_credentials_error":
+          errorMessage =
+            "Twitter connection failed: API credentials error. Please check your TWITTER_API_KEY and TWITTER_API_SECRET in backend/.env";
+          message.error(errorMessage);
+          break;
+        case "oauth_init_failed":
+          errorMessage =
+            "Twitter connection failed: OAuth initialization failed. Please check your Twitter API credentials and callback URL configuration.";
+          message.error(errorMessage);
+          break;
+        default:
+          errorMessage = `Twitter connection failed: ${reason || "Unknown error"}`;
+          message.error(errorMessage);
+      }
+
+      message.error(errorMessage);
+      // Clean up URL
+      window.history.replaceState({}, "", "/socialdashboard");
+    }
+  }, [jwt]);
+
+  // Load Facebook/Instagram status
+  useEffect(() => {
+    const loadSocialStatus = async () => {
+      if (!jwt) {
+        setLoadingFacebook(false);
+        setLoadingInstagram(false);
+        return;
+      }
+      
+      // Load Facebook status
+      setLoadingFacebook(true);
+      try {
+        const fbData = await getFacebookStatus(jwt);
+        setFacebookStatus(fbData);
+      } catch (error) {
+        console.error("Failed to load Facebook status:", error);
+      } finally {
+        setLoadingFacebook(false);
+      }
+
+      // Load Instagram status
+      setLoadingInstagram(true);
+      try {
+        const igData = await getInstagramStatus(jwt);
+        setInstagramStatus(igData);
+      } catch (error) {
+        console.error("Failed to load Instagram status:", error);
+      } finally {
+        setLoadingInstagram(false);
+      }
+
+      // Get Facebook/Instagram auth URL
+      try {
+        const authData = await getInstagramAuthUrl(jwt);
+        console.log("Facebook/Instagram auth URL response:", authData);
+        if (authData.success && authData.authUrl) {
+          setFacebookAuthUrl(authData.authUrl);
+        } else {
+          console.error("Failed to get auth URL:", authData.error);
+          message.error(authData.error || "Failed to get Facebook/Instagram auth URL");
+        }
+      } catch (error) {
+        console.error("Failed to get Facebook/Instagram auth URL:", error);
+        message.error("Failed to get Facebook/Instagram auth URL");
+      }
+    };
+    loadSocialStatus();
+  }, [jwt]);
+
+  // Handle Facebook/Instagram OAuth callback (like Twitter)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const facebookParam = params.get("facebook");
+    const instagramParam = params.get("instagram");
+    const warning = params.get("warning");
+    
+    if (facebookParam === "connected" || instagramParam === "connected") {
+      // Check for warning about no Page
+      if (warning === "no_page" && facebookParam === "connected") {
+        message.warning(
+          "Facebook account connected successfully! However, you need to create a Facebook Page to share content. Facebook does not allow posting to personal profiles via API. Please create a Page at https://www.facebook.com/pages/create and reconnect.",
+          12
+        );
+      } else {
+        message.success(
+          facebookParam === "connected" && instagramParam === "connected"
+            ? "Successfully connected Facebook and Instagram!"
+            : facebookParam === "connected"
+            ? "Successfully connected Facebook!"
+            : "Successfully connected Instagram!"
+        );
+      }
+      
+      // Reload Facebook/Instagram status
+      if (jwt) {
+        if (facebookParam === "connected") {
+          getFacebookStatus(jwt).then(setFacebookStatus);
+          // IMPORTANT: Also refresh Instagram status after Facebook connection
+          // Facebook-only connection should have removed Instagram connection
+          // This ensures the UI reflects the correct state
+          getInstagramStatus(jwt).then(setInstagramStatus).catch((err) => {
+            console.error("Failed to refresh Instagram status after Facebook connection:", err);
+            // If refresh fails, set Instagram to disconnected to ensure UI is correct
+            setInstagramStatus({ connected: false });
+          });
+        }
+        if (instagramParam === "connected") {
+          getInstagramStatus(jwt).then(setInstagramStatus);
+          // Also refresh Facebook status after Instagram connection
+          // Instagram connection also connects Facebook Page
+          getFacebookStatus(jwt).then(setFacebookStatus).catch((err) => {
+            console.error("Failed to refresh Facebook status after Instagram connection:", err);
+          });
+        }
+      }
+      
+      // Clean up URL
+      const newParams = new URLSearchParams(params);
+      newParams.delete("facebook");
+      newParams.delete("instagram");
+      newParams.delete("warning");
+      const newUrl = newParams.toString()
+        ? `${window.location.pathname}?${newParams.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    } else if (facebookParam === "error" || instagramParam === "error") {
+      const reason = params.get("reason");
+      
+      // Skip showing error for invalid_state (common during OAuth flow, not a real error)
+      if (reason === "invalid_state") {
+        // Silently clean up URL without showing error message
+        const newParams = new URLSearchParams(params);
+        newParams.delete("facebook");
+        newParams.delete("instagram");
+        newParams.delete("reason");
+        const newUrl = newParams.toString()
+          ? `${window.location.pathname}?${newParams.toString()}`
+          : window.location.pathname;
+        window.history.replaceState({}, "", newUrl);
+        return;
+      }
+      
+      let errorMessage = "Facebook/Instagram connection failed";
+      
+      // Provide user-friendly error messages
+      switch (reason) {
+        case "user_denied":
+          errorMessage = "Connection was cancelled. Please try again.";
+          break;
+        case "missing_params":
+          errorMessage = "Missing required parameters. Please try again.";
+          break;
+        case "user_not_found":
+          errorMessage = "User not found. Please log in again.";
+          break;
+        default:
+          errorMessage = reason || "Connection failed. Please try again.";
+      }
+      
+      message.error(errorMessage);
+      
+      // Clean up URL
+      const newParams = new URLSearchParams(params);
+      newParams.delete("facebook");
+      newParams.delete("instagram");
+      newParams.delete("reason");
+      const newUrl = newParams.toString()
+        ? `${window.location.pathname}?${newParams.toString()}`
+        : window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
   }, [jwt]);
 
   // Load administered organizations when connected
@@ -259,6 +511,126 @@ export default function LinkedInDashboard({
           console.error("Failed to disconnect LinkedIn:", error);
         } finally {
           setDisconnecting(false);
+        }
+      },
+    });
+  };
+
+  const handleDisconnectTwitter = () => {
+    Modal.confirm({
+      title: "Disconnect Twitter",
+      icon: <ExclamationCircleOutlined />,
+      content:
+        "Are you sure you want to disconnect your Twitter account? You will need to reconnect to post tweets.",
+      okText: "Disconnect",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        if (!jwt) return;
+        setDisconnectingTwitter(true);
+        try {
+          const result = await disconnectTwitter(jwt);
+          if (result.success) {
+            // Reset status to show disconnected state
+            setTwitterStatus({ connected: false });
+            message.success("Twitter account disconnected successfully");
+          } else {
+            message.error(result.error || "Failed to disconnect Twitter");
+          }
+        } catch (error) {
+          console.error("Failed to disconnect Twitter:", error);
+          message.error("Failed to disconnect Twitter account");
+        } finally {
+          setDisconnectingTwitter(false);
+        }
+      },
+    });
+  };
+
+  const handleDisconnectFacebook = () => {
+    modal.confirm({
+      title: "Disconnect Facebook",
+      icon: <ExclamationCircleOutlined />,
+      content:
+        "Are you sure you want to disconnect your Facebook account? You will need to reconnect to share posts.",
+      okText: "Disconnect",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        if (!jwt) return;
+        setDisconnectingFacebook(true);
+        try {
+          const result = await disconnectFacebook(jwt);
+          console.log("Disconnect Facebook result:", result);
+          if (result.success) {
+            // IMPORTANT: Reload status from backend to ensure UI reflects actual state
+            // Don't just set local state, as it might be stale
+            // Add a small delay to ensure backend has processed the deletion
+            await new Promise(resolve => setTimeout(resolve, 500));
+            try {
+              const fbData = await getFacebookStatus(jwt);
+              console.log("Facebook status after disconnect:", fbData);
+              setFacebookStatus(fbData);
+              
+              // Double check: if status still shows connected, force set to disconnected
+              if (fbData.connected) {
+                console.warn("Facebook status still shows connected after disconnect, forcing to disconnected");
+                setFacebookStatus({ connected: false, success: true });
+              }
+            } catch (statusError) {
+              console.error("Failed to refresh Facebook status after disconnect:", statusError);
+              // If refresh fails, set to disconnected to ensure UI is correct
+              setFacebookStatus({ connected: false, success: true });
+            }
+            message.success("Facebook account disconnected successfully");
+          } else {
+            message.error(result.error || "Failed to disconnect Facebook");
+          }
+        } catch (error) {
+          console.error("Failed to disconnect Facebook:", error);
+          message.error("Failed to disconnect Facebook account");
+        } finally {
+          setDisconnectingFacebook(false);
+        }
+      },
+    });
+  };
+
+  const handleDisconnectInstagram = () => {
+    modal.confirm({
+      title: "Disconnect Instagram",
+      icon: <ExclamationCircleOutlined />,
+      content:
+        "Are you sure you want to disconnect your Instagram account? You will need to reconnect to share posts.",
+      okText: "Disconnect",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk: async () => {
+        if (!jwt) return;
+        setDisconnectingInstagram(true);
+        try {
+          const result = await disconnectInstagram(jwt);
+          if (result.success) {
+            // IMPORTANT: Reload status from backend to ensure UI reflects actual state
+            // Don't just set local state, as it might be stale
+            try {
+              const igData = await getInstagramStatus(jwt);
+              setInstagramStatus(igData);
+              console.log("Instagram status after disconnect:", igData);
+            } catch (statusError) {
+              console.error("Failed to refresh Instagram status after disconnect:", statusError);
+              // If refresh fails, set to disconnected to ensure UI is correct
+              setInstagramStatus({ connected: false });
+            }
+            message.success("Instagram account disconnected successfully");
+          } else {
+            message.error(result.error || "Failed to disconnect Instagram");
+          }
+        } catch (error) {
+          console.error("Failed to disconnect Instagram:", error);
+          message.error("Failed to disconnect Instagram account");
+        } finally {
+          setDisconnectingInstagram(false);
         }
       },
     });
@@ -563,38 +935,10 @@ export default function LinkedInDashboard({
     });
   };
 
-  const handleConversationSelect = useCallback(
-    (conversationId: string | null) => {
-      setSelectedConversationId(conversationId);
-    },
-    []
-  );
-
-  const handleNewConversation = useCallback(() => {
-    setSelectedConversationId(null);
-  }, []);
-
-  const handleToggleSidebar = useCallback(() => {
-    if (isMobile) {
-      setSidebarDrawerOpen((prev) => !prev);
-    } else {
-      setCollapsed((prev) => !prev);
-    }
-  }, [isMobile]);
-
-  const handleConversationSelectWithClose = useCallback(
-    (conversationId: string | null) => {
-      handleConversationSelect(conversationId);
-      if (isMobile) {
-        setSidebarDrawerOpen(false);
-      }
-    },
-    [handleConversationSelect, isMobile]
-  );
-
   // Generate auth URL with userId for proper token association
   // If userId is not available yet, we still show the button but it won't work until user data loads
   const authUrl = userId ? getLinkedInAuthUrl(userId) : undefined;
+  const twitterAuthUrl = userId ? getTwitterAuthUrl(userId) : undefined;
 
   // Debug: Log what we have
   console.log(
@@ -637,7 +981,14 @@ export default function LinkedInDashboard({
     const profile = metrics?.profile;
 
     return (
-      <div style={{ width: "100%", maxWidth: 1200 }}>
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: isMobile ? "0 16px" : screens.xl ? "0 32px" : "0 24px",
+        }}
+      >
         {/* Header Section */}
         <div
           style={{
@@ -811,7 +1162,7 @@ export default function LinkedInDashboard({
               <Select
                 value={selectedPostTarget}
                 onChange={setSelectedPostTarget}
-                style={{ width: "100%", maxWidth: 300 }}
+                style={{ width: "100%", maxWidth: isMobile ? "100%" : 300 }}
                 loading={loadingOrgs}
               >
                 <Select.Option value="personal">
@@ -1255,7 +1606,22 @@ export default function LinkedInDashboard({
                   {authUrl ? (
                     <Button
                       type="link"
-                      href={authUrl}
+                      onClick={() => {
+                        if (!authUrl) {
+                          console.error(
+                            "Cannot connect: userId not available. userId:",
+                            userId,
+                            "user:",
+                            user
+                          );
+                          alert(
+                            "Please wait for user data to load, or try refreshing the page."
+                          );
+                          return;
+                        }
+                        // Redirect to LinkedIn OAuth
+                        window.location.href = authUrl;
+                      }}
                       style={{ padding: 0, color: "#0077B5" }}
                     >
                       Connect now →
@@ -1400,6 +1766,477 @@ export default function LinkedInDashboard({
             </Col>
             <Col>
               {isConnected ? (
+                <Tag
+                  color="success"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
+                  ● Connected
+                </Tag>
+              ) : (
+                <Tag
+                  color="default"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
+                  ○ Not Connected
+                </Tag>
+              )}
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Twitter Connection Section */}
+        <Card
+          style={{ marginTop: 24, borderRadius: 12 }}
+          styles={{ body: { padding: 24 } }}
+        >
+          <div
+            style={{
+              marginBottom: 24,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <div>
+              <Typography.Title
+                level={4}
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <TwitterOutlined style={{ color: "#1DA1F2" }} />
+                Twitter/X Connection
+              </Typography.Title>
+              <Typography.Text type="secondary">
+                Connect your Twitter account to post tweets from your calendar
+              </Typography.Text>
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              {twitterStatus?.connected && (
+                <>
+                  <Button
+                    icon={<SyncOutlined />}
+                    onClick={async () => {
+                      if (!jwt) return;
+                      setLoadingTwitter(true);
+                      try {
+                        const data = await getTwitterStatus(jwt);
+                        setTwitterStatus(data);
+                        message.success("Twitter status refreshed");
+                      } catch (error) {
+                        console.error(
+                          "Failed to refresh Twitter status:",
+                          error
+                        );
+                        message.error("Failed to refresh Twitter status");
+                      } finally {
+                        setLoadingTwitter(false);
+                      }
+                    }}
+                    loading={loadingTwitter}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    icon={<DisconnectOutlined />}
+                    onClick={handleDisconnectTwitter}
+                    loading={disconnectingTwitter}
+                    danger
+                  >
+                    Disconnect
+                  </Button>
+                </>
+              )}
+              {!twitterStatus?.connected && (
+                <Button
+                  type="default"
+                  icon={<TwitterOutlined style={{ color: "#ffffff" }} />}
+                  disabled={!twitterAuthUrl}
+                  onClick={() => {
+                    if (!twitterAuthUrl) {
+                      console.error(
+                        "Cannot connect: userId not available. userId:",
+                        userId,
+                        "user:",
+                        user
+                      );
+                      alert(
+                        "Please wait for user data to load, or try refreshing the page."
+                      );
+                      return;
+                    }
+                    // Redirect to Twitter OAuth
+                    window.location.href = twitterAuthUrl;
+                  }}
+                  style={{
+                    backgroundColor: "#1DA1F2",
+                    borderColor: "#1DA1F2",
+                    color: "#ffffff",
+                    fontWeight: 500,
+                  }}
+                >
+                  <span style={{ color: "#ffffff" }}>
+                    {twitterAuthUrl ? "Connect Twitter" : "Loading..."}
+                  </span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Twitter Profile Card - Show when connected */}
+          {twitterStatus?.connected && twitterStatus?.profile && (
+            <Card
+              style={{
+                marginBottom: 24,
+                borderRadius: 12,
+                backgroundColor: "#f8f9fa",
+              }}
+              styles={{ body: { padding: 24 } }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <div
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: "50%",
+                    background:
+                      "linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <TwitterOutlined style={{ fontSize: 32, color: "#fff" }} />
+                </div>
+                <div>
+                  <Typography.Title level={4} style={{ margin: 0 }}>
+                    @{twitterStatus.profile.username}
+                  </Typography.Title>
+                  <Typography.Text type="secondary">
+                    {twitterStatus.profile.name}
+                  </Typography.Text>
+                  <br />
+                  <Tag color="success" style={{ marginTop: 8 }}>
+                    ● Connected
+                  </Tag>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Twitter Connection Status */}
+          <Row align="middle" justify="space-between">
+            <Col>
+              <Typography.Text strong style={{ fontSize: 16 }}>
+                Twitter Connection Status
+              </Typography.Text>
+              <br />
+              <Typography.Text type="secondary">
+                {twitterStatus?.connected
+                  ? "Your Twitter account is connected and ready to post tweets"
+                  : "Connect your Twitter account to enable posting tweets from your calendar"}
+              </Typography.Text>
+            </Col>
+            <Col>
+              {twitterStatus?.connected ? (
+                <Tag
+                  color="success"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
+                  ● Connected
+                </Tag>
+              ) : (
+                <Tag
+                  color="default"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
+                  ○ Not Connected
+                </Tag>
+              )}
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Facebook Connection Section */}
+        <Card
+          style={{ marginTop: 24, borderRadius: 12 }}
+          styles={{ body: { padding: 24 } }}
+        >
+          <div
+            style={{
+              marginBottom: 24,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <div>
+              <Typography.Title
+                level={4}
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <FacebookOutlined style={{ color: "#1877F2" }} />
+                Facebook Connection
+              </Typography.Title>
+              <Typography.Text type="secondary">
+                Connect your Facebook Page to share posts from your calendar. Personal accounts can also use this.
+              </Typography.Text>
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              {facebookStatus?.connected && (
+                <>
+                  <Button
+                    icon={<SyncOutlined />}
+                    onClick={async () => {
+                      if (!jwt) return;
+                      setLoadingFacebook(true);
+                      try {
+                        const fbData = await getFacebookStatus(jwt);
+                        setFacebookStatus(fbData);
+                        message.success("Facebook status refreshed");
+                      } catch (error) {
+                        console.error("Failed to refresh Facebook status:", error);
+                        message.error("Failed to refresh Facebook status");
+                      } finally {
+                        setLoadingFacebook(false);
+                      }
+                    }}
+                    loading={loadingFacebook}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    icon={<DisconnectOutlined />}
+                    onClick={handleDisconnectFacebook}
+                    loading={disconnectingFacebook}
+                    danger
+                  >
+                    Disconnect
+                  </Button>
+                </>
+              )}
+              {!facebookStatus?.connected && (
+                <Button
+                  type="default"
+                  icon={<FacebookOutlined style={{ color: "#ffffff" }} />}
+                  loading={!facebookAuthUrl && loadingFacebook}
+                  onClick={async () => {
+                    // If auth URL is not loaded, try to load it first
+                    if (!facebookAuthUrl) {
+                      if (!jwt) {
+                        message.error("Please login first");
+                        return;
+                      }
+                      message.loading("Loading auth URL...", 1);
+                      try {
+                        const authData = await getFacebookAuthUrl(jwt);
+                        console.log("Facebook auth URL response:", authData);
+                        if (authData.success && authData.authUrl) {
+                          setFacebookAuthUrl(authData.authUrl);
+                          // Redirect immediately after getting URL
+                          window.location.href = authData.authUrl;
+                        } else {
+                          console.error("Failed to get Facebook auth URL:", authData.error);
+                          message.error(authData.error || "Failed to get Facebook auth URL");
+                        }
+                      } catch (error) {
+                        console.error("Failed to get Facebook auth URL:", error);
+                        message.error("Failed to get Facebook auth URL. Please check your connection.");
+                      }
+                      return;
+                    }
+                    // Redirect to Facebook OAuth
+                    console.log("Redirecting to Facebook OAuth:", facebookAuthUrl);
+                    window.location.href = facebookAuthUrl;
+                  }}
+                  style={{
+                    backgroundColor: "#1877F2",
+                    borderColor: "#1877F2",
+                    color: "#ffffff",
+                    fontWeight: 500,
+                  }}
+                >
+                  <span style={{ color: "#ffffff" }}>
+                    {facebookAuthUrl ? "Connect Facebook" : "Connect Facebook"}
+                  </span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Facebook Connection Status */}
+          <Row align="middle" justify="space-between">
+            <Col>
+              <Typography.Text strong style={{ fontSize: 16 }}>
+                Facebook Connection Status
+              </Typography.Text>
+              <br />
+              <Typography.Text type="secondary">
+                {facebookStatus?.connected
+                  ? "Your Facebook Page is connected and ready to share posts"
+                  : "Connect your Facebook Page to enable sharing posts from your calendar"}
+              </Typography.Text>
+            </Col>
+            <Col>
+              {facebookStatus?.connected ? (
+                <Tag
+                  color="success"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
+                  ● Connected
+                </Tag>
+              ) : (
+                <Tag
+                  color="default"
+                  style={{ padding: "4px 12px", fontSize: 14 }}
+                >
+                  ○ Not Connected
+                </Tag>
+              )}
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Instagram Connection Section */}
+        <Card
+          style={{ marginTop: 24, borderRadius: 12 }}
+          styles={{ body: { padding: 24 } }}
+        >
+          <div
+            style={{
+              marginBottom: 24,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 16,
+            }}
+          >
+            <div>
+              <Typography.Title
+                level={4}
+                style={{
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
+              >
+                <span style={{ fontSize: 20, color: "#E4405F" }}>📷</span>
+                Instagram Connection
+              </Typography.Title>
+              <Typography.Text type="secondary">
+                Connect your Instagram Business/Creator account. Requires a Facebook Page (will be connected automatically).
+              </Typography.Text>
+            </div>
+            <div style={{ display: "flex", gap: 12 }}>
+              {instagramStatus?.connected && (
+                <>
+                  <Button
+                    icon={<SyncOutlined />}
+                    onClick={async () => {
+                      if (!jwt) return;
+                      setLoadingInstagram(true);
+                      try {
+                        const igData = await getInstagramStatus(jwt);
+                        setInstagramStatus(igData);
+                        message.success("Instagram status refreshed");
+                      } catch (error) {
+                        console.error("Failed to refresh Instagram status:", error);
+                        message.error("Failed to refresh Instagram status");
+                      } finally {
+                        setLoadingInstagram(false);
+                      }
+                    }}
+                    loading={loadingInstagram}
+                  >
+                    Refresh
+                  </Button>
+                  <Button
+                    icon={<DisconnectOutlined />}
+                    onClick={handleDisconnectInstagram}
+                    loading={disconnectingInstagram}
+                    danger
+                  >
+                    Disconnect
+                  </Button>
+                </>
+              )}
+              {!instagramStatus?.connected && (
+                <Button
+                  type="default"
+                  style={{
+                    backgroundColor: "#E4405F",
+                    borderColor: "#E4405F",
+                    color: "#ffffff",
+                    fontWeight: 500,
+                  }}
+                  loading={!instagramAuthUrl && loadingInstagram}
+                  onClick={async () => {
+                    // If auth URL is not loaded, try to load it first
+                    if (!instagramAuthUrl) {
+                      if (!jwt) {
+                        message.error("Please login first");
+                        return;
+                      }
+                      message.loading("Loading auth URL...", 1);
+                      try {
+                        const authData = await getInstagramAuthUrl(jwt);
+                        console.log("Instagram auth URL response:", authData);
+                        if (authData.success && authData.authUrl) {
+                          setInstagramAuthUrl(authData.authUrl);
+                          // Redirect immediately after getting URL
+                          window.location.href = authData.authUrl;
+                        } else {
+                          console.error("Failed to get Instagram auth URL:", authData.error);
+                          message.error(authData.error || "Failed to get Instagram auth URL");
+                        }
+                      } catch (error) {
+                        console.error("Failed to get Instagram auth URL:", error);
+                        message.error("Failed to get Instagram auth URL. Please check your connection.");
+                      }
+                      return;
+                    }
+                    // Redirect to Instagram OAuth
+                    console.log("Redirecting to Instagram OAuth:", instagramAuthUrl);
+                    window.location.href = instagramAuthUrl;
+                  }}
+                >
+                  <span style={{ color: "#ffffff" }}>
+                    {instagramAuthUrl ? "Connect Instagram" : "Connect Instagram"}
+                  </span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Instagram Connection Status */}
+          <Row align="middle" justify="space-between">
+            <Col>
+              <Typography.Text strong style={{ fontSize: 16 }}>
+                Instagram Connection Status
+              </Typography.Text>
+              <br />
+              <Typography.Text type="secondary">
+                {instagramStatus?.connected
+                  ? "Your Instagram account is connected and ready to share posts"
+                  : "Connect your Instagram Business/Creator account to enable sharing posts from your calendar. Note: Requires a Facebook Page."}
+              </Typography.Text>
+            </Col>
+            <Col>
+              {instagramStatus?.connected ? (
                 <Tag
                   color="success"
                   style={{ padding: "4px 12px", fontSize: 14 }}
@@ -1726,8 +2563,8 @@ export default function LinkedInDashboard({
               />
             </Form.Item>
 
-            <Row gutter={16}>
-              <Col span={12}>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} sm={24} md={12}>
                 <Form.Item
                   name="startAt"
                   label="Start Date & Time"
@@ -1743,7 +2580,7 @@ export default function LinkedInDashboard({
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={24} md={12}>
                 <Form.Item name="endAt" label="End Date & Time">
                   <DatePicker
                     showTime
@@ -1809,66 +2646,11 @@ export default function LinkedInDashboard({
         user={user}
       />
       <Layout className={styles.dashboardLayout}>
-        {/* Sidebar - same as Dashboard */}
-        {isLoggedIn && !isMobile && (
-          <Sider
-            width={360}
-            collapsedWidth={isTablet ? 0 : 88}
-            collapsed={collapsed}
-            theme="light"
-            trigger={null}
-            breakpoint="lg"
-            className={styles.sider}
-          >
-            <Sidebar
-              collapsed={collapsed}
-              onToggleSidebar={handleToggleSidebar}
-              user={user}
-              selectedConversationId={selectedConversationId}
-              onConversationSelect={handleConversationSelect}
-              onNewConversation={handleNewConversation}
-              conversationsUpdateTrigger={conversationsUpdateTrigger}
-            />
-          </Sider>
-        )}
-        {isLoggedIn && isMobile && (
-          <Drawer
-            title="Flippy chats"
-            placement="left"
-            onClose={() => setSidebarDrawerOpen(false)}
-            open={sidebarDrawerOpen}
-            width={280}
-            className={styles.sidebarDrawer}
-          >
-            <Sidebar
-              collapsed={false}
-              onToggleSidebar={() => setSidebarDrawerOpen(false)}
-              user={user}
-              selectedConversationId={selectedConversationId}
-              onConversationSelect={handleConversationSelectWithClose}
-              onNewConversation={handleNewConversation}
-              conversationsUpdateTrigger={conversationsUpdateTrigger}
-            />
-          </Drawer>
-        )}
         <Content
-          className={`${styles.content} ${styles.contentLight}`}
+          className={`${styles.content} ${styles.contentLight} ${styles.socialDashboardContent}`}
           style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}
         >
           {renderMetricsContent()}
-          {isMobile && isLoggedIn && (
-            <FloatButton
-              icon={<MenuOutlined />}
-              type="primary"
-              style={{
-                right: 16,
-                bottom: 16,
-                backgroundColor: "#0077B5",
-                borderColor: "#0077B5",
-              }}
-              onClick={() => setSidebarDrawerOpen(true)}
-            />
-          )}
         </Content>
       </Layout>
     </Layout>

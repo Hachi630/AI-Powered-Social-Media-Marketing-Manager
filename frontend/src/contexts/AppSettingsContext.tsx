@@ -263,11 +263,123 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             color: ${darkenColor(accentColor, 20)} !important;
           }
           
+          /* ===== BRAND PROFILE COMPANY SELECTOR ===== */
+          .ant-layout [class*="companyItemActive"] {
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-layout [class*="companyItem"]:hover {
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-layout [class*="addCompanyBtn"]:hover {
+            border-color: ${accentColor} !important;
+            color: ${accentColor} !important;
+          }
+          
+          .ant-layout [class*="addCompanyBtn"]:focus,
+          .ant-layout [class*="addCompanyBtn"]:focus-visible {
+            border-color: ${accentColor} !important;
+            color: ${accentColor} !important;
+            box-shadow: 0 0 0 2px ${hexToRgba(accentColor, 0.1)} !important;
+          }
+          
           /* ===== CHATBOX SPECIFIC ===== */
           .userMessage .messageContent {
             background-color: ${accentColor} !important;
             color: ${getContrastColor(accentColor)} !important;
             border-color: ${accentColor} !important;
+          }
+          
+          /* ===== FONT SETTINGS FOR MODAL ===== */
+          .ant-modal {
+            font-size: ${settings.fontSize}px !important;
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          .ant-modal p,
+          .ant-modal span,
+          .ant-modal div,
+          .ant-modal h1,
+          .ant-modal h2,
+          .ant-modal h3,
+          .ant-modal h4,
+          .ant-modal h5,
+          .ant-modal h6,
+          .ant-modal a,
+          .ant-modal li,
+          .ant-modal td,
+          .ant-modal th,
+          .ant-modal label {
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          .ant-modal p,
+          .ant-modal span,
+          .ant-modal div,
+          .ant-modal a,
+          .ant-modal li,
+          .ant-modal td,
+          .ant-modal th,
+          .ant-modal label,
+          .ant-modal input,
+          .ant-modal textarea,
+          .ant-modal select,
+          .ant-modal button {
+            font-size: ${settings.fontSize}px !important;
+          }
+          
+          .ant-modal input,
+          .ant-modal textarea,
+          .ant-modal .ant-input,
+          .ant-modal .ant-input-affix-wrapper input,
+          .ant-modal .ant-input-affix-wrapper textarea,
+          .ant-modal textarea.ant-input {
+            font-family: ${settings.fontFamily} !important;
+            font-size: ${settings.fontSize}px !important;
+          }
+          
+          .ant-modal input:focus,
+          .ant-modal textarea:focus,
+          .ant-modal .ant-input:focus,
+          .ant-modal .ant-input-affix-wrapper-focused input,
+          .ant-modal textarea.ant-input:focus {
+            caret-color: ${accentColor} !important;
+          }
+          
+          .ant-modal input::placeholder,
+          .ant-modal textarea::placeholder,
+          .ant-modal .ant-input::placeholder,
+          .ant-modal .ant-input-affix-wrapper input::placeholder {
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          /* ===== ACCENT COLOR FOR MODAL ===== */
+          .ant-modal .ant-btn-primary,
+          .ant-modal .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
+            background-color: ${accentColor} !important;
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-modal .ant-btn-primary:hover:not(:disabled):not(.ant-btn-disabled),
+          .ant-modal .ant-btn-primary:focus:not(:disabled):not(.ant-btn-disabled) {
+            background-color: ${darkenColor(accentColor, 20)} !important;
+            border-color: ${darkenColor(accentColor, 20)} !important;
+          }
+          
+          /* ===== ACCENT COLOR FOR MODAL TABS ===== */
+          .ant-modal .ant-tabs-tab.ant-tabs-tab-active,
+          .ant-modal .ant-tabs-tab-active,
+          .ant-modal .ant-tabs-tab-active .ant-tabs-tab-btn {
+            color: ${accentColor} !important;
+          }
+          
+          .ant-modal .ant-tabs-ink-bar {
+            background: ${accentColor} !important;
+          }
+          
+          .ant-modal .ant-tabs-tab:hover {
+            color: ${accentColor} !important;
           }
         `
       }

@@ -14,6 +14,7 @@ import {
   Typography,
   Dropdown,
   Upload,
+  App,
 } from 'antd'
 import { EditOutlined, ShareAltOutlined, UploadOutlined, DeleteOutlined, PictureOutlined, RobotOutlined } from '@ant-design/icons'
 import type { MenuProps, UploadProps } from 'antd'
@@ -38,6 +39,7 @@ export const PLATFORMS = {
   TIKTOK: 'tiktok',
   FACEBOOK: 'facebook',
   TWITTER: 'twitter',
+  LINKEDIN: 'linkedin',
 } as const
 
 const platformOptions = [
@@ -47,6 +49,7 @@ const platformOptions = [
   { value: PLATFORMS.TIKTOK, label: 'TikTok' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
   { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
+  { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
 ]
 
 const statusOptions = [
@@ -70,6 +73,7 @@ export default function CalendarItemModal({
   onClose,
   onSave,
 }: CalendarItemModalProps) {
+  const { modal } = App.useApp()
   const [form] = Form.useForm()
   const [loading, setLoading] = useState(false)
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
@@ -179,7 +183,7 @@ export default function CalendarItemModal({
   const handleDelete = async () => {
     if (!item) return
 
-    Modal.confirm({
+    modal.confirm({
       title: 'Delete Calendar Item',
       content: 'Are you sure you want to delete this calendar item?',
       onOk: async () => {
@@ -212,6 +216,7 @@ export default function CalendarItemModal({
     try {
       setLoading(true)
       
+      // Use calendar share endpoint for Twitter
       if (platform === 'twitter') {
         message.info('Sharing to Twitter/X...')
         const response = await calendarService.shareCalendarItem(item.id, platform)
@@ -220,17 +225,66 @@ export default function CalendarItemModal({
         } else {
           message.error(response.message || 'Failed to post to Twitter/X')
         }
-      } else {
-        // Placeholder for other platforms
-        message.info(`Sharing to ${platform}... (Coming soon)`)
+        return
       }
       
-      // const response = await calendarService.shareToPlatform(item.id, platform)
-      // if (response.success) {
-      //   message.success(`Successfully shared to ${platform}`)
-      // } else {
-      //   message.error(response.message || `Failed to share to ${platform}`)
-      // }
+      // Use social API for Instagram and Facebook
+      if (platform === 'instagram' || platform === 'facebook') {
+        message.info(`Sharing to ${platform}...`)
+        
+        const token = localStorage.getItem('token')
+        if (!token) {
+          message.error('Not authenticated')
+          return
+        }
+
+        try {
+          const response = await fetch(`/api/social/${platform}/share`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              calendarItemId: item.id,
+              content: item.content,
+              imageUrl: item.imageUrl,
+            }),
+          })
+
+          const data = await response.json()
+
+          if (response.ok && data.success) {
+            message.success(`Successfully shared to ${platform}!`)
+            onSave() // Refresh the calendar
+          } else {
+            if (data.requiresAuth) {
+              // Show modal to connect account
+              modal.confirm({
+                title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
+                content: data.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
+                okText: 'Connect Now',
+                cancelText: 'Cancel',
+                onOk: () => {
+                  if (platform === 'instagram' || platform === 'facebook') {
+                    // Redirect to Social Dashboard to connect
+                    window.location.href = '/socialdashboard'
+                  }
+                },
+              })
+            } else {
+              message.error(data.message || `Failed to share to ${platform}`)
+            }
+          }
+        } catch (error) {
+          console.error('Share error:', error)
+          message.error(`Failed to share to ${platform}`)
+        }
+        return
+      }
+      
+      // For other platforms, show coming soon
+      message.info(`Sharing to ${platform}... (Coming soon)`)
     } catch (error) {
       console.error('Share error:', error)
       message.error(`Failed to share to ${platform}`)

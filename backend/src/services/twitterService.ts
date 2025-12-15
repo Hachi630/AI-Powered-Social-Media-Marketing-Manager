@@ -4,7 +4,35 @@ import path from 'path';
 
 export const twitterService = {
   /**
-   * Initialize Twitter client
+   * Initialize Twitter client with user tokens
+   */
+  getUserClient(accessToken: string, accessSecret: string) {
+    const appKey = process.env.TWITTER_API_KEY;
+    const appSecret = process.env.TWITTER_API_SECRET;
+
+    if (!appKey || !appSecret) {
+      throw new Error('Twitter API credentials are missing');
+    }
+
+    if (!accessToken || !accessSecret) {
+      throw new Error('User Twitter tokens are missing');
+    }
+
+    // Create client with OAuth 1.0a user context
+    const client = new TwitterApi({
+      appKey,
+      appSecret,
+      accessToken,
+      accessSecret,
+    });
+
+    // Return readWrite client explicitly for write operations
+    return client.readWrite;
+  },
+
+  /**
+   * Initialize Twitter client with default (developer) credentials
+   * This is kept for backward compatibility
    */
   getClient() {
     // These env vars should be set in your .env file
@@ -31,13 +59,31 @@ export const twitterService = {
 
   /**
    * Post a tweet, optionally with an image
+   * @param content - Tweet content
+   * @param imageUrl - Optional image URL or path
+   * @param accessToken - Optional user access token (if not provided, uses default)
+   * @param accessSecret - Optional user access secret (if not provided, uses default)
    */
-  async postTweet(content: string, imageUrl?: string | null): Promise<{ success: boolean; tweetId?: string; error?: any }> {
+  async postTweet(
+    content: string, 
+    imageUrl?: string | null,
+    accessToken?: string,
+    accessSecret?: string
+  ): Promise<{ success: boolean; tweetId?: string; error?: any }> {
     try {
-      // Get base client for media upload (v1 API)
-      const baseClient = this.getBaseClient();
-      // Get readWrite client for posting tweets (v2 API)
-      const readWriteClient = this.getClient();
+      // Determine which client to use
+      let baseClient: TwitterApi;
+      let readWriteClient: any;
+
+      if (accessToken && accessSecret) {
+        // Use user's tokens
+        baseClient = this.getUserBaseClient(accessToken, accessSecret);
+        readWriteClient = this.getUserClient(accessToken, accessSecret);
+      } else {
+        // Use default (developer) credentials
+        baseClient = this.getBaseClient();
+        readWriteClient = this.getClient();
+      }
       
       let mediaId;
 
@@ -129,7 +175,31 @@ export const twitterService = {
   },
 
   /**
+   * Get base client for v1 API operations (like media upload) with user tokens
+   */
+  getUserBaseClient(accessToken: string, accessSecret: string) {
+    const appKey = process.env.TWITTER_API_KEY;
+    const appSecret = process.env.TWITTER_API_SECRET;
+
+    if (!appKey || !appSecret) {
+      throw new Error('Twitter API credentials are missing');
+    }
+
+    if (!accessToken || !accessSecret) {
+      throw new Error('User Twitter tokens are missing');
+    }
+
+    return new TwitterApi({
+      appKey,
+      appSecret,
+      accessToken,
+      accessSecret,
+    });
+  },
+
+  /**
    * Get base client for v1 API operations (like media upload)
+   * This is kept for backward compatibility
    */
   getBaseClient() {
     const appKey = process.env.TWITTER_API_KEY;
