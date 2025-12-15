@@ -269,6 +269,82 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             color: ${getContrastColor(accentColor)} !important;
             border-color: ${accentColor} !important;
           }
+          
+          /* ===== FONT SETTINGS FOR MODAL ===== */
+          .ant-modal {
+            font-size: ${settings.fontSize}px !important;
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          .ant-modal p,
+          .ant-modal span,
+          .ant-modal div,
+          .ant-modal h1,
+          .ant-modal h2,
+          .ant-modal h3,
+          .ant-modal h4,
+          .ant-modal h5,
+          .ant-modal h6,
+          .ant-modal a,
+          .ant-modal li,
+          .ant-modal td,
+          .ant-modal th,
+          .ant-modal label {
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          .ant-modal p,
+          .ant-modal span,
+          .ant-modal div,
+          .ant-modal a,
+          .ant-modal li,
+          .ant-modal td,
+          .ant-modal th,
+          .ant-modal label,
+          .ant-modal input,
+          .ant-modal textarea,
+          .ant-modal select,
+          .ant-modal button {
+            font-size: ${settings.fontSize}px !important;
+          }
+          
+          .ant-modal input,
+          .ant-modal textarea,
+          .ant-modal .ant-input,
+          .ant-modal .ant-input-affix-wrapper input,
+          .ant-modal .ant-input-affix-wrapper textarea,
+          .ant-modal textarea.ant-input {
+            font-family: ${settings.fontFamily} !important;
+            font-size: ${settings.fontSize}px !important;
+          }
+          
+          .ant-modal input:focus,
+          .ant-modal textarea:focus,
+          .ant-modal .ant-input:focus,
+          .ant-modal .ant-input-affix-wrapper-focused input,
+          .ant-modal textarea.ant-input:focus {
+            caret-color: ${accentColor} !important;
+          }
+          
+          .ant-modal input::placeholder,
+          .ant-modal textarea::placeholder,
+          .ant-modal .ant-input::placeholder,
+          .ant-modal .ant-input-affix-wrapper input::placeholder {
+            font-family: ${settings.fontFamily} !important;
+          }
+          
+          /* ===== ACCENT COLOR FOR MODAL ===== */
+          .ant-modal .ant-btn-primary,
+          .ant-modal .ant-btn-primary:not(:disabled):not(.ant-btn-disabled) {
+            background-color: ${accentColor} !important;
+            border-color: ${accentColor} !important;
+          }
+          
+          .ant-modal .ant-btn-primary:hover:not(:disabled):not(.ant-btn-disabled),
+          .ant-modal .ant-btn-primary:focus:not(:disabled):not(.ant-btn-disabled) {
+            background-color: ${darkenColor(accentColor, 20)} !important;
+            border-color: ${darkenColor(accentColor, 20)} !important;
+          }
         `
       }
       
