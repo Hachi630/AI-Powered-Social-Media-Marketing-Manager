@@ -4,17 +4,18 @@
   height: 100%;
   background: #ffffff;
   overflow-y: auto;
-  padding: 24px;
+  padding: 20px;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
 }
 
 .yearHeader {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   text-align: left;
+  flex-shrink: 0;
 }
 
 .yearTitle {
-  font-size: 48px;
+  font-size: 40px;
   font-weight: 600;
   color: #1d1d1f;
   margin: 0;
@@ -25,20 +26,22 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  gap: 24px;
+  gap: 20px;
   flex: 1;
+  min-height: 0;
 }
 
 .monthCell {
   background: #ffffff;
   border: 1px solid #f0f0f0;
   border-radius: 8px;
-  padding: 16px;
+  padding: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   flex-direction: column;
-  min-height: 200px;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .monthCell:hover {
@@ -47,11 +50,12 @@
 }
 
 .monthHeader {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
 }
 
 .monthName {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #ff3b30;
   text-transform: capitalize;
@@ -60,16 +64,17 @@
 .weekdayHeaders {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-  margin-bottom: 8px;
+  gap: 1px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
 .weekdayHeader {
   text-align: center;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
   color: #86868b;
-  padding: 4px 0;
+  padding: 2px 0;
 }
 
 .dateGrid {
@@ -77,20 +82,21 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 2px;
   flex: 1;
+  min-height: 0;
 }
 
 .dateCell {
-  aspect-ratio: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 4px;
+  padding: 2px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.15s ease;
   position: relative;
-  min-height: 32px;
+  min-height: 24px;
+  aspect-ratio: 1;
 }
 
 .dateCell:hover {
@@ -102,16 +108,16 @@
 }
 
 .dateNumber {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 400;
   color: #1d1d1f;
-  margin-bottom: 2px;
+  margin-bottom: 1px;
 }
 
 .dateCell.today .dateNumber {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -120,6 +126,7 @@
   color: white;
   font-weight: 600;
   z-index: 1;
+  font-size: 10px;
 }
 
 .eventIndicator {

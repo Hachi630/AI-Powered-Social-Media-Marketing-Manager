@@ -46,7 +46,6 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
   };
 
   const dayItems = getItemsForDay();
-  const allDayItems = dayItems.filter(i => !i.time);
   const timedItems = dayItems.filter(i => i.time);
 
   // Calculate item position and height based on time
@@ -74,24 +73,6 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
           <span className={styles.dayName}>{currentDate.format('dddd')}</span>
         </div>
       </div>
-
-      {/* All-day Section */}
-      {allDayItems.length > 0 && (
-        <div className={styles.allDaySection}>
-          <div className={styles.allDayLabel}>all-day</div>
-          <div className={styles.allDayContent}>
-            {allDayItems.map(item => (
-              <div 
-                key={item.id} 
-                className={`${styles.eventCard} ${styles[`event_${item.platform}`]}`}
-                onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
-              >
-                <div className={styles.eventTitle}>{item.title}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Scrollable Main Grid */}
       <div className={styles.scrollArea} ref={scrollRef}>
