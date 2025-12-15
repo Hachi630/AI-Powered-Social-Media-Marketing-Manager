@@ -108,15 +108,17 @@
 /* Social Dashboard specific styles */
 .socialDashboardContent {
   display: flex !important;
-  justify-content: center !important;
+  justify-content: flex-start !important;
   align-items: flex-start !important;
   width: 100% !important;
   min-height: calc(100vh - 99px) !important;
+  padding-top: 0 !important;
 }
 
 .socialDashboardContent > * {
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* Responsive styles for Social Dashboard */

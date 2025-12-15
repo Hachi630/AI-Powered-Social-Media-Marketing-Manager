@@ -54,10 +54,13 @@ import {
   CommentOutlined,
   TwitterOutlined,
   FacebookOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
 import Header from "./Header";
+import SocialSidebar, { type SocialPlatform } from "./SocialSidebar";
 import styles from "./Dashboard.module.css";
 import {
   getLinkedInMetrics,
@@ -108,7 +111,7 @@ interface LinkedInDashboardProps {
   userId?: string;
 }
 
-const { Content } = Layout;
+const { Content, Sider } = Layout;
 const { useBreakpoint } = Grid;
 
 export default function LinkedInDashboard({
@@ -122,6 +125,15 @@ export default function LinkedInDashboard({
   const { modal } = App.useApp();
   const screens = useBreakpoint();
   const isMobile = !screens.lg;
+  const isTablet = screens.md && !screens.lg;
+
+  // Sidebar and platform selection states
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    isMobile || isTablet
+  );
+  const [selectedPlatform, setSelectedPlatform] =
+    useState<SocialPlatform>("linkedin");
+
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -141,7 +153,7 @@ export default function LinkedInDashboard({
   const [disconnectingFacebook, setDisconnectingFacebook] = useState(false);
   const [disconnectingInstagram, setDisconnectingInstagram] = useState(false);
 
-  // Post creation states
+  // LinkedIn Post creation states
   const [postText, setPostText] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -149,7 +161,7 @@ export default function LinkedInDashboard({
   const [postModalOpen, setPostModalOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // Enhanced post type states
+  // LinkedIn Enhanced post type states
   const [postType, setPostType] = useState<"text" | "image" | "video" | "link">(
     "text"
   );
@@ -158,6 +170,68 @@ export default function LinkedInDashboard({
   const [linkUrl, setLinkUrl] = useState("");
   const [linkTitle, setLinkTitle] = useState("");
   const [linkDescription, setLinkDescription] = useState("");
+
+  // Twitter/X Post states
+  const [twitterPostText, setTwitterPostText] = useState("");
+  const [twitterPostType, setTwitterPostType] = useState<
+    "text" | "image" | "video" | "link"
+  >("text");
+  const [twitterSelectedImage, setTwitterSelectedImage] = useState<File | null>(
+    null
+  );
+  const [twitterImagePreview, setTwitterImagePreview] = useState<string | null>(
+    null
+  );
+  const [twitterSelectedVideo, setTwitterSelectedVideo] = useState<File | null>(
+    null
+  );
+  const [twitterVideoPreview, setTwitterVideoPreview] = useState<string | null>(
+    null
+  );
+  const [twitterLinkUrl, setTwitterLinkUrl] = useState("");
+  const [twitterLinkTitle, setTwitterLinkTitle] = useState("");
+  const [twitterLinkDescription, setTwitterLinkDescription] = useState("");
+  const [twitterPosting, setTwitterPosting] = useState(false);
+
+  // Instagram Post states
+  const [instagramPostText, setInstagramPostText] = useState("");
+  const [instagramPostType, setInstagramPostType] = useState<
+    "text" | "image" | "video" | "link"
+  >("text");
+  const [instagramSelectedImage, setInstagramSelectedImage] =
+    useState<File | null>(null);
+  const [instagramImagePreview, setInstagramImagePreview] = useState<
+    string | null
+  >(null);
+  const [instagramSelectedVideo, setInstagramSelectedVideo] =
+    useState<File | null>(null);
+  const [instagramVideoPreview, setInstagramVideoPreview] = useState<
+    string | null
+  >(null);
+  const [instagramLinkUrl, setInstagramLinkUrl] = useState("");
+  const [instagramLinkTitle, setInstagramLinkTitle] = useState("");
+  const [instagramLinkDescription, setInstagramLinkDescription] = useState("");
+  const [instagramPosting, setInstagramPosting] = useState(false);
+
+  // Facebook Post states
+  const [facebookPostText, setFacebookPostText] = useState("");
+  const [facebookPostType, setFacebookPostType] = useState<
+    "text" | "image" | "video" | "link"
+  >("text");
+  const [facebookSelectedImage, setFacebookSelectedImage] =
+    useState<File | null>(null);
+  const [facebookImagePreview, setFacebookImagePreview] = useState<
+    string | null
+  >(null);
+  const [facebookSelectedVideo, setFacebookSelectedVideo] =
+    useState<File | null>(null);
+  const [facebookVideoPreview, setFacebookVideoPreview] = useState<
+    string | null
+  >(null);
+  const [facebookLinkUrl, setFacebookLinkUrl] = useState("");
+  const [facebookLinkTitle, setFacebookLinkTitle] = useState("");
+  const [facebookLinkDescription, setFacebookLinkDescription] = useState("");
+  const [facebookPosting, setFacebookPosting] = useState(false);
 
   // Organization/Company Page states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -172,6 +246,23 @@ export default function LinkedInDashboard({
   const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
   const [creatingEvent, setCreatingEvent] = useState(false);
   const [eventForm] = Form.useForm();
+
+  // Update sidebar collapsed state when screen size changes
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      setSidebarCollapsed(true);
+    } else {
+      setSidebarCollapsed(false);
+    }
+  }, [isMobile, isTablet]);
+
+  const handleToggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => !prev);
+  }, []);
+
+  const handlePlatformSelect = useCallback((platform: SocialPlatform) => {
+    setSelectedPlatform(platform);
+  }, []);
 
   // Load LinkedIn metrics
   useEffect(() => {
@@ -221,7 +312,10 @@ export default function LinkedInDashboard({
     if (twitterParam === "connected") {
       const note = params.get("note");
       if (note === "rate_limited") {
-        message.warning("Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets.", 8);
+        message.warning(
+          "Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets.",
+          8
+        );
       } else {
         message.success("Twitter account connected successfully!");
       }
@@ -245,8 +339,12 @@ export default function LinkedInDashboard({
       // Provide user-friendly error messages
       switch (reason) {
         case "rate_limited":
-          const resetTime = resetTimestamp ? new Date(parseInt(resetTimestamp) * 1000) : null;
-          const resetTimeStr = resetTime ? resetTime.toLocaleString() : "24 hours";
+          const resetTime = resetTimestamp
+            ? new Date(parseInt(resetTimestamp) * 1000)
+            : null;
+          const resetTimeStr = resetTime
+            ? resetTime.toLocaleString()
+            : "24 hours";
           errorMessage = `Twitter API rate limit reached (25 requests per 24 hours). This is a Twitter API limitation, not a code issue. Please wait until ${resetTimeStr} and try again. Your tokens are saved and will work once the rate limit resets.`;
           message.warning(errorMessage, 10); // Show for 10 seconds
           break;
@@ -289,7 +387,7 @@ export default function LinkedInDashboard({
         setLoadingInstagram(false);
         return;
       }
-      
+
       // Load Facebook status
       setLoadingFacebook(true);
       try {
@@ -320,7 +418,9 @@ export default function LinkedInDashboard({
           setFacebookAuthUrl(authData.authUrl);
         } else {
           console.error("Failed to get auth URL:", authData.error);
-          message.error(authData.error || "Failed to get Facebook/Instagram auth URL");
+          message.error(
+            authData.error || "Failed to get Facebook/Instagram auth URL"
+          );
         }
       } catch (error) {
         console.error("Failed to get Facebook/Instagram auth URL:", error);
@@ -335,16 +435,16 @@ export default function LinkedInDashboard({
     const params = new URLSearchParams(window.location.search);
     const facebookParam = params.get("facebook");
     const instagramParam = params.get("instagram");
-    
+
     if (facebookParam === "connected" || instagramParam === "connected") {
       message.success(
         facebookParam === "connected" && instagramParam === "connected"
           ? "Successfully connected Facebook and Instagram!"
           : facebookParam === "connected"
-          ? "Successfully connected Facebook!"
-          : "Successfully connected Instagram!"
+            ? "Successfully connected Facebook!"
+            : "Successfully connected Instagram!"
       );
-      
+
       // Reload Facebook/Instagram status
       if (jwt) {
         if (facebookParam === "connected") {
@@ -352,22 +452,32 @@ export default function LinkedInDashboard({
           // IMPORTANT: Also refresh Instagram status after Facebook connection
           // Facebook-only connection should have removed Instagram connection
           // This ensures the UI reflects the correct state
-          getInstagramStatus(jwt).then(setInstagramStatus).catch((err) => {
-            console.error("Failed to refresh Instagram status after Facebook connection:", err);
-            // If refresh fails, set Instagram to disconnected to ensure UI is correct
-            setInstagramStatus({ connected: false });
-          });
+          getInstagramStatus(jwt)
+            .then(setInstagramStatus)
+            .catch((err) => {
+              console.error(
+                "Failed to refresh Instagram status after Facebook connection:",
+                err
+              );
+              // If refresh fails, set Instagram to disconnected to ensure UI is correct
+              setInstagramStatus({ connected: false });
+            });
         }
         if (instagramParam === "connected") {
           getInstagramStatus(jwt).then(setInstagramStatus);
           // Also refresh Facebook status after Instagram connection
           // Instagram connection also connects Facebook Page
-          getFacebookStatus(jwt).then(setFacebookStatus).catch((err) => {
-            console.error("Failed to refresh Facebook status after Instagram connection:", err);
-          });
+          getFacebookStatus(jwt)
+            .then(setFacebookStatus)
+            .catch((err) => {
+              console.error(
+                "Failed to refresh Facebook status after Instagram connection:",
+                err
+              );
+            });
         }
       }
-      
+
       // Clean up URL
       const newParams = new URLSearchParams(params);
       newParams.delete("facebook");
@@ -378,7 +488,7 @@ export default function LinkedInDashboard({
       window.history.replaceState({}, "", newUrl);
     } else if (facebookParam === "error" || instagramParam === "error") {
       const reason = params.get("reason");
-      
+
       // Skip showing error for invalid_state (common during OAuth flow, not a real error)
       if (reason === "invalid_state") {
         // Silently clean up URL without showing error message
@@ -392,9 +502,9 @@ export default function LinkedInDashboard({
         window.history.replaceState({}, "", newUrl);
         return;
       }
-      
+
       let errorMessage = "Facebook/Instagram connection failed";
-      
+
       // Provide user-friendly error messages
       switch (reason) {
         case "user_denied":
@@ -409,9 +519,9 @@ export default function LinkedInDashboard({
         default:
           errorMessage = reason || "Connection failed. Please try again.";
       }
-      
+
       message.error(errorMessage);
-      
+
       // Clean up URL
       const newParams = new URLSearchParams(params);
       newParams.delete("facebook");
@@ -434,7 +544,9 @@ export default function LinkedInDashboard({
       window.history.replaceState({}, "", "/socialdashboard");
     } else if (facebookParam === "error" || instagramParam === "error") {
       const reason = params.get("reason");
-      message.error(`Facebook/Instagram connection failed: ${reason || "Unknown error"}`);
+      message.error(
+        `Facebook/Instagram connection failed: ${reason || "Unknown error"}`
+      );
       // Clean up URL
       window.history.replaceState({}, "", "/socialdashboard");
     }
@@ -572,19 +684,24 @@ export default function LinkedInDashboard({
             // IMPORTANT: Reload status from backend to ensure UI reflects actual state
             // Don't just set local state, as it might be stale
             // Add a small delay to ensure backend has processed the deletion
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise((resolve) => setTimeout(resolve, 500));
             try {
               const fbData = await getFacebookStatus(jwt);
               console.log("Facebook status after disconnect:", fbData);
               setFacebookStatus(fbData);
-              
+
               // Double check: if status still shows connected, force set to disconnected
               if (fbData.connected) {
-                console.warn("Facebook status still shows connected after disconnect, forcing to disconnected");
+                console.warn(
+                  "Facebook status still shows connected after disconnect, forcing to disconnected"
+                );
                 setFacebookStatus({ connected: false, success: true });
               }
             } catch (statusError) {
-              console.error("Failed to refresh Facebook status after disconnect:", statusError);
+              console.error(
+                "Failed to refresh Facebook status after disconnect:",
+                statusError
+              );
               // If refresh fails, set to disconnected to ensure UI is correct
               setFacebookStatus({ connected: false, success: true });
             }
@@ -624,7 +741,10 @@ export default function LinkedInDashboard({
               setInstagramStatus(igData);
               console.log("Instagram status after disconnect:", igData);
             } catch (statusError) {
-              console.error("Failed to refresh Instagram status after disconnect:", statusError);
+              console.error(
+                "Failed to refresh Instagram status after disconnect:",
+                statusError
+              );
               // If refresh fails, set to disconnected to ensure UI is correct
               setInstagramStatus({ connected: false });
             }
@@ -854,6 +974,111 @@ export default function LinkedInDashboard({
     setVideoPreview(null);
   };
 
+  // Twitter/X Image handlers
+  const handleTwitterImageSelect = (file: File) => {
+    setTwitterSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setTwitterImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleTwitterRemoveImage = () => {
+    setTwitterSelectedImage(null);
+    setTwitterImagePreview(null);
+  };
+
+  // Twitter/X Video handlers
+  const handleTwitterVideoSelect = (file: File) => {
+    if (file.size > 200 * 1024 * 1024) {
+      message.error("Video must be smaller than 200MB");
+      return false;
+    }
+    setTwitterSelectedVideo(file);
+    setTwitterVideoPreview(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleTwitterVideoClear = () => {
+    if (twitterVideoPreview) {
+      URL.revokeObjectURL(twitterVideoPreview);
+    }
+    setTwitterSelectedVideo(null);
+    setTwitterVideoPreview(null);
+  };
+
+  // Instagram Image handlers
+  const handleInstagramImageSelect = (file: File) => {
+    setInstagramSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setInstagramImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleInstagramRemoveImage = () => {
+    setInstagramSelectedImage(null);
+    setInstagramImagePreview(null);
+  };
+
+  // Instagram Video handlers
+  const handleInstagramVideoSelect = (file: File) => {
+    if (file.size > 200 * 1024 * 1024) {
+      message.error("Video must be smaller than 200MB");
+      return false;
+    }
+    setInstagramSelectedVideo(file);
+    setInstagramVideoPreview(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleInstagramVideoClear = () => {
+    if (instagramVideoPreview) {
+      URL.revokeObjectURL(instagramVideoPreview);
+    }
+    setInstagramSelectedVideo(null);
+    setInstagramVideoPreview(null);
+  };
+
+  // Facebook Image handlers
+  const handleFacebookImageSelect = (file: File) => {
+    setFacebookSelectedImage(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFacebookImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    return false;
+  };
+
+  const handleFacebookRemoveImage = () => {
+    setFacebookSelectedImage(null);
+    setFacebookImagePreview(null);
+  };
+
+  // Facebook Video handlers
+  const handleFacebookVideoSelect = (file: File) => {
+    if (file.size > 200 * 1024 * 1024) {
+      message.error("Video must be smaller than 200MB");
+      return false;
+    }
+    setFacebookSelectedVideo(file);
+    setFacebookVideoPreview(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleFacebookVideoClear = () => {
+    if (facebookVideoPreview) {
+      URL.revokeObjectURL(facebookVideoPreview);
+    }
+    setFacebookSelectedVideo(null);
+    setFacebookVideoPreview(null);
+  };
+
   // Load events for a specific organization
   const handleLoadOrgEvents = async (orgId: string) => {
     if (!jwt) return;
@@ -957,6 +1182,102 @@ export default function LinkedInDashboard({
   );
 
   const renderMetricsContent = () => {
+    // Handle platform-specific content based on selectedPlatform
+    // For non-LinkedIn platforms, show their specific content
+    if (selectedPlatform !== "linkedin") {
+      // Twitter content
+      if (selectedPlatform === "twitter") {
+        const isTwitterConnected = twitterStatus?.connected === true;
+        if (loadingTwitter) {
+          return (
+            <div style={{ textAlign: "center", padding: "60px 0" }}>
+              <Spin size="large" />
+              <Typography.Paragraph style={{ marginTop: 16, color: "#666" }}>
+                Loading Twitter status...
+              </Typography.Paragraph>
+            </div>
+          );
+        }
+        if (!jwt || !isLoggedIn) {
+          return (
+            <Empty
+              image={
+                <TwitterOutlined style={{ fontSize: 64, color: "#1DA1F2" }} />
+              }
+              description={
+                <Typography.Text type="secondary">
+                  Please log in to view your Twitter account
+                </Typography.Text>
+              }
+            />
+          );
+        }
+        // Continue to show Twitter content from renderMetricsContent
+        // Don't return early, let the function continue to render Twitter section
+      }
+
+      // Instagram content
+      if (selectedPlatform === "instagram") {
+        const isInstagramConnected = instagramStatus?.connected === true;
+        if (loadingInstagram) {
+          return (
+            <div style={{ textAlign: "center", padding: "60px 0" }}>
+              <Spin size="large" />
+              <Typography.Paragraph style={{ marginTop: 16, color: "#666" }}>
+                Loading Instagram status...
+              </Typography.Paragraph>
+            </div>
+          );
+        }
+        if (!jwt || !isLoggedIn) {
+          return (
+            <Empty
+              image={
+                <InstagramOutlined style={{ fontSize: 64, color: "#E4405F" }} />
+              }
+              description={
+                <Typography.Text type="secondary">
+                  Please log in to view your Instagram account
+                </Typography.Text>
+              }
+            />
+          );
+        }
+        // Continue to show Instagram content from renderMetricsContent
+      }
+
+      // Facebook content
+      if (selectedPlatform === "facebook") {
+        const isFacebookConnected = facebookStatus?.connected === true;
+        if (loadingFacebook) {
+          return (
+            <div style={{ textAlign: "center", padding: "60px 0" }}>
+              <Spin size="large" />
+              <Typography.Paragraph style={{ marginTop: 16, color: "#666" }}>
+                Loading Facebook status...
+              </Typography.Paragraph>
+            </div>
+          );
+        }
+        if (!jwt || !isLoggedIn) {
+          return (
+            <Empty
+              image={
+                <FacebookOutlined style={{ fontSize: 64, color: "#1877F2" }} />
+              }
+              description={
+                <Typography.Text type="secondary">
+                  Please log in to view your Facebook account
+                </Typography.Text>
+              }
+            />
+          );
+        }
+        // Continue to show Facebook content from renderMetricsContent
+      }
+    }
+
+    // Original LinkedIn content (unchanged)
     if (loading) {
       return (
         <div style={{ textAlign: "center", padding: "60px 0" }}>
@@ -990,132 +1311,10 @@ export default function LinkedInDashboard({
       <div
         style={{
           width: "100%",
-          maxWidth: 1200,
-          margin: "0 auto",
-          padding: isMobile ? "0 16px" : screens.xl ? "0 32px" : "0 24px",
         }}
       >
-        {/* Header Section */}
-        <div
-          style={{
-            marginBottom: 32,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: 16,
-          }}
-        >
-          <div>
-            <Typography.Title
-              level={2}
-              style={{
-                margin: 0,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-              }}
-            >
-              <LinkedinOutlined style={{ color: "#0077B5" }} />
-              Social Dashboard
-            </Typography.Title>
-            <Typography.Text type="secondary">
-              Track your LinkedIn presence and engagement
-            </Typography.Text>
-          </div>
-          <div style={{ display: "flex", gap: 12 }}>
-            {isConnected && (
-              <>
-                <Button
-                  icon={<SyncOutlined />}
-                  onClick={handleRefreshMetrics}
-                  loading={loading}
-                >
-                  Refresh
-                </Button>
-                <Button
-                  icon={<DisconnectOutlined />}
-                  onClick={handleDisconnect}
-                  loading={disconnecting}
-                  danger
-                >
-                  Disconnect
-                </Button>
-              </>
-            )}
-            {!isConnected && (
-              <Button
-                type="default"
-                icon={<LinkedinOutlined style={{ color: "#ffffff" }} />}
-                disabled={!authUrl}
-                onClick={() => {
-                  if (!authUrl) {
-                    console.error(
-                      "Cannot connect: userId not available. userId:",
-                      userId,
-                      "user:",
-                      user
-                    );
-                    alert(
-                      "Please wait for user data to load, or try refreshing the page."
-                    );
-                    return;
-                  }
-                  // Redirect to LinkedIn OAuth
-                  window.location.href = authUrl;
-                }}
-                style={{
-                  backgroundColor: "#0077B5",
-                  borderColor: "#0077B5",
-                  color: "#ffffff",
-                  fontWeight: 500,
-                }}
-              >
-                <span style={{ color: "#ffffff" }}>
-                  {authUrl ? "Connect LinkedIn" : "Loading..."}
-                </span>
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Profile Card - Show when connected */}
-        {isConnected && profile && (
-          <Card
-            style={{ marginBottom: 24, borderRadius: 12 }}
-            styles={{ body: { padding: 24 } }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {profile.picture && (
-                <img
-                  src={profile.picture}
-                  alt={profile.name}
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
-                />
-              )}
-              <div>
-                <Typography.Title level={4} style={{ margin: 0 }}>
-                  {profile.name}
-                </Typography.Title>
-                <Typography.Text type="secondary">
-                  {profile.email}
-                </Typography.Text>
-                <br />
-                <Tag color="success" style={{ marginTop: 8 }}>
-                  ● Connected
-                </Tag>
-              </div>
-            </div>
-          </Card>
-        )}
-
-        {/* Create Post Card - Show when connected */}
-        {isConnected && (
+        {/* Create Post Card - Show when connected - Only for LinkedIn */}
+        {selectedPlatform === "linkedin" && isConnected && (
           <Card
             style={{
               marginBottom: 24,
@@ -1546,74 +1745,347 @@ export default function LinkedInDashboard({
           </Card>
         )}
 
-        {/* Metrics Cards */}
-        <Row gutter={[24, 24]}>
-          {/* Followers Card */}
-          <Col xs={24} sm={12} lg={8}>
+        {/* Metrics Cards - Only for LinkedIn */}
+        {selectedPlatform === "linkedin" && (
+          <Row gutter={[24, 24]}>
+            {/* Followers Card */}
+            <Col xs={24} sm={12} lg={8}>
+              <Card
+                hoverable
+                style={{ height: "100%", borderRadius: 12 }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <UserOutlined style={{ fontSize: 24, color: "#fff" }} />
+                  </div>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    Followers
+                  </Typography.Text>
+                </div>
+                {metrics?.followers?.available ? (
+                  <Statistic
+                    value={metrics.followers.value}
+                    valueStyle={{
+                      fontSize: 36,
+                      fontWeight: 700,
+                      color: "#0077B5",
+                    }}
+                  />
+                ) : isConnected ? (
+                  <div>
+                    <Typography.Text
+                      type="secondary"
+                      style={{ display: "block", marginBottom: 12 }}
+                    >
+                      {metrics?.followers?.reason ||
+                        "Requires LinkedIn Marketing API permissions"}
+                    </Typography.Text>
+                    <Tag color="warning">API Limited</Tag>
+                  </div>
+                ) : (
+                  <div>
+                    <Typography.Text
+                      type="secondary"
+                      style={{ display: "block", marginBottom: 12 }}
+                    >
+                      Connect LinkedIn to see your follower count
+                    </Typography.Text>
+                    {authUrl ? (
+                      <Button
+                        type="link"
+                        onClick={() => {
+                          if (!authUrl) {
+                            console.error(
+                              "Cannot connect: userId not available. userId:",
+                              userId,
+                              "user:",
+                              user
+                            );
+                            alert(
+                              "Please wait for user data to load, or try refreshing the page."
+                            );
+                            return;
+                          }
+                          // Redirect to LinkedIn OAuth
+                          window.location.href = authUrl;
+                        }}
+                        style={{ padding: 0, color: "#0077B5" }}
+                      >
+                        Connect now →
+                      </Button>
+                    ) : (
+                      <Tag color="default">Not Available</Tag>
+                    )}
+                  </div>
+                )}
+              </Card>
+            </Col>
+
+            {/* Connections Card */}
+            <Col xs={24} sm={12} lg={8}>
+              <Card
+                hoverable
+                style={{ height: "100%", borderRadius: 12 }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #00A0DC 0%, #0077B5 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <TeamOutlined style={{ fontSize: 24, color: "#fff" }} />
+                  </div>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    Connections
+                  </Typography.Text>
+                </div>
+                {metrics?.connections?.available ? (
+                  <Statistic
+                    value={metrics.connections.value}
+                    valueStyle={{
+                      fontSize: 36,
+                      fontWeight: 700,
+                      color: "#00A0DC",
+                    }}
+                  />
+                ) : isConnected ? (
+                  <div>
+                    <Typography.Text
+                      type="secondary"
+                      style={{ display: "block", marginBottom: 12 }}
+                    >
+                      {metrics?.connections?.reason ||
+                        "Requires special LinkedIn API permissions"}
+                    </Typography.Text>
+                    <Tag color="warning">API Limited</Tag>
+                  </div>
+                ) : (
+                  <div>
+                    <Typography.Text
+                      type="secondary"
+                      style={{ display: "block", marginBottom: 12 }}
+                    >
+                      Your total network connections
+                    </Typography.Text>
+                    <Tag color="default">Not Connected</Tag>
+                  </div>
+                )}
+              </Card>
+            </Col>
+
+            {/* Profile Views Card */}
+            <Col xs={24} sm={12} lg={8}>
+              <Card
+                hoverable
+                style={{ height: "100%", borderRadius: 12 }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #86868B 0%, #636366 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <EyeOutlined style={{ fontSize: 24, color: "#fff" }} />
+                  </div>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    Profile Views
+                  </Typography.Text>
+                </div>
+                <div>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 12 }}
+                  >
+                    90-day profile view analytics
+                  </Typography.Text>
+                  <Tag color="warning">Not supported by LinkedIn API</Tag>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+        )}
+
+        {/* Connection Status - Only for LinkedIn */}
+        {selectedPlatform === "linkedin" && (
+          <Card
+            style={{ marginTop: 24, borderRadius: 12 }}
+            styles={{ body: { padding: 24 } }}
+          >
+            <Row align="middle" justify="space-between">
+              <Col>
+                <Typography.Text strong style={{ fontSize: 16 }}>
+                  LinkedIn Connection Status
+                </Typography.Text>
+                <br />
+                <Typography.Text type="secondary">
+                  {isConnected
+                    ? "Your LinkedIn account is connected and syncing data"
+                    : "Connect your LinkedIn account to start tracking your social metrics"}
+                </Typography.Text>
+              </Col>
+              <Col>
+                {isConnected ? (
+                  <Tag
+                    color="success"
+                    style={{ padding: "4px 12px", fontSize: 14 }}
+                  >
+                    ● Connected
+                  </Tag>
+                ) : (
+                  <Tag
+                    color="default"
+                    style={{ padding: "4px 12px", fontSize: 14 }}
+                  >
+                    ○ Not Connected
+                  </Tag>
+                )}
+              </Col>
+            </Row>
+          </Card>
+        )}
+
+        {/* Twitter Connection Section - Only show when Twitter is selected */}
+        {selectedPlatform === "twitter" && (
+          <>
             <Card
-              hoverable
-              style={{ height: "100%", borderRadius: 12 }}
+              style={{ marginTop: 24, borderRadius: 12 }}
               styles={{ body: { padding: 24 } }}
             >
               <div
                 style={{
+                  marginBottom: 24,
                   display: "flex",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  gap: 12,
-                  marginBottom: 16,
+                  flexWrap: "wrap",
+                  gap: 16,
                 }}
               >
+                <div>
+                  <Typography.Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <TwitterOutlined style={{ color: "#1DA1F2" }} />
+                    Twitter/X Connection
+                  </Typography.Title>
+                  <Typography.Text type="secondary">
+                    Connect your Twitter account to post tweets from your
+                    calendar
+                  </Typography.Text>
+                </div>
                 <div
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    background:
-                      "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    flexDirection: "column",
+                    gap: 16,
+                    alignItems: "flex-end",
                   }}
                 >
-                  <UserOutlined style={{ fontSize: 24, color: "#fff" }} />
-                </div>
-                <Typography.Text strong style={{ fontSize: 16 }}>
-                  Followers
-                </Typography.Text>
-              </div>
-              {metrics?.followers?.available ? (
-                <Statistic
-                  value={metrics.followers.value}
-                  valueStyle={{
-                    fontSize: 36,
-                    fontWeight: 700,
-                    color: "#0077B5",
-                  }}
-                />
-              ) : isConnected ? (
-                <div>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 12 }}
-                  >
-                    {metrics?.followers?.reason ||
-                      "Requires LinkedIn Marketing API permissions"}
-                  </Typography.Text>
-                  <Tag color="warning">API Limited</Tag>
-                </div>
-              ) : (
-                <div>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 12 }}
-                  >
-                    Connect LinkedIn to see your follower count
-                  </Typography.Text>
-                  {authUrl ? (
+                  {twitterStatus?.connected && (
+                    <>
+                      <Button
+                        icon={<SyncOutlined />}
+                        onClick={async () => {
+                          if (!jwt) return;
+                          setLoadingTwitter(true);
+                          try {
+                            const data = await getTwitterStatus(jwt);
+                            setTwitterStatus(data);
+                            message.success("Twitter status refreshed");
+                          } catch (error) {
+                            console.error(
+                              "Failed to refresh Twitter status:",
+                              error
+                            );
+                            message.error("Failed to refresh Twitter status");
+                          } finally {
+                            setLoadingTwitter(false);
+                          }
+                        }}
+                        loading={loadingTwitter}
+                        style={{
+                          width: 120,
+                          height: 40,
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                      <Button
+                        icon={<DisconnectOutlined />}
+                        onClick={handleDisconnectTwitter}
+                        loading={disconnectingTwitter}
+                        danger
+                        style={{
+                          width: 120,
+                          height: 40,
+                        }}
+                      >
+                        Disconnect
+                      </Button>
+                    </>
+                  )}
+                  {!twitterStatus?.connected && (
                     <Button
-                      type="link"
+                      type="default"
+                      icon={<TwitterOutlined style={{ color: "#ffffff" }} />}
+                      disabled={!twitterAuthUrl}
                       onClick={() => {
-                        if (!authUrl) {
+                        if (!twitterAuthUrl) {
                           console.error(
                             "Cannot connect: userId not available. userId:",
                             userId,
@@ -1625,644 +2097,1447 @@ export default function LinkedInDashboard({
                           );
                           return;
                         }
-                        // Redirect to LinkedIn OAuth
-                        window.location.href = authUrl;
+                        // Redirect to Twitter OAuth
+                        window.location.href = twitterAuthUrl;
                       }}
-                      style={{ padding: 0, color: "#0077B5" }}
+                      style={{
+                        backgroundColor: "#1DA1F2",
+                        borderColor: "#1DA1F2",
+                        color: "#ffffff",
+                        fontWeight: 500,
+                      }}
                     >
-                      Connect now →
+                      <span style={{ color: "#ffffff" }}>
+                        {twitterAuthUrl ? "Connect Twitter" : "Loading..."}
+                      </span>
                     </Button>
-                  ) : (
-                    <Tag color="default">Not Available</Tag>
                   )}
                 </div>
-              )}
-            </Card>
-          </Col>
-
-          {/* Connections Card */}
-          <Col xs={24} sm={12} lg={8}>
-            <Card
-              hoverable
-              style={{ height: "100%", borderRadius: 12 }}
-              styles={{ body: { padding: 24 } }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 16,
-                }}
-              >
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    background:
-                      "linear-gradient(135deg, #00A0DC 0%, #0077B5 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <TeamOutlined style={{ fontSize: 24, color: "#fff" }} />
-                </div>
-                <Typography.Text strong style={{ fontSize: 16 }}>
-                  Connections
-                </Typography.Text>
               </div>
-              {metrics?.connections?.available ? (
-                <Statistic
-                  value={metrics.connections.value}
-                  valueStyle={{
-                    fontSize: 36,
-                    fontWeight: 700,
-                    color: "#00A0DC",
-                  }}
-                />
-              ) : isConnected ? (
-                <div>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 12 }}
-                  >
-                    {metrics?.connections?.reason ||
-                      "Requires special LinkedIn API permissions"}
-                  </Typography.Text>
-                  <Tag color="warning">API Limited</Tag>
-                </div>
-              ) : (
-                <div>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 12 }}
-                  >
-                    Your total network connections
-                  </Typography.Text>
-                  <Tag color="default">Not Connected</Tag>
-                </div>
-              )}
-            </Card>
-          </Col>
 
-          {/* Profile Views Card */}
-          <Col xs={24} sm={12} lg={8}>
-            <Card
-              hoverable
-              style={{ height: "100%", borderRadius: 12 }}
-              styles={{ body: { padding: 24 } }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 16,
-                }}
-              >
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 12,
-                    background:
-                      "linear-gradient(135deg, #86868B 0%, #636366 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <EyeOutlined style={{ fontSize: 24, color: "#fff" }} />
-                </div>
-                <Typography.Text strong style={{ fontSize: 16 }}>
-                  Profile Views
-                </Typography.Text>
-              </div>
-              <div>
-                <Typography.Text
-                  type="secondary"
-                  style={{ display: "block", marginBottom: 12 }}
-                >
-                  90-day profile view analytics
-                </Typography.Text>
-                <Tag color="warning">Not supported by LinkedIn API</Tag>
-              </div>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Connection Status */}
-        <Card
-          style={{ marginTop: 24, borderRadius: 12 }}
-          styles={{ body: { padding: 24 } }}
-        >
-          <Row align="middle" justify="space-between">
-            <Col>
-              <Typography.Text strong style={{ fontSize: 16 }}>
-                LinkedIn Connection Status
-              </Typography.Text>
-              <br />
-              <Typography.Text type="secondary">
-                {isConnected
-                  ? "Your LinkedIn account is connected and syncing data"
-                  : "Connect your LinkedIn account to start tracking your social metrics"}
-              </Typography.Text>
-            </Col>
-            <Col>
-              {isConnected ? (
-                <Tag
-                  color="success"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ● Connected
-                </Tag>
-              ) : (
-                <Tag
-                  color="default"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ○ Not Connected
-                </Tag>
-              )}
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Twitter Connection Section */}
-        <Card
-          style={{ marginTop: 24, borderRadius: 12 }}
-          styles={{ body: { padding: 24 } }}
-        >
-          <div
-            style={{
-              marginBottom: 24,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 16,
-            }}
-          >
-            <div>
-              <Typography.Title
-                level={4}
-                style={{
-                  margin: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
-                <TwitterOutlined style={{ color: "#1DA1F2" }} />
-                Twitter/X Connection
-              </Typography.Title>
-              <Typography.Text type="secondary">
-                Connect your Twitter account to post tweets from your calendar
-              </Typography.Text>
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              {twitterStatus?.connected && (
-                <>
-                  <Button
-                    icon={<SyncOutlined />}
-                    onClick={async () => {
-                      if (!jwt) return;
-                      setLoadingTwitter(true);
-                      try {
-                        const data = await getTwitterStatus(jwt);
-                        setTwitterStatus(data);
-                        message.success("Twitter status refreshed");
-                      } catch (error) {
-                        console.error(
-                          "Failed to refresh Twitter status:",
-                          error
-                        );
-                        message.error("Failed to refresh Twitter status");
-                      } finally {
-                        setLoadingTwitter(false);
-                      }
-                    }}
-                    loading={loadingTwitter}
-                  >
-                    Refresh
-                  </Button>
-                  <Button
-                    icon={<DisconnectOutlined />}
-                    onClick={handleDisconnectTwitter}
-                    loading={disconnectingTwitter}
-                    danger
-                  >
-                    Disconnect
-                  </Button>
-                </>
-              )}
-              {!twitterStatus?.connected && (
-                <Button
-                  type="default"
-                  icon={<TwitterOutlined style={{ color: "#ffffff" }} />}
-                  disabled={!twitterAuthUrl}
-                  onClick={() => {
-                    if (!twitterAuthUrl) {
-                      console.error(
-                        "Cannot connect: userId not available. userId:",
-                        userId,
-                        "user:",
-                        user
-                      );
-                      alert(
-                        "Please wait for user data to load, or try refreshing the page."
-                      );
-                      return;
-                    }
-                    // Redirect to Twitter OAuth
-                    window.location.href = twitterAuthUrl;
-                  }}
-                  style={{
-                    backgroundColor: "#1DA1F2",
-                    borderColor: "#1DA1F2",
-                    color: "#ffffff",
-                    fontWeight: 500,
-                  }}
-                >
-                  <span style={{ color: "#ffffff" }}>
-                    {twitterAuthUrl ? "Connect Twitter" : "Loading..."}
-                  </span>
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Twitter Profile Card - Show when connected */}
-          {twitterStatus?.connected && twitterStatus?.profile && (
-            <Card
-              style={{
-                marginBottom: 24,
-                borderRadius: 12,
-                backgroundColor: "#f8f9fa",
-              }}
-              styles={{ body: { padding: 24 } }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <div
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: "50%",
-                    background:
-                      "linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <TwitterOutlined style={{ fontSize: 32, color: "#fff" }} />
-                </div>
-                <div>
-                  <Typography.Title level={4} style={{ margin: 0 }}>
-                    @{twitterStatus.profile.username}
-                  </Typography.Title>
-                  <Typography.Text type="secondary">
-                    {twitterStatus.profile.name}
+              {/* Twitter Connection Status */}
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    Twitter Connection Status
                   </Typography.Text>
                   <br />
-                  <Tag color="success" style={{ marginTop: 8 }}>
-                    ● Connected
-                  </Tag>
+                  <Typography.Text type="secondary">
+                    {twitterStatus?.connected
+                      ? "Your Twitter account is connected and ready to post tweets"
+                      : "Connect your Twitter account to enable posting tweets from your calendar"}
+                  </Typography.Text>
+                </Col>
+                <Col>
+                  {twitterStatus?.connected ? (
+                    <Tag
+                      color="success"
+                      style={{ padding: "4px 12px", fontSize: 14 }}
+                    >
+                      ● Connected
+                    </Tag>
+                  ) : (
+                    <Tag
+                      color="default"
+                      style={{ padding: "4px 12px", fontSize: 14 }}
+                    >
+                      ○ Not Connected
+                    </Tag>
+                  )}
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Twitter Post Box - Show when connected */}
+            {twitterStatus?.connected && (
+              <Card
+                style={{
+                  marginTop: 24,
+                  marginBottom: 24,
+                  borderRadius: 12,
+                  border: "2px dashed #1DA1F2",
+                }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #1DA1F2 0%, #0d8bd9 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
+                  </div>
+                  <div>
+                    <Typography.Text strong style={{ fontSize: 18 }}>
+                      Share on Twitter/X
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      Create a post to share with your followers
+                    </Typography.Text>
+                  </div>
+                </div>
+
+                {/* Post Type Selector */}
+                <div style={{ marginBottom: 16 }}>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 8 }}
+                  >
+                    Post type:
+                  </Typography.Text>
+                  <Segmented
+                    value={twitterPostType}
+                    onChange={(value) => {
+                      setTwitterPostType(
+                        value as "text" | "image" | "video" | "link"
+                      );
+                      if (value !== "image") {
+                        handleTwitterRemoveImage();
+                      }
+                      if (value !== "video") {
+                        handleTwitterVideoClear();
+                      }
+                      if (value !== "link") {
+                        setTwitterLinkUrl("");
+                        setTwitterLinkTitle("");
+                        setTwitterLinkDescription("");
+                      }
+                    }}
+                    options={[
+                      {
+                        label: (
+                          <Tooltip title="Text Post">
+                            <span>
+                              <SendOutlined /> Text
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "text",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Image Post">
+                            <span>
+                              <PictureOutlined /> Image
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "image",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Video Post">
+                            <span>
+                              <VideoCameraOutlined /> Video
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "video",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Link Post">
+                            <span>
+                              <LinkOutlined /> Link
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "link",
+                      },
+                    ]}
+                    style={{ marginBottom: 8 }}
+                  />
+                </div>
+
+                <Input.TextArea
+                  placeholder="What's happening?"
+                  value={twitterPostText}
+                  onChange={(e) => setTwitterPostText(e.target.value)}
+                  maxLength={280}
+                  showCount
+                  autoSize={{ minRows: 3, maxRows: 6 }}
+                  style={{ marginBottom: 16, borderRadius: 8 }}
+                />
+
+                {/* Link Fields */}
+                {twitterPostType === "link" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <Input
+                      placeholder="Enter URL (e.g., https://example.com)"
+                      value={twitterLinkUrl}
+                      onChange={(e) => setTwitterLinkUrl(e.target.value)}
+                      prefix={<LinkOutlined />}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link title (optional)"
+                      value={twitterLinkTitle}
+                      onChange={(e) => setTwitterLinkTitle(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link description (optional)"
+                      value={twitterLinkDescription}
+                      onChange={(e) =>
+                        setTwitterLinkDescription(e.target.value)
+                      }
+                      style={{ borderRadius: 8 }}
+                    />
+                  </div>
+                )}
+
+                {/* Image Upload Section */}
+                {twitterPostType === "image" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {twitterImagePreview ? (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                        }}
+                      >
+                        <img
+                          src={twitterImagePreview}
+                          alt="Preview"
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleTwitterRemoveImage}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="image/*"
+                        showUploadList={false}
+                        beforeUpload={handleTwitterImageSelect}
+                        disabled={twitterPosting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <PictureOutlined
+                            style={{ fontSize: 32, color: "#1DA1F2" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag image to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: JPG, PNG, GIF (Max 8MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                {/* Video Upload Section */}
+                {twitterPostType === "video" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {twitterVideoPreview ? (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                        }}
+                      >
+                        <video
+                          src={twitterVideoPreview}
+                          controls
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleTwitterVideoClear}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                        <Typography.Text
+                          type="secondary"
+                          style={{ display: "block", marginTop: 8 }}
+                        >
+                          {twitterSelectedVideo?.name} (
+                          {(
+                            (twitterSelectedVideo?.size || 0) /
+                            1024 /
+                            1024
+                          ).toFixed(2)}{" "}
+                          MB)
+                        </Typography.Text>
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="video/*"
+                        showUploadList={false}
+                        beforeUpload={handleTwitterVideoSelect}
+                        disabled={twitterPosting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <VideoCameraOutlined
+                            style={{ fontSize: 32, color: "#1DA1F2" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag video to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: MP4, MOV (Max 200MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                  }}
+                >
+                  <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={() => {
+                      message.info("Twitter post functionality coming soon");
+                    }}
+                    loading={twitterPosting}
+                    disabled={
+                      !twitterPostText.trim() ||
+                      (twitterPostType === "link" && !twitterLinkUrl.trim()) ||
+                      (twitterPostType === "video" && !twitterSelectedVideo) ||
+                      (twitterPostType === "image" && !twitterSelectedImage)
+                    }
+                    style={{
+                      borderRadius: 8,
+                      backgroundColor: "#1DA1F2",
+                      borderColor: "#1DA1F2",
+                    }}
+                  >
+                    {twitterPosting ? "Publishing..." : "Post to Twitter"}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* Facebook Connection Section - Only show when Facebook is selected */}
+        {selectedPlatform === "facebook" && (
+          <>
+            <Card
+              style={{ marginTop: 24, borderRadius: 12 }}
+              styles={{ body: { padding: 24 } }}
+            >
+              <div
+                style={{
+                  marginBottom: 24,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: 16,
+                }}
+              >
+                <div>
+                  <Typography.Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <FacebookOutlined style={{ color: "#1877F2" }} />
+                    Facebook Connection
+                  </Typography.Title>
+                  <Typography.Text type="secondary">
+                    Connect your Facebook Page to share posts from your
+                    calendar. Personal accounts can also use this.
+                  </Typography.Text>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    alignItems: "flex-end",
+                  }}
+                >
+                  {facebookStatus?.connected && (
+                    <>
+                      <Button
+                        icon={<SyncOutlined />}
+                        onClick={async () => {
+                          if (!jwt) return;
+                          setLoadingFacebook(true);
+                          try {
+                            const fbData = await getFacebookStatus(jwt);
+                            setFacebookStatus(fbData);
+                            message.success("Facebook status refreshed");
+                          } catch (error) {
+                            console.error(
+                              "Failed to refresh Facebook status:",
+                              error
+                            );
+                            message.error("Failed to refresh Facebook status");
+                          } finally {
+                            setLoadingFacebook(false);
+                          }
+                        }}
+                        loading={loadingFacebook}
+                        style={{
+                          width: 120,
+                          height: 40,
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                      <Button
+                        icon={<DisconnectOutlined />}
+                        onClick={handleDisconnectFacebook}
+                        loading={disconnectingFacebook}
+                        danger
+                        style={{
+                          width: 120,
+                          height: 40,
+                        }}
+                      >
+                        Disconnect
+                      </Button>
+                    </>
+                  )}
+                  {!facebookStatus?.connected && (
+                    <Button
+                      type="default"
+                      icon={<FacebookOutlined style={{ color: "#ffffff" }} />}
+                      loading={!facebookAuthUrl && loadingFacebook}
+                      onClick={async () => {
+                        // If auth URL is not loaded, try to load it first
+                        if (!facebookAuthUrl) {
+                          if (!jwt) {
+                            message.error("Please login first");
+                            return;
+                          }
+                          message.loading("Loading auth URL...", 1);
+                          try {
+                            const authData = await getFacebookAuthUrl(jwt);
+                            console.log(
+                              "Facebook auth URL response:",
+                              authData
+                            );
+                            if (authData.success && authData.authUrl) {
+                              setFacebookAuthUrl(authData.authUrl);
+                              // Redirect immediately after getting URL
+                              window.location.href = authData.authUrl;
+                            } else {
+                              console.error(
+                                "Failed to get Facebook auth URL:",
+                                authData.error
+                              );
+                              message.error(
+                                authData.error ||
+                                  "Failed to get Facebook auth URL"
+                              );
+                            }
+                          } catch (error) {
+                            console.error(
+                              "Failed to get Facebook auth URL:",
+                              error
+                            );
+                            message.error(
+                              "Failed to get Facebook auth URL. Please check your connection."
+                            );
+                          }
+                          return;
+                        }
+                        // Redirect to Facebook OAuth
+                        console.log(
+                          "Redirecting to Facebook OAuth:",
+                          facebookAuthUrl
+                        );
+                        window.location.href = facebookAuthUrl;
+                      }}
+                      style={{
+                        backgroundColor: "#1877F2",
+                        borderColor: "#1877F2",
+                        color: "#ffffff",
+                        fontWeight: 500,
+                      }}
+                    >
+                      <span style={{ color: "#ffffff" }}>
+                        {facebookAuthUrl
+                          ? "Connect Facebook"
+                          : "Connect Facebook"}
+                      </span>
+                    </Button>
+                  )}
                 </div>
               </div>
+
+              {/* Facebook Connection Status */}
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    Facebook Connection Status
+                  </Typography.Text>
+                  <br />
+                  <Typography.Text type="secondary">
+                    {facebookStatus?.connected
+                      ? "Your Facebook Page is connected and ready to share posts"
+                      : "Connect your Facebook Page to enable sharing posts from your calendar"}
+                  </Typography.Text>
+                </Col>
+                <Col>
+                  {facebookStatus?.connected ? (
+                    <Tag
+                      color="success"
+                      style={{ padding: "4px 12px", fontSize: 14 }}
+                    >
+                      ● Connected
+                    </Tag>
+                  ) : (
+                    <Tag
+                      color="default"
+                      style={{ padding: "4px 12px", fontSize: 14 }}
+                    >
+                      ○ Not Connected
+                    </Tag>
+                  )}
+                </Col>
+              </Row>
             </Card>
-          )}
 
-          {/* Twitter Connection Status */}
-          <Row align="middle" justify="space-between">
-            <Col>
-              <Typography.Text strong style={{ fontSize: 16 }}>
-                Twitter Connection Status
-              </Typography.Text>
-              <br />
-              <Typography.Text type="secondary">
-                {twitterStatus?.connected
-                  ? "Your Twitter account is connected and ready to post tweets"
-                  : "Connect your Twitter account to enable posting tweets from your calendar"}
-              </Typography.Text>
-            </Col>
-            <Col>
-              {twitterStatus?.connected ? (
-                <Tag
-                  color="success"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ● Connected
-                </Tag>
-              ) : (
-                <Tag
-                  color="default"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ○ Not Connected
-                </Tag>
-              )}
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Facebook Connection Section */}
-        <Card
-          style={{ marginTop: 24, borderRadius: 12 }}
-          styles={{ body: { padding: 24 } }}
-        >
-          <div
-            style={{
-              marginBottom: 24,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 16,
-            }}
-          >
-            <div>
-              <Typography.Title
-                level={4}
+            {/* Facebook Post Box - Show when connected */}
+            {facebookStatus?.connected && (
+              <Card
                 style={{
-                  margin: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
+                  marginTop: 24,
+                  marginBottom: 24,
+                  borderRadius: 12,
+                  border: "2px dashed #1877F2",
                 }}
+                styles={{ body: { padding: 24 } }}
               >
-                <FacebookOutlined style={{ color: "#1877F2" }} />
-                Facebook Connection
-              </Typography.Title>
-              <Typography.Text type="secondary">
-                Connect your Facebook Page to share posts from your calendar. Personal accounts can also use this.
-              </Typography.Text>
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              {facebookStatus?.connected && (
-                <>
-                  <Button
-                    icon={<SyncOutlined />}
-                    onClick={async () => {
-                      if (!jwt) return;
-                      setLoadingFacebook(true);
-                      try {
-                        const fbData = await getFacebookStatus(jwt);
-                        setFacebookStatus(fbData);
-                        message.success("Facebook status refreshed");
-                      } catch (error) {
-                        console.error("Failed to refresh Facebook status:", error);
-                        message.error("Failed to refresh Facebook status");
-                      } finally {
-                        setLoadingFacebook(false);
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #1877F2 0%, #0d5bd9 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
+                  </div>
+                  <div>
+                    <Typography.Text strong style={{ fontSize: 18 }}>
+                      Share on Facebook
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      Create a post to share with your audience
+                    </Typography.Text>
+                  </div>
+                </div>
+
+                {/* Post Type Selector */}
+                <div style={{ marginBottom: 16 }}>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 8 }}
+                  >
+                    Post type:
+                  </Typography.Text>
+                  <Segmented
+                    value={facebookPostType}
+                    onChange={(value) => {
+                      setFacebookPostType(
+                        value as "text" | "image" | "video" | "link"
+                      );
+                      if (value !== "image") {
+                        handleFacebookRemoveImage();
+                      }
+                      if (value !== "video") {
+                        handleFacebookVideoClear();
+                      }
+                      if (value !== "link") {
+                        setFacebookLinkUrl("");
+                        setFacebookLinkTitle("");
+                        setFacebookLinkDescription("");
                       }
                     }}
-                    loading={loadingFacebook}
-                  >
-                    Refresh
-                  </Button>
-                  <Button
-                    icon={<DisconnectOutlined />}
-                    onClick={handleDisconnectFacebook}
-                    loading={disconnectingFacebook}
-                    danger
-                  >
-                    Disconnect
-                  </Button>
-                </>
-              )}
-              {!facebookStatus?.connected && (
-                <Button
-                  type="default"
-                  icon={<FacebookOutlined style={{ color: "#ffffff" }} />}
-                  loading={!facebookAuthUrl && loadingFacebook}
-                  onClick={async () => {
-                    // If auth URL is not loaded, try to load it first
-                    if (!facebookAuthUrl) {
-                      if (!jwt) {
-                        message.error("Please login first");
-                        return;
+                    options={[
+                      {
+                        label: (
+                          <Tooltip title="Text Post">
+                            <span>
+                              <SendOutlined /> Text
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "text",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Image Post">
+                            <span>
+                              <PictureOutlined /> Image
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "image",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Video Post">
+                            <span>
+                              <VideoCameraOutlined /> Video
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "video",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Link Post">
+                            <span>
+                              <LinkOutlined /> Link
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "link",
+                      },
+                    ]}
+                    style={{ marginBottom: 8 }}
+                  />
+                </div>
+
+                <Input.TextArea
+                  placeholder="What's on your mind?"
+                  value={facebookPostText}
+                  onChange={(e) => setFacebookPostText(e.target.value)}
+                  maxLength={5000}
+                  showCount
+                  autoSize={{ minRows: 3, maxRows: 6 }}
+                  style={{ marginBottom: 16, borderRadius: 8 }}
+                />
+
+                {/* Link Fields */}
+                {facebookPostType === "link" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <Input
+                      placeholder="Enter URL (e.g., https://example.com)"
+                      value={facebookLinkUrl}
+                      onChange={(e) => setFacebookLinkUrl(e.target.value)}
+                      prefix={<LinkOutlined />}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link title (optional)"
+                      value={facebookLinkTitle}
+                      onChange={(e) => setFacebookLinkTitle(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link description (optional)"
+                      value={facebookLinkDescription}
+                      onChange={(e) =>
+                        setFacebookLinkDescription(e.target.value)
                       }
-                      message.loading("Loading auth URL...", 1);
-                      try {
-                        const authData = await getFacebookAuthUrl(jwt);
-                        console.log("Facebook auth URL response:", authData);
-                        if (authData.success && authData.authUrl) {
-                          setFacebookAuthUrl(authData.authUrl);
-                          // Redirect immediately after getting URL
-                          window.location.href = authData.authUrl;
-                        } else {
-                          console.error("Failed to get Facebook auth URL:", authData.error);
-                          message.error(authData.error || "Failed to get Facebook auth URL");
-                        }
-                      } catch (error) {
-                        console.error("Failed to get Facebook auth URL:", error);
-                        message.error("Failed to get Facebook auth URL. Please check your connection.");
-                      }
-                      return;
-                    }
-                    // Redirect to Facebook OAuth
-                    console.log("Redirecting to Facebook OAuth:", facebookAuthUrl);
-                    window.location.href = facebookAuthUrl;
-                  }}
+                      style={{ borderRadius: 8 }}
+                    />
+                  </div>
+                )}
+
+                {/* Image Upload Section */}
+                {facebookPostType === "image" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {facebookImagePreview ? (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                        }}
+                      >
+                        <img
+                          src={facebookImagePreview}
+                          alt="Preview"
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleFacebookRemoveImage}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="image/*"
+                        showUploadList={false}
+                        beforeUpload={handleFacebookImageSelect}
+                        disabled={facebookPosting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <PictureOutlined
+                            style={{ fontSize: 32, color: "#1877F2" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag image to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: JPG, PNG, GIF (Max 8MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                {/* Video Upload Section */}
+                {facebookPostType === "video" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {facebookVideoPreview ? (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                        }}
+                      >
+                        <video
+                          src={facebookVideoPreview}
+                          controls
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleFacebookVideoClear}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                        <Typography.Text
+                          type="secondary"
+                          style={{ display: "block", marginTop: 8 }}
+                        >
+                          {facebookSelectedVideo?.name} (
+                          {(
+                            (facebookSelectedVideo?.size || 0) /
+                            1024 /
+                            1024
+                          ).toFixed(2)}{" "}
+                          MB)
+                        </Typography.Text>
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="video/*"
+                        showUploadList={false}
+                        beforeUpload={handleFacebookVideoSelect}
+                        disabled={facebookPosting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <VideoCameraOutlined
+                            style={{ fontSize: 32, color: "#1877F2" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag video to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: MP4, MOV (Max 200MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                <div
                   style={{
-                    backgroundColor: "#1877F2",
-                    borderColor: "#1877F2",
-                    color: "#ffffff",
-                    fontWeight: 500,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
                   }}
                 >
-                  <span style={{ color: "#ffffff" }}>
-                    {facebookAuthUrl ? "Connect Facebook" : "Connect Facebook"}
-                  </span>
-                </Button>
-              )}
-            </div>
-          </div>
+                  <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={() => {
+                      message.info("Facebook post functionality coming soon");
+                    }}
+                    loading={facebookPosting}
+                    disabled={
+                      !facebookPostText.trim() ||
+                      (facebookPostType === "link" &&
+                        !facebookLinkUrl.trim()) ||
+                      (facebookPostType === "video" &&
+                        !facebookSelectedVideo) ||
+                      (facebookPostType === "image" && !facebookSelectedImage)
+                    }
+                    style={{
+                      borderRadius: 8,
+                      backgroundColor: "#1877F2",
+                      borderColor: "#1877F2",
+                    }}
+                  >
+                    {facebookPosting ? "Publishing..." : "Post to Facebook"}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </>
+        )}
 
-          {/* Facebook Connection Status */}
-          <Row align="middle" justify="space-between">
-            <Col>
-              <Typography.Text strong style={{ fontSize: 16 }}>
-                Facebook Connection Status
-              </Typography.Text>
-              <br />
-              <Typography.Text type="secondary">
-                {facebookStatus?.connected
-                  ? "Your Facebook Page is connected and ready to share posts"
-                  : "Connect your Facebook Page to enable sharing posts from your calendar"}
-              </Typography.Text>
-            </Col>
-            <Col>
-              {facebookStatus?.connected ? (
-                <Tag
-                  color="success"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ● Connected
-                </Tag>
-              ) : (
-                <Tag
-                  color="default"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ○ Not Connected
-                </Tag>
-              )}
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Instagram Connection Section */}
-        <Card
-          style={{ marginTop: 24, borderRadius: 12 }}
-          styles={{ body: { padding: 24 } }}
-        >
-          <div
-            style={{
-              marginBottom: 24,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 16,
-            }}
-          >
-            <div>
-              <Typography.Title
-                level={4}
+        {/* Instagram Connection Section - Only show when Instagram is selected */}
+        {selectedPlatform === "instagram" && (
+          <>
+            <Card
+              style={{ marginTop: 24, borderRadius: 12 }}
+              styles={{ body: { padding: 24 } }}
+            >
+              <div
                 style={{
-                  margin: 0,
+                  marginBottom: 24,
                   display: "flex",
+                  justifyContent: "space-between",
                   alignItems: "center",
-                  gap: 12,
+                  flexWrap: "wrap",
+                  gap: 16,
                 }}
               >
-                <span style={{ fontSize: 20, color: "#E4405F" }}>📷</span>
-                Instagram Connection
-              </Typography.Title>
-              <Typography.Text type="secondary">
-                Connect your Instagram Business/Creator account. Requires a Facebook Page (will be connected automatically).
-              </Typography.Text>
-            </div>
-            <div style={{ display: "flex", gap: 12 }}>
-              {instagramStatus?.connected && (
-                <>
-                  <Button
-                    icon={<SyncOutlined />}
-                    onClick={async () => {
-                      if (!jwt) return;
-                      setLoadingInstagram(true);
-                      try {
-                        const igData = await getInstagramStatus(jwt);
-                        setInstagramStatus(igData);
-                        message.success("Instagram status refreshed");
-                      } catch (error) {
-                        console.error("Failed to refresh Instagram status:", error);
-                        message.error("Failed to refresh Instagram status");
-                      } finally {
-                        setLoadingInstagram(false);
+                <div>
+                  <Typography.Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                    }}
+                  >
+                    <span style={{ fontSize: 20, color: "#E4405F" }}>📷</span>
+                    Instagram Connection
+                  </Typography.Title>
+                  <Typography.Text type="secondary">
+                    Connect your Instagram Business/Creator account. Requires a
+                    Facebook Page (will be connected automatically).
+                  </Typography.Text>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 16,
+                    alignItems: "flex-end",
+                  }}
+                >
+                  {instagramStatus?.connected && (
+                    <>
+                      <Button
+                        icon={<SyncOutlined />}
+                        onClick={async () => {
+                          if (!jwt) return;
+                          setLoadingInstagram(true);
+                          try {
+                            const igData = await getInstagramStatus(jwt);
+                            setInstagramStatus(igData);
+                            message.success("Instagram status refreshed");
+                          } catch (error) {
+                            console.error(
+                              "Failed to refresh Instagram status:",
+                              error
+                            );
+                            message.error("Failed to refresh Instagram status");
+                          } finally {
+                            setLoadingInstagram(false);
+                          }
+                        }}
+                        loading={loadingInstagram}
+                        style={{
+                          width: 120,
+                          height: 40,
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                      <Button
+                        icon={<DisconnectOutlined />}
+                        onClick={handleDisconnectInstagram}
+                        loading={disconnectingInstagram}
+                        danger
+                        style={{
+                          width: 120,
+                          height: 40,
+                        }}
+                      >
+                        Disconnect
+                      </Button>
+                    </>
+                  )}
+                  {!instagramStatus?.connected && (
+                    <Button
+                      type="default"
+                      style={{
+                        backgroundColor: "#E4405F",
+                        borderColor: "#E4405F",
+                        color: "#ffffff",
+                        fontWeight: 500,
+                      }}
+                      loading={!instagramAuthUrl && loadingInstagram}
+                      onClick={async () => {
+                        // If auth URL is not loaded, try to load it first
+                        if (!instagramAuthUrl) {
+                          if (!jwt) {
+                            message.error("Please login first");
+                            return;
+                          }
+                          message.loading("Loading auth URL...", 1);
+                          try {
+                            const authData = await getInstagramAuthUrl(jwt);
+                            console.log(
+                              "Instagram auth URL response:",
+                              authData
+                            );
+                            if (authData.success && authData.authUrl) {
+                              setInstagramAuthUrl(authData.authUrl);
+                              // Redirect immediately after getting URL
+                              window.location.href = authData.authUrl;
+                            } else {
+                              console.error(
+                                "Failed to get Instagram auth URL:",
+                                authData.error
+                              );
+                              message.error(
+                                authData.error ||
+                                  "Failed to get Instagram auth URL"
+                              );
+                            }
+                          } catch (error) {
+                            console.error(
+                              "Failed to get Instagram auth URL:",
+                              error
+                            );
+                            message.error(
+                              "Failed to get Instagram auth URL. Please check your connection."
+                            );
+                          }
+                          return;
+                        }
+                        // Redirect to Instagram OAuth
+                        console.log(
+                          "Redirecting to Instagram OAuth:",
+                          instagramAuthUrl
+                        );
+                        window.location.href = instagramAuthUrl;
+                      }}
+                    >
+                      <span style={{ color: "#ffffff" }}>
+                        {instagramAuthUrl
+                          ? "Connect Instagram"
+                          : "Connect Instagram"}
+                      </span>
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {/* Instagram Connection Status */}
+              <Row align="middle" justify="space-between">
+                <Col>
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    Instagram Connection Status
+                  </Typography.Text>
+                  <br />
+                  <Typography.Text type="secondary">
+                    {instagramStatus?.connected
+                      ? "Your Instagram account is connected and ready to share posts"
+                      : "Connect your Instagram Business/Creator account to enable sharing posts from your calendar. Note: Requires a Facebook Page."}
+                  </Typography.Text>
+                </Col>
+                <Col>
+                  {instagramStatus?.connected ? (
+                    <Tag
+                      color="success"
+                      style={{ padding: "4px 12px", fontSize: 14 }}
+                    >
+                      ● Connected
+                    </Tag>
+                  ) : (
+                    <Tag
+                      color="default"
+                      style={{ padding: "4px 12px", fontSize: 14 }}
+                    >
+                      ○ Not Connected
+                    </Tag>
+                  )}
+                </Col>
+              </Row>
+            </Card>
+
+            {/* Instagram Post Box - Show when connected */}
+            {instagramStatus?.connected && (
+              <Card
+                style={{
+                  marginTop: 24,
+                  marginBottom: 24,
+                  borderRadius: 12,
+                  border: "2px dashed #E4405F",
+                }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #E4405F 0%, #C13584 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
+                  </div>
+                  <div>
+                    <Typography.Text strong style={{ fontSize: 18 }}>
+                      Share on Instagram
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      Create a post to share with your followers
+                    </Typography.Text>
+                  </div>
+                </div>
+
+                {/* Post Type Selector */}
+                <div style={{ marginBottom: 16 }}>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 8 }}
+                  >
+                    Post type:
+                  </Typography.Text>
+                  <Segmented
+                    value={instagramPostType}
+                    onChange={(value) => {
+                      setInstagramPostType(
+                        value as "text" | "image" | "video" | "link"
+                      );
+                      if (value !== "image") {
+                        handleInstagramRemoveImage();
+                      }
+                      if (value !== "video") {
+                        handleInstagramVideoClear();
+                      }
+                      if (value !== "link") {
+                        setInstagramLinkUrl("");
+                        setInstagramLinkTitle("");
+                        setInstagramLinkDescription("");
                       }
                     }}
-                    loading={loadingInstagram}
-                  >
-                    Refresh
-                  </Button>
-                  <Button
-                    icon={<DisconnectOutlined />}
-                    onClick={handleDisconnectInstagram}
-                    loading={disconnectingInstagram}
-                    danger
-                  >
-                    Disconnect
-                  </Button>
-                </>
-              )}
-              {!instagramStatus?.connected && (
-                <Button
-                  type="default"
+                    options={[
+                      {
+                        label: (
+                          <Tooltip title="Text Post">
+                            <span>
+                              <SendOutlined /> Text
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "text",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Image Post">
+                            <span>
+                              <PictureOutlined /> Image
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "image",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Video Post">
+                            <span>
+                              <VideoCameraOutlined /> Video
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "video",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Link Post">
+                            <span>
+                              <LinkOutlined /> Link
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "link",
+                      },
+                    ]}
+                    style={{ marginBottom: 8 }}
+                  />
+                </div>
+
+                <Input.TextArea
+                  placeholder="Write a caption..."
+                  value={instagramPostText}
+                  onChange={(e) => setInstagramPostText(e.target.value)}
+                  maxLength={2200}
+                  showCount
+                  autoSize={{ minRows: 3, maxRows: 6 }}
+                  style={{ marginBottom: 16, borderRadius: 8 }}
+                />
+
+                {/* Link Fields */}
+                {instagramPostType === "link" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <Input
+                      placeholder="Enter URL (e.g., https://example.com)"
+                      value={instagramLinkUrl}
+                      onChange={(e) => setInstagramLinkUrl(e.target.value)}
+                      prefix={<LinkOutlined />}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link title (optional)"
+                      value={instagramLinkTitle}
+                      onChange={(e) => setInstagramLinkTitle(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link description (optional)"
+                      value={instagramLinkDescription}
+                      onChange={(e) =>
+                        setInstagramLinkDescription(e.target.value)
+                      }
+                      style={{ borderRadius: 8 }}
+                    />
+                  </div>
+                )}
+
+                {/* Image Upload Section */}
+                {instagramPostType === "image" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {instagramImagePreview ? (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                        }}
+                      >
+                        <img
+                          src={instagramImagePreview}
+                          alt="Preview"
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleInstagramRemoveImage}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="image/*"
+                        showUploadList={false}
+                        beforeUpload={handleInstagramImageSelect}
+                        disabled={instagramPosting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <PictureOutlined
+                            style={{ fontSize: 32, color: "#E4405F" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag image to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: JPG, PNG, GIF (Max 8MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                {/* Video Upload Section */}
+                {instagramPostType === "video" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {instagramVideoPreview ? (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "inline-block",
+                        }}
+                      >
+                        <video
+                          src={instagramVideoPreview}
+                          controls
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleInstagramVideoClear}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                        <Typography.Text
+                          type="secondary"
+                          style={{ display: "block", marginTop: 8 }}
+                        >
+                          {instagramSelectedVideo?.name} (
+                          {(
+                            (instagramSelectedVideo?.size || 0) /
+                            1024 /
+                            1024
+                          ).toFixed(2)}{" "}
+                          MB)
+                        </Typography.Text>
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="video/*"
+                        showUploadList={false}
+                        beforeUpload={handleInstagramVideoSelect}
+                        disabled={instagramPosting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <VideoCameraOutlined
+                            style={{ fontSize: 32, color: "#E4405F" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag video to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: MP4, MOV (Max 200MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                <div
                   style={{
-                    backgroundColor: "#E4405F",
-                    borderColor: "#E4405F",
-                    color: "#ffffff",
-                    fontWeight: 500,
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
                   }}
-                  loading={!instagramAuthUrl && loadingInstagram}
-                  onClick={async () => {
-                    // If auth URL is not loaded, try to load it first
-                    if (!instagramAuthUrl) {
-                      if (!jwt) {
-                        message.error("Please login first");
-                        return;
-                      }
-                      message.loading("Loading auth URL...", 1);
-                      try {
-                        const authData = await getInstagramAuthUrl(jwt);
-                        console.log("Instagram auth URL response:", authData);
-                        if (authData.success && authData.authUrl) {
-                          setInstagramAuthUrl(authData.authUrl);
-                          // Redirect immediately after getting URL
-                          window.location.href = authData.authUrl;
-                        } else {
-                          console.error("Failed to get Instagram auth URL:", authData.error);
-                          message.error(authData.error || "Failed to get Instagram auth URL");
-                        }
-                      } catch (error) {
-                        console.error("Failed to get Instagram auth URL:", error);
-                        message.error("Failed to get Instagram auth URL. Please check your connection.");
-                      }
-                      return;
+                >
+                  <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={() => {
+                      message.info("Instagram post functionality coming soon");
+                    }}
+                    loading={instagramPosting}
+                    disabled={
+                      !instagramPostText.trim() ||
+                      (instagramPostType === "link" &&
+                        !instagramLinkUrl.trim()) ||
+                      (instagramPostType === "video" &&
+                        !instagramSelectedVideo) ||
+                      (instagramPostType === "image" && !instagramSelectedImage)
                     }
-                    // Redirect to Instagram OAuth
-                    console.log("Redirecting to Instagram OAuth:", instagramAuthUrl);
-                    window.location.href = instagramAuthUrl;
-                  }}
-                >
-                  <span style={{ color: "#ffffff" }}>
-                    {instagramAuthUrl ? "Connect Instagram" : "Connect Instagram"}
-                  </span>
-                </Button>
-              )}
-            </div>
-          </div>
+                    style={{
+                      borderRadius: 8,
+                      backgroundColor: "#E4405F",
+                      borderColor: "#E4405F",
+                    }}
+                  >
+                    {instagramPosting ? "Publishing..." : "Post to Instagram"}
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </>
+        )}
 
-          {/* Instagram Connection Status */}
-          <Row align="middle" justify="space-between">
-            <Col>
-              <Typography.Text strong style={{ fontSize: 16 }}>
-                Instagram Connection Status
-              </Typography.Text>
-              <br />
-              <Typography.Text type="secondary">
-                {instagramStatus?.connected
-                  ? "Your Instagram account is connected and ready to share posts"
-                  : "Connect your Instagram Business/Creator account to enable sharing posts from your calendar. Note: Requires a Facebook Page."}
-              </Typography.Text>
-            </Col>
-            <Col>
-              {instagramStatus?.connected ? (
-                <Tag
-                  color="success"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ● Connected
-                </Tag>
-              ) : (
-                <Tag
-                  color="default"
-                  style={{ padding: "4px 12px", fontSize: 14 }}
-                >
-                  ○ Not Connected
-                </Tag>
-              )}
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Events Section */}
-        {isConnected && (
+        {/* Events Section - Only for LinkedIn */}
+        {selectedPlatform === "linkedin" && isConnected && (
           <Card
             style={{ marginTop: 24, borderRadius: 12 }}
             styles={{ body: { padding: 24 } }}
@@ -2643,6 +3918,173 @@ export default function LinkedInDashboard({
     );
   };
 
+  // Get current platform's user profile info
+  const getCurrentPlatformProfile = () => {
+    switch (selectedPlatform) {
+      case "linkedin":
+        if (metrics?.connected && metrics?.profile) {
+          return {
+            name: metrics.profile.name,
+            email: metrics.profile.email,
+            picture: metrics.profile.picture,
+            connected: true,
+          };
+        }
+        return { connected: false };
+      case "twitter":
+        if (twitterStatus?.connected && twitterStatus?.profile) {
+          return {
+            name: twitterStatus.profile.name,
+            username: twitterStatus.profile.username,
+            email: twitterStatus.profile.email || null,
+            picture: twitterStatus.profile.picture || null,
+            connected: true,
+          };
+        }
+        return { connected: false };
+      case "facebook":
+        if (facebookStatus?.connected) {
+          return {
+            name: facebookStatus?.profile?.name || "Facebook Account",
+            email: facebookStatus?.profile?.email || "",
+            picture: facebookStatus?.profile?.picture || null,
+            connected: true,
+          };
+        }
+        return { connected: false };
+      case "instagram":
+        if (instagramStatus?.connected) {
+          return {
+            name: instagramStatus?.profile?.name || "Instagram Account",
+            email: instagramStatus?.profile?.email || "",
+            username: instagramStatus?.profile?.username || "",
+            picture: instagramStatus?.profile?.picture || null,
+            connected: true,
+          };
+        }
+        return { connected: false };
+      default:
+        return { connected: false };
+    }
+  };
+
+  // Render user profile card based on selected platform
+  const renderPlatformProfileCard = () => {
+    const profile = getCurrentPlatformProfile();
+
+    if (!profile.connected) {
+      return null;
+    }
+
+    return (
+      <Card
+        style={{
+          marginBottom: 24,
+          borderRadius: 0,
+          boxShadow: "none",
+          border: "none",
+          backgroundColor: "transparent",
+        }}
+        styles={{
+          body: {
+            padding: "24px 0",
+          },
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {profile.picture && (
+            <img
+              src={profile.picture}
+              alt={profile.name}
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+          )}
+          {!profile.picture && selectedPlatform === "linkedin" && (
+            <Avatar
+              size={96}
+              icon={<LinkedinOutlined />}
+              style={{ backgroundColor: "#0077B5" }}
+            />
+          )}
+          {!profile.picture && selectedPlatform === "twitter" && (
+            <Avatar
+              size={96}
+              icon={<TwitterOutlined />}
+              style={{ backgroundColor: "#1DA1F2" }}
+            />
+          )}
+          {!profile.picture && selectedPlatform === "instagram" && (
+            <Avatar
+              size={96}
+              icon={<InstagramOutlined />}
+              style={{ backgroundColor: "#E4405F" }}
+            />
+          )}
+          {!profile.picture && selectedPlatform === "facebook" && (
+            <Avatar
+              size={96}
+              icon={<FacebookOutlined />}
+              style={{ backgroundColor: "#1877F2" }}
+            />
+          )}
+          <div style={{ flex: 1 }}>
+            <Typography.Title
+              level={3}
+              style={{
+                margin: 0,
+                marginBottom: 8,
+                fontSize: 20,
+                fontWeight: 600,
+              }}
+            >
+              {profile.name || profile.username || "Connected Account"}
+            </Typography.Title>
+            {profile.email && (
+              <Typography.Text
+                type="secondary"
+                style={{ display: "block", fontSize: 15, marginBottom: 8 }}
+              >
+                {profile.email}
+              </Typography.Text>
+            )}
+            {profile.username && (
+              <Typography.Text
+                type="secondary"
+                style={{ display: "block", fontSize: 15, marginBottom: 8 }}
+              >
+                {selectedPlatform === "twitter" ? "@" : ""}
+                {profile.username}
+              </Typography.Text>
+            )}
+            {!profile.email && !profile.username && (
+              <Typography.Text
+                type="secondary"
+                style={{ display: "block", fontSize: 15, marginBottom: 8 }}
+              >
+                {selectedPlatform === "facebook"
+                  ? "Facebook Account"
+                  : selectedPlatform === "instagram"
+                    ? "Instagram Account"
+                    : "Connected Account"}
+              </Typography.Text>
+            )}
+            <Tag color="success" style={{ marginTop: 0 }}>
+              ● Connected
+            </Tag>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
+  // Define isConnected at component level for use in return statement
+  const isConnected = metrics?.connected === true;
+
   return (
     <Layout className={`${styles.dashboard} ${styles.dashboardLight}`}>
       <Header
@@ -2652,11 +4094,187 @@ export default function LinkedInDashboard({
         user={user}
       />
       <Layout className={styles.dashboardLayout}>
+        {/* Social Sidebar */}
+        {isLoggedIn && !isMobile && (
+          <Sider
+            width={280}
+            collapsedWidth={isTablet ? 0 : 80}
+            collapsed={sidebarCollapsed}
+            theme="light"
+            trigger={null}
+            breakpoint="lg"
+            className={styles.sider}
+          >
+            <SocialSidebar
+              collapsed={sidebarCollapsed}
+              onToggleSidebar={handleToggleSidebar}
+              selectedPlatform={selectedPlatform}
+              onPlatformSelect={handlePlatformSelect}
+              linkedInConnected={metrics?.connected === true}
+              twitterConnected={twitterStatus?.connected === true}
+              instagramConnected={instagramStatus?.connected === true}
+              facebookConnected={facebookStatus?.connected === true}
+            />
+          </Sider>
+        )}
         <Content
           className={`${styles.content} ${styles.contentLight} ${styles.socialDashboardContent}`}
-          style={{ padding: isMobile ? 16 : 32, alignItems: "flex-start" }}
+          style={{
+            padding: isMobile ? "16px 0" : "32px 0",
+            alignItems: "flex-start",
+            justifyContent: "flex-start",
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
-          {renderMetricsContent()}
+          {/* Unified Container for all content - ensures left alignment */}
+          <div
+            style={{
+              width: "100%",
+              maxWidth: 1200,
+              margin: "0 auto",
+              paddingLeft: isMobile ? 16 : screens.xl ? 32 : 24,
+              paddingRight: isMobile ? 16 : screens.xl ? 32 : 24,
+            }}
+          >
+            {/* Global Header Section - Show for all platforms */}
+            <div
+              style={{
+                marginTop: isMobile ? 16 : 24,
+                marginBottom: isMobile ? 24 : 32,
+              }}
+            >
+              <Row
+                gutter={[16, 16]}
+                align="middle"
+                justify="space-between"
+                style={{ width: "100%" }}
+              >
+                <Col
+                  xs={24}
+                  sm={24}
+                  md={selectedPlatform === "linkedin" ? 16 : 24}
+                  lg={selectedPlatform === "linkedin" ? 18 : 24}
+                >
+                  <Typography.Title
+                    level={isMobile ? 3 : 2}
+                    style={{
+                      margin: 0,
+                      marginBottom: isMobile ? 4 : 8,
+                      fontSize: isMobile
+                        ? 20
+                        : screens.xl
+                          ? 32
+                          : screens.lg
+                            ? 28
+                            : 24,
+                      fontWeight: 600,
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    Social Dashboard
+                  </Typography.Title>
+                  <Typography.Text
+                    type="secondary"
+                    style={{
+                      fontSize: isMobile ? 13 : 14,
+                      display: "block",
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    One-Click for Social Media
+                  </Typography.Text>
+                </Col>
+                {selectedPlatform === "linkedin" && (
+                  <Col xs={24} sm={24} md={8} lg={6}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: isMobile ? "flex-start" : "flex-end",
+                        gap: 16,
+                        alignItems: isMobile ? "flex-start" : "flex-end",
+                      }}
+                    >
+                      {/* LinkedIn specific actions */}
+                      {isConnected && (
+                        <>
+                          <Button
+                            icon={<SyncOutlined />}
+                            onClick={handleRefreshMetrics}
+                            loading={loading}
+                            size={isMobile ? "middle" : "default"}
+                            style={{
+                              width: 120,
+                              height: 40,
+                            }}
+                          >
+                            Refresh
+                          </Button>
+                          <Button
+                            icon={<DisconnectOutlined />}
+                            onClick={handleDisconnect}
+                            loading={disconnecting}
+                            danger
+                            size={isMobile ? "middle" : "default"}
+                            style={{
+                              width: 120,
+                              height: 40,
+                            }}
+                          >
+                            Disconnect
+                          </Button>
+                        </>
+                      )}
+                      {!isConnected && (
+                        <Button
+                          type="primary"
+                          icon={<LinkedinOutlined />}
+                          disabled={!authUrl}
+                          onClick={() => {
+                            if (!authUrl) {
+                              console.error(
+                                "Cannot connect: userId not available. userId:",
+                                userId,
+                                "user:",
+                                user
+                              );
+                              alert(
+                                "Please wait for user data to load, or try refreshing the page."
+                              );
+                              return;
+                            }
+                            // Redirect to LinkedIn OAuth
+                            window.location.href = authUrl;
+                          }}
+                          size={isMobile ? "middle" : "default"}
+                          block={isMobile}
+                          style={{
+                            backgroundColor: "#0077B5",
+                            borderColor: "#0077B5",
+                          }}
+                        >
+                          {authUrl ? "Connect LinkedIn" : "Loading..."}
+                        </Button>
+                      )}
+                    </div>
+                  </Col>
+                )}
+              </Row>
+            </div>
+
+            {/* Platform Profile Card - Show when connected */}
+            {renderPlatformProfileCard()}
+
+            {/* Render content based on selected platform */}
+            {/* For LinkedIn, show all existing content */}
+            {selectedPlatform === "linkedin" && renderMetricsContent()}
+
+            {/* For other platforms, show platform-specific content */}
+            {selectedPlatform === "twitter" && renderMetricsContent()}
+            {selectedPlatform === "instagram" && renderMetricsContent()}
+            {selectedPlatform === "facebook" && renderMetricsContent()}
+          </div>
         </Content>
       </Layout>
     </Layout>
