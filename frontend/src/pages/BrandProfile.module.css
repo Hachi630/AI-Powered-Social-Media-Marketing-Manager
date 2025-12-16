@@ -192,6 +192,10 @@
   grid-column: span 1;
 }
 
+.uploadDatabase :global(.ant-card-body) {
+  padding: 20px !important;
+}
+
 .knowledgeBase {
   grid-column: span 1;
 }
@@ -722,9 +726,29 @@
 /* Upload Database styles */
 .uploadDragger {
   border: 2px dashed var(--border-color, #d9d9d9) !important;
-  border-radius: 12px !important;
+  border-left: none !important;
+  border-radius: 0 12px 12px 0 !important;
   background: var(--bg-tertiary, #f0f0f0) !important;
   transition: all 0.2s ease;
+  padding: 16px 8px !important;
+  margin-left: 0 !important;
+}
+
+.uploadDragger :global(.ant-upload-drag-container) {
+  padding: 0 !important;
+}
+
+.uploadDragger :global(.ant-upload-drag) {
+  border-left: none !important;
+}
+
+.uploadDragger :global(.ant-upload-btn) {
+  border-left: none !important;
+}
+
+.uploadDragger::before,
+.uploadDragger::after {
+  display: none !important;
 }
 
 [data-theme="warm"] .uploadDragger {
@@ -743,9 +767,10 @@
 }
 
 .uploadIcon {
-  font-size: 40px;
+  font-size: 32px;
   color: var(--text-primary, #1e1e1e);
-  margin-bottom: 8px;
+  margin-bottom: 4px !important;
+  margin-top: 0 !important;
 }
 
 [data-theme="warm"] .uploadIcon {
@@ -753,10 +778,11 @@
 }
 
 .uploadText {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-primary, #1e1e1e);
   font-weight: 500;
-  margin-bottom: 4px !important;
+  margin-bottom: 2px !important;
+  margin-top: 0 !important;
   font-family: var(--font-family, "Inter", sans-serif);
 }
 
@@ -766,8 +792,10 @@
 }
 
 .uploadHint {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary, #757575);
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
 }
 
 [data-theme="warm"] .uploadHint {

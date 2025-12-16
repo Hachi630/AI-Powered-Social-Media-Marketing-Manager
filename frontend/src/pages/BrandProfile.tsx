@@ -795,10 +795,10 @@ export default function BrandProfile({
             >
               <Space
                 direction="vertical"
-                size="middle"
+                size="small"
                 className={styles.fullWidth}
               >
-                <Typography.Text type="secondary">
+                <Typography.Text type="secondary" style={{ marginBottom: 0 }}>
                   Upload annual reports, financial data, product catalogs, or
                   any business documents
                 </Typography.Text>
