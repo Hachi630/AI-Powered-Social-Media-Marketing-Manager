@@ -14,6 +14,8 @@ import socialRoutes from './routes/social'
 import { errorHandler } from './middleware/errorHandler'
 import linkedinRoutes from "./routes/linkedin";
 import twitterRoutes from "./routes/twitter";
+import analyticsRoutes from "./routes/analytics";
+import messagingRoutes from "./routes/messaging";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -56,6 +58,8 @@ app.use('/api/upload', uploadRoutes)
 app.use('/api/social', socialRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/messaging", messagingRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })

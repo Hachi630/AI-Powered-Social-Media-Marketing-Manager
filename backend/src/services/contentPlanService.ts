@@ -29,7 +29,7 @@ export async function generateContentPlan(
   try {
     const model = process.env.GEMINI_MODEL || 'gemini-3-pro-preview'
 
-    // Build system prompt from user context
+    // Build system prompt from user context (brand profile saved by unique user ID)
     let systemPrompt = 'You are an AI assistant'
     if (request.userContext) {
       if (request.userContext.brandName) {
@@ -44,6 +44,11 @@ export async function generateContentPlan(
 
       systemPrompt += '.'
 
+      // Add company description if available
+      if (request.userContext.aboutMe && request.userContext.aboutMe.trim()) {
+        systemPrompt += `\n\nCompany Description: ${request.userContext.aboutMe.trim()}`
+      }
+
       if (request.userContext.toneOfVoice) {
         const toneDescriptions: Record<string, string> = {
           calm: 'calm, peaceful, and soothing',
@@ -53,14 +58,14 @@ export async function generateContentPlan(
         const toneDesc =
           toneDescriptions[request.userContext.toneOfVoice] ||
           request.userContext.toneOfVoice
-        systemPrompt += ` Your tone of voice should be ${toneDesc}.`
+        systemPrompt += `\n\nYour tone of voice should be ${toneDesc}.`
       }
 
       if (
         request.userContext.knowledgeProducts &&
         request.userContext.knowledgeProducts.length > 0
       ) {
-        systemPrompt += `\n\nYou have knowledge about these products: ${request.userContext.knowledgeProducts.join(', ')}.`
+        systemPrompt += `\n\nYou have knowledge about these products/services: ${request.userContext.knowledgeProducts.join(', ')}.`
       }
 
       if (

@@ -13,6 +13,7 @@ export interface ChatMessage {
 export interface UserContext {
   brandName?: string
   industry?: string
+  aboutMe?: string // Company description
   toneOfVoice?: string
   knowledgeProducts?: string[]
   targetAudience?: string[]
@@ -165,6 +166,11 @@ export const geminiService = {
 
     prompt += '.'
 
+    // Add company description if available
+    if (context.aboutMe && context.aboutMe.trim()) {
+      prompt += `\n\nCompany Description: ${context.aboutMe.trim()}`
+    }
+
     if (context.toneOfVoice) {
       const toneDescriptions: Record<string, string> = {
         calm: 'calm, peaceful, and soothing',
@@ -172,18 +178,18 @@ export const geminiService = {
         mindful: 'mindful, thoughtful, and reflective',
       }
       const toneDesc = toneDescriptions[context.toneOfVoice] || context.toneOfVoice
-      prompt += ` Your tone of voice should be ${toneDesc}.`
+      prompt += `\n\nYour tone of voice should be ${toneDesc}.`
     }
 
     if (context.knowledgeProducts && context.knowledgeProducts.length > 0) {
-      prompt += `\n\nYou have knowledge about these products: ${context.knowledgeProducts.join(', ')}.`
+      prompt += `\n\nYou have knowledge about these products/services: ${context.knowledgeProducts.join(', ')}.`
     }
 
     if (context.targetAudience && context.targetAudience.length > 0) {
       prompt += `\n\nYour target audience includes: ${context.targetAudience.join(', ')}.`
     }
 
-    prompt += '\n\nPlease respond in a helpful and professional manner that aligns with the brand identity.'
+    prompt += '\n\nPlease respond in a helpful and professional manner that aligns with the brand identity and company description. All content should reflect the brand\'s values, industry, and target audience.'
 
     return prompt
   },

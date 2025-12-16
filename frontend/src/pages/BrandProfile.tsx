@@ -404,7 +404,7 @@ export default function BrandProfile({
           ? customTone.trim()
           : selectedTone;
 
-      // Save to local company data
+      // Save to local company data first
       saveCurrentToCompany();
 
       const response = await authService.updateProfile({

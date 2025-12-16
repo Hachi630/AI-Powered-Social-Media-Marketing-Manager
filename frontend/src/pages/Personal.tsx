@@ -37,17 +37,21 @@ const genderOptions = [
 ]
 
 interface PersonalProps {
-  open: boolean
-  onClose: () => void
-  user?: User | null
+  open?: boolean
+  onClose?: () => void
+  isLoggedIn?: boolean
   onLoginSuccess?: (user: User) => void
+  onLogout?: () => void
+  user?: User | null
 }
 
 export default function Personal({
   open,
   onClose,
-  user: propUser,
+  isLoggedIn,
   onLoginSuccess,
+  onLogout,
+  user: propUser,
 }: PersonalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)

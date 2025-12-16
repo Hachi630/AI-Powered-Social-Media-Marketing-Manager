@@ -27,6 +27,8 @@ const navItems: MenuProps['items'] = [
   { key: '/calendar', label: 'Calendar' },
   { key: '/settings', label: 'Brands' },
   { key: '/socialdashboard', label: 'Social Dashboard' },
+  { key: '/analytics', label: 'Analytics' },
+  { key: '/messaging', label: 'Messaging' },
 ]
 
 const { Header: AntHeader } = Layout
