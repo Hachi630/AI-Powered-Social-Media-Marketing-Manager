@@ -24,13 +24,17 @@ import {
   Typography,
   message,
   Upload,
+  Dropdown,
 } from "antd";
-import type { UploadFile, UploadProps } from "antd";
+import type { UploadFile, UploadProps, MenuProps } from "antd";
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import { MELO_LOGO } from "../constants/assets";
 import styles from "./BrandProfile.module.css";
 import { User, authService } from "../services/authService";
+import { uploadService } from "../services/uploadService";
+import { chatService } from "../services/chatService";
+import { PictureOutlined, RobotOutlined } from "@ant-design/icons";
 
 const { Content } = Layout;
 
@@ -64,6 +68,7 @@ interface CompanyData {
   knowledgeProducts: string[];
   targetAudience: string[];
   companyDescription: string;
+  brandLogoUrl?: string;
 }
 
 // Default company template
@@ -77,6 +82,7 @@ const createDefaultCompany = (name: string): CompanyData => ({
   knowledgeProducts: [],
   targetAudience: [],
   companyDescription: "",
+  brandLogoUrl: "",
 });
 
 interface BrandProfileProps {
@@ -106,6 +112,9 @@ export default function BrandProfile({
   const [loading, setLoading] = useState(false);
   const [companyDescription, setCompanyDescription] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string>("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [generatingLogo, setGeneratingLogo] = useState(false);
 
   // Multi-company state management
   const [companies, setCompanies] = useState<CompanyData[]>([]);
@@ -197,6 +206,7 @@ export default function BrandProfile({
     setKnowledgeProducts(company.knowledgeProducts);
     setAudienceTags(company.targetAudience);
     setCompanyDescription(company.companyDescription);
+    setBrandLogoUrl(company.brandLogoUrl || "");
   };
 
   // Save current form data to selected company
@@ -221,6 +231,7 @@ export default function BrandProfile({
           knowledgeProducts,
           targetAudience: audienceTags,
           companyDescription,
+          brandLogoUrl,
         };
       }
       return company;
@@ -395,6 +406,95 @@ export default function BrandProfile({
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Handle logo upload
+  const handleLogoUpload = async (file: File) => {
+    setUploadingLogo(true);
+    try {
+      const response = await uploadService.uploadImage(file);
+      if (response.success && response.imageUrl) {
+        setBrandLogoUrl(response.imageUrl);
+        saveCurrentToCompany();
+        message.success("Logo uploaded successfully");
+      } else {
+        message.error(response.message || "Failed to upload logo");
+      }
+    } catch (error) {
+      message.error("Failed to upload logo");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  // Handle logo generation
+  const handleGenerateLogo = async () => {
+    if (!brandName.trim()) {
+      message.warning("Please enter a brand name first");
+      return;
+    }
+
+    setGeneratingLogo(true);
+    try {
+      const industryText = industry ? `, a ${industry} company` : "";
+      const prompt = `Create a professional brand logo for ${brandName}${industryText}. The logo should be simple, modern, minimalist, and suitable for digital use. Use a clean design with good contrast.`;
+      
+      const response = await chatService.generateImage(prompt);
+      if (response.success && response.imageUrl) {
+        setBrandLogoUrl(response.imageUrl);
+        saveCurrentToCompany();
+        message.success("Logo generated successfully");
+      } else {
+        message.error(response.message || "Failed to generate logo");
+      }
+    } catch (error) {
+      message.error("Failed to generate logo");
+    } finally {
+      setGeneratingLogo(false);
+    }
+  };
+
+  // Handle logo removal
+  const handleRemoveLogo = () => {
+    setBrandLogoUrl("");
+    saveCurrentToCompany();
+    message.success("Logo removed");
+  };
+
+  // Logo menu items for dropdown
+  const logoMenuItems: MenuProps['items'] = [
+    {
+      key: 'upload',
+      label: 'Upload Logo',
+      icon: <UploadOutlined />,
+      onClick: () => {
+        // Trigger file input click
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            handleLogoUpload(file);
+          }
+        };
+        input.click();
+      },
+    },
+    {
+      key: 'generate',
+      label: 'Generate Logo',
+      icon: <RobotOutlined />,
+      onClick: handleGenerateLogo,
+      disabled: !brandName.trim(),
+    },
+    ...(brandLogoUrl ? [{
+      key: 'remove',
+      label: 'Remove Logo',
+      icon: <DeleteOutlined />,
+      danger: true,
+      onClick: handleRemoveLogo,
+    }] : []),
+  ];
+
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
@@ -414,6 +514,7 @@ export default function BrandProfile({
         knowledgeProducts,
         targetAudience: audienceTags,
         companyDescription,
+        brandLogoUrl: brandLogoUrl || undefined,
       });
 
       if (response.success && response.user) {
@@ -529,6 +630,30 @@ export default function BrandProfile({
             <Card
               title="Basic Info"
               className={`${styles.card} ${styles.basicInfo}`}
+              extra={
+                <div className={styles.logoHeaderArea}>
+                  {brandLogoUrl ? (
+                    <img src={brandLogoUrl} alt="Brand Logo" className={styles.logoHeaderImage} />
+                  ) : (
+                    <div className={styles.logoHeaderPlaceholder}>
+                      {brandName ? brandName[0]?.toUpperCase() || '?' : '?'}
+                    </div>
+                  )}
+                  <Dropdown
+                    menu={{ items: logoMenuItems }}
+                    trigger={['click']}
+                    placement="bottomRight"
+                  >
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<EditOutlined />}
+                      className={styles.logoEditBtn}
+                      loading={uploadingLogo || generatingLogo}
+                    />
+                  </Dropdown>
+                </div>
+              }
             >
               <Space
                 direction="vertical"

@@ -6,6 +6,7 @@ export interface IUser extends Document {
   googleId?: string
   name?: string
   brandName?: string
+  brandLogoUrl?: string
   phone?: string
   birthday?: string
   gender?: string
@@ -71,6 +72,10 @@ const UserSchema: Schema = new Schema(
       default: 'local',
     },
     brandName: {
+      type: String,
+      trim: true,
+    },
+    brandLogoUrl: {
       type: String,
       trim: true,
     },
