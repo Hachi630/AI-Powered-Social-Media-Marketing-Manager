@@ -235,6 +235,59 @@
   gap: 8px;
 }
 
+.messageActions {
+  margin-top: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.messageItem:hover .messageActions {
+  opacity: 1;
+}
+
+.messageActions :global(.ant-btn) {
+  font-size: 12px;
+  height: 24px;
+  padding: 0 8px;
+  color: var(--text-secondary, #8e8ea0);
+}
+
+.messageActions :global(.ant-btn):hover {
+  color: var(--accent-color, #667eea);
+  background-color: var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1));
+}
+
+[data-theme="warm"] .messageActions :global(.ant-btn):hover {
+  color: var(--accent-color, #ae906e);
+  background-color: var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1));
+}
+
+.editMessageContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.editMessageContainer :global(.ant-input) {
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.editActions :global(.ant-btn) {
+  min-width: 80px;
+}
+
 .markdownContent {
   color: inherit;
   font-size: 15px;

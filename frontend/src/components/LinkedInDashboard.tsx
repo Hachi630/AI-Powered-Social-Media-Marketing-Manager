@@ -63,6 +63,7 @@ import {
   getTwitterStatus,
   getTwitterAuthUrl,
   disconnectTwitter,
+  createTwitterPost,
 } from "../services/twitterService";
 import {
   getFacebookStatus,
@@ -160,7 +161,7 @@ export default function LinkedInDashboard({
   // Twitter/X Post states
   const [twitterPostText, setTwitterPostText] = useState("");
   const [twitterPostType, setTwitterPostType] = useState<
-    "text" | "image" | "video" | "link"
+    "text" | "image"
   >("text");
   const [twitterSelectedImage, setTwitterSelectedImage] = useState<File | null>(
     null
@@ -941,6 +942,11 @@ export default function LinkedInDashboard({
 
   // Twitter/X Image handlers
   const handleTwitterImageSelect = (file: File) => {
+    // Check file size (max 5MB for Twitter)
+    if (file.size > 5 * 1024 * 1024) {
+      message.error("Image must be smaller than 5MB for Twitter");
+      return false;
+    }
     setTwitterSelectedImage(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -972,6 +978,58 @@ export default function LinkedInDashboard({
     }
     setTwitterSelectedVideo(null);
     setTwitterVideoPreview(null);
+  };
+
+  // Twitter/X Post handler
+  const handleTwitterPost = async () => {
+    if (!jwt) {
+      message.error("Please log in to post tweets");
+      return;
+    }
+
+    // Validate text content
+    if (!twitterPostText.trim()) {
+      message.error("Please enter tweet text");
+      return;
+    }
+
+    if (twitterPostText.length > 280) {
+      message.error("Tweet text cannot exceed 280 characters");
+      return;
+    }
+
+    // Validate image if post type is image
+    if (twitterPostType === "image" && !twitterSelectedImage) {
+      message.error("Please select an image for your image post");
+      return;
+    }
+
+    setTwitterPosting(true);
+
+    try {
+      const result = await createTwitterPost(
+        jwt,
+        twitterPostText.trim(),
+        twitterPostType === "image" ? twitterSelectedImage : null
+      );
+
+      if (result.success) {
+        message.success("🎉 Tweet posted successfully!");
+        
+        // Reset form
+        setTwitterPostText("");
+        setTwitterSelectedImage(null);
+        setTwitterImagePreview(null);
+        setTwitterPostType("text");
+      } else {
+        message.error(result.error || "Failed to post tweet. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Failed to create Twitter post:", error);
+      message.error(error.message || "Failed to post tweet. Please try again.");
+    } finally {
+      setTwitterPosting(false);
+    }
   };
 
   // Instagram Image handlers
@@ -1824,18 +1882,10 @@ export default function LinkedInDashboard({
                     value={twitterPostType}
                     onChange={(value) => {
                       setTwitterPostType(
-                        value as "text" | "image" | "video" | "link"
+                        value as "text" | "image"
                       );
                       if (value !== "image") {
                         handleTwitterRemoveImage();
-                      }
-                      if (value !== "video") {
-                        handleTwitterVideoClear();
-                      }
-                      if (value !== "link") {
-                        setTwitterLinkUrl("");
-                        setTwitterLinkTitle("");
-                        setTwitterLinkDescription("");
                       }
                     }}
                     options={[
@@ -1859,26 +1909,6 @@ export default function LinkedInDashboard({
                         ),
                         value: "image",
                       },
-                      {
-                        label: (
-                          <Tooltip title="Video Post">
-                            <span>
-                              <VideoCameraOutlined /> Video
-                            </span>
-                          </Tooltip>
-                        ),
-                        value: "video",
-                      },
-                      {
-                        label: (
-                          <Tooltip title="Link Post">
-                            <span>
-                              <LinkOutlined /> Link
-                            </span>
-                          </Tooltip>
-                        ),
-                        value: "link",
-                      },
                     ]}
                     style={{ marginBottom: 8 }}
                   />
@@ -1893,33 +1923,6 @@ export default function LinkedInDashboard({
                   autoSize={{ minRows: 3, maxRows: 6 }}
                   style={{ marginBottom: 16, borderRadius: 8 }}
                 />
-
-                {/* Link Fields */}
-                {twitterPostType === "link" && (
-                  <div style={{ marginBottom: 16 }}>
-                    <Input
-                      placeholder="Enter URL (e.g., https://example.com)"
-                      value={twitterLinkUrl}
-                      onChange={(e) => setTwitterLinkUrl(e.target.value)}
-                      prefix={<LinkOutlined />}
-                      style={{ marginBottom: 8, borderRadius: 8 }}
-                    />
-                    <Input
-                      placeholder="Link title (optional)"
-                      value={twitterLinkTitle}
-                      onChange={(e) => setTwitterLinkTitle(e.target.value)}
-                      style={{ marginBottom: 8, borderRadius: 8 }}
-                    />
-                    <Input
-                      placeholder="Link description (optional)"
-                      value={twitterLinkDescription}
-                      onChange={(e) =>
-                        setTwitterLinkDescription(e.target.value)
-                      }
-                      style={{ borderRadius: 8 }}
-                    />
-                  </div>
-                )}
 
                 {/* Image Upload Section */}
                 {twitterPostType === "image" && (
@@ -1982,88 +1985,7 @@ export default function LinkedInDashboard({
                             type="secondary"
                             style={{ fontSize: 12 }}
                           >
-                            Supports: JPG, PNG, GIF (Max 8MB)
-                          </Typography.Text>
-                        </div>
-                      </Upload>
-                    )}
-                  </div>
-                )}
-
-                {/* Video Upload Section */}
-                {twitterPostType === "video" && (
-                  <div style={{ marginBottom: 16 }}>
-                    {twitterVideoPreview ? (
-                      <div
-                        style={{
-                          position: "relative",
-                          display: "inline-block",
-                        }}
-                      >
-                        <video
-                          src={twitterVideoPreview}
-                          controls
-                          style={{
-                            maxWidth: "100%",
-                            maxHeight: 200,
-                            borderRadius: 8,
-                            border: "1px solid #d9d9d9",
-                          }}
-                        />
-                        <Button
-                          icon={<DeleteOutlined />}
-                          size="small"
-                          danger
-                          shape="circle"
-                          onClick={handleTwitterVideoClear}
-                          style={{
-                            position: "absolute",
-                            top: 8,
-                            right: 8,
-                            backgroundColor: "rgba(255,255,255,0.9)",
-                          }}
-                        />
-                        <Typography.Text
-                          type="secondary"
-                          style={{ display: "block", marginTop: 8 }}
-                        >
-                          {twitterSelectedVideo?.name} (
-                          {(
-                            (twitterSelectedVideo?.size || 0) /
-                            1024 /
-                            1024
-                          ).toFixed(2)}{" "}
-                          MB)
-                        </Typography.Text>
-                      </div>
-                    ) : (
-                      <Upload
-                        accept="video/*"
-                        showUploadList={false}
-                        beforeUpload={handleTwitterVideoSelect}
-                        disabled={twitterPosting}
-                      >
-                        <div
-                          style={{
-                            border: "2px dashed #d9d9d9",
-                            borderRadius: 8,
-                            padding: 24,
-                            textAlign: "center",
-                            cursor: "pointer",
-                            transition: "border-color 0.3s",
-                          }}
-                        >
-                          <VideoCameraOutlined
-                            style={{ fontSize: 32, color: "#1DA1F2" }}
-                          />
-                          <div style={{ marginTop: 8 }}>
-                            Click or drag video to upload
-                          </div>
-                          <Typography.Text
-                            type="secondary"
-                            style={{ fontSize: 12 }}
-                          >
-                            Supports: MP4, MOV (Max 200MB)
+                            Supports: JPG, PNG, GIF (Max 5MB)
                           </Typography.Text>
                         </div>
                       </Upload>
@@ -2081,14 +2003,10 @@ export default function LinkedInDashboard({
                   <Button
                     type="primary"
                     icon={<SendOutlined />}
-                    onClick={() => {
-                      message.info("Twitter post functionality coming soon");
-                    }}
+                    onClick={handleTwitterPost}
                     loading={twitterPosting}
                     disabled={
                       !twitterPostText.trim() ||
-                      (twitterPostType === "link" && !twitterLinkUrl.trim()) ||
-                      (twitterPostType === "video" && !twitterSelectedVideo) ||
                       (twitterPostType === "image" && !twitterSelectedImage)
                     }
                     style={{
