@@ -38,7 +38,7 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "User not found" });
     }
 
-    const { message, conversationId, images, files } = req.body;
+    const { message, conversationId, images, files, editMessageIndex } = req.body;
 
     // Validate message, images or files
     if (
@@ -70,6 +70,69 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Handle edit message mode
+    if (editMessageIndex !== undefined && editMessageIndex !== null) {
+      if (!conversation) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Conversation ID is required for editing messages",
+          });
+      }
+
+      // Validate editMessageIndex
+      if (
+        editMessageIndex < 0 ||
+        editMessageIndex >= conversation.messages.length
+      ) {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Invalid message index for editing",
+          });
+      }
+
+      // Ensure the message at editMessageIndex is a user message
+      if (conversation.messages[editMessageIndex].role !== "user") {
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: "Can only edit user messages",
+          });
+      }
+
+      // Remove all messages after editMessageIndex
+      conversation.messages = conversation.messages.slice(0, editMessageIndex + 1);
+
+      // Update the message at editMessageIndex
+      const userMessageContent = message
+        ? message.trim()
+        : images && images.length > 0
+          ? `Uploaded ${images.length} image(s)`
+          : files && files.length > 0
+            ? `Uploaded ${files.length} file(s)`
+            : "";
+
+      conversation.messages[editMessageIndex] = {
+        role: "user",
+        content: userMessageContent,
+        images: images && Array.isArray(images) ? images : undefined,
+        files:
+          files && Array.isArray(files)
+            ? files.map((f: any) => ({
+                url: f.url,
+                name: f.name,
+                type: f.type,
+                size: f.size,
+              }))
+            : undefined,
+        timestamp: new Date(),
+      };
+    }
+
     // Get user context from Brand Profile
     const userContext = {
       brandName: user.brandName,
@@ -92,27 +155,29 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Add current user message
-    const userMessageContent = message
-      ? message.trim()
-      : images && images.length > 0
-        ? `Uploaded ${images.length} image(s)`
-        : files && files.length > 0
-          ? `Uploaded ${files.length} file(s)`
-          : "";
-    messages.push({
-      role: "user",
-      content: userMessageContent,
-      images: images && Array.isArray(images) ? images : undefined,
-      files:
-        files && Array.isArray(files)
-          ? files.map((f: any) => ({
-              url: f.url,
-              name: f.name,
-              type: f.type,
-            }))
-          : undefined,
-    });
+    // Add current user message (if not in edit mode)
+    if (editMessageIndex === undefined || editMessageIndex === null) {
+      const userMessageContent = message
+        ? message.trim()
+        : images && images.length > 0
+          ? `Uploaded ${images.length} image(s)`
+          : files && files.length > 0
+            ? `Uploaded ${files.length} file(s)`
+            : "";
+      messages.push({
+        role: "user",
+        content: userMessageContent,
+        images: images && Array.isArray(images) ? images : undefined,
+        files:
+          files && Array.isArray(files)
+            ? files.map((f: any) => ({
+                url: f.url,
+                name: f.name,
+                type: f.type,
+              }))
+            : undefined,
+      });
+    }
 
     // Process images: read and convert to base64
     const imageData: Array<{ base64: string; mimeType: string }> = [];
@@ -182,6 +247,13 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
     // Create or update conversation
     if (!conversation) {
       // Create new conversation
+      const userMessageContent = message
+        ? message.trim()
+        : images && images.length > 0
+          ? `Uploaded ${images.length} image(s)`
+          : files && files.length > 0
+            ? `Uploaded ${files.length} file(s)`
+            : "";
       conversation = await Conversation.create({
         userId: user._id,
         title: generateTitle(userMessageContent),
@@ -210,21 +282,32 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       });
     } else {
       // Update existing conversation
-      conversation.messages.push({
-        role: "user",
-        content: userMessageContent,
-        images: images && Array.isArray(images) ? images : undefined,
-        files:
-          files && Array.isArray(files)
-            ? files.map((f: any) => ({
-                url: f.url,
-                name: f.name,
-                type: f.type,
-                size: f.size,
-              }))
-            : undefined,
-        timestamp: new Date(),
-      });
+      if (editMessageIndex === undefined || editMessageIndex === null) {
+        // Normal mode: append new messages
+        const userMessageContent = message
+          ? message.trim()
+          : images && images.length > 0
+            ? `Uploaded ${images.length} image(s)`
+            : files && files.length > 0
+              ? `Uploaded ${files.length} file(s)`
+              : "";
+        conversation.messages.push({
+          role: "user",
+          content: userMessageContent,
+          images: images && Array.isArray(images) ? images : undefined,
+          files:
+            files && Array.isArray(files)
+              ? files.map((f: any) => ({
+                  url: f.url,
+                  name: f.name,
+                  type: f.type,
+                  size: f.size,
+                }))
+              : undefined,
+          timestamp: new Date(),
+        });
+      }
+      // Add assistant response
       conversation.messages.push({
         role: "assistant",
         content: aiResponse,
