@@ -1,10 +1,12 @@
 .toggleContainer {
-  display: inline-flex;
+  display: flex;
+  width: 100%;
   border-radius: 8px;
   border: 1px solid var(--border-color, #e0e0e0);
   background: var(--bg-secondary, #ffffff);
   overflow: hidden;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-width: 0;
 }
 
 [data-theme="warm"] .toggleContainer {
@@ -15,7 +17,7 @@
 .segment {
   border: none;
   background: transparent;
-  padding: 6px 16px;
+  padding: 6px 12px;
   font-size: 12px;
   font-weight: 500;
   font-family: var(--font-family, "Inter", sans-serif);
@@ -23,8 +25,12 @@
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  min-width: 60px;
+  min-width: 0;
+  flex: 1;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-theme="warm"] .segment {
@@ -34,16 +40,6 @@
 
 .segment:first-child {
   border-radius: 8px 0 0 8px;
-}
-
-.segment:nth-child(2) {
-  border-left: 1px solid var(--border-color, #e0e0e0);
-  border-right: 1px solid var(--border-color, #e0e0e0);
-}
-
-[data-theme="warm"] .segment:nth-child(2) {
-  border-left: 1px solid #e1dbc3;
-  border-right: 1px solid #e1dbc3;
 }
 
 .segment:last-child {

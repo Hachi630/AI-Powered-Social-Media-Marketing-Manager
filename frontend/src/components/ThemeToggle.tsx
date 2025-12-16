@@ -61,7 +61,7 @@ export default function ThemeToggle() {
         onClick={handleNightModeClick}
         aria-label="Switch to night mode"
       >
-        NightMode
+        Night
       </button>
     </div>
   );

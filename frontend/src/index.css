@@ -890,3 +890,112 @@ html[data-darkreader-mode] .ant-carousel .slick-dots li.slick-active button {
 html[data-darkreader-mode] {
   color-scheme: dark;
 }
+
+/* Dark Mode Logo: Remove black background and blend with header */
+/* Note: The logo file is actually JPEG (not PNG), so we need CSS blend modes to remove black background */
+html[data-darkreader-mode] .logoImage,
+html[data-darkreader-mode] img.logoImage,
+html[data-darkreader-mode] .header .logoImage,
+html[data-darkreader-mode] .logoGroup .logoImage,
+html[data-darkreader-mode] .logoButton .logoImage,
+html[data-darkreader-mode] .logoButton img,
+html[data-darkreader-mode] .logoGroup img,
+html[data-darkreader-mode] img[src*="night"] {
+  /* Use lighten blend mode: only lighter pixels (white logo) visible,
+     darker pixels (black background) become transparent/invisible */
+  mix-blend-mode: lighten !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  /* Force hardware acceleration for smooth rendering */
+  transform: translateZ(0) !important;
+  will-change: mix-blend-mode !important;
+  /* Ensure proper stacking */
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Alternative: Try screen mode if lighten doesn't work well */
+html[data-darkreader-mode] .logoImage[src*="night"],
+html[data-darkreader-mode] img[src*="night"] {
+  mix-blend-mode: screen !important;
+}
+
+/* Ensure all parent containers are fully transparent and don't interfere */
+html[data-darkreader-mode] .logoButton,
+html[data-darkreader-mode] .logoGroup,
+html[data-darkreader-mode] .header .logoButton,
+html[data-darkreader-mode] .header .logoGroup,
+html[data-darkreader-mode] .header button.logoButton,
+html[data-darkreader-mode] button.logoButton {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  /* Critical: Don't create isolation context that breaks blend mode */
+  isolation: auto !important;
+}
+
+/* Remove any pseudo-element backgrounds */
+html[data-darkreader-mode] .logoButton::before,
+html[data-darkreader-mode] .logoButton::after,
+html[data-darkreader-mode] .logoGroup::before,
+html[data-darkreader-mode] .logoGroup::after {
+  display: none !important;
+  background: none !important;
+}
+
+/* Warm Theme Logo: Remove white background and blend with header */
+[data-theme="warm"] .logoImage,
+[data-theme="warm"] img.logoImage,
+[data-theme="warm"] .header .logoImage,
+[data-theme="warm"] .logoGroup .logoImage,
+[data-theme="warm"] .logoButton .logoImage,
+[data-theme="warm"] .logoButton img,
+[data-theme="warm"] .logoGroup img {
+  /* Use darken blend mode - makes white transparent, keeps black logo visible */
+  mix-blend-mode: darken !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  object-fit: contain !important;
+  /* Force hardware acceleration */
+  transform: translateZ(0) !important;
+  will-change: mix-blend-mode !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Ensure warm theme parent containers are transparent */
+[data-theme="warm"] .logoButton,
+[data-theme="warm"] .logoGroup,
+[data-theme="warm"] .header .logoButton,
+[data-theme="warm"] .header .logoGroup,
+[data-theme="warm"] button.logoButton {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  isolation: auto !important;
+}
+
+/* Remove pseudo-element backgrounds in warm theme */
+[data-theme="warm"] .logoButton::before,
+[data-theme="warm"] .logoButton::after,
+[data-theme="warm"] .logoGroup::before,
+[data-theme="warm"] .logoGroup::after {
+  display: none !important;
+  background: none !important;
+}

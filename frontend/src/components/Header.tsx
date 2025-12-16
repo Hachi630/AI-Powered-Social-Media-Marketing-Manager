@@ -67,6 +67,7 @@ export default function Header({
   const isHomePage = location.pathname === "/" || location.pathname === "/home";
 
   // Use night logo if dark mode is enabled
+  // Note: The night logo should have transparent background for proper blending
   const currentLogoSrc = settings.darkMode
     ? MELO_LOGO_NIGHT
     : logoSrc || MELO_LOGO;

@@ -53,8 +53,44 @@ html[data-darkreader-mode] .header {
 .logoImage {
   width: 56px;
   height: 54px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 4px;
+  background: transparent;
+  transition: all 0.3s ease;
+  display: block;
+}
+
+/* Warm theme: remove white background using blend mode */
+[data-theme="warm"] .logoImage {
+  /* Use darken blend mode - makes white transparent, keeps black logo visible */
+  mix-blend-mode: darken !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+  transform: translateZ(0) !important;
+  will-change: mix-blend-mode !important;
+}
+
+/* Dark mode: remove black background using blend mode */
+html[data-darkreader-mode] .logoImage {
+  /* Use lighten blend mode - makes black transparent, keeps white visible */
+  mix-blend-mode: lighten !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  border-radius: 0 !important;
+  /* Change object-fit to contain to avoid cropping issues */
+  object-fit: contain !important;
+  transform: translateZ(0) !important;
+  will-change: mix-blend-mode !important;
+}
+
+/* Ensure warm theme containers are transparent */
+[data-theme="warm"] .logoButton,
+[data-theme="warm"] .logoGroup {
+  background: transparent !important;
+  background-color: transparent !important;
+  isolation: auto !important;
 }
 
 .logoText {

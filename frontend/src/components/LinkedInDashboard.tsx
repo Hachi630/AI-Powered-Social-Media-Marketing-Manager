@@ -2173,14 +2173,25 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingFacebook}
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Refresh
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Refresh
+                        </span>
                       </Button>
                       <Button
                         icon={<DisconnectOutlined />}
@@ -2188,14 +2199,25 @@ export default function LinkedInDashboard({
                         loading={disconnectingFacebook}
                         danger
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Disconnect
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Disconnect
+                        </span>
                       </Button>
                     </>
                   )}
@@ -2701,14 +2723,25 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingInstagram}
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Refresh
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Refresh
+                        </span>
                       </Button>
                       <Button
                         icon={<DisconnectOutlined />}
@@ -2716,14 +2749,25 @@ export default function LinkedInDashboard({
                         loading={disconnectingInstagram}
                         danger
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Disconnect
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Disconnect
+                        </span>
                       </Button>
                     </>
                   )}
@@ -3450,14 +3494,25 @@ export default function LinkedInDashboard({
                             loading={loading}
                             size={isMobile ? "middle" : "middle"}
                             style={{
-                              width: 150,
+                              minWidth: 120,
+                              maxWidth: "100%",
                               height: 44,
                               display: "inline-flex",
                               justifyContent: "center",
                               alignItems: "center",
+                              paddingLeft: 12,
+                              paddingRight: 12,
                             }}
                           >
-                            Refresh
+                            <span
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              Refresh
+                            </span>
                           </Button>
                           <Button
                             icon={<DisconnectOutlined />}
@@ -3466,14 +3521,25 @@ export default function LinkedInDashboard({
                             danger
                             size={isMobile ? "middle" : "middle"}
                             style={{
-                              width: 150,
+                              minWidth: 120,
+                              maxWidth: "100%",
                               height: 44,
                               display: "inline-flex",
                               justifyContent: "center",
                               alignItems: "center",
+                              paddingLeft: 12,
+                              paddingRight: 12,
                             }}
                           >
-                            Disconnect
+                            <span
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              Disconnect
+                            </span>
                           </Button>
                         </>
                       )}
