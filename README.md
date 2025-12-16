@@ -147,6 +147,7 @@ Melo/
    ```
 
 3. **Install frontend dependencies**
+
    ```bash
    cd ../frontend
    npm install
@@ -159,6 +160,7 @@ Melo/
    Create a `.env` file in the `backend/` directory (see Environment Variables section below for required variables).
    
    **Important**: Make sure to add Twitter and LinkedIn API credentials:
+
    ```env
    # Twitter/X OAuth (Required for Twitter integration)
    TWITTER_API_KEY=your_twitter_api_key
@@ -347,13 +349,13 @@ The Twitter/X integration allows users to connect their Twitter accounts via OAu
 
 #### Common Issues & Solutions
 
-| Issue                          | Solution                                                                                                  |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| "Twitter API credentials are not configured" | Ensure `TWITTER_API_KEY` and `TWITTER_API_SECRET` are set in `backend/.env`                               |
-| "Callback URL not approved"    | Verify callback URL in Twitter Developer Portal matches `TWITTER_CALLBACK_URL` exactly                    |
-| "Invalid request token"        | Request tokens expire after 10 minutes. Try connecting again                                               |
-| "Twitter account not connected" | User must connect their Twitter account before sharing content                                            |
-| Button doesn't redirect        | Ensure user is logged in, check backend is running                                                       |
+| Issue                                        | Solution                                                                               |
+| -------------------------------------------- | -------------------------------------------------------------------------------------- |
+| "Twitter API credentials are not configured" | Ensure `TWITTER_API_KEY` and `TWITTER_API_SECRET` are set in `backend/.env`            |
+| "Callback URL not approved"                  | Verify callback URL in Twitter Developer Portal matches `TWITTER_CALLBACK_URL` exactly |
+| "Invalid request token"                      | Request tokens expire after 10 minutes. Try connecting again                           |
+| "Twitter account not connected"              | User must connect their Twitter account before sharing content                         |
+| Button doesn't redirect                      | Ensure user is logged in, check backend is running                                     |
 
 #### Debugging
 
@@ -1557,6 +1559,40 @@ npm run preview # Preview production build
 - **Routes**: API endpoints in `backend/src/routes/`
 - **Middleware**: Express middleware in `backend/src/middleware/`
 - **Models**: Database models in `backend/src/models/`
+
+---
+
+## 🌙 Dark Mode Implementation
+
+### Color Palette
+
+Dark mode uses a gray-scale color scheme for consistent theming:
+
+- **Deep Gray**: `#1b1c1e` - Primary background
+- **Dark Gray**: `#1f1f1f` - Secondary background
+- **Gray**: `#2b2b2b` - Card/surface background
+- **Light Gray**: `#303030` - Border and divider
+
+### Implementation Steps
+
+1. **Add dark mode toggle** in App Settings (Settings → Theme Mode)
+2. **Apply CSS variables** for dark theme colors
+3. **Override Ant Design components** with dark backgrounds
+4. **Exclude entry pages** (home, privacy, terms, contact) from dark mode
+5. **Update logo styling** for dark header compatibility
+
+### CSS Variable Mapping
+
+```css
+html.dark-mode-active {
+  --bg-primary: #1b1c1e;
+  --bg-secondary: #1f1f1f;
+  --card-bg: #2b2b2b;
+  --border-color: #303030;
+  --text-primary: #e8edf5;
+  --text-secondary: #b6c2d1;
+}
+```
 
 ---
 
