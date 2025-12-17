@@ -4,7 +4,7 @@
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-header) {
-  background-color: #FFEFD5 !important;
+  background-color: #ffefd5 !important;
   border-bottom: none !important;
 }
 
@@ -12,12 +12,29 @@
   font-size: 20px !important;
   font-weight: 600 !important;
   color: var(--text-primary, #1e1e1e) !important;
-  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.settingsModal :global(.ant-modal-header) {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+}
+
+.settingsModal :global(.ant-modal-header .ant-modal-title) {
+  flex: 1;
+  min-width: 0;
+  margin-right: 24px;
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-title) {
   color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
 }
 
 .settingsModal :global(.ant-modal-body) {
@@ -26,17 +43,30 @@
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-body) {
-  background-color: #FFEFD5 !important;
+  background-color: #ffefd5 !important;
 }
 
 .settingsModal :global(.ant-modal-footer) {
   background-color: #ffffff !important;
   border-top: none !important;
   padding: 16px 24px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+}
+
+.settingsModal :global(.ant-modal-footer .ant-btn) {
+  min-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-footer) {
-  background-color: #FFEFD5 !important;
+  background-color: #ffefd5 !important;
   border-top: none !important;
 }
 
@@ -47,12 +77,17 @@
   font-size: 20px !important;
   font-weight: 600 !important;
   color: var(--text-primary, #1e1e1e) !important;
-  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
 }
 
 [data-theme="warm"] .modalTitle {
   color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
 }
 
 .modalContent {
@@ -85,8 +120,8 @@
 }
 
 [data-theme="warm"] .settingCard {
-  border: 1px solid #E1DBC3 !important;
-  background-color: #FFEFD5 !important;
+  border: 1px solid #e1dbc3 !important;
+  background-color: #ffefd5 !important;
   box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3) !important;
 }
 
@@ -97,20 +132,23 @@
 }
 
 [data-theme="warm"] .settingCard :global(.ant-card-head) {
-  background-color: #FFEFD5 !important;
-  border-bottom: 1px solid #E1DBC3 !important;
+  background-color: #ffefd5 !important;
+  border-bottom: 1px solid #e1dbc3 !important;
 }
 
 .settingCard :global(.ant-card-head-title) {
   font-size: 20px !important;
   font-weight: 600 !important;
   color: var(--text-primary, #1e1e1e) !important;
-  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-theme="warm"] .settingCard :global(.ant-card-head-title) {
   color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
 }
 
 .settingCard :global(.ant-card-body) {
@@ -119,7 +157,7 @@
 }
 
 [data-theme="warm"] .settingCard :global(.ant-card-body) {
-  background-color: #FFEFD5 !important;
+  background-color: #ffefd5 !important;
 }
 
 .settingItem {
@@ -132,30 +170,39 @@
   font-size: 16px !important;
   font-weight: 500 !important;
   color: var(--text-primary, #1e1e1e) !important;
-  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 [data-theme="warm"] .settingLabel {
   color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
 }
 
 .settingDescription {
   font-size: 14px !important;
   font-weight: 400 !important;
   color: var(--text-secondary, #666666) !important;
-  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+  line-height: 1.5;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
 [data-theme="warm"] .settingDescription {
-  color: #B1A285 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  color: #b1a285 !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
 }
 
 .themeToggleWrapper {
   display: flex;
   align-items: center;
   padding: 8px 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .colorPickerWrapper {
@@ -210,7 +257,7 @@
 }
 
 .colorSwatchActive::after {
-  content: '✓';
+  content: "✓";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -230,7 +277,7 @@
 }
 
 [data-theme="warm"] .slider :global(.ant-slider-track) {
-  background-color: #AE906E !important;
+  background-color: #ae906e !important;
 }
 
 .slider :global(.ant-slider-handle) {
@@ -238,7 +285,7 @@
 }
 
 [data-theme="warm"] .slider :global(.ant-slider-handle) {
-  border-color: #AE906E !important;
+  border-color: #ae906e !important;
 }
 
 .select {
@@ -249,14 +296,14 @@
   background-color: #ffffff !important;
   border: 1px solid rgba(0, 0, 0, 0.1) !important;
   color: var(--text-primary, #1e1e1e) !important;
-  font-family: var(--font-family, 'Inter', sans-serif) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
 }
 
 [data-theme="warm"] .select :global(.ant-select-selector) {
-  background-color: #FFEFD5 !important;
+  background-color: #ffefd5 !important;
   border: 1px solid rgba(144, 128, 102, 0.2) !important;
   color: #908066 !important;
-  font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
 }
 
 .select :global(.ant-select-focused .ant-select-selector) {
@@ -264,7 +311,7 @@
 }
 
 [data-theme="warm"] .select :global(.ant-select-focused .ant-select-selector) {
-  border-color: #AE906E !important;
+  border-color: #ae906e !important;
 }
 
 /* Font preview in select options - ensure inline styles work */
@@ -294,7 +341,7 @@
 }
 
 [data-theme="warm"] .settingsModal :global(.ant-modal-content) {
-  background-color: #FFEFD5 !important;
+  background-color: #ffefd5 !important;
 }
 
 .settingsModal :global(.ant-modal) {
@@ -315,5 +362,17 @@
   .settingCard {
     min-height: auto;
   }
-}
 
+  .settingsModal :global(.ant-modal-footer) {
+    flex-direction: column !important;
+  }
+
+  .settingsModal :global(.ant-modal-footer .ant-btn) {
+    width: 100% !important;
+  }
+
+  .themeToggleWrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

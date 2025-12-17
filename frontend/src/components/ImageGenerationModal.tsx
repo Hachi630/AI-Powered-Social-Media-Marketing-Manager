@@ -1,14 +1,14 @@
-import { Modal, Input, Button, message } from 'antd'
-import { useState } from 'react'
-import { chatService } from '../services/chatService'
+import { Modal, Input, Button, message } from "antd";
+import { useState } from "react";
+import { chatService } from "../services/chatService";
 
-const { TextArea } = Input
+const { TextArea } = Input;
 
 interface ImageGenerationModalProps {
-  open: boolean
-  onCancel: () => void
-  onSuccess: (imageUrl: string, conversationId?: string) => void
-  conversationId?: string | null
+  open: boolean;
+  onCancel: () => void;
+  onSuccess: (imageUrl: string, conversationId?: string) => void;
+  conversationId?: string | null;
 }
 
 export default function ImageGenerationModal({
@@ -17,41 +17,41 @@ export default function ImageGenerationModal({
   onSuccess,
   conversationId,
 }: ImageGenerationModalProps) {
-  const [prompt, setPrompt] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [prompt, setPrompt] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
-      message.warning('Please enter image description')
-      return
+      message.warning("Please enter image description");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       const response = await chatService.generateImage(
         prompt.trim(),
         conversationId || undefined
-      )
+      );
 
       if (response.success && response.imageUrl) {
-        message.success('Image generated successfully')
-        onSuccess(response.imageUrl, response.conversationId)
-        setPrompt('')
-        onCancel()
+        message.success("Image generated successfully");
+        onSuccess(response.imageUrl, response.conversationId);
+        setPrompt("");
+        onCancel();
       } else {
-        message.error(response.message || 'Failed to generate image')
+        message.error(response.message || "Failed to generate image");
       }
-    } catch (error) {
-      message.error('Failed to generate image, please try again later')
+    } catch {
+      message.error("Failed to generate image, please try again later");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    setPrompt('')
-    onCancel()
-  }
+    setPrompt("");
+    onCancel();
+  };
 
   return (
     <Modal
@@ -62,7 +62,12 @@ export default function ImageGenerationModal({
         <Button key="cancel" onClick={handleCancel}>
           Cancel
         </Button>,
-        <Button key="generate" type="primary" loading={loading} onClick={handleGenerate}>
+        <Button
+          key="generate"
+          type="primary"
+          loading={loading}
+          onClick={handleGenerate}
+        >
           Generate
         </Button>,
       ]}
@@ -76,15 +81,14 @@ export default function ImageGenerationModal({
           disabled={loading}
           onPressEnter={(e) => {
             if (e.ctrlKey || e.metaKey) {
-              handleGenerate()
+              handleGenerate();
             }
           }}
         />
-        <div style={{ marginTop: 8, fontSize: 12, color: '#999' }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: "#999" }}>
           Tip: Press Ctrl+Enter or Cmd+Enter to generate quickly
         </div>
       </div>
     </Modal>
-  )
+  );
 }
-

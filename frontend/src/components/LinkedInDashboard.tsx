@@ -5,7 +5,6 @@ import {
   Card,
   Row,
   Col,
-  Statistic,
   Tag,
   Button,
   Spin,
@@ -18,9 +17,6 @@ import {
   Select,
   Avatar,
   Space,
-  List,
-  DatePicker,
-  Form,
   Segmented,
   Tooltip,
   App,
@@ -28,38 +24,20 @@ import {
 import {
   LinkedinOutlined,
   UserOutlined,
-  TeamOutlined,
-  EyeOutlined,
   SyncOutlined,
   DisconnectOutlined,
   ExclamationCircleOutlined,
   SendOutlined,
   PictureOutlined,
   DeleteOutlined,
-  FileImageOutlined,
   BankOutlined,
   InstagramOutlined,
-  CalendarOutlined,
-  PlusOutlined,
-  EditOutlined,
-  GlobalOutlined,
-  EnvironmentOutlined,
   LinkOutlined,
   VideoCameraOutlined,
-  LikeOutlined,
-  HeartOutlined,
-  TrophyOutlined,
-  BulbOutlined,
-  QuestionCircleOutlined,
-  SmileOutlined,
-  CommentOutlined,
   TwitterOutlined,
   FacebookOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
-import dayjs from "dayjs";
 import Header from "./Header";
 import SocialSidebar, { type SocialPlatform } from "./SocialSidebar";
 import styles from "./Dashboard.module.css";
@@ -74,19 +52,12 @@ import {
   fileToBase64,
   getAdministeredOrganizations,
   Organization,
-  // Events
-  LinkedInEvent,
-  getMyLinkedInEvents,
-  getOrganizationLinkedInEvents,
-  createLinkedInEvent,
-  deleteLinkedInEventService,
   // New features
   createLinkedInPostWithLink,
   initializeVideoUpload,
   uploadVideoToLinkedIn as uploadVideo,
   createLinkedInPostWithVideo,
   videoFileToBase64,
-  ReactionType,
 } from "../services/linkedinService";
 import {
   getTwitterStatus,
@@ -114,6 +85,17 @@ interface LinkedInDashboardProps {
   userId?: string;
 }
 
+interface SocialStatus {
+  connected?: boolean;
+  profile?: {
+    name?: string;
+    email?: string;
+    picture?: string;
+    username?: string;
+  };
+  [key: string]: unknown;
+}
+
 const { Content, Sider } = Layout;
 const { useBreakpoint } = Grid;
 
@@ -131,24 +113,28 @@ export default function LinkedInDashboard({
   const isTablet = screens.md && !screens.lg;
 
   // Sidebar and platform selection states
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(
-    isMobile || isTablet
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(
+    !!(isMobile || isTablet)
   );
   const [selectedPlatform, setSelectedPlatform] =
     useState<SocialPlatform>("linkedin");
 
-  const [metrics, setMetrics] = useState<any>(null);
+  const [metrics, setMetrics] = useState<SocialStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
   // Twitter states
-  const [twitterStatus, setTwitterStatus] = useState<any>(null);
+  const [twitterStatus, setTwitterStatus] = useState<SocialStatus | null>(null);
   const [loadingTwitter, setLoadingTwitter] = useState(true);
   const [disconnectingTwitter, setDisconnectingTwitter] = useState(false);
 
   // Facebook/Instagram states
-  const [facebookStatus, setFacebookStatus] = useState<any>(null);
-  const [instagramStatus, setInstagramStatus] = useState<any>(null);
+  const [facebookStatus, setFacebookStatus] = useState<SocialStatus | null>(
+    null
+  );
+  const [instagramStatus, setInstagramStatus] = useState<SocialStatus | null>(
+    null
+  );
   const [loadingFacebook, setLoadingFacebook] = useState(true);
   const [loadingInstagram, setLoadingInstagram] = useState(true);
   const [facebookAuthUrl, setFacebookAuthUrl] = useState<string | null>(null);
@@ -161,7 +147,6 @@ export default function LinkedInDashboard({
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
-  const [postModalOpen, setPostModalOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // LinkedIn Enhanced post type states
@@ -176,24 +161,15 @@ export default function LinkedInDashboard({
 
   // Twitter/X Post states
   const [twitterPostText, setTwitterPostText] = useState("");
-  const [twitterPostType, setTwitterPostType] = useState<
-    "text" | "image"
-  >("text");
+  const [twitterPostType, setTwitterPostType] = useState<"text" | "image">(
+    "text"
+  );
   const [twitterSelectedImage, setTwitterSelectedImage] = useState<File | null>(
     null
   );
   const [twitterImagePreview, setTwitterImagePreview] = useState<string | null>(
     null
   );
-  const [twitterSelectedVideo, setTwitterSelectedVideo] = useState<File | null>(
-    null
-  );
-  const [twitterVideoPreview, setTwitterVideoPreview] = useState<string | null>(
-    null
-  );
-  const [twitterLinkUrl, setTwitterLinkUrl] = useState("");
-  const [twitterLinkTitle, setTwitterLinkTitle] = useState("");
-  const [twitterLinkDescription, setTwitterLinkDescription] = useState("");
   const [twitterPosting, setTwitterPosting] = useState(false);
 
   // Instagram Post states
@@ -214,7 +190,7 @@ export default function LinkedInDashboard({
   const [instagramLinkUrl, setInstagramLinkUrl] = useState("");
   const [instagramLinkTitle, setInstagramLinkTitle] = useState("");
   const [instagramLinkDescription, setInstagramLinkDescription] = useState("");
-  const [instagramPosting, setInstagramPosting] = useState(false);
+  const [instagramPosting] = useState(false);
 
   // Facebook Post states
   const [facebookPostText, setFacebookPostText] = useState("");
@@ -234,21 +210,13 @@ export default function LinkedInDashboard({
   const [facebookLinkUrl, setFacebookLinkUrl] = useState("");
   const [facebookLinkTitle, setFacebookLinkTitle] = useState("");
   const [facebookLinkDescription, setFacebookLinkDescription] = useState("");
-  const [facebookPosting, setFacebookPosting] = useState(false);
+  const [facebookPosting] = useState(false);
 
   // Organization/Company Page states
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [selectedPostTarget, setSelectedPostTarget] =
     useState<string>("personal"); // "personal" or org ID
-
-  // Events states
-  const [events, setEvents] = useState<LinkedInEvent[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(false);
-  const [selectedEventOrg, setSelectedEventOrg] = useState<string>("all"); // "all" or org ID
-  const [createEventModalOpen, setCreateEventModalOpen] = useState(false);
-  const [creatingEvent, setCreatingEvent] = useState(false);
-  const [eventForm] = Form.useForm();
 
   // Update sidebar collapsed state when screen size changes
   useEffect(() => {
@@ -297,6 +265,17 @@ export default function LinkedInDashboard({
       setLoadingTwitter(true);
       try {
         const data = await getTwitterStatus(jwt);
+        console.log(
+          "=== Twitter Status Data ===",
+          JSON.stringify(data, null, 2)
+        );
+        console.log("Twitter connected:", data?.connected);
+        console.log("Twitter profile:", data?.profile);
+        console.log("Profile name:", data?.profile?.name);
+        console.log("Profile username:", data?.profile?.username);
+        console.log("Profile picture:", data?.profile?.picture);
+        console.log("Rate limited?", data?.rateLimited);
+        console.log("Error?", data?.error);
         setTwitterStatus(data);
       } catch (error) {
         console.error("Failed to load Twitter status:", error);
@@ -316,15 +295,38 @@ export default function LinkedInDashboard({
       const note = params.get("note");
       if (note === "rate_limited") {
         message.warning(
-          "Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets.",
-          8
+          "Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets. Please click Refresh button later.",
+          10
         );
       } else {
         message.success("Twitter account connected successfully!");
       }
       // Reload Twitter status
       if (jwt) {
-        getTwitterStatus(jwt).then(setTwitterStatus);
+        getTwitterStatus(jwt).then((data) => {
+          setTwitterStatus(data);
+          // If rate limited, schedule auto-refresh after reset time
+          if (
+            data?.rateLimited &&
+            data?.rateLimitReset &&
+            typeof data.rateLimitReset === "string"
+          ) {
+            const resetTime = new Date(data.rateLimitReset).getTime();
+            const now = Date.now();
+            const delay = Math.max(0, resetTime - now) + 5000; // Add 5 seconds buffer
+            if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
+              // Only schedule if less than 24 hours
+              setTimeout(() => {
+                if (jwt) {
+                  getTwitterStatus(jwt).then(setTwitterStatus);
+                  message.info(
+                    "Automatically refreshed Twitter status after rate limit reset"
+                  );
+                }
+              }, delay);
+            }
+          }
+        });
       }
       // Clean up URL
       const newParams = new URLSearchParams(params);
@@ -341,7 +343,7 @@ export default function LinkedInDashboard({
 
       // Provide user-friendly error messages
       switch (reason) {
-        case "rate_limited":
+        case "rate_limited": {
           const resetTime = resetTimestamp
             ? new Date(parseInt(resetTimestamp) * 1000)
             : null;
@@ -351,6 +353,7 @@ export default function LinkedInDashboard({
           errorMessage = `Twitter API rate limit reached (25 requests per 24 hours). This is a Twitter API limitation, not a code issue. Please wait until ${resetTimeStr} and try again. Your tokens are saved and will work once the rate limit resets.`;
           message.warning(errorMessage, 10); // Show for 10 seconds
           break;
+        }
         case "callback_url_not_approved":
           errorMessage =
             "Twitter connection failed: Callback URL not approved. Please configure the callback URL in your Twitter Developer Portal app settings.";
@@ -396,8 +399,8 @@ export default function LinkedInDashboard({
       try {
         const fbData = await getFacebookStatus(jwt);
         setFacebookStatus(fbData);
-      } catch (error) {
-        console.error("Failed to load Facebook status:", error);
+      } catch {
+        console.error("Failed to load Facebook status");
       } finally {
         setLoadingFacebook(false);
       }
@@ -511,17 +514,21 @@ export default function LinkedInDashboard({
 
       // Provide user-friendly error messages
       switch (reason) {
-        case "user_denied":
+        case "user_denied": {
           errorMessage = "Connection was cancelled. Please try again.";
           break;
-        case "missing_params":
+        }
+        case "missing_params": {
           errorMessage = "Missing required parameters. Please try again.";
           break;
-        case "user_not_found":
+        }
+        case "user_not_found": {
           errorMessage = "User not found. Please log in again.";
           break;
-        default:
+        }
+        default: {
           errorMessage = reason || "Connection failed. Please try again.";
+        }
       }
 
       message.error(errorMessage);
@@ -574,26 +581,6 @@ export default function LinkedInDashboard({
       }
     };
     loadOrganizations();
-  }, [jwt, metrics?.connected]);
-
-  // Load events when connected
-  useEffect(() => {
-    const loadEvents = async () => {
-      if (!jwt || !metrics?.connected) return;
-
-      setLoadingEvents(true);
-      try {
-        const result = await getMyLinkedInEvents(jwt);
-        if (result.success) {
-          setEvents(result.events);
-        }
-      } catch (error) {
-        console.error("Failed to load events:", error);
-      } finally {
-        setLoadingEvents(false);
-      }
-    };
-    loadEvents();
   }, [jwt, metrics?.connected]);
 
   const handleRefreshMetrics = async () => {
@@ -945,12 +932,13 @@ export default function LinkedInDashboard({
       setLinkTitle("");
       setLinkDescription("");
       setPostType("text");
-      setPostModalOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create LinkedIn post:", error);
-      message.error(
-        error.message || "Failed to create post. Please try again."
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to create post. Please try again.";
+      message.error(errorMessage);
     } finally {
       setPosting(false);
       setUploadProgress(0);
@@ -999,25 +987,6 @@ export default function LinkedInDashboard({
     setTwitterImagePreview(null);
   };
 
-  // Twitter/X Video handlers
-  const handleTwitterVideoSelect = (file: File) => {
-    if (file.size > 200 * 1024 * 1024) {
-      message.error("Video must be smaller than 200MB");
-      return false;
-    }
-    setTwitterSelectedVideo(file);
-    setTwitterVideoPreview(URL.createObjectURL(file));
-    return false;
-  };
-
-  const handleTwitterVideoClear = () => {
-    if (twitterVideoPreview) {
-      URL.revokeObjectURL(twitterVideoPreview);
-    }
-    setTwitterSelectedVideo(null);
-    setTwitterVideoPreview(null);
-  };
-
   // Twitter/X Post handler
   const handleTwitterPost = async () => {
     if (!jwt) {
@@ -1053,18 +1022,24 @@ export default function LinkedInDashboard({
 
       if (result.success) {
         message.success("🎉 Tweet posted successfully!");
-        
+
         // Reset form
         setTwitterPostText("");
         setTwitterSelectedImage(null);
         setTwitterImagePreview(null);
         setTwitterPostType("text");
       } else {
-        message.error(result.error || "Failed to post tweet. Please try again.");
+        message.error(
+          result.error || "Failed to post tweet. Please try again."
+        );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create Twitter post:", error);
-      message.error(error.message || "Failed to post tweet. Please try again.");
+      message.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to post tweet. Please try again."
+      );
     } finally {
       setTwitterPosting(false);
     }
@@ -1301,7 +1276,6 @@ export default function LinkedInDashboard({
       },
     });
   };
-
   // Generate auth URL with userId for proper token association
   // If userId is not available yet, we still show the button but it won't work until user data loads
   const authUrl = userId ? getLinkedInAuthUrl(userId) : undefined;
@@ -1323,7 +1297,6 @@ export default function LinkedInDashboard({
     if (selectedPlatform !== "linkedin") {
       // Twitter content
       if (selectedPlatform === "twitter") {
-        const isTwitterConnected = twitterStatus?.connected === true;
         if (loadingTwitter) {
           return (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
@@ -1354,7 +1327,6 @@ export default function LinkedInDashboard({
 
       // Instagram content
       if (selectedPlatform === "instagram") {
-        const isInstagramConnected = instagramStatus?.connected === true;
         if (loadingInstagram) {
           return (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
@@ -1384,7 +1356,6 @@ export default function LinkedInDashboard({
 
       // Facebook content
       if (selectedPlatform === "facebook") {
-        const isFacebookConnected = facebookStatus?.connected === true;
         if (loadingFacebook) {
           return (
             <div style={{ textAlign: "center", padding: "60px 0" }}>
@@ -1541,17 +1512,6 @@ export default function LinkedInDashboard({
                   </Select.Option>
                 ))}
               </Select>
-              {organizations.length === 0 && !loadingOrgs && (
-                <Typography.Text
-                  type="secondary"
-                  style={{ display: "block", marginTop: 4, fontSize: 12 }}
-                >
-                  <strong>Company pages not available:</strong> Posting to
-                  company pages requires <code>w_organization_social</code>{" "}
-                  scope which needs LinkedIn app verification. You can post to
-                  your personal profile.
-                </Typography.Text>
-              )}
             </div>
 
             {/* Post Type Selector */}
@@ -1803,48 +1763,6 @@ export default function LinkedInDashboard({
               />
             )}
 
-            {/* Reactions Info */}
-            <div
-              style={{
-                marginBottom: 16,
-                padding: 12,
-                backgroundColor: "rgba(0, 119, 181, 0.05)",
-                borderRadius: 8,
-                border: "1px solid rgba(0, 119, 181, 0.1)",
-              }}
-            >
-              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                <strong>Available with w_member_social:</strong>
-              </Typography.Text>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  marginTop: 8,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Tag icon={<LikeOutlined />} color="blue">
-                  Like
-                </Tag>
-                <Tag icon={<TrophyOutlined />} color="gold">
-                  Celebrate
-                </Tag>
-                <Tag icon={<HeartOutlined />} color="red">
-                  Love
-                </Tag>
-                <Tag icon={<BulbOutlined />} color="green">
-                  Insightful
-                </Tag>
-                <Tag icon={<QuestionCircleOutlined />} color="purple">
-                  Curious
-                </Tag>
-                <Tag icon={<CommentOutlined />} color="cyan">
-                  Comment
-                </Tag>
-              </div>
-            </div>
-
             <div
               style={{
                 display: "flex",
@@ -1873,215 +1791,6 @@ export default function LinkedInDashboard({
               </Button>
             </div>
           </Card>
-        )}
-
-        {/* Metrics Cards - Only for LinkedIn */}
-        {selectedPlatform === "linkedin" && (
-          <Row gutter={[24, 24]}>
-            {/* Followers Card */}
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                styles={{ body: { padding: 24 } }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background:
-                        "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <UserOutlined style={{ fontSize: 24, color: "#fff" }} />
-                  </div>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Followers
-                  </Typography.Text>
-                </div>
-                {metrics?.followers?.available ? (
-                  <Statistic
-                    value={metrics.followers.value}
-                    valueStyle={{
-                      fontSize: 36,
-                      fontWeight: 700,
-                      color: "#0077B5",
-                    }}
-                  />
-                ) : isConnected ? (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      {metrics?.followers?.reason ||
-                        "Requires LinkedIn Marketing API permissions"}
-                    </Typography.Text>
-                    <Tag color="warning">API Limited</Tag>
-                  </div>
-                ) : (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      Connect LinkedIn to see your follower count
-                    </Typography.Text>
-                    {authUrl ? (
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          if (!authUrl) {
-                            console.error(
-                              "Cannot connect: userId not available. userId:",
-                              userId,
-                              "user:",
-                              user
-                            );
-                            alert(
-                              "Please wait for user data to load, or try refreshing the page."
-                            );
-                            return;
-                          }
-                          // Redirect to LinkedIn OAuth
-                          window.location.href = authUrl;
-                        }}
-                        style={{ padding: 0, color: "#0077B5" }}
-                      >
-                        Connect now →
-                      </Button>
-                    ) : (
-                      <Tag color="default">Not Available</Tag>
-                    )}
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            {/* Connections Card */}
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                styles={{ body: { padding: 24 } }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background:
-                        "linear-gradient(135deg, #00A0DC 0%, #0077B5 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <TeamOutlined style={{ fontSize: 24, color: "#fff" }} />
-                  </div>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Connections
-                  </Typography.Text>
-                </div>
-                {metrics?.connections?.available ? (
-                  <Statistic
-                    value={metrics.connections.value}
-                    valueStyle={{
-                      fontSize: 36,
-                      fontWeight: 700,
-                      color: "#00A0DC",
-                    }}
-                  />
-                ) : isConnected ? (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      {metrics?.connections?.reason ||
-                        "Requires special LinkedIn API permissions"}
-                    </Typography.Text>
-                    <Tag color="warning">API Limited</Tag>
-                  </div>
-                ) : (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      Your total network connections
-                    </Typography.Text>
-                    <Tag color="default">Not Connected</Tag>
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            {/* Profile Views Card */}
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                styles={{ body: { padding: 24 } }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background:
-                        "linear-gradient(135deg, #86868B 0%, #636366 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <EyeOutlined style={{ fontSize: 24, color: "#fff" }} />
-                  </div>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Profile Views
-                  </Typography.Text>
-                </div>
-                <div>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 12 }}
-                  >
-                    90-day profile view analytics
-                  </Typography.Text>
-                  <Tag color="warning">Not supported by LinkedIn API</Tag>
-                </div>
-              </Card>
-            </Col>
-          </Row>
         )}
 
         {/* Connection Status - Only for LinkedIn */}
@@ -2177,8 +1886,31 @@ export default function LinkedInDashboard({
                           setLoadingTwitter(true);
                           try {
                             const data = await getTwitterStatus(jwt);
+                            console.log(
+                              "=== Twitter Status Data (Refresh) ===",
+                              JSON.stringify(data, null, 2)
+                            );
                             setTwitterStatus(data);
-                            message.success("Twitter status refreshed");
+                            if (
+                              data?.profile &&
+                              (data.profile.name ||
+                                data.profile.username ||
+                                data.profile.picture)
+                            ) {
+                              message.success(
+                                "Twitter status refreshed - Profile information loaded!"
+                              );
+                            } else if (data?.rateLimited) {
+                              message.warning(
+                                `Twitter status refreshed, but still rate limited. ${
+                                  data.rateLimitReset
+                                    ? `Rate limit will reset at: ${new Date(data.rateLimitReset).toLocaleString()}`
+                                    : "Please try again later"
+                                }`
+                              );
+                            } else {
+                              message.success("Twitter status refreshed");
+                            }
                           } catch (error) {
                             console.error(
                               "Failed to refresh Twitter status:",
@@ -2253,37 +1985,151 @@ export default function LinkedInDashboard({
                 </div>
               </div>
 
-              {/* Twitter Connection Status */}
-              <Row align="middle" justify="space-between">
-                <Col>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Twitter Connection Status
-                  </Typography.Text>
-                  <br />
-                  <Typography.Text type="secondary">
-                    {twitterStatus?.connected
-                      ? "Your Twitter account is connected and ready to post tweets"
-                      : "Connect your Twitter account to enable posting tweets from your calendar"}
-                  </Typography.Text>
-                </Col>
-                <Col>
-                  {twitterStatus?.connected ? (
-                    <Tag
-                      color="success"
-                      style={{ padding: "4px 12px", fontSize: 14 }}
+              {/* Twitter Connection Status with User Info */}
+              {twitterStatus?.connected ? (
+                twitterStatus?.profile &&
+                (twitterStatus.profile.name ||
+                  twitterStatus.profile.username ||
+                  twitterStatus.profile.picture) ? (
+                  <div
+                    style={{
+                      padding: "16px 0",
+                      borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                      marginTop: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 16,
+                      }}
                     >
-                      ● Connected
-                    </Tag>
-                  ) : (
+                      {twitterStatus.profile.picture ? (
+                        <Avatar
+                          size={64}
+                          src={twitterStatus.profile.picture}
+                          alt={
+                            twitterStatus.profile.name ||
+                            twitterStatus.profile.username ||
+                            "Twitter"
+                          }
+                        />
+                      ) : (
+                        <Avatar
+                          size={64}
+                          icon={<TwitterOutlined />}
+                          style={{ backgroundColor: "#1DA1F2" }}
+                        />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <Typography.Text
+                          strong
+                          style={{
+                            fontSize: 18,
+                            display: "block",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {twitterStatus.profile.name ||
+                            twitterStatus.profile.username ||
+                            "Twitter Account"}
+                        </Typography.Text>
+                        {twitterStatus.profile.username && (
+                          <Typography.Text
+                            type="secondary"
+                            style={{
+                              fontSize: 14,
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            @{twitterStatus.profile.username}
+                          </Typography.Text>
+                        )}
+                        {twitterStatus.profile.email && (
+                          <Typography.Text
+                            type="secondary"
+                            style={{
+                              fontSize: 13,
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {twitterStatus.profile.email}
+                          </Typography.Text>
+                        )}
+                        <Tag
+                          color="success"
+                          style={{ padding: "2px 8px", fontSize: 12 }}
+                        >
+                          ● Connected
+                        </Tag>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: "16px 0",
+                      borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                      marginTop: 16,
+                    }}
+                  >
+                    <Row align="middle" justify="space-between">
+                      <Col>
+                        <Typography.Text strong style={{ fontSize: 16 }}>
+                          Twitter Connection Status
+                        </Typography.Text>
+                        <br />
+                        <Typography.Text type="secondary">
+                          {twitterStatus?.rateLimited
+                            ? `Your Twitter account is connected, but profile information cannot be fetched due to rate limits. ${
+                                twitterStatus?.rateLimitReset &&
+                                typeof twitterStatus.rateLimitReset === "string"
+                                  ? `Rate limit will reset at: ${new Date(
+                                      twitterStatus.rateLimitReset
+                                    ).toLocaleString()}. Please try refreshing after that time.`
+                                  : "Please try again later."
+                              }`
+                            : twitterStatus?.error
+                              ? `Error: ${twitterStatus.error}`
+                              : "Your Twitter account is connected, but profile information is not available. Please try refreshing or disconnecting and reconnecting."}
+                        </Typography.Text>
+                      </Col>
+                      <Col>
+                        <Tag
+                          color="success"
+                          style={{ padding: "4px 12px", fontSize: 14 }}
+                        >
+                          ● Connected
+                        </Tag>
+                      </Col>
+                    </Row>
+                  </div>
+                )
+              ) : (
+                <Row align="middle" justify="space-between">
+                  <Col>
+                    <Typography.Text strong style={{ fontSize: 16 }}>
+                      Twitter Connection Status
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      Connect your Twitter account to enable posting tweets from
+                      your calendar
+                    </Typography.Text>
+                  </Col>
+                  <Col>
                     <Tag
                       color="default"
                       style={{ padding: "4px 12px", fontSize: 14 }}
                     >
                       ○ Not Connected
                     </Tag>
-                  )}
-                </Col>
-              </Row>
+                  </Col>
+                </Row>
+              )}
             </Card>
 
             {/* Twitter Post Box - Show when connected */}
@@ -2335,9 +2181,7 @@ export default function LinkedInDashboard({
                   <Segmented
                     value={twitterPostType}
                     onChange={(value) => {
-                      setTwitterPostType(
-                        value as "text" | "image"
-                      );
+                      setTwitterPostType(value as "text" | "image");
                       if (value !== "image") {
                         handleTwitterRemoveImage();
                       }
@@ -2545,14 +2389,25 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingFacebook}
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Refresh
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Refresh
+                        </span>
                       </Button>
                       <Button
                         icon={<DisconnectOutlined />}
@@ -2560,14 +2415,25 @@ export default function LinkedInDashboard({
                         loading={disconnectingFacebook}
                         danger
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Disconnect
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Disconnect
+                        </span>
                       </Button>
                     </>
                   )}
@@ -3071,14 +2937,25 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingInstagram}
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Refresh
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Refresh
+                        </span>
                       </Button>
                       <Button
                         icon={<DisconnectOutlined />}
@@ -3086,14 +2963,25 @@ export default function LinkedInDashboard({
                         loading={disconnectingInstagram}
                         danger
                         style={{
-                          width: 150,
+                          minWidth: 120,
+                          maxWidth: "100%",
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
                           alignItems: "center",
+                          paddingLeft: 12,
+                          paddingRight: 12,
                         }}
                       >
-                        Disconnect
+                        <span
+                          style={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          Disconnect
+                        </span>
                       </Button>
                     </>
                   )}
@@ -3529,385 +3417,6 @@ export default function LinkedInDashboard({
             )}
           </>
         )}
-
-        {/* Events Section - Only for LinkedIn */}
-        {selectedPlatform === "linkedin" && isConnected && (
-          <Card
-            style={{ marginTop: 24, borderRadius: 12 }}
-            styles={{ body: { padding: 24 } }}
-            title={
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <CalendarOutlined style={{ fontSize: 20, color: "#0077B5" }} />
-                <span>LinkedIn Events</span>
-                <Tag color="orange">Requires Community Management API</Tag>
-              </div>
-            }
-            extra={
-              organizations.length > 0 ? (
-                <Space>
-                  <Select
-                    value={selectedEventOrg}
-                    onChange={handleLoadOrgEvents}
-                    style={{ width: 200 }}
-                    loading={loadingOrgs}
-                  >
-                    <Select.Option value="all">All My Events</Select.Option>
-                    {organizations.map((org) => (
-                      <Select.Option key={org.id} value={org.id}>
-                        {org.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => setCreateEventModalOpen(true)}
-                    style={{
-                      backgroundColor: "#0077B5",
-                      borderColor: "#0077B5",
-                    }}
-                  >
-                    Create Event
-                  </Button>
-                </Space>
-              ) : null
-            }
-          >
-            {/* Show API requirement notice */}
-            {events.length === 0 && !loadingEvents && (
-              <div
-                style={{
-                  background:
-                    "linear-gradient(135deg, #fff7e6 0%, #fff2d9 100%)",
-                  padding: 20,
-                  borderRadius: 8,
-                  marginBottom: 16,
-                  border: "1px solid #ffd591",
-                }}
-              >
-                <Typography.Text
-                  strong
-                  style={{
-                    display: "block",
-                    marginBottom: 8,
-                    color: "#d48806",
-                  }}
-                >
-                  ⚠️ LinkedIn API Access Required
-                </Typography.Text>
-                <Typography.Text type="secondary">
-                  To access LinkedIn Events, your app needs the{" "}
-                  <strong>Community Management API</strong> product enabled in
-                  the LinkedIn Developer Portal. This product provides access to{" "}
-                  <code>r_events</code> and <code>rw_events</code> scopes.
-                </Typography.Text>
-                <br />
-                <br />
-                <Typography.Text type="secondary">
-                  <strong>To enable Events access:</strong>
-                  <ol style={{ marginTop: 8, paddingLeft: 20 }}>
-                    <li>
-                      Go to{" "}
-                      <a
-                        href="https://www.linkedin.com/developers/apps"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        LinkedIn Developer Portal
-                      </a>
-                    </li>
-                    <li>
-                      Select your app → <strong>Products</strong> tab
-                    </li>
-                    <li>
-                      Request access to{" "}
-                      <strong>"Community Management API"</strong>
-                    </li>
-                    <li>Once approved, reconnect your LinkedIn account</li>
-                  </ol>
-                </Typography.Text>
-              </div>
-            )}
-
-            {loadingEvents ? (
-              <div style={{ textAlign: "center", padding: 40 }}>
-                <Spin />
-                <Typography.Text
-                  type="secondary"
-                  style={{ display: "block", marginTop: 12 }}
-                >
-                  Loading events...
-                </Typography.Text>
-              </div>
-            ) : events.length === 0 ? (
-              <Empty
-                image={
-                  <CalendarOutlined
-                    style={{ fontSize: 48, color: "#d9d9d9" }}
-                  />
-                }
-                description={
-                  <div>
-                    <Typography.Text type="secondary">
-                      No events found
-                    </Typography.Text>
-                    <br />
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                      {organizations.length > 0
-                        ? "Create an event to get started"
-                        : "You need admin access to an organization to manage events"}
-                    </Typography.Text>
-                  </div>
-                }
-              >
-                {organizations.length > 0 && (
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => setCreateEventModalOpen(true)}
-                    style={{
-                      backgroundColor: "#0077B5",
-                      borderColor: "#0077B5",
-                    }}
-                  >
-                    Create Your First Event
-                  </Button>
-                )}
-              </Empty>
-            ) : (
-              <List
-                dataSource={events}
-                renderItem={(event) => (
-                  <List.Item
-                    actions={[
-                      <Button
-                        key="delete"
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => handleDeleteEvent(event.id)}
-                      >
-                        Delete
-                      </Button>,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      avatar={
-                        <div
-                          style={{
-                            width: 48,
-                            height: 48,
-                            borderRadius: 8,
-                            background:
-                              "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <CalendarOutlined
-                            style={{ fontSize: 24, color: "#fff" }}
-                          />
-                        </div>
-                      }
-                      title={
-                        <Space>
-                          <Typography.Text strong>{event.name}</Typography.Text>
-                          {event.eventType && (
-                            <Tag
-                              color={
-                                event.eventType === "ONLINE" ? "blue" : "green"
-                              }
-                            >
-                              {event.eventType === "ONLINE" ? (
-                                <GlobalOutlined />
-                              ) : (
-                                <EnvironmentOutlined />
-                              )}{" "}
-                              {event.eventType}
-                            </Tag>
-                          )}
-                        </Space>
-                      }
-                      description={
-                        <div>
-                          {event.description && (
-                            <Typography.Paragraph
-                              ellipsis={{ rows: 2 }}
-                              style={{ margin: 0, marginBottom: 4 }}
-                            >
-                              {event.description}
-                            </Typography.Paragraph>
-                          )}
-                          <Space size="middle">
-                            {event.startAt && (
-                              <Typography.Text
-                                type="secondary"
-                                style={{ fontSize: 12 }}
-                              >
-                                <CalendarOutlined />{" "}
-                                {dayjs(event.startAt).format(
-                                  "MMM D, YYYY h:mm A"
-                                )}
-                              </Typography.Text>
-                            )}
-                            {event.organizerName && (
-                              <Typography.Text
-                                type="secondary"
-                                style={{ fontSize: 12 }}
-                              >
-                                <BankOutlined /> {event.organizerName}
-                              </Typography.Text>
-                            )}
-                          </Space>
-                        </div>
-                      }
-                    />
-                  </List.Item>
-                )}
-              />
-            )}
-          </Card>
-        )}
-
-        {/* Create Event Modal */}
-        <Modal
-          title={
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <CalendarOutlined style={{ color: "#0077B5" }} />
-              Create LinkedIn Event
-            </div>
-          }
-          open={createEventModalOpen}
-          onCancel={() => {
-            setCreateEventModalOpen(false);
-            eventForm.resetFields();
-          }}
-          footer={null}
-          width={600}
-        >
-          <Form
-            form={eventForm}
-            layout="vertical"
-            onFinish={handleCreateEvent}
-            initialValues={{
-              eventType: "ONLINE",
-            }}
-          >
-            <Form.Item
-              name="organizationId"
-              label="Organization"
-              rules={[
-                { required: true, message: "Please select an organization" },
-              ]}
-            >
-              <Select placeholder="Select organization">
-                {organizations.map((org) => (
-                  <Select.Option key={org.id} value={org.id}>
-                    <Space>
-                      {org.logoUrl ? (
-                        <Avatar size="small" src={org.logoUrl} />
-                      ) : (
-                        <Avatar
-                          size="small"
-                          icon={<BankOutlined />}
-                          style={{ backgroundColor: "#00A0DC" }}
-                        />
-                      )}
-                      {org.name}
-                    </Space>
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              name="name"
-              label="Event Name"
-              rules={[{ required: true, message: "Please enter event name" }]}
-            >
-              <Input placeholder="Enter event name" maxLength={100} />
-            </Form.Item>
-
-            <Form.Item name="description" label="Description">
-              <Input.TextArea
-                placeholder="Describe your event..."
-                maxLength={1000}
-                showCount
-                autoSize={{ minRows: 3, maxRows: 6 }}
-              />
-            </Form.Item>
-
-            <Row gutter={[16, 16]}>
-              <Col xs={24} sm={24} md={12}>
-                <Form.Item
-                  name="startAt"
-                  label="Start Date & Time"
-                  rules={[
-                    { required: true, message: "Please select start time" },
-                  ]}
-                >
-                  <DatePicker
-                    showTime
-                    format="YYYY-MM-DD HH:mm"
-                    style={{ width: "100%" }}
-                    placeholder="Select start date/time"
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={24} sm={24} md={12}>
-                <Form.Item name="endAt" label="End Date & Time">
-                  <DatePicker
-                    showTime
-                    format="YYYY-MM-DD HH:mm"
-                    style={{ width: "100%" }}
-                    placeholder="Select end date/time"
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Form.Item name="eventType" label="Event Type">
-              <Select>
-                <Select.Option value="ONLINE">
-                  <Space>
-                    <GlobalOutlined /> Online Event
-                  </Space>
-                </Select.Option>
-                <Select.Option value="IN_PERSON">
-                  <Space>
-                    <EnvironmentOutlined /> In-Person Event
-                  </Space>
-                </Select.Option>
-              </Select>
-            </Form.Item>
-
-            <Form.Item name="eventUrl" label="Event URL">
-              <Input placeholder="https://..." />
-            </Form.Item>
-
-            <Form.Item style={{ marginBottom: 0, textAlign: "right" }}>
-              <Space>
-                <Button
-                  onClick={() => {
-                    setCreateEventModalOpen(false);
-                    eventForm.resetFields();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  loading={creatingEvent}
-                  style={{ backgroundColor: "#0077B5", borderColor: "#0077B5" }}
-                >
-                  Create Event
-                </Button>
-              </Space>
-            </Form.Item>
-          </Form>
-        </Modal>
       </div>
     );
   };
@@ -4197,32 +3706,54 @@ export default function LinkedInDashboard({
                             icon={<SyncOutlined />}
                             onClick={handleRefreshMetrics}
                             loading={loading}
-                            size={isMobile ? "middle" : "default"}
+                            size={isMobile ? "middle" : "middle"}
                             style={{
-                              width: 150,
+                              minWidth: 120,
+                              maxWidth: "100%",
                               height: 44,
                               display: "inline-flex",
                               justifyContent: "center",
                               alignItems: "center",
+                              paddingLeft: 12,
+                              paddingRight: 12,
                             }}
                           >
-                            Refresh
+                            <span
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              Refresh
+                            </span>
                           </Button>
                           <Button
                             icon={<DisconnectOutlined />}
                             onClick={handleDisconnect}
                             loading={disconnecting}
                             danger
-                            size={isMobile ? "middle" : "default"}
+                            size={isMobile ? "middle" : "middle"}
                             style={{
-                              width: 150,
+                              minWidth: 120,
+                              maxWidth: "100%",
                               height: 44,
                               display: "inline-flex",
                               justifyContent: "center",
                               alignItems: "center",
+                              paddingLeft: 12,
+                              paddingRight: 12,
                             }}
                           >
-                            Disconnect
+                            <span
+                              style={{
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                            >
+                              Disconnect
+                            </span>
                           </Button>
                         </>
                       )}
@@ -4247,7 +3778,7 @@ export default function LinkedInDashboard({
                             // Redirect to LinkedIn OAuth
                             window.location.href = authUrl;
                           }}
-                          size={isMobile ? "middle" : "default"}
+                          size={isMobile ? "middle" : "middle"}
                           block={isMobile}
                           style={{
                             backgroundColor: "#0077B5",

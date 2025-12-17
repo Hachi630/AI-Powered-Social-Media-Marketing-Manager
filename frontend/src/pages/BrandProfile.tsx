@@ -40,8 +40,6 @@ const toneButtons = [
   { key: "mindful", label: "Mindful", color: "#908066" },
 ];
 
-const initialKnowledgeProducts = ["Lavender Candle", "Succulent Pot"];
-
 const industryOptions = [
   { value: "home-decor", label: "Home Decor" },
   { value: "wellness", label: "Wellness" },
@@ -50,8 +48,6 @@ const industryOptions = [
   { value: "fashion", label: "Fashion" },
   { value: "food", label: "Food & Restaurant" },
 ];
-
-const initialAudience = ["Yoga lovers", "Interior design enthusiast"];
 
 // Company data structure for multi-company support
 interface CompanyData {
