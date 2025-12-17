@@ -53,10 +53,6 @@ const industryOptions = [
   { value: "food", label: "Food & Restaurant" },
 ];
 
-<<<<<<< HEAD
-// Company data structure for multi-company support
-interface CompanyData {
-  id: string;
 const initialAudience = ["Yoga lovers", "Interior design enthusiast"];
 
 // CompanyData is now imported from authService
