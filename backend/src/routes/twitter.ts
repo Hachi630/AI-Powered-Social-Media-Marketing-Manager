@@ -17,7 +17,7 @@ const __dirname = dirname(__filename);
 const router = Router();
 
 // Configure multer for image uploads
-const UPLOADS_DIR = path.join(__dirname, '../../uploads/images');
+const UPLOADS_DIR = path.join(__dirname, "../../uploads/images");
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -31,16 +31,20 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 15);
-    const ext = path.extname(file.originalname) || '.png';
+    const ext = path.extname(file.originalname) || ".png";
     cb(null, `twitter-${timestamp}-${random}${ext}`);
   },
 });
 
-const imageFileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  if (file.mimetype.startsWith('image/')) {
+const imageFileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed'));
+    cb(new Error("Only image files are allowed"));
   }
 };
 
@@ -317,11 +321,25 @@ router.get("/callback", async (req, res) => {
     let twitterUserId: string | null = null;
     let userInfoError: any = null;
 
+    let twitterUsername: string | null = null;
+    let twitterName: string | null = null;
+    let twitterPicture: string | null = null;
+
     try {
       console.log("Twitter OAuth: Getting user info...");
-      const userMe = await loggedClient.v2.me();
+      const userMe = await loggedClient.v2.me({
+        "user.fields": "profile_image_url,name,username",
+      });
       twitterUserId = userMe.data.id;
-      console.log("Twitter OAuth: Got user ID:", twitterUserId);
+      twitterUsername = userMe.data.username || null;
+      twitterName = userMe.data.name || null;
+      twitterPicture = userMe.data.profile_image_url || null;
+      console.log("Twitter OAuth: Got user info:", {
+        id: twitterUserId,
+        username: twitterUsername,
+        name: twitterName,
+        picture: twitterPicture,
+      });
     } catch (err: any) {
       userInfoError = err;
       console.warn(
@@ -350,7 +368,10 @@ router.get("/callback", async (req, res) => {
         { userId },
         {
           userId,
-          twitterUserId: twitterUserId || undefined, // Only save if we got it
+          twitterUserId: twitterUserId || undefined,
+          twitterUsername: twitterUsername || undefined,
+          twitterName: twitterName || undefined,
+          twitterPicture: twitterPicture || undefined,
           accessToken,
           accessSecret,
           // OAuth 1.0a tokens don't expire, but we can set a far future date
@@ -362,6 +383,9 @@ router.get("/callback", async (req, res) => {
       console.log("Twitter OAuth: Tokens saved successfully", {
         userId,
         twitterUserId: twitterUserId || "will be fetched later",
+        twitterUsername: twitterUsername || "will be fetched later",
+        twitterName: twitterName || "will be fetched later",
+        twitterPicture: twitterPicture ? "saved" : "will be fetched later",
         hadUserInfoError: !!userInfoError,
       });
 
@@ -464,141 +488,167 @@ router.delete("/disconnect", protect, async (req: any, res) => {
 });
 
 // STEP 5 — Create a tweet (text and/or image)
-router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, res: Response) => {
-  const userId = req.user._id;
-  const { text } = req.body;
+router.post(
+  "/posts",
+  protect,
+  upload.single("image"),
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.user._id;
+    const { text } = req.body;
 
-  // Validate text content
-  if (!text || text.trim().length === 0) {
-    return res.status(400).json({ 
-      success: false, 
-      error: "Tweet text is required" 
-    });
-  }
+    // Validate text content
+    if (!text || text.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: "Tweet text is required",
+      });
+    }
 
-  if (text.length > 280) {
-    return res.status(400).json({ 
-      success: false, 
-      error: "Tweet text cannot exceed 280 characters" 
-    });
-  }
+    if (text.length > 280) {
+      return res.status(400).json({
+        success: false,
+        error: "Tweet text cannot exceed 280 characters",
+      });
+    }
 
-  // Check if user has connected their Twitter account
-  const twitterToken = await TwitterToken.findOne({ userId });
+    // Check if user has connected their Twitter account
+    const twitterToken = await TwitterToken.findOne({ userId });
 
-  if (!twitterToken || !twitterToken.accessToken || !twitterToken.accessSecret) {
-    return res.status(401).json({
-      success: false,
-      error: "Twitter account not connected. Please connect your Twitter account first.",
-      requiresAuth: true
-    });
-  }
+    if (
+      !twitterToken ||
+      !twitterToken.accessToken ||
+      !twitterToken.accessSecret
+    ) {
+      return res.status(401).json({
+        success: false,
+        error:
+          "Twitter account not connected. Please connect your Twitter account first.",
+        requiresAuth: true,
+      });
+    }
 
-  try {
-    let imagePath: string | null = null;
+    try {
+      let imagePath: string | null = null;
 
-    // Handle image upload if present
-    if (req.file) {
-      // Validate file size (Twitter API limit is 5MB = 5242880 bytes)
-      const maxFileSize = 5 * 1024 * 1024; // 5MB
-      if (req.file.size > maxFileSize) {
-        // Clean up the uploaded file
-        const filePath = path.join(process.cwd(), `/uploads/images/${req.file.filename}`);
-        if (fs.existsSync(filePath)) {
+      // Handle image upload if present
+      if (req.file) {
+        // Validate file size (Twitter API limit is 5MB = 5242880 bytes)
+        const maxFileSize = 5 * 1024 * 1024; // 5MB
+        if (req.file.size > maxFileSize) {
+          // Clean up the uploaded file
+          const filePath = path.join(
+            process.cwd(),
+            `/uploads/images/${req.file.filename}`
+          );
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch (cleanupError) {
+              console.warn("Failed to delete oversized file:", cleanupError);
+            }
+          }
+          return res.status(400).json({
+            success: false,
+            error: `Image file size (${(req.file.size / 1024 / 1024).toFixed(2)}MB) exceeds Twitter's limit of 5MB`,
+          });
+        }
+
+        // File is already saved by multer, get the path
+        imagePath = `/uploads/images/${req.file.filename}`;
+        // Convert to absolute path for twitterService
+        const absolutePath = path.join(process.cwd(), imagePath);
+        imagePath = absolutePath;
+      }
+
+      // Post tweet using user's tokens
+      const result = await twitterService.postTweet(
+        text.trim(),
+        imagePath,
+        twitterToken.accessToken,
+        twitterToken.accessSecret
+      );
+
+      if (result.success) {
+        // Clean up uploaded image file after successful post
+        if (req.file && imagePath && fs.existsSync(imagePath)) {
           try {
-            fs.unlinkSync(filePath);
+            fs.unlinkSync(imagePath);
+            console.log("Temporary image file deleted:", imagePath);
           } catch (cleanupError) {
-            console.warn('Failed to delete oversized file:', cleanupError);
+            console.warn(
+              "Failed to delete temporary image file:",
+              cleanupError
+            );
+            // Don't fail the request if cleanup fails
           }
         }
-        return res.status(400).json({
+
+        return res.json({
+          success: true,
+          message: "Tweet posted successfully",
+          tweetId: result.tweetId,
+        });
+      } else {
+        // Clean up uploaded image file on error
+        if (req.file && imagePath && fs.existsSync(imagePath)) {
+          try {
+            fs.unlinkSync(imagePath);
+          } catch (cleanupError) {
+            console.warn(
+              "Failed to delete temporary image file on error:",
+              cleanupError
+            );
+          }
+        }
+
+        // Return detailed error information
+        const errorMessage =
+          result.error?.data?.detail ||
+          result.error?.errors?.[0]?.message ||
+          result.error?.message ||
+          "Failed to post tweet";
+        const errorCode = result.error?.code;
+
+        console.error("Twitter posting failed:", {
+          message: errorMessage,
+          code: errorCode,
+          fullError: result.error,
+        });
+
+        return res.status(500).json({
           success: false,
-          error: `Image file size (${(req.file.size / 1024 / 1024).toFixed(2)}MB) exceeds Twitter's limit of 5MB`
+          error: errorMessage,
+          code: errorCode,
+          details: result.error?.data || result.error?.errors,
         });
       }
-
-      // File is already saved by multer, get the path
-      imagePath = `/uploads/images/${req.file.filename}`;
-      // Convert to absolute path for twitterService
-      const absolutePath = path.join(process.cwd(), imagePath);
-      imagePath = absolutePath;
-    }
-
-    // Post tweet using user's tokens
-    const result = await twitterService.postTweet(
-      text.trim(),
-      imagePath,
-      twitterToken.accessToken,
-      twitterToken.accessSecret
-    );
-
-    if (result.success) {
-      // Clean up uploaded image file after successful post
-      if (req.file && imagePath && fs.existsSync(imagePath)) {
-        try {
-          fs.unlinkSync(imagePath);
-          console.log('Temporary image file deleted:', imagePath);
-        } catch (cleanupError) {
-          console.warn('Failed to delete temporary image file:', cleanupError);
-          // Don't fail the request if cleanup fails
+    } catch (error: any) {
+      // Clean up uploaded image file on exception
+      if (req.file) {
+        const imagePath = path.join(
+          process.cwd(),
+          `/uploads/images/${req.file.filename}`
+        );
+        if (fs.existsSync(imagePath)) {
+          try {
+            fs.unlinkSync(imagePath);
+          } catch (cleanupError) {
+            console.warn(
+              "Failed to delete temporary image file on exception:",
+              cleanupError
+            );
+          }
         }
       }
 
-      return res.json({
-        success: true,
-        message: "Tweet posted successfully",
-        tweetId: result.tweetId
-      });
-    } else {
-      // Clean up uploaded image file on error
-      if (req.file && imagePath && fs.existsSync(imagePath)) {
-        try {
-          fs.unlinkSync(imagePath);
-        } catch (cleanupError) {
-          console.warn('Failed to delete temporary image file on error:', cleanupError);
-        }
-      }
-
-      // Return detailed error information
-      const errorMessage = result.error?.data?.detail || 
-                          result.error?.errors?.[0]?.message || 
-                          result.error?.message || 
-                          'Failed to post tweet';
-      const errorCode = result.error?.code;
-
-      console.error('Twitter posting failed:', {
-        message: errorMessage,
-        code: errorCode,
-        fullError: result.error
-      });
-
+      console.error("Error posting tweet:", error);
       return res.status(500).json({
         success: false,
-        error: errorMessage,
-        code: errorCode,
-        details: result.error?.data || result.error?.errors
+        error: error.message || "Failed to post tweet. Please try again.",
       });
     }
-  } catch (error: any) {
-    // Clean up uploaded image file on exception
-    if (req.file) {
-      const imagePath = path.join(process.cwd(), `/uploads/images/${req.file.filename}`);
-      if (fs.existsSync(imagePath)) {
-        try {
-          fs.unlinkSync(imagePath);
-        } catch (cleanupError) {
-          console.warn('Failed to delete temporary image file on exception:', cleanupError);
-        }
-      }
-    }
-
-    console.error('Error posting tweet:', error);
-    return res.status(500).json({
-      success: false,
-      error: error.message || "Failed to post tweet. Please try again."
-    });
   }
-});
+);
 
 // STEP 4 — Check connection status
 router.get("/status", protect, async (req: any, res) => {
@@ -636,6 +686,17 @@ router.get("/status", protect, async (req: any, res) => {
       "user.fields": "profile_image_url,description",
     });
 
+    // Update cached profile info in database
+    await TwitterToken.findOneAndUpdate(
+      { userId },
+      {
+        twitterUserId: userMe.data.id,
+        twitterUsername: userMe.data.username || undefined,
+        twitterName: userMe.data.name || undefined,
+        twitterPicture: userMe.data.profile_image_url || undefined,
+      }
+    );
+
     res.json({
       connected: true,
       profile: {
@@ -668,19 +729,22 @@ router.get("/status", protect, async (req: any, res) => {
       );
 
       // Return connected: true even if we can't get profile due to rate limit
-      // The token is valid, just can't fetch user info right now
+      // Use cached profile info from database if available
       return res.json({
         connected: true,
         profile: token.twitterUserId
           ? {
               id: token.twitterUserId,
-              username: null, // Will be fetched when rate limit resets
+              username: token.twitterUsername || null,
+              name: token.twitterName || null,
+              picture: token.twitterPicture || null,
+              email: null,
             }
           : null,
         rateLimited: true,
         rateLimitReset: resetTime?.toISOString(),
         message:
-          "Twitter account is connected, but user info cannot be fetched due to rate limit. Please try again later.",
+          "Twitter account is connected, but user info cannot be fetched due to rate limit. Using cached profile info.",
       });
     }
 

@@ -160,25 +160,16 @@ export default function LinkedInDashboard({
 
   // Twitter/X Post states
   const [twitterPostText, setTwitterPostText] = useState("");
-  const [twitterPostType, setTwitterPostType] = useState<
-    "text" | "image"
-  >("text");
+  const [twitterPostType, setTwitterPostType] = useState<"text" | "image">(
+    "text"
+  );
   const [twitterSelectedImage, setTwitterSelectedImage] = useState<File | null>(
     null
   );
   const [twitterImagePreview, setTwitterImagePreview] = useState<string | null>(
     null
   );
-  const [twitterSelectedVideo, setTwitterSelectedVideo] = useState<File | null>(
-    null
-  );
-  const [twitterVideoPreview, setTwitterVideoPreview] = useState<string | null>(
-    null
-  );
-  const [twitterLinkUrl, setTwitterLinkUrl] = useState("");
-  const [twitterLinkTitle, setTwitterLinkTitle] = useState("");
-  const [twitterLinkDescription, setTwitterLinkDescription] = useState("");
-  const [twitterPosting] = useState(false);
+  const [twitterPosting, setTwitterPosting] = useState(false);
 
   // Instagram Post states
   const [instagramPostText, setInstagramPostText] = useState("");
@@ -273,6 +264,17 @@ export default function LinkedInDashboard({
       setLoadingTwitter(true);
       try {
         const data = await getTwitterStatus(jwt);
+        console.log(
+          "=== Twitter Status Data ===",
+          JSON.stringify(data, null, 2)
+        );
+        console.log("Twitter connected:", data?.connected);
+        console.log("Twitter profile:", data?.profile);
+        console.log("Profile name:", data?.profile?.name);
+        console.log("Profile username:", data?.profile?.username);
+        console.log("Profile picture:", data?.profile?.picture);
+        console.log("Rate limited?", data?.rateLimited);
+        console.log("Error?", data?.error);
         setTwitterStatus(data);
       } catch (error) {
         console.error("Failed to load Twitter status:", error);
@@ -292,15 +294,38 @@ export default function LinkedInDashboard({
       const note = params.get("note");
       if (note === "rate_limited") {
         message.warning(
-          "Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets.",
-          8
+          "Twitter account connected successfully! However, user info cannot be fetched due to rate limit. It will be available after the rate limit resets. Please click Refresh button later.",
+          10
         );
       } else {
         message.success("Twitter account connected successfully!");
       }
       // Reload Twitter status
       if (jwt) {
-        getTwitterStatus(jwt).then(setTwitterStatus);
+        getTwitterStatus(jwt).then((data) => {
+          setTwitterStatus(data);
+          // If rate limited, schedule auto-refresh after reset time
+          if (
+            data?.rateLimited &&
+            data?.rateLimitReset &&
+            typeof data.rateLimitReset === "string"
+          ) {
+            const resetTime = new Date(data.rateLimitReset).getTime();
+            const now = Date.now();
+            const delay = Math.max(0, resetTime - now) + 5000; // Add 5 seconds buffer
+            if (delay > 0 && delay < 24 * 60 * 60 * 1000) {
+              // Only schedule if less than 24 hours
+              setTimeout(() => {
+                if (jwt) {
+                  getTwitterStatus(jwt).then(setTwitterStatus);
+                  message.info(
+                    "Automatically refreshed Twitter status after rate limit reset"
+                  );
+                }
+              }, delay);
+            }
+          }
+        });
       }
       // Clean up URL
       const newParams = new URLSearchParams(params);
@@ -961,25 +986,6 @@ export default function LinkedInDashboard({
     setTwitterImagePreview(null);
   };
 
-  // Twitter/X Video handlers
-  const handleTwitterVideoSelect = (file: File) => {
-    if (file.size > 200 * 1024 * 1024) {
-      message.error("Video must be smaller than 200MB");
-      return false;
-    }
-    setTwitterSelectedVideo(file);
-    setTwitterVideoPreview(URL.createObjectURL(file));
-    return false;
-  };
-
-  const handleTwitterVideoClear = () => {
-    if (twitterVideoPreview) {
-      URL.revokeObjectURL(twitterVideoPreview);
-    }
-    setTwitterSelectedVideo(null);
-    setTwitterVideoPreview(null);
-  };
-
   // Twitter/X Post handler
   const handleTwitterPost = async () => {
     if (!jwt) {
@@ -1015,18 +1021,24 @@ export default function LinkedInDashboard({
 
       if (result.success) {
         message.success("🎉 Tweet posted successfully!");
-        
+
         // Reset form
         setTwitterPostText("");
         setTwitterSelectedImage(null);
         setTwitterImagePreview(null);
         setTwitterPostType("text");
       } else {
-        message.error(result.error || "Failed to post tweet. Please try again.");
+        message.error(
+          result.error || "Failed to post tweet. Please try again."
+        );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create Twitter post:", error);
-      message.error(error.message || "Failed to post tweet. Please try again.");
+      message.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to post tweet. Please try again."
+      );
     } finally {
       setTwitterPosting(false);
     }
@@ -1338,17 +1350,6 @@ export default function LinkedInDashboard({
                   </Select.Option>
                 ))}
               </Select>
-              {organizations.length === 0 && !loadingOrgs && (
-                <Typography.Text
-                  type="secondary"
-                  style={{ display: "block", marginTop: 4, fontSize: 12 }}
-                >
-                  <strong>Company pages not available:</strong> Posting to
-                  company pages requires <code>w_organization_social</code>{" "}
-                  scope which needs LinkedIn app verification. You can post to
-                  your personal profile.
-                </Typography.Text>
-              )}
             </div>
 
             {/* Post Type Selector */}
@@ -1723,8 +1724,31 @@ export default function LinkedInDashboard({
                           setLoadingTwitter(true);
                           try {
                             const data = await getTwitterStatus(jwt);
+                            console.log(
+                              "=== Twitter Status Data (Refresh) ===",
+                              JSON.stringify(data, null, 2)
+                            );
                             setTwitterStatus(data);
-                            message.success("Twitter status refreshed");
+                            if (
+                              data?.profile &&
+                              (data.profile.name ||
+                                data.profile.username ||
+                                data.profile.picture)
+                            ) {
+                              message.success(
+                                "Twitter status refreshed - Profile information loaded!"
+                              );
+                            } else if (data?.rateLimited) {
+                              message.warning(
+                                `Twitter status refreshed, but still rate limited. ${
+                                  data.rateLimitReset
+                                    ? `Rate limit will reset at: ${new Date(data.rateLimitReset).toLocaleString()}`
+                                    : "Please try again later"
+                                }`
+                              );
+                            } else {
+                              message.success("Twitter status refreshed");
+                            }
                           } catch (error) {
                             console.error(
                               "Failed to refresh Twitter status:",
@@ -1799,37 +1823,151 @@ export default function LinkedInDashboard({
                 </div>
               </div>
 
-              {/* Twitter Connection Status */}
-              <Row align="middle" justify="space-between">
-                <Col>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Twitter Connection Status
-                  </Typography.Text>
-                  <br />
-                  <Typography.Text type="secondary">
-                    {twitterStatus?.connected
-                      ? "Your Twitter account is connected and ready to post tweets"
-                      : "Connect your Twitter account to enable posting tweets from your calendar"}
-                  </Typography.Text>
-                </Col>
-                <Col>
-                  {twitterStatus?.connected ? (
-                    <Tag
-                      color="success"
-                      style={{ padding: "4px 12px", fontSize: 14 }}
+              {/* Twitter Connection Status with User Info */}
+              {twitterStatus?.connected ? (
+                twitterStatus?.profile &&
+                (twitterStatus.profile.name ||
+                  twitterStatus.profile.username ||
+                  twitterStatus.profile.picture) ? (
+                  <div
+                    style={{
+                      padding: "16px 0",
+                      borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                      marginTop: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 16,
+                      }}
                     >
-                      ● Connected
-                    </Tag>
-                  ) : (
+                      {twitterStatus.profile.picture ? (
+                        <Avatar
+                          size={64}
+                          src={twitterStatus.profile.picture}
+                          alt={
+                            twitterStatus.profile.name ||
+                            twitterStatus.profile.username ||
+                            "Twitter"
+                          }
+                        />
+                      ) : (
+                        <Avatar
+                          size={64}
+                          icon={<TwitterOutlined />}
+                          style={{ backgroundColor: "#1DA1F2" }}
+                        />
+                      )}
+                      <div style={{ flex: 1 }}>
+                        <Typography.Text
+                          strong
+                          style={{
+                            fontSize: 18,
+                            display: "block",
+                            marginBottom: 4,
+                          }}
+                        >
+                          {twitterStatus.profile.name ||
+                            twitterStatus.profile.username ||
+                            "Twitter Account"}
+                        </Typography.Text>
+                        {twitterStatus.profile.username && (
+                          <Typography.Text
+                            type="secondary"
+                            style={{
+                              fontSize: 14,
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            @{twitterStatus.profile.username}
+                          </Typography.Text>
+                        )}
+                        {twitterStatus.profile.email && (
+                          <Typography.Text
+                            type="secondary"
+                            style={{
+                              fontSize: 13,
+                              display: "block",
+                              marginBottom: 4,
+                            }}
+                          >
+                            {twitterStatus.profile.email}
+                          </Typography.Text>
+                        )}
+                        <Tag
+                          color="success"
+                          style={{ padding: "2px 8px", fontSize: 12 }}
+                        >
+                          ● Connected
+                        </Tag>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      padding: "16px 0",
+                      borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                      marginTop: 16,
+                    }}
+                  >
+                    <Row align="middle" justify="space-between">
+                      <Col>
+                        <Typography.Text strong style={{ fontSize: 16 }}>
+                          Twitter Connection Status
+                        </Typography.Text>
+                        <br />
+                        <Typography.Text type="secondary">
+                          {twitterStatus?.rateLimited
+                            ? `Your Twitter account is connected, but profile information cannot be fetched due to rate limits. ${
+                                twitterStatus?.rateLimitReset &&
+                                typeof twitterStatus.rateLimitReset === "string"
+                                  ? `Rate limit will reset at: ${new Date(
+                                      twitterStatus.rateLimitReset
+                                    ).toLocaleString()}. Please try refreshing after that time.`
+                                  : "Please try again later."
+                              }`
+                            : twitterStatus?.error
+                              ? `Error: ${twitterStatus.error}`
+                              : "Your Twitter account is connected, but profile information is not available. Please try refreshing or disconnecting and reconnecting."}
+                        </Typography.Text>
+                      </Col>
+                      <Col>
+                        <Tag
+                          color="success"
+                          style={{ padding: "4px 12px", fontSize: 14 }}
+                        >
+                          ● Connected
+                        </Tag>
+                      </Col>
+                    </Row>
+                  </div>
+                )
+              ) : (
+                <Row align="middle" justify="space-between">
+                  <Col>
+                    <Typography.Text strong style={{ fontSize: 16 }}>
+                      Twitter Connection Status
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      Connect your Twitter account to enable posting tweets from
+                      your calendar
+                    </Typography.Text>
+                  </Col>
+                  <Col>
                     <Tag
                       color="default"
                       style={{ padding: "4px 12px", fontSize: 14 }}
                     >
                       ○ Not Connected
                     </Tag>
-                  )}
-                </Col>
-              </Row>
+                  </Col>
+                </Row>
+              )}
             </Card>
 
             {/* Twitter Post Box - Show when connected */}
@@ -1881,9 +2019,7 @@ export default function LinkedInDashboard({
                   <Segmented
                     value={twitterPostType}
                     onChange={(value) => {
-                      setTwitterPostType(
-                        value as "text" | "image"
-                      );
+                      setTwitterPostType(value as "text" | "image");
                       if (value !== "image") {
                         handleTwitterRemoveImage();
                       }

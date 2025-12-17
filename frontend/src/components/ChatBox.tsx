@@ -65,10 +65,17 @@ export default function ChatBox({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Edit message state (from main branch)
-  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(null);
-  const [editingMessageContent, setEditingMessageContent] = useState<string>("");
-  const [editingMessageImages, setEditingMessageImages] = useState<string[]>([]);
-  const [editingMessageFiles, setEditingMessageFiles] = useState<Array<{ url: string; name: string; type: string; size: number }>>([]);
+  const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
+    null
+  );
+  const [editingMessageContent, setEditingMessageContent] =
+    useState<string>("");
+  const [editingMessageImages, setEditingMessageImages] = useState<string[]>(
+    []
+  );
+  const [editingMessageFiles, setEditingMessageFiles] = useState<
+    Array<{ url: string; name: string; type: string; size: number }>
+  >([]);
 
   // Load conversation when conversationId changes
   useEffect(() => {
@@ -515,90 +522,100 @@ export default function ChatBox({
 
   // Handle edit message
   const handleEditMessage = (index: number) => {
-    const msg = messages[index]
-    if (msg.role !== 'user') return
+    const msg = messages[index];
+    if (msg.role !== "user") return;
 
-    setEditingMessageIndex(index)
-    setEditingMessageContent(msg.content || '')
-    setEditingMessageImages(msg.images ? [...msg.images] : [])
-    setEditingMessageFiles(msg.files ? [...msg.files] : [])
-  }
+    setEditingMessageIndex(index);
+    setEditingMessageContent(msg.content || "");
+    setEditingMessageImages(msg.images ? [...msg.images] : []);
+    setEditingMessageFiles(msg.files ? [...msg.files] : []);
+  };
 
   // Handle cancel edit
   const handleCancelEdit = () => {
-    setEditingMessageIndex(null)
-    setEditingMessageContent('')
-    setEditingMessageImages([])
-    setEditingMessageFiles([])
-  }
+    setEditingMessageIndex(null);
+    setEditingMessageContent("");
+    setEditingMessageImages([]);
+    setEditingMessageFiles([]);
+  };
 
   // Handle save edit
   const handleSaveEdit = async (index: number) => {
     if (!currentConversationId) {
-      message.error('Conversation ID is required for editing messages')
-      return
+      message.error("Conversation ID is required for editing messages");
+      return;
     }
 
-    const hasContent = editingMessageContent.trim() || editingMessageImages.length > 0 || editingMessageFiles.length > 0
+    const hasContent =
+      editingMessageContent.trim() ||
+      editingMessageImages.length > 0 ||
+      editingMessageFiles.length > 0;
     if (!hasContent) {
-      message.error('Message content is required')
-      return
+      message.error("Message content is required");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
 
     try {
       const response = await chatService.sendMessage(
         editingMessageContent.trim() ||
           (editingMessageImages.length > 0 || editingMessageFiles.length > 0
-            ? `Uploaded ${editingMessageImages.length > 0 ? `${editingMessageImages.length} image(s)` : ''}${editingMessageImages.length > 0 && editingMessageFiles.length > 0 ? ' and ' : ''}${editingMessageFiles.length > 0 ? `${editingMessageFiles.length} file(s)` : ''}`
-            : ''),
+            ? `Uploaded ${editingMessageImages.length > 0 ? `${editingMessageImages.length} image(s)` : ""}${editingMessageImages.length > 0 && editingMessageFiles.length > 0 ? " and " : ""}${editingMessageFiles.length > 0 ? `${editingMessageFiles.length} file(s)` : ""}`
+            : ""),
         currentConversationId,
         editingMessageImages.length > 0 ? editingMessageImages : undefined,
         editingMessageFiles.length > 0 ? editingMessageFiles : undefined,
         index
-      )
+      );
 
       if (response.success && response.response) {
         // Remove all messages after the edited message index
         setMessages((prev) => {
-          const newMessages = prev.slice(0, index + 1)
+          const newMessages = prev.slice(0, index + 1);
           // Update the edited message
           newMessages[index] = {
-            role: 'user',
-            content: editingMessageContent.trim() ||
+            role: "user",
+            content:
+              editingMessageContent.trim() ||
               (editingMessageImages.length > 0 || editingMessageFiles.length > 0
-                ? `Uploaded ${editingMessageImages.length > 0 ? `${editingMessageImages.length} image(s)` : ''}${editingMessageImages.length > 0 && editingMessageFiles.length > 0 ? ' and ' : ''}${editingMessageFiles.length > 0 ? `${editingMessageFiles.length} file(s)` : ''}`
-                : ''),
-            images: editingMessageImages.length > 0 ? [...editingMessageImages] : undefined,
-            files: editingMessageFiles.length > 0 ? editingMessageFiles.map((f) => ({
-              url: f.url,
-              name: f.name,
-              type: f.type,
-              size: f.size,
-            })) : undefined,
+                ? `Uploaded ${editingMessageImages.length > 0 ? `${editingMessageImages.length} image(s)` : ""}${editingMessageImages.length > 0 && editingMessageFiles.length > 0 ? " and " : ""}${editingMessageFiles.length > 0 ? `${editingMessageFiles.length} file(s)` : ""}`
+                : ""),
+            images:
+              editingMessageImages.length > 0
+                ? [...editingMessageImages]
+                : undefined,
+            files:
+              editingMessageFiles.length > 0
+                ? editingMessageFiles.map((f) => ({
+                    url: f.url,
+                    name: f.name,
+                    type: f.type,
+                    size: f.size,
+                  }))
+                : undefined,
             timestamp: new Date(),
-          }
+          };
           // Add new assistant response
           newMessages.push({
-            role: 'assistant',
+            role: "assistant",
             content: response.response!,
             timestamp: new Date(),
-          })
-          return newMessages
-        })
+          });
+          return newMessages;
+        });
 
         // Reset edit state
-        handleCancelEdit()
+        handleCancelEdit();
       } else {
-        message.error(response.message || 'Failed to update message')
+        message.error(response.message || "Failed to update message");
       }
     } catch {
       message.error("An error occurred while updating message");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className={styles.chatContainer}>
@@ -628,13 +645,24 @@ export default function ChatBox({
                     {editingMessageImages.length > 0 && (
                       <div className={styles.imagePreviewContainer}>
                         {editingMessageImages.map((imgUrl, imgIndex) => (
-                          <div key={imgIndex} className={styles.imagePreviewItem}>
-                            <img src={getImageUrl(imgUrl)} alt={`Preview ${imgIndex + 1}`} className={styles.previewImage} />
+                          <div
+                            key={imgIndex}
+                            className={styles.imagePreviewItem}
+                          >
+                            <img
+                              src={getImageUrl(imgUrl)}
+                              alt={`Preview ${imgIndex + 1}`}
+                              className={styles.previewImage}
+                            />
                             <Button
                               type="text"
                               shape="circle"
                               icon={<CloseOutlined />}
-                              onClick={() => setEditingMessageImages((prev) => prev.filter((_, i) => i !== imgIndex))}
+                              onClick={() =>
+                                setEditingMessageImages((prev) =>
+                                  prev.filter((_, i) => i !== imgIndex)
+                                )
+                              }
                               className={styles.removeImageButton}
                               disabled={loading}
                             />
@@ -645,17 +673,28 @@ export default function ChatBox({
                     {editingMessageFiles.length > 0 && (
                       <div className={styles.filePreviewContainer}>
                         {editingMessageFiles.map((file, fileIndex) => (
-                          <div key={fileIndex} className={styles.filePreviewItem}>
+                          <div
+                            key={fileIndex}
+                            className={styles.filePreviewItem}
+                          >
                             {getFileIcon(file.type)}
                             <div className={styles.filePreviewInfo}>
-                              <div className={styles.filePreviewName}>{file.name}</div>
-                              <div className={styles.filePreviewSize}>{formatFileSize(file.size)}</div>
+                              <div className={styles.filePreviewName}>
+                                {file.name}
+                              </div>
+                              <div className={styles.filePreviewSize}>
+                                {formatFileSize(file.size)}
+                              </div>
                             </div>
                             <Button
                               type="text"
                               shape="circle"
                               icon={<CloseOutlined />}
-                              onClick={() => setEditingMessageFiles((prev) => prev.filter((_, i) => i !== fileIndex))}
+                              onClick={() =>
+                                setEditingMessageFiles((prev) =>
+                                  prev.filter((_, i) => i !== fileIndex)
+                                )
+                              }
                               className={styles.removeFileButton}
                               disabled={loading}
                             />
@@ -705,7 +744,9 @@ export default function ChatBox({
                             <div className={styles.fileItem}>
                               {getFileIcon(file.type)}
                               <div className={styles.fileInfo}>
-                                <div className={styles.fileName}>{file.name}</div>
+                                <div className={styles.fileName}>
+                                  {file.name}
+                                </div>
                                 <div className={styles.fileSize}>
                                   {formatFileSize(file.size)}
                                 </div>
