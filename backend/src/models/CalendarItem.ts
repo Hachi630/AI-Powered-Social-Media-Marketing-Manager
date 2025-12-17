@@ -12,6 +12,7 @@ export interface ICalendarItemVariants {
 export interface ICalendarItem extends Document {
   userId: Types.ObjectId
   campaignId?: Types.ObjectId | null
+  companyId?: string | null
   platform: string
   date: Date
   time?: string | null
@@ -47,6 +48,11 @@ const CalendarItemSchema: Schema = new Schema(
     campaignId: {
       type: Schema.Types.ObjectId,
       ref: 'Campaign',
+      default: null,
+    },
+    companyId: {
+      type: String,
+      trim: true,
       default: null,
     },
     platform: {

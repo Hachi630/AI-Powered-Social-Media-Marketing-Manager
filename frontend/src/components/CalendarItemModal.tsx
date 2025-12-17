@@ -147,6 +147,20 @@ export default function CalendarItemModal({
       const values = await form.validateFields();
       setLoading(true);
 
+      // Get current selected company ID from localStorage
+      let companyId: string | null = null
+      try {
+        const savedSelectedId = localStorage.getItem("melo_selected_company")
+        if (savedSelectedId) {
+          companyId = savedSelectedId
+          console.log("Saving calendar item with companyId:", companyId)
+        } else {
+          console.warn("No selected company found in localStorage")
+        }
+      } catch (error) {
+        console.error("Error getting selected company:", error)
+      }
+
       const formData = {
         platform: values.platform,
         date: values.date.format("YYYY-MM-DD"),
@@ -156,6 +170,7 @@ export default function CalendarItemModal({
         imageUrl: imageUrl || null,
         status: values.status,
         campaignId: values.campaignId || null,
+        companyId: companyId,
         variants: {
           ...(values.variants || {}),
         },

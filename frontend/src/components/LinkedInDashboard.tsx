@@ -3449,7 +3449,7 @@ export default function LinkedInDashboard({
             className={styles.sider}
           >
             <SocialSidebar
-              collapsed={sidebarCollapsed}
+              collapsed={sidebarCollapsed ?? false}
               onToggleSidebar={handleToggleSidebar}
               selectedPlatform={selectedPlatform}
               onPlatformSelect={handlePlatformSelect}
@@ -3546,7 +3546,7 @@ export default function LinkedInDashboard({
                             icon={<SyncOutlined />}
                             onClick={handleRefreshMetrics}
                             loading={loading}
-                            size={isMobile ? "middle" : "middle"}
+                            size={isMobile ? "middle" : "large"}
                             style={{
                               minWidth: 120,
                               maxWidth: "100%",
@@ -3573,7 +3573,7 @@ export default function LinkedInDashboard({
                             onClick={handleDisconnect}
                             loading={disconnecting}
                             danger
-                            size={isMobile ? "middle" : "middle"}
+                            size={isMobile ? "middle" : "large"}
                             style={{
                               minWidth: 120,
                               maxWidth: "100%",
@@ -3618,7 +3618,7 @@ export default function LinkedInDashboard({
                             // Redirect to LinkedIn OAuth
                             window.location.href = authUrl;
                           }}
-                          size={isMobile ? "middle" : "middle"}
+                          size={isMobile ? "middle" : "large"}
                           block={isMobile}
                           style={{
                             backgroundColor: "#0077B5",
