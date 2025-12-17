@@ -241,7 +241,7 @@ export default function CalendarItemModal({
         }
 
         try {
-          const response = await fetch(`/api/social/${platform}/share`, {
+          const response = await fetch(`/api/${platform}/share`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
