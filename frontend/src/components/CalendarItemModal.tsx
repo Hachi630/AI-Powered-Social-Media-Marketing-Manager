@@ -15,63 +15,56 @@ import {
   Dropdown,
   Upload,
   App,
-} from "antd";
-import {
-  EditOutlined,
-  ShareAltOutlined,
-  UploadOutlined,
-  DeleteOutlined,
-  PictureOutlined,
-  RobotOutlined,
-} from "@ant-design/icons";
-import type { MenuProps, UploadProps } from "antd";
-import dayjs, { Dayjs } from "dayjs";
-import { useEffect, useState } from "react";
-import { CalendarItem, calendarService } from "../services/calendarService";
-import { Campaign, campaignService } from "../services/campaignService";
-import { uploadService } from "../services/uploadService";
-import { chatService } from "../services/chatService";
-import ImageGenerationModal from "./ImageGenerationModal";
-import styles from "./CalendarItemModal.module.css";
+} from 'antd'
+import { EditOutlined, ShareAltOutlined, UploadOutlined, DeleteOutlined, PictureOutlined, RobotOutlined } from '@ant-design/icons'
+import type { MenuProps, UploadProps } from 'antd'
+import dayjs, { Dayjs } from 'dayjs'
+import { useEffect, useState } from 'react'
+import { CalendarItem, calendarService } from '../services/calendarService'
+import { Campaign, campaignService } from '../services/campaignService'
+import { uploadService } from '../services/uploadService'
+import { chatService } from '../services/chatService'
+import ImageGenerationModal from './ImageGenerationModal'
+import styles from './CalendarItemModal.module.css'
 
-const { Text } = Typography;
+const { Text } = Typography
 
-const { TextArea } = Input;
-const { Option } = Select;
+const { TextArea } = Input
+const { Option } = Select
 
 export const PLATFORMS = {
-  INSTAGRAM_POST: "instagram_post",
-  INSTAGRAM_STORY: "instagram_story",
-  INSTAGRAM_REELS: "instagram_reels",
-  TIKTOK: "tiktok",
-  FACEBOOK: "facebook",
-  TWITTER: "twitter",
-  LINKEDIN: "linkedin",
-} as const;
+  INSTAGRAM_POST: 'instagram_post',
+  INSTAGRAM_STORY: 'instagram_story',
+  INSTAGRAM_REELS: 'instagram_reels',
+  TIKTOK: 'tiktok',
+  FACEBOOK: 'facebook',
+  TWITTER: 'twitter',
+  LINKEDIN: 'linkedin',
+} as const
 
 const platformOptions = [
-  { value: PLATFORMS.INSTAGRAM_POST, label: "Instagram Post" },
-  { value: PLATFORMS.INSTAGRAM_STORY, label: "Instagram Story" },
-  { value: PLATFORMS.INSTAGRAM_REELS, label: "Instagram Reels" },
-  { value: PLATFORMS.TIKTOK, label: "TikTok" },
-  { value: PLATFORMS.FACEBOOK, label: "Facebook" },
-  { value: PLATFORMS.TWITTER, label: "Twitter/X" },
-  { value: PLATFORMS.LINKEDIN, label: "LinkedIn" },
-];
+  { value: PLATFORMS.INSTAGRAM_POST, label: 'Instagram Post' },
+  { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
+  { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
+  { value: PLATFORMS.TIKTOK, label: 'TikTok' },
+  { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
+  { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
+  { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
+]
 
 const statusOptions = [
-  { value: "draft", label: "Draft" },
-  { value: "scheduled", label: "Scheduled" },
-  { value: "published", label: "Published" },
-];
+  { value: 'draft', label: 'Draft' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'published', label: 'Published' },
+]
 
 interface CalendarItemModalProps {
-  open: boolean;
-  item?: CalendarItem | null;
-  defaultDate?: Dayjs;
-  defaultTime?: string;
-  onClose: () => void;
-  onSave: () => void;
+  open: boolean
+  item?: CalendarItem | null
+  defaultDate?: Dayjs
+  defaultTime?: string
+  onClose: () => void
+  onSave: () => void
 }
 
 export default function CalendarItemModal({
@@ -82,70 +75,70 @@ export default function CalendarItemModal({
   onClose,
   onSave,
 }: CalendarItemModalProps) {
-  const { modal } = App.useApp();
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [activePlatformTab, setActivePlatformTab] = useState<string>("main");
-  const [isEditing, setIsEditing] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [imageGenModalOpen, setImageGenModalOpen] = useState(false);
+  const { modal } = App.useApp()
+  const [form] = Form.useForm()
+  const [loading, setLoading] = useState(false)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [activePlatformTab, setActivePlatformTab] = useState<string>('main')
+  const [isEditing, setIsEditing] = useState(false)
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [imageGenModalOpen, setImageGenModalOpen] = useState(false)
 
-  const isEditMode = !!item;
-  const isPreviewMode = isEditMode && !isEditing;
+  const isEditMode = !!item
+  const isPreviewMode = isEditMode && !isEditing
 
   useEffect(() => {
     if (open) {
-      loadCampaigns();
+      loadCampaigns()
       if (item) {
         // Edit mode: populate form with item data
         form.setFieldsValue({
           platform: item.platform,
           date: dayjs(item.date),
-          time: item.time ? dayjs(item.time, "HH:mm") : null,
+          time: item.time ? dayjs(item.time, 'HH:mm') : null,
           title: item.title,
           content: item.content,
           status: item.status,
           campaignId: item.campaignId || undefined,
           variants: item.variants || {},
-        });
-        setImageUrl(item.imageUrl || null);
+        })
+        setImageUrl(item.imageUrl || null)
         // Set active tab to main platform
-        setActivePlatformTab(item.platform);
+        setActivePlatformTab(item.platform)
         // Preview mode by default for existing items
-        setIsEditing(false);
+        setIsEditing(false)
       } else {
         // Create mode: set defaults
         form.setFieldsValue({
           platform: PLATFORMS.INSTAGRAM_POST,
           date: defaultDate || dayjs(),
-          time: defaultTime ? dayjs(defaultTime, "HH:mm") : null,
-          title: "",
-          content: "",
-          status: "draft",
+          time: defaultTime ? dayjs(defaultTime, 'HH:mm') : null,
+          title: '',
+          content: '',
+          status: 'draft',
           campaignId: undefined,
           variants: {},
-        });
-        setImageUrl(null);
-        setActivePlatformTab(PLATFORMS.INSTAGRAM_POST);
+        })
+        setImageUrl(null)
+        setActivePlatformTab(PLATFORMS.INSTAGRAM_POST)
         // Create mode: always in editing state
-        setIsEditing(true);
+        setIsEditing(true)
       }
     }
-  }, [open, item, defaultDate, defaultTime, form]);
+  }, [open, item, defaultDate, defaultTime, form])
 
   const loadCampaigns = async () => {
-    const response = await campaignService.getCampaigns();
+    const response = await campaignService.getCampaigns()
     if (response.success && response.campaigns) {
-      setCampaigns(response.campaigns);
+      setCampaigns(response.campaigns)
     }
-  };
+  }
 
   const handleSave = async () => {
     try {
-      const values = await form.validateFields();
-      setLoading(true);
+      const values = await form.validateFields()
+      setLoading(true)
 
       // Get current selected company ID from localStorage
       let companyId: string | null = null
@@ -163,8 +156,8 @@ export default function CalendarItemModal({
 
       const formData = {
         platform: values.platform,
-        date: values.date.format("YYYY-MM-DD"),
-        time: values.time ? values.time.format("HH:mm") : null,
+        date: values.date.format('YYYY-MM-DD'),
+        time: values.time ? values.time.format('HH:mm') : null,
         title: values.title,
         content: values.content,
         imageUrl: imageUrl || null,
@@ -174,105 +167,99 @@ export default function CalendarItemModal({
         variants: {
           ...(values.variants || {}),
         },
-      };
+      }
 
       if (isEditMode && item) {
         // Update existing item
-        const response = await calendarService.updateCalendarItem(
-          item.id,
-          formData
-        );
+        const response = await calendarService.updateCalendarItem(item.id, formData)
         if (response.success) {
-          message.success("Calendar item updated successfully");
-          onSave();
-          onClose();
+          message.success('Calendar item updated successfully')
+          onSave()
+          onClose()
         } else {
-          message.error(response.message || "Failed to update calendar item");
+          message.error(response.message || 'Failed to update calendar item')
         }
       } else {
         // Create new item
-        const response = await calendarService.createCalendarItem(formData);
+        const response = await calendarService.createCalendarItem(formData)
         if (response.success) {
-          message.success("Calendar item created successfully");
-          onSave();
-          onClose();
+          message.success('Calendar item created successfully')
+          onSave()
+          onClose()
         } else {
-          message.error(response.message || "Failed to create calendar item");
+          message.error(response.message || 'Failed to create calendar item')
         }
       }
     } catch (error) {
-      console.error("Save error:", error);
+      console.error('Save error:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleDelete = async () => {
-    if (!item) return;
+    if (!item) return
 
     modal.confirm({
-      title: "Delete Calendar Item",
-      content: "Are you sure you want to delete this calendar item?",
+      title: 'Delete Calendar Item',
+      content: 'Are you sure you want to delete this calendar item?',
       onOk: async () => {
-        setLoading(true);
-        const response = await calendarService.deleteCalendarItem(item.id);
+        setLoading(true)
+        const response = await calendarService.deleteCalendarItem(item.id)
         if (response.success) {
-          message.success("Calendar item deleted successfully");
-          onSave();
-          onClose();
+          message.success('Calendar item deleted successfully')
+          onSave()
+          onClose()
         } else {
-          message.error(response.message || "Failed to delete calendar item");
+          message.error(response.message || 'Failed to delete calendar item')
         }
-        setLoading(false);
+        setLoading(false)
       },
-    });
-  };
+    })
+  }
 
   const handleClose = () => {
-    form.resetFields();
-    setIsEditing(false);
-    onClose();
-  };
+    form.resetFields()
+    setIsEditing(false)
+    onClose()
+  }
 
   const handleShare = async (platform: string) => {
     if (!item) {
-      message.error("No item to share");
-      return;
+      message.error('No item to share')
+      return
     }
 
     try {
-      setLoading(true);
-
+      setLoading(true)
+      
       // Use calendar share endpoint for Twitter
-      if (platform === "twitter") {
-        message.info("Sharing to Twitter/X...");
-        const response = await calendarService.shareCalendarItem(
-          item.id,
-          platform
-        );
+      if (platform === 'twitter') {
+        message.info('Sharing to Twitter/X...')
+        const response = await calendarService.shareCalendarItem(item.id, platform)
         if (response.success) {
-          message.success("Successfully posted to Twitter/X!");
+          message.success('Successfully posted to Twitter/X!')
         } else {
-          message.error(response.message || "Failed to post to Twitter/X");
+          message.error(response.message || 'Failed to post to Twitter/X')
         }
-        return;
+        return
       }
-
+      
       // Use social API for Instagram and Facebook
-      if (platform === "instagram" || platform === "facebook") {
-        message.info(`Sharing to ${platform}...`);
-
-        const token = localStorage.getItem("token");
+      if (platform === 'instagram' || platform === 'facebook') {
+        message.info(`Sharing to ${platform}...`)
+        
+        const token = localStorage.getItem('token')
         if (!token) {
-          message.error("Not authenticated");
-          return;
+          message.error('Not authenticated')
+          return
         }
 
         try {
           const response = await fetch(`/api/${platform}/share`, {
             method: 'POST',
             headers: {
-              "Content-Type": "application/json",
+              'Content-Type': 'application/json',
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
@@ -280,79 +267,79 @@ export default function CalendarItemModal({
               content: item.content,
               imageUrl: item.imageUrl,
             }),
-          });
+          })
 
-          const data = await response.json();
+          const data = await response.json()
 
           if (response.ok && data.success) {
-            message.success(`Successfully shared to ${platform}!`);
-            onSave(); // Refresh the calendar
+            message.success(`Successfully shared to ${platform}!`)
+            onSave() // Refresh the calendar
           } else {
             if (data.requiresAuth) {
               // Show modal to connect account
               modal.confirm({
                 title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
-                content:
-                  data.message ||
-                  `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
-                okText: "Connect Now",
-                cancelText: "Cancel",
+                content: data.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
+                okText: 'Connect Now',
+                cancelText: 'Cancel',
                 onOk: () => {
-                  if (platform === "instagram" || platform === "facebook") {
+                  if (platform === 'instagram' || platform === 'facebook') {
                     // Redirect to Social Dashboard to connect
-                    window.location.href = "/socialdashboard";
+                    window.location.href = '/socialdashboard'
                   }
                 },
-              });
+              })
             } else {
-              message.error(data.message || `Failed to share to ${platform}`);
+              message.error(data.message || `Failed to share to ${platform}`)
             }
           }
-        } catch {
-          message.error(`Failed to share to ${platform}`);
+        } catch (error) {
+          console.error('Share error:', error)
+          message.error(`Failed to share to ${platform}`)
         }
-        return;
+        return
       }
-
+      
       // For other platforms, show coming soon
-      message.info(`Sharing to ${platform}... (Coming soon)`);
-    } catch {
-      message.error(`Failed to share to ${platform}`);
+      message.info(`Sharing to ${platform}... (Coming soon)`)
+    } catch (error) {
+      console.error('Share error:', error)
+      message.error(`Failed to share to ${platform}`)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const shareMenuItems: MenuProps["items"] = [
+  const shareMenuItems: MenuProps['items'] = [
     {
-      key: "instagram",
-      label: "Instagram",
+      key: 'instagram',
+      label: 'Instagram',
       icon: <span>📷</span>,
-      onClick: () => handleShare("instagram"),
+      onClick: () => handleShare('instagram'),
     },
     {
-      key: "facebook",
-      label: "Facebook",
+      key: 'facebook',
+      label: 'Facebook',
       icon: <span>👥</span>,
-      onClick: () => handleShare("facebook"),
+      onClick: () => handleShare('facebook'),
     },
     {
-      key: "twitter",
-      label: "Twitter/X",
+      key: 'twitter',
+      label: 'Twitter/X',
       icon: <span>🐦</span>,
-      onClick: () => handleShare("twitter"),
+      onClick: () => handleShare('twitter'),
     },
     {
-      key: "linkedin",
-      label: "LinkedIn",
+      key: 'linkedin',
+      label: 'LinkedIn',
       icon: <span>💼</span>,
-      onClick: () => handleShare("linkedin"),
+      onClick: () => handleShare('linkedin'),
     },
-  ];
+  ]
 
   const handleEdit = () => {
-    setIsEditing(true);
-  };
+    setIsEditing(true)
+  }
 
   const handleCancelEdit = () => {
     if (item) {
@@ -360,139 +347,147 @@ export default function CalendarItemModal({
       form.setFieldsValue({
         platform: item.platform,
         date: dayjs(item.date),
-        time: item.time ? dayjs(item.time, "HH:mm") : null,
+        time: item.time ? dayjs(item.time, 'HH:mm') : null,
         title: item.title,
         content: item.content,
         status: item.status,
         campaignId: item.campaignId || undefined,
         variants: item.variants || {},
-      });
-      setImageUrl(item.imageUrl || null);
-      setActivePlatformTab(item.platform);
+      })
+      setImageUrl(item.imageUrl || null)
+      setActivePlatformTab(item.platform)
     }
-    setIsEditing(false);
-  };
+    setIsEditing(false)
+  }
 
   const handleImageUpload = async (file: File) => {
-    setUploadingImage(true);
+    setUploadingImage(true)
     try {
-      const response = await uploadService.uploadImage(file);
+      const response = await uploadService.uploadImage(file)
       if (response.success && response.imageUrl) {
-        setImageUrl(response.imageUrl);
-        message.success("Image uploaded successfully");
+        setImageUrl(response.imageUrl)
+        message.success('Image uploaded successfully')
       } else {
-        message.error(response.message || "Failed to upload image");
+        message.error(response.message || 'Failed to upload image')
       }
     } catch (error) {
-      message.error("Failed to upload image");
+      message.error('Failed to upload image')
     } finally {
-      setUploadingImage(false);
+      setUploadingImage(false)
     }
-  };
+  }
 
-  const handleFileSelect: UploadProps["onChange"] = (info) => {
-    const file =
-      info.file.originFileObj || (info.file as any).originFileObj || info.file;
+  const handleImageUploadBase64 = async (file: File) => {
+    setUploadingImage(true)
+    try {
+      const base64 = await uploadService.convertToBase64(file)
+      const mimeType = file.type || 'image/png'
+      const response = await uploadService.uploadImageBase64(base64, mimeType)
+      if (response.success && response.imageUrl) {
+        setImageUrl(response.imageUrl)
+        message.success('Image uploaded successfully')
+      } else {
+        message.error(response.message || 'Failed to upload image')
+      }
+    } catch (error) {
+      message.error('Failed to upload image')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleFileSelect: UploadProps['onChange'] = (info) => {
+    const file = info.file.originFileObj || (info.file as any).originFileObj || info.file
     if (file && file instanceof File) {
       // Validate file type
-      const isImage = file.type.startsWith("image/");
+      const isImage = file.type.startsWith('image/')
       if (!isImage) {
-        message.error("Only image files are allowed");
-        return;
+        message.error('Only image files are allowed')
+        return
       }
       // Validate file size (10MB)
-      const isLt10M = file.size / 1024 / 1024 < 10;
+      const isLt10M = file.size / 1024 / 1024 < 10
       if (!isLt10M) {
-        message.error("Image must be smaller than 10MB");
-        return;
+        message.error('Image must be smaller than 10MB')
+        return
       }
       // Use file upload method
-      handleImageUpload(file);
+      handleImageUpload(file)
     }
-  };
+  }
 
   const handleRemoveImage = () => {
-    setImageUrl(null);
-    message.success("Image removed");
-  };
+    setImageUrl(null)
+    message.success('Image removed')
+  }
 
   const handleAIGenerateImage = () => {
-    setImageGenModalOpen(true);
-  };
+    setImageGenModalOpen(true)
+  }
 
   const handleAIGenerateImageAuto = async () => {
-    const content = form.getFieldValue("content");
+    const content = form.getFieldValue('content')
     if (!content || !content.trim()) {
-      message.warning(
-        "Please enter content first to generate image automatically"
-      );
-      return;
+      message.warning('Please enter content first to generate image automatically')
+      return
     }
 
-    setUploadingImage(true);
+    setUploadingImage(true)
     try {
       // Generate prompt from content
-      const prompt = `Create a professional social media image for: ${content.substring(0, 200)}`;
-      const response = await chatService.generateImage(prompt);
+      const prompt = `Create a professional social media image for: ${content.substring(0, 200)}`
+      const response = await chatService.generateImage(prompt)
       if (response.success && response.imageUrl) {
-        setImageUrl(response.imageUrl);
-        message.success("Image generated successfully");
+        setImageUrl(response.imageUrl)
+        message.success('Image generated successfully')
       } else {
-        message.error(response.message || "Failed to generate image");
+        message.error(response.message || 'Failed to generate image')
       }
-    } catch {
-      message.error("Failed to generate image");
+    } catch (error) {
+      message.error('Failed to generate image')
     } finally {
-      setUploadingImage(false);
+      setUploadingImage(false)
     }
-  };
+  }
 
   const handleImageGenSuccess = (url: string) => {
-    setImageUrl(url);
-    setImageGenModalOpen(false);
-  };
+    setImageUrl(url)
+    setImageGenModalOpen(false)
+  }
 
   const getImageUrl = (url: string | null | undefined): string => {
-    if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
+    if (!url) return ''
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url
     }
-    return url;
-  };
+    return url
+  }
 
   const getPlatformLabel = (platform: string) => {
-    return (
-      platformOptions.find((opt) => opt.value === platform)?.label || platform
-    );
-  };
+    return platformOptions.find((opt) => opt.value === platform)?.label || platform
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "draft":
-        return "default";
-      case "scheduled":
-        return "processing";
-      case "published":
-        return "success";
+      case 'draft':
+        return 'default'
+      case 'scheduled':
+        return 'processing'
+      case 'published':
+        return 'success'
       default:
-        return "default";
+        return 'default'
     }
-  };
+  }
 
   const platformTabs = [
-    { key: "main", label: "Main Content" },
+    { key: 'main', label: 'Main Content' },
     ...platformOptions.map((p) => ({ key: p.value, label: p.label })),
-  ];
+  ]
 
   return (
     <Modal
-      title={
-        isEditMode
-          ? isPreviewMode
-            ? "Calendar Item Details"
-            : "Edit Calendar Item"
-          : "Create Calendar Item"
-      }
+      title={isEditMode ? (isPreviewMode ? 'Calendar Item Details' : 'Edit Calendar Item') : 'Create Calendar Item'}
       open={open}
       onCancel={handleClose}
       footer={null}
@@ -506,9 +501,11 @@ export default function CalendarItemModal({
             <Descriptions.Item label="Platform">
               <Tag color="blue">{getPlatformLabel(item.platform)}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Date">{item.date}</Descriptions.Item>
+            <Descriptions.Item label="Date">
+              {item.date}
+            </Descriptions.Item>
             <Descriptions.Item label="Time">
-              {item.time || "Not set"}
+              {item.time || 'Not set'}
             </Descriptions.Item>
             <Descriptions.Item label="Title">
               <Text strong>{item.title}</Text>
@@ -524,9 +521,7 @@ export default function CalendarItemModal({
               </Descriptions.Item>
             )}
             <Descriptions.Item label="Status">
-              <Tag color={getStatusColor(item.status)}>
-                {item.status.toUpperCase()}
-              </Tag>
+              <Tag color={getStatusColor(item.status)}>{item.status.toUpperCase()}</Tag>
             </Descriptions.Item>
             {item.campaignName && (
               <Descriptions.Item label="Campaign">
@@ -537,15 +532,11 @@ export default function CalendarItemModal({
               <Descriptions.Item label="Platform Variants">
                 <Tabs
                   size="small"
-                  items={Object.entries(item.variants).map(
-                    ([platform, content]) => ({
-                      key: platform,
-                      label: getPlatformLabel(platform),
-                      children: (
-                        <div className={styles.contentPreview}>{content}</div>
-                      ),
-                    })
-                  )}
+                  items={Object.entries(item.variants).map(([platform, content]) => ({
+                    key: platform,
+                    label: getPlatformLabel(platform),
+                    children: <div className={styles.contentPreview}>{content}</div>,
+                  }))}
                 />
               </Descriptions.Item>
             )}
@@ -556,16 +547,12 @@ export default function CalendarItemModal({
                 Delete
               </Button>
               <Button onClick={handleClose}>Close</Button>
-              <Dropdown menu={{ items: shareMenuItems }} trigger={["click"]}>
+              <Dropdown menu={{ items: shareMenuItems }} trigger={['click']}>
                 <Button icon={<ShareAltOutlined />} loading={loading}>
                   Share
                 </Button>
               </Dropdown>
-              <Button
-                type="primary"
-                icon={<EditOutlined />}
-                onClick={handleEdit}
-              >
+              <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
                 Edit
               </Button>
             </Space>
@@ -574,16 +561,142 @@ export default function CalendarItemModal({
       ) : (
         // Edit Mode
         <Form form={form} layout="vertical" onFinish={handleSave}>
+        <Form.Item
+          name="platform"
+          label="Platform"
+          rules={[{ required: true, message: 'Please select a platform' }]}
+        >
+          <Select placeholder="Select platform" onChange={(value) => setActivePlatformTab(value)}>
+            {platformOptions.map((option) => (
+              <Option key={option.value} value={option.value}>
+                {option.label}
+              </Option>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Space orientation="horizontal" size="middle" style={{ width: '100%' }}>
           <Form.Item
-            name="platform"
-            label="Platform"
-            rules={[{ required: true, message: "Please select a platform" }]}
+            name="date"
+            label="Date"
+            rules={[{ required: true, message: 'Please select a date' }]}
+            style={{ flex: 1 }}
           >
-            <Select
-              placeholder="Select platform"
-              onChange={(value) => setActivePlatformTab(value)}
-            >
-              {platformOptions.map((option) => (
+            <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+          </Form.Item>
+
+          <Form.Item name="time" label="Time" style={{ flex: 1 }}>
+            <TimePicker style={{ width: '100%' }} format="HH:mm" />
+          </Form.Item>
+        </Space>
+
+        <Form.Item
+          name="title"
+          label="Title"
+          rules={[{ required: true, message: 'Please enter a title' }]}
+        >
+          <Input placeholder="Short title for calendar display" maxLength={100} />
+        </Form.Item>
+
+        <Form.Item
+          name="content"
+          label="Content"
+          rules={[{ required: true, message: 'Please enter content' }]}
+        >
+          <TextArea
+            rows={6}
+            placeholder="Full content text"
+            showCount
+            maxLength={2000}
+          />
+        </Form.Item>
+
+        <Form.Item label="Image">
+          <div className={styles.imageContainer}>
+            {imageUrl ? (
+              <div className={styles.imagePreview}>
+                <img src={getImageUrl(imageUrl)} alt="Preview" />
+                <Button
+                  icon={<DeleteOutlined />}
+                  danger
+                  size="small"
+                  onClick={handleRemoveImage}
+                  className={styles.removeImageBtn}
+                >
+                  Remove
+                </Button>
+              </div>
+            ) : (
+              <div className={styles.imageUploadArea}>
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    beforeUpload={() => false}
+                    onChange={handleFileSelect}
+                    disabled={uploadingImage}
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      loading={uploadingImage}
+                      block
+                    >
+                      Upload Image
+                    </Button>
+                  </Upload>
+                  <Space style={{ width: '100%', justifyContent: 'center' }}>
+                    <Button
+                      icon={<RobotOutlined />}
+                      onClick={handleAIGenerateImage}
+                      disabled={uploadingImage}
+                    >
+                      AI Generate (Manual)
+                    </Button>
+                    <Button
+                      icon={<PictureOutlined />}
+                      onClick={handleAIGenerateImageAuto}
+                      disabled={uploadingImage || !form.getFieldValue('content')}
+                      loading={uploadingImage}
+                    >
+                      AI Generate (Auto)
+                    </Button>
+                  </Space>
+                </Space>
+              </div>
+            )}
+          </div>
+        </Form.Item>
+
+        <Tabs
+          activeKey={activePlatformTab}
+          onChange={setActivePlatformTab}
+          items={platformTabs.map((tab) => ({
+            key: tab.key,
+            label: tab.label,
+            children: (
+              <Form.Item
+                name={tab.key === 'main' ? 'content' : ['variants', tab.key]}
+                label={tab.key === 'main' ? 'Main Content' : `${tab.label} Variant`}
+              >
+                <TextArea
+                  rows={4}
+                  placeholder={
+                    tab.key === 'main'
+                      ? 'Main content (used as default)'
+                      : `Platform-specific content for ${tab.label}`
+                  }
+                  showCount
+                  maxLength={2000}
+                />
+              </Form.Item>
+            ),
+          }))}
+        />
+
+        <Space orientation="horizontal" size="middle" style={{ width: '100%' }}>
+          <Form.Item name="status" label="Status" style={{ flex: 1 }}>
+            <Select placeholder="Select status">
+              {statusOptions.map((option) => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
                 </Option>
@@ -591,171 +704,27 @@ export default function CalendarItemModal({
             </Select>
           </Form.Item>
 
-          <Space
-            orientation="horizontal"
-            size="middle"
-            style={{ width: "100%" }}
-          >
-            <Form.Item
-              name="date"
-              label="Date"
-              rules={[{ required: true, message: "Please select a date" }]}
-              style={{ flex: 1 }}
-            >
-              <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
-            </Form.Item>
-
-            <Form.Item name="time" label="Time" style={{ flex: 1 }}>
-              <TimePicker style={{ width: "100%" }} format="HH:mm" />
-            </Form.Item>
-          </Space>
-
-          <Form.Item
-            name="title"
-            label="Title"
-            rules={[{ required: true, message: "Please enter a title" }]}
-          >
-            <Input
-              placeholder="Short title for calendar display"
-              maxLength={100}
-            />
+          <Form.Item name="campaignId" label="Campaign" style={{ flex: 1 }}>
+            <Select placeholder="Select campaign (optional)" allowClear>
+              {campaigns.map((campaign) => (
+                <Option key={campaign.id} value={campaign.id}>
+                  {campaign.name}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
-
-          <Form.Item
-            name="content"
-            label="Content"
-            rules={[{ required: true, message: "Please enter content" }]}
-          >
-            <TextArea
-              rows={6}
-              placeholder="Full content text"
-              showCount
-              maxLength={2000}
-            />
-          </Form.Item>
-
-          <Form.Item label="Image">
-            <div className={styles.imageContainer}>
-              {imageUrl ? (
-                <div className={styles.imagePreview}>
-                  <img src={getImageUrl(imageUrl)} alt="Preview" />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    danger
-                    size="small"
-                    onClick={handleRemoveImage}
-                    className={styles.removeImageBtn}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ) : (
-                <div className={styles.imageUploadArea}>
-                  <Space
-                    direction="vertical"
-                    size="middle"
-                    style={{ width: "100%" }}
-                  >
-                    <Upload
-                      accept="image/*"
-                      showUploadList={false}
-                      beforeUpload={() => false}
-                      onChange={handleFileSelect}
-                      disabled={uploadingImage}
-                    >
-                      <Button
-                        icon={<UploadOutlined />}
-                        loading={uploadingImage}
-                        block
-                      >
-                        Upload Image
-                      </Button>
-                    </Upload>
-                    <Space style={{ width: "100%", justifyContent: "center" }}>
-                      <Button
-                        icon={<RobotOutlined />}
-                        onClick={handleAIGenerateImage}
-                        disabled={uploadingImage}
-                      >
-                        AI Generate (Manual)
-                      </Button>
-                      <Button
-                        icon={<PictureOutlined />}
-                        onClick={handleAIGenerateImageAuto}
-                        disabled={
-                          uploadingImage || !form.getFieldValue("content")
-                        }
-                        loading={uploadingImage}
-                      >
-                        AI Generate (Auto)
-                      </Button>
-                    </Space>
-                  </Space>
-                </div>
-              )}
-            </div>
-          </Form.Item>
-
-          <Tabs
-            activeKey={activePlatformTab}
-            onChange={setActivePlatformTab}
-            items={platformTabs.map((tab) => ({
-              key: tab.key,
-              label: tab.label,
-              children: (
-                <Form.Item
-                  name={tab.key === "main" ? "content" : ["variants", tab.key]}
-                  label={
-                    tab.key === "main" ? "Main Content" : `${tab.label} Variant`
-                  }
-                >
-                  <TextArea
-                    rows={4}
-                    placeholder={
-                      tab.key === "main"
-                        ? "Main content (used as default)"
-                        : `Platform-specific content for ${tab.label}`
-                    }
-                    showCount
-                    maxLength={2000}
-                  />
-                </Form.Item>
-              ),
-            }))}
-          />
-
-          <Space
-            orientation="horizontal"
-            size="middle"
-            style={{ width: "100%" }}
-          >
-            <Form.Item name="status" label="Status" style={{ flex: 1 }}>
-              <Select placeholder="Select status">
-                {statusOptions.map((option) => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-
-            <Form.Item name="campaignId" label="Campaign" style={{ flex: 1 }}>
-              <Select placeholder="Select campaign (optional)" allowClear>
-                {campaigns.map((campaign) => (
-                  <Option key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </Option>
-                ))}
-              </Select>
-            </Form.Item>
-          </Space>
+        </Space>
 
           <Form.Item style={{ marginBottom: 0, marginTop: 24 }}>
-            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
-              {isEditMode && <Button onClick={handleCancelEdit}>Cancel</Button>}
-              {!isEditMode && <Button onClick={handleClose}>Cancel</Button>}
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              {isEditMode && (
+                <Button onClick={handleCancelEdit}>Cancel</Button>
+              )}
+              {!isEditMode && (
+                <Button onClick={handleClose}>Cancel</Button>
+              )}
               <Button type="primary" htmlType="submit" loading={loading}>
-                {isEditMode ? "Update" : "Create"}
+                {isEditMode ? 'Update' : 'Create'}
               </Button>
             </Space>
           </Form.Item>
@@ -767,5 +736,6 @@ export default function CalendarItemModal({
         onSuccess={handleImageGenSuccess}
       />
     </Modal>
-  );
+  )
 }
+
