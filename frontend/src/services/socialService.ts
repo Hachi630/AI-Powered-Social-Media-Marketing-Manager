@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Get Facebook connection status
 export async function getFacebookStatus(token: string) {
-  const res = await fetch(`${API_URL}/api/social/facebook/status`, {
+  const res = await fetch(`${API_URL}/api/facebook/status`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -21,7 +21,7 @@ export async function getFacebookStatus(token: string) {
 
 // Get Instagram connection status
 export async function getInstagramStatus(token: string) {
-  const res = await fetch(`${API_URL}/api/social/instagram/status`, {
+  const res = await fetch(`${API_URL}/api/instagram/status`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -38,7 +38,7 @@ export async function getInstagramStatus(token: string) {
 
 // Generate Facebook OAuth URL (for Facebook sharing only)
 export async function getFacebookAuthUrl(token: string): Promise<{ success: boolean; authUrl?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/facebook/auth`, {
+  const res = await fetch(`${API_URL}/api/facebook/auth`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -55,7 +55,7 @@ export async function getFacebookAuthUrl(token: string): Promise<{ success: bool
 
 // Generate Instagram OAuth URL (requires Facebook Page, includes business_management)
 export async function getInstagramAuthUrl(token: string): Promise<{ success: boolean; authUrl?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/instagram/auth`, {
+  const res = await fetch(`${API_URL}/api/instagram/auth`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -72,7 +72,7 @@ export async function getInstagramAuthUrl(token: string): Promise<{ success: boo
 
 // Disconnect Facebook account
 export async function disconnectFacebook(token: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/facebook/disconnect`, {
+  const res = await fetch(`${API_URL}/api/facebook/disconnect`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -90,7 +90,7 @@ export async function disconnectFacebook(token: string): Promise<{ success: bool
 
 // Disconnect Instagram account
 export async function disconnectInstagram(token: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/instagram/disconnect`, {
+  const res = await fetch(`${API_URL}/api/instagram/disconnect`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });

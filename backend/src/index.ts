@@ -10,7 +10,8 @@ import chatRoutes from './routes/chat'
 import calendarRoutes from './routes/calendar'
 import campaignRoutes from './routes/campaign'
 import uploadRoutes from './routes/upload'
-import socialRoutes from './routes/social'
+import facebookRoutes from './routes/facebook'
+import instagramRoutes from './routes/instagram'
 import { errorHandler } from './middleware/errorHandler'
 import linkedinRoutes from "./routes/linkedin";
 import twitterRoutes from "./routes/twitter";
@@ -53,7 +54,8 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
-app.use('/api/social', socialRoutes)
+app.use('/api/facebook', facebookRoutes)
+app.use('/api/instagram', instagramRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
 
