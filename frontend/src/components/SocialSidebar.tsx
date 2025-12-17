@@ -7,7 +7,7 @@ import {
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { Layout, Button, Typography, Avatar, Tooltip } from "antd";
-import { useState } from "react";
+import React from "react";
 import styles from "./SocialSidebar.module.css";
 
 const { Sider } = Layout;

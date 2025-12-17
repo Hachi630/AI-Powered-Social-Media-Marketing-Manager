@@ -9,80 +9,112 @@ import {
   Slider,
   Typography,
   message,
-} from 'antd'
-import { SettingOutlined, ReloadOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
-import styles from './AppSettings.module.css'
-import { useAppSettings } from '../contexts/AppSettingsContext'
-import ThemeToggle from '../components/ThemeToggle'
+} from "antd";
+import {
+  SettingOutlined,
+  ReloadOutlined,
+  CheckOutlined,
+  CloseOutlined,
+} from "@ant-design/icons";
+import styles from "./AppSettings.module.css";
+import { useAppSettings } from "../contexts/AppSettingsContext";
+import ThemeToggle from "../components/ThemeToggle";
 
-const { Text } = Typography
+const { Text } = Typography;
 
 const fontOptions = [
-  { value: 'Inter, system-ui, sans-serif', label: 'Inter', fontFamily: 'Inter, system-ui, sans-serif' },
-  { value: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif", label: 'ZCOOL KuaiLe', fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif" },
-  { value: 'Arial, sans-serif', label: 'Arial', fontFamily: 'Arial, sans-serif' },
-  { value: 'Georgia, serif', label: 'Georgia', fontFamily: 'Georgia, serif' },
-  { value: "'Times New Roman', serif", label: 'Times New Roman', fontFamily: "'Times New Roman', serif" },
-]
+  {
+    value: "Inter, system-ui, sans-serif",
+    label: "Inter",
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  {
+    value: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
+    label: "ZCOOL KuaiLe",
+    fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
+  },
+  {
+    value: "Arial, sans-serif",
+    label: "Arial",
+    fontFamily: "Arial, sans-serif",
+  },
+  { value: "Georgia, serif", label: "Georgia", fontFamily: "Georgia, serif" },
+  {
+    value: "'Times New Roman', serif",
+    label: "Times New Roman",
+    fontFamily: "'Times New Roman', serif",
+  },
+];
 
 const accentColorOptions = [
-  { value: '#bacf65', label: 'Green', color: '#bacf65' },
-  { value: '#fbda41', label: 'Yellow', color: '#fbda41' },
-  { value: '#b9dec9', label: 'Mint', color: '#b9dec9' },
-  { value: '#83cbac', label: 'Teal', color: '#83cbac' },
-  { value: '#93d5dc', label: 'Sky', color: '#93d5dc' },
-  { value: '#f6cec1', label: 'Peach', color: '#f6cec1' },
-]
+  { value: "#bacf65", label: "Green", color: "#bacf65" },
+  { value: "#fbda41", label: "Yellow", color: "#fbda41" },
+  { value: "#b9dec9", label: "Mint", color: "#b9dec9" },
+  { value: "#83cbac", label: "Teal", color: "#83cbac" },
+  { value: "#93d5dc", label: "Sky", color: "#93d5dc" },
+  { value: "#f6cec1", label: "Peach", color: "#f6cec1" },
+];
 
 interface AppSettingsProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function AppSettings({
-  open,
-  onClose,
-}: AppSettingsProps) {
-  const { 
-    pendingSettings, 
-    updatePendingSettings, 
+export default function AppSettings({ open, onClose }: AppSettingsProps) {
+  const {
+    settings,
+    pendingSettings,
+    updatePendingSettings,
     applySettings,
     resetSettings,
-    resetPendingSettings
-  } = useAppSettings()
+    resetPendingSettings,
+  } = useAppSettings();
 
   const handleFontSizeChange = (value: number) => {
-    updatePendingSettings({ fontSize: value })
-  }
+    updatePendingSettings({ fontSize: value });
+  };
 
   const handleFontFamilyChange = (value: string) => {
-    updatePendingSettings({ fontFamily: value })
-  }
+    updatePendingSettings({ fontFamily: value });
+  };
 
   const handleAccentColorChange = (color: string) => {
-    updatePendingSettings({ accentColor: color })
-  }
+    updatePendingSettings({ accentColor: color });
+  };
 
   const handleApply = () => {
-    applySettings()
-    message.success('Settings applied successfully')
-    onClose()
-  }
+    const wasDarkMode = settings.darkMode;
+    const willBeDarkMode = pendingSettings.darkMode;
+    const darkModeChanged = wasDarkMode !== willBeDarkMode;
+
+    applySettings();
+    message.success("Settings applied successfully");
+
+    // Close modal first
+    onClose();
+
+    // If dark mode changed, refresh the browser after a short delay
+    if (darkModeChanged) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 200);
+    }
+  };
 
   const handleCancel = () => {
-    resetPendingSettings()
-    onClose()
-  }
+    resetPendingSettings();
+    onClose();
+  };
 
   const handleReset = () => {
-    resetSettings()
-    message.success('Settings reset to default')
-  }
+    resetSettings();
+    message.success("Settings reset to default");
+  };
 
   const handleModalClose = () => {
-    resetPendingSettings()
-    onClose()
-  }
+    resetPendingSettings();
+    onClose();
+  };
 
   return (
     <Modal
@@ -166,8 +198,10 @@ export default function AppSettings({
                     value={pendingSettings.fontFamily}
                     onChange={handleFontFamilyChange}
                     className={styles.select}
-                    style={{ width: '100%' }}
-                    getPopupContainer={(triggerNode) => triggerNode.parentElement || document.body}
+                    style={{ width: "100%" }}
+                    getPopupContainer={(triggerNode) =>
+                      triggerNode.parentElement || document.body
+                    }
                   >
                     {fontOptions.map((option) => (
                       <Select.Option
@@ -199,7 +233,9 @@ export default function AppSettings({
                     <button
                       key={option.value}
                       className={`${styles.colorSwatch} ${
-                        pendingSettings.accentColor === option.value ? styles.colorSwatchActive : ''
+                        pendingSettings.accentColor === option.value
+                          ? styles.colorSwatchActive
+                          : ""
                       }`}
                       style={{ backgroundColor: option.color }}
                       onClick={() => handleAccentColorChange(option.value)}
@@ -231,6 +267,5 @@ export default function AppSettings({
         </Row>
       </div>
     </Modal>
-  )
+  );
 }
-

@@ -723,3 +723,178 @@
   cursor: grabbing;
   opacity: 0.7;
 }
+
+/* Dark mode sidebar styles */
+html[data-darkreader-mode] .sidebar {
+  background-color: #1b1c1e !important;
+}
+
+html[data-darkreader-mode] .menuButton {
+  color: #e8edf5 !important;
+  background-color: transparent !important;
+}
+
+html[data-darkreader-mode] .menuButton:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+  color: #6aa4ff !important;
+  border-color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .title {
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .searchIconButton {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .searchIconButton:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .newChatButton {
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .newChatButton:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .searchInput :global(.ant-input) {
+  background-color: #2b2b2b !important;
+  border-color: #303030 !important;
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .searchInput :global(.ant-input::placeholder) {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .sectionTitle {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .chatItem,
+html[data-darkreader-mode] .chatItemRow {
+  background-color: transparent !important;
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .chatItem:hover,
+html[data-darkreader-mode] .chatItemRow:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+}
+
+html[data-darkreader-mode] .chatItemActive,
+html[data-darkreader-mode] .chatItemRow.chatItemActive {
+  background-color: rgba(106, 164, 255, 0.15) !important;
+}
+
+html[data-darkreader-mode] .chatIcon {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .chatItemActive .chatIcon {
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .chatTitle {
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .userSection {
+  border-top-color: #303030 !important;
+  background-color: #1b1c1e !important;
+}
+
+html[data-darkreader-mode] .userName {
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .userEmail {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .userSection :global(.ant-avatar) {
+  border-color: #303030 !important;
+  background-color: #2b2b2b !important;
+}
+
+html[data-darkreader-mode] .folderItem {
+  background-color: transparent !important;
+}
+
+html[data-darkreader-mode] .folderItem:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+}
+
+html[data-darkreader-mode] .folderDragOver {
+  background-color: rgba(106, 164, 255, 0.15) !important;
+  border-color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .folderIcon {
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .folderName {
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .newFolderButton {
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .newFolderButton:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .rootDropZoneDragOver {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+}
+
+html[data-darkreader-mode] .moreButton {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .moreButton:hover {
+  color: #6aa4ff !important;
+  background-color: rgba(106, 164, 255, 0.1) !important;
+}
+
+html[data-darkreader-mode] .editButton {
+  color: #b6c2d1 !important;
+}
+
+html[data-darkreader-mode] .editButton:hover {
+  color: #6aa4ff !important;
+  background-color: rgba(106, 164, 255, 0.1) !important;
+}
+
+html[data-darkreader-mode] .renameInput :global(.ant-input) {
+  background-color: #2b2b2b !important;
+  border-color: #303030 !important;
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .folderSearchModal :global(.ant-input) {
+  background-color: #2b2b2b !important;
+  border-color: #303030 !important;
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .folderSearchItem {
+  color: #e8edf5 !important;
+}
+
+html[data-darkreader-mode] .folderSearchItem:hover {
+  background-color: rgba(106, 164, 255, 0.1) !important;
+  color: #6aa4ff !important;
+}
+
+html[data-darkreader-mode] .folderSearchItemHighlight {
+  color: #6aa4ff !important;
+}
