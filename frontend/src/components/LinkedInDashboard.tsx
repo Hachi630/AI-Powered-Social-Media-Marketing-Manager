@@ -98,6 +98,7 @@ import {
   getFacebookStatus,
   getInstagramStatus,
   getFacebookAuthUrl,
+  createFacebookPost,
   getInstagramAuthUrl,
   disconnectFacebook,
   disconnectInstagram,
@@ -1137,6 +1138,81 @@ export default function LinkedInDashboard({
     }
     setFacebookSelectedVideo(null);
     setFacebookVideoPreview(null);
+  };
+
+  // Facebook Post handler
+  const handleFacebookPost = async () => {
+    if (!jwt) {
+      message.error("Please log in to post to Facebook");
+      return;
+    }
+
+    // Validate text content
+    if (!facebookPostText.trim()) {
+      message.error("Please enter post text");
+      return;
+    }
+
+    if (facebookPostText.length > 5000) {
+      message.error("Post text cannot exceed 5000 characters");
+      return;
+    }
+
+    // Validate post type specific requirements
+    if (facebookPostType === "image" && !facebookSelectedImage) {
+      message.error("Please select an image for your image post");
+      return;
+    }
+
+    if (facebookPostType === "video" && !facebookSelectedVideo) {
+      message.error("Please select a video for your video post");
+      return;
+    }
+
+    if (facebookPostType === "link" && !facebookLinkUrl.trim()) {
+      message.error("Please enter a link URL for your link post");
+      return;
+    }
+
+    setFacebookPosting(true);
+
+    try {
+      const result = await createFacebookPost(
+        jwt,
+        facebookPostText.trim(),
+        facebookPostType,
+        facebookPostType === "image" ? facebookSelectedImage : null,
+        facebookPostType === "video" ? facebookSelectedVideo : null,
+        facebookPostType === "link" ? facebookLinkUrl.trim() : undefined,
+        facebookPostType === "link" ? facebookLinkTitle.trim() : undefined,
+        facebookPostType === "link" ? facebookLinkDescription.trim() : undefined
+      );
+
+      if (result.success) {
+        message.success("🎉 Facebook post published successfully!");
+        
+        // Reset form
+        setFacebookPostText("");
+        setFacebookPostType("text");
+        setFacebookSelectedImage(null);
+        setFacebookImagePreview(null);
+        setFacebookSelectedVideo(null);
+        if (facebookVideoPreview) {
+          URL.revokeObjectURL(facebookVideoPreview);
+        }
+        setFacebookVideoPreview(null);
+        setFacebookLinkUrl("");
+        setFacebookLinkTitle("");
+        setFacebookLinkDescription("");
+      } else {
+        message.error(result.error || "Failed to post to Facebook. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Failed to create Facebook post:", error);
+      message.error(error.message || "Failed to post to Facebook. Please try again.");
+    } finally {
+      setFacebookPosting(false);
+    }
   };
 
   // Load events for a specific organization
@@ -2903,9 +2979,7 @@ export default function LinkedInDashboard({
                   <Button
                     type="primary"
                     icon={<SendOutlined />}
-                    onClick={() => {
-                      message.info("Facebook post functionality coming soon");
-                    }}
+                    onClick={handleFacebookPost}
                     loading={facebookPosting}
                     disabled={
                       !facebookPostText.trim() ||
