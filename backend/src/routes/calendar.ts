@@ -137,6 +137,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       time,
       title,
       content,
+      imageUrl,
       variants,
       status,
     } = req.body
