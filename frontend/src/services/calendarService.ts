@@ -15,6 +15,7 @@ export interface CalendarItem {
   userId: string
   campaignId: string | null
   campaignName?: string | null
+  companyId?: string | null
   platform: string
   date: string // YYYY-MM-DD
   time: string | null // HH:mm

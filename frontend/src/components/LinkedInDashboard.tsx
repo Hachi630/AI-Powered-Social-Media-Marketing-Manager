@@ -4100,7 +4100,7 @@ export default function LinkedInDashboard({
             className={styles.sider}
           >
             <SocialSidebar
-              collapsed={sidebarCollapsed}
+              collapsed={sidebarCollapsed ?? false}
               onToggleSidebar={handleToggleSidebar}
               selectedPlatform={selectedPlatform}
               onPlatformSelect={handlePlatformSelect}

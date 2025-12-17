@@ -50,6 +50,7 @@ router.get('/', protect, async (req: AuthRequest, res: Response) => {
         userId: item.userId.toString(),
         campaignId: item.campaignId ? item.campaignId.toString() : null,
         campaignName: (item.campaignId as any)?.name || null,
+        companyId: item.companyId || null,
         platform: item.platform,
         date: item.date.toISOString().split('T')[0],
         time: item.time || null,
@@ -98,6 +99,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
         userId: item.userId.toString(),
         campaignId: item.campaignId ? item.campaignId.toString() : null,
         campaignName: (item.campaignId as any)?.name || null,
+        companyId: item.companyId || null,
         platform: item.platform,
         date: item.date.toISOString().split('T')[0],
         time: item.time || null,
@@ -132,11 +134,13 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
 
     const {
       campaignId,
+      companyId,
       platform,
       date,
       time,
       title,
       content,
+      imageUrl,
       variants,
       status,
     } = req.body
@@ -152,6 +156,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     const item = await CalendarItem.create({
       userId: user._id,
       campaignId: campaignId || null,
+      companyId: companyId || null,
       platform,
       date: new Date(date),
       time: time || null,
@@ -168,11 +173,13 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
         id: item._id.toString(),
         userId: item.userId.toString(),
         campaignId: item.campaignId ? item.campaignId.toString() : null,
+        companyId: item.companyId || null,
         platform: item.platform,
         date: item.date.toISOString().split('T')[0],
         time: item.time || null,
         title: item.title,
         content: item.content,
+        imageUrl: item.imageUrl || null,
         variants: item.variants || {},
         status: item.status,
         createdAt: item.createdAt,
@@ -210,6 +217,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
 
     const {
       campaignId,
+      companyId,
       platform,
       date,
       time,
@@ -222,6 +230,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
 
     // Update fields
     if (campaignId !== undefined) item.campaignId = campaignId || null
+    if (companyId !== undefined) item.companyId = companyId || null
     if (platform !== undefined) item.platform = platform
     if (date !== undefined) item.date = new Date(date)
     if (time !== undefined) item.time = time || null
@@ -239,6 +248,7 @@ router.put('/:id', protect, async (req: AuthRequest, res: Response) => {
         id: item._id.toString(),
         userId: item.userId.toString(),
         campaignId: item.campaignId ? item.campaignId.toString() : null,
+        companyId: item.companyId || null,
         platform: item.platform,
         date: item.date.toISOString().split('T')[0],
         time: item.time || null,
@@ -317,6 +327,7 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
     const itemsToCreate = items.map((item: any) => ({
       userId: user._id,
       campaignId: item.campaignId || null,
+      companyId: item.companyId || null,
       platform: item.platform,
       date: new Date(item.date),
       time: item.time || null,
@@ -335,6 +346,7 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
         id: item._id.toString(),
         userId: item.userId.toString(),
         campaignId: item.campaignId ? item.campaignId.toString() : null,
+        companyId: item.companyId || null,
         platform: item.platform,
         date: item.date.toISOString().split('T')[0],
         time: item.time || null,
