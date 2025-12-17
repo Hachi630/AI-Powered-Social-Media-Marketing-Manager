@@ -4197,7 +4197,7 @@ export default function LinkedInDashboard({
                             icon={<SyncOutlined />}
                             onClick={handleRefreshMetrics}
                             loading={loading}
-                            size={isMobile ? "middle" : "default"}
+                            size={isMobile ? "middle" : "large"}
                             style={{
                               width: 150,
                               height: 44,
@@ -4213,7 +4213,7 @@ export default function LinkedInDashboard({
                             onClick={handleDisconnect}
                             loading={disconnecting}
                             danger
-                            size={isMobile ? "middle" : "default"}
+                            size={isMobile ? "middle" : "large"}
                             style={{
                               width: 150,
                               height: 44,
@@ -4247,7 +4247,7 @@ export default function LinkedInDashboard({
                             // Redirect to LinkedIn OAuth
                             window.location.href = authUrl;
                           }}
-                          size={isMobile ? "middle" : "default"}
+                          size={isMobile ? "middle" : "large"}
                           block={isMobile}
                           style={{
                             backgroundColor: "#0077B5",
