@@ -124,6 +124,8 @@ export default function CalendarPage({
   const [activeDragItem, setActiveDragItem] = useState<CalendarItem | null>(null);
   const [viewMode, setViewMode] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('all');
+  const [brands, setBrands] = useState<Array<{ id: string; name: string; brandName: string }>>([]);
 
   // Load calendar items
   const loadCalendarItems = useCallback(async () => {
@@ -166,10 +168,82 @@ export default function CalendarPage({
     loadCalendarItems();
   }, [loadCalendarItems]);
 
+  // Load brands from localStorage
+  useEffect(() => {
+    try {
+      const savedCompanies = localStorage.getItem("melo_companies");
+      if (savedCompanies) {
+        const companies = JSON.parse(savedCompanies);
+        const brandList = companies.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          brandName: c.brandName || c.name
+        }));
+        setBrands(brandList);
+        console.log("Loaded brands:", brandList);
+      }
+    } catch (error) {
+      console.error("Error loading brands:", error);
+    }
+  }, []);
+
+  // Auto-update items without companyId when a brand is selected
+  useEffect(() => {
+    if (selectedBrandId && selectedBrandId !== 'all' && calendarItems.length > 0) {
+      const itemsWithoutCompanyId = calendarItems.filter(item => !item.companyId || item.companyId === null);
+      if (itemsWithoutCompanyId.length > 0) {
+        console.log(`Found ${itemsWithoutCompanyId.length} items without companyId. Auto-updating them to selected brand: ${selectedBrandId}`);
+        
+        // Update items in batch
+        const updatePromises = itemsWithoutCompanyId.map(item =>
+          calendarService.updateCalendarItem(item.id, { companyId: selectedBrandId })
+        );
+        
+        Promise.all(updatePromises)
+          .then(() => {
+            console.log("Successfully updated items with companyId");
+            loadCalendarItems(); // Reload to get updated items
+          })
+          .catch(error => {
+            console.error("Error updating items with companyId:", error);
+          });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBrandId]); // Only run when brand selection changes
+
   // Helpers
   const getFilteredItems = (items: CalendarItem[]) => {
-    if (selectedPlatforms.length === 0) return items;
-    return items.filter(item => selectedPlatforms.includes(item.platform));
+    let filtered = items;
+    
+    // Filter by brand
+    if (selectedBrandId && selectedBrandId !== 'all') {
+      console.log("Filtering by brand:", selectedBrandId);
+      console.log("Available brands:", brands.map(b => ({ id: b.id, name: b.brandName })));
+      console.log("Calendar items before filter:", items.map(i => ({ id: i.id, title: i.title, companyId: i.companyId })));
+      
+      filtered = filtered.filter(item => {
+        // Strict match: companyId must exactly match selectedBrandId
+        const matches = item.companyId === selectedBrandId;
+        if (!matches) {
+          console.log(`Item ${item.id} (${item.title}) - companyId: "${item.companyId}" (type: ${typeof item.companyId}), expected: "${selectedBrandId}" (type: ${typeof selectedBrandId})`);
+        }
+        return matches;
+      });
+      
+      console.log("Calendar items after filter:", filtered.length);
+      if (filtered.length === 0 && items.length > 0) {
+        console.warn("No items matched the selected brand. This might mean existing items don't have companyId set.");
+        console.log("Items without companyId:", items.filter(i => !i.companyId || i.companyId === null).length);
+      }
+    }
+    
+    // Filter by platform
+    if (selectedPlatforms.length > 0) {
+      filtered = filtered.filter(item => selectedPlatforms.includes(item.platform));
+    }
+    
+    return filtered;
   };
 
   const getItemsForDate = (date: Dayjs): CalendarItem[] => {
@@ -355,8 +429,18 @@ export default function CalendarPage({
 
       {/* Filter Bar */}
       <div className={styles.filterBar}>
-        <Select defaultValue="all" style={{ width: 120 }} bordered={false}>
+        <Select 
+          value={selectedBrandId} 
+          onChange={setSelectedBrandId}
+          style={{ width: 150 }} 
+          bordered={false}
+        >
           <Option value="all">All Brands</Option>
+          {brands.map(brand => (
+            <Option key={brand.id} value={brand.id}>
+              {brand.brandName || brand.name}
+            </Option>
+          ))}
         </Select>
         <Select
           mode="multiple"
