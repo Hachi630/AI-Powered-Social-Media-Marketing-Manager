@@ -258,6 +258,25 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "User not found" });
     }
 
+      // If user has companies array, use it; otherwise, create from single company fields (backward compatibility)
+      let companies = user.companies || []
+      
+      // If no companies but has single company fields, create a company from those fields
+      if (companies.length === 0 && (user.brandName || user.industry || user.toneOfVoice)) {
+        companies = [{
+          id: `company_${Date.now()}`,
+          name: user.brandName || 'My Company',
+          brandName: user.brandName || '',
+          industry: user.industry || '',
+          toneOfVoice: user.toneOfVoice || 'calm',
+          customTone: '',
+          knowledgeProducts: user.knowledgeProducts || [],
+          targetAudience: user.targetAudience || [],
+          companyDescription: '',
+          brandLogoUrl: user.brandLogoUrl || '',
+        }]
+      }
+
       res.status(200).json({
         success: true,
         user: {
@@ -265,6 +284,7 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
           email: user.email,
           name: user.name,
           brandName: user.brandName,
+          brandLogoUrl: user.brandLogoUrl,
           phone: user.phone,
           birthday: user.birthday,
           gender: user.gender,
@@ -275,6 +295,7 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
           toneOfVoice: user.toneOfVoice,
           knowledgeProducts: user.knowledgeProducts,
           targetAudience: user.targetAudience,
+          companies: companies,
           authProvider: user.authProvider,
           createdAt: user.createdAt,
         },
@@ -299,6 +320,7 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
     const {
       name,
       brandName,
+      brandLogoUrl,
       phone,
       birthday,
       gender,
@@ -309,11 +331,13 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
       toneOfVoice,
       knowledgeProducts,
       targetAudience,
+      companies,
     } = req.body
 
     // Update user fields
     if (name !== undefined) user.name = name
     if (brandName !== undefined) user.brandName = brandName
+    if (brandLogoUrl !== undefined) user.brandLogoUrl = brandLogoUrl
     if (phone !== undefined) user.phone = phone
     if (birthday !== undefined) user.birthday = birthday
     if (gender !== undefined) user.gender = gender
@@ -325,6 +349,18 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
     if (knowledgeProducts !== undefined) user.knowledgeProducts = knowledgeProducts
     if (targetAudience !== undefined) user.targetAudience = targetAudience
 
+    // Update companies array if provided
+    if (companies !== undefined) {
+      // Validate companies array length (max 10)
+      if (Array.isArray(companies) && companies.length > 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 10 companies allowed',
+        })
+      }
+      user.companies = companies
+    }
+
     // Save updated user
     await user.save()
 
@@ -335,6 +371,7 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
         email: user.email,
         name: user.name,
         brandName: user.brandName,
+        brandLogoUrl: user.brandLogoUrl,
         phone: user.phone,
         birthday: user.birthday,
         gender: user.gender,
@@ -345,6 +382,7 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
+        companies: user.companies || [],
         authProvider: user.authProvider,
         createdAt: user.createdAt,
       },

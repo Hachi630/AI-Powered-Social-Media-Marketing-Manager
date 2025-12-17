@@ -1,6 +1,20 @@
 // API base URL - using Vite proxy (no CORS issues)
 const API_URL = '/api/auth'
 
+// Company data structure for multi-company support
+export interface CompanyData {
+  id: string
+  name: string
+  brandName: string
+  industry: string
+  toneOfVoice: string
+  customTone: string
+  knowledgeProducts: string[]
+  targetAudience: string[]
+  companyDescription: string
+  brandLogoUrl?: string
+}
+
 export interface User {
   id: string
   email: string
@@ -17,6 +31,7 @@ export interface User {
   toneOfVoice?: string
   knowledgeProducts?: string[]
   targetAudience?: string[]
+  companies?: CompanyData[]
   authProvider?: 'local' | 'google'
   createdAt: string
 }

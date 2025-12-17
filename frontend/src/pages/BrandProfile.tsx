@@ -31,7 +31,7 @@ import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import { MELO_LOGO } from "../constants/assets";
 import styles from "./BrandProfile.module.css";
-import { User, authService } from "../services/authService";
+import { User, authService, CompanyData } from "../services/authService";
 import { uploadService } from "../services/uploadService";
 import { chatService } from "../services/chatService";
 import { PictureOutlined, RobotOutlined } from "@ant-design/icons";
@@ -57,19 +57,7 @@ const industryOptions = [
 
 const initialAudience = ["Yoga lovers", "Interior design enthusiast"];
 
-// Company data structure for multi-company support
-interface CompanyData {
-  id: string;
-  name: string;
-  brandName: string;
-  industry: string;
-  toneOfVoice: string;
-  customTone: string;
-  knowledgeProducts: string[];
-  targetAudience: string[];
-  companyDescription: string;
-  brandLogoUrl?: string;
-}
+// CompanyData is now imported from authService
 
 // Default company template
 const createDefaultCompany = (name: string): CompanyData => ({
@@ -124,35 +112,65 @@ export default function BrandProfile({
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
   const [editingCompanyName, setEditingCompanyName] = useState("");
 
-  // Load companies from localStorage on mount
+  // Load companies from database first, then localStorage as fallback
   useEffect(() => {
-    const savedCompanies = localStorage.getItem("melo_companies");
-    const savedSelectedId = localStorage.getItem("melo_selected_company");
-
-    if (savedCompanies) {
-      const parsed = JSON.parse(savedCompanies) as CompanyData[];
-      if (parsed.length > 0) {
-        setCompanies(parsed);
-
-        // Restore selected company or select first one
-        if (savedSelectedId && parsed.find((c) => c.id === savedSelectedId)) {
-          setSelectedCompanyId(savedSelectedId);
-          loadCompanyData(parsed.find((c) => c.id === savedSelectedId)!);
-        } else {
-          setSelectedCompanyId(parsed[0].id);
-          loadCompanyData(parsed[0]);
+    const loadCompanies = async () => {
+      if (isLoggedIn) {
+        try {
+          const currentUser = await authService.getCurrentUser();
+          if (currentUser && currentUser.companies && currentUser.companies.length > 0) {
+            // Load from database
+            setCompanies(currentUser.companies);
+            // Sync to localStorage
+            localStorage.setItem("melo_companies", JSON.stringify(currentUser.companies));
+            
+            const savedSelectedId = localStorage.getItem("melo_selected_company");
+            if (savedSelectedId && currentUser.companies.find((c) => c.id === savedSelectedId)) {
+              setSelectedCompanyId(savedSelectedId);
+              loadCompanyData(currentUser.companies.find((c) => c.id === savedSelectedId)!);
+            } else {
+              setSelectedCompanyId(currentUser.companies[0].id);
+              localStorage.setItem("melo_selected_company", currentUser.companies[0].id);
+              loadCompanyData(currentUser.companies[0]);
+            }
+            return;
+          }
+        } catch (error) {
+          console.error("Error loading companies from database:", error);
         }
-        return;
       }
-    }
 
-    // Create default company if none exists
-    const defaultCompany = createDefaultCompany("My Company");
-    setCompanies([defaultCompany]);
-    setSelectedCompanyId(defaultCompany.id);
-    localStorage.setItem("melo_companies", JSON.stringify([defaultCompany]));
-    localStorage.setItem("melo_selected_company", defaultCompany.id);
-  }, []);
+      // Fallback to localStorage
+      const savedCompanies = localStorage.getItem("melo_companies");
+      const savedSelectedId = localStorage.getItem("melo_selected_company");
+
+      if (savedCompanies) {
+        const parsed = JSON.parse(savedCompanies) as CompanyData[];
+        if (parsed.length > 0) {
+          setCompanies(parsed);
+
+          // Restore selected company or select first one
+          if (savedSelectedId && parsed.find((c) => c.id === savedSelectedId)) {
+            setSelectedCompanyId(savedSelectedId);
+            loadCompanyData(parsed.find((c) => c.id === savedSelectedId)!);
+          } else {
+            setSelectedCompanyId(parsed[0].id);
+            loadCompanyData(parsed[0]);
+          }
+          return;
+        }
+      }
+
+      // Create default company if none exists
+      const defaultCompany = createDefaultCompany("My Company");
+      setCompanies([defaultCompany]);
+      setSelectedCompanyId(defaultCompany.id);
+      localStorage.setItem("melo_companies", JSON.stringify([defaultCompany]));
+      localStorage.setItem("melo_selected_company", defaultCompany.id);
+    };
+
+    loadCompanies();
+  }, [isLoggedIn]);
 
   // Load user data on mount and when propUser changes
   useEffect(() => {
@@ -259,6 +277,12 @@ export default function BrandProfile({
 
   // Add a new company - directly creates a new blank company
   const handleAddCompany = () => {
+    // Check company limit (max 10)
+    if (companies.length >= 10) {
+      message.warning("Maximum 10 companies allowed. Please delete a company before adding a new one.");
+      return;
+    }
+
     // Save current data first
     if (selectedCompanyId) {
       saveCurrentToCompany();
@@ -504,22 +528,42 @@ export default function BrandProfile({
           ? customTone.trim()
           : selectedTone;
 
-      // Save to local company data
+      // Save to local company data first and get updated companies
       saveCurrentToCompany();
+      
+      // Get the latest companies state after saving current company
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === selectedCompanyId) {
+          return {
+            ...company,
+            name: brandName.trim() || company.name,
+            brandName,
+            industry,
+            toneOfVoice,
+            customTone,
+            knowledgeProducts,
+            targetAudience: audienceTags,
+            companyDescription,
+            brandLogoUrl,
+          };
+        }
+        return company;
+      });
 
+      // Save all companies to database
       const response = await authService.updateProfile({
-        brandName,
-        industry,
-        toneOfVoice,
-        knowledgeProducts,
-        targetAudience: audienceTags,
-        companyDescription,
-        brandLogoUrl: brandLogoUrl || undefined,
+        companies: updatedCompanies,
       });
 
       if (response.success && response.user) {
         setUser(response.user);
         onLoginSuccess(response.user);
+        
+        // Sync companies to localStorage
+        if (response.user.companies) {
+          localStorage.setItem("melo_companies", JSON.stringify(response.user.companies));
+        }
+        
         message.success("Profile saved successfully");
       } else {
         message.error(response.message || "Failed to save profile");
@@ -617,9 +661,16 @@ export default function BrandProfile({
                 icon={<PlusOutlined />}
                 onClick={handleAddCompany}
                 className={styles.addCompanyBtn}
+                disabled={companies.length >= 10}
+                title={companies.length >= 10 ? "Maximum 10 companies allowed" : "Add a new company"}
               >
-                Add New Company
+                Add New Company {companies.length >= 10 && "(Max 10)"}
               </Button>
+              {companies.length >= 10 && (
+                <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px', textAlign: 'center' }}>
+                  Maximum 10 companies allowed. Delete a company to add a new one.
+                </Typography.Text>
+              )}
             </div>
           </div>
         </Card>
