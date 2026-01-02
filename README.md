@@ -2,7 +2,7 @@
 
 Melo is an AI-powered social media and marketing management platform that helps businesses create, manage, and optimize their social media content and marketing strategies.
 
-## 📋 Table of Contents
+## 📋 Table of Contents 
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
