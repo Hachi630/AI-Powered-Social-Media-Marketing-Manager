@@ -213,7 +213,7 @@ export default function Dashboard({
                 onTypingStatusChange={handleTypingStatus}
                 onContentChange={handleContentChange}
               />
-              {tagline && (
+              {tagline && !hasMessages && (
                 <Typography.Paragraph className={styles.tagline}>
                   {tagline}
                 </Typography.Paragraph>
