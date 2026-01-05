@@ -9,23 +9,21 @@ import {
   message,
   List,
   Typography,
-} from 'antd'
-import { CalendarOutlined } from '@ant-design/icons'
-import dayjs, { Dayjs } from 'dayjs'
-import { useState } from 'react'
-import { PLATFORMS } from './CalendarItemModal'
-import { calendarService, CalendarItem } from '../services/calendarService'
-import { chatService } from '../services/chatService'
+} from "antd";
+import { CalendarOutlined } from "@ant-design/icons";
+import { Dayjs } from "dayjs";
+import { useState } from "react";
+import { PLATFORMS } from "./CalendarItemModal";
 
-const { TextArea } = Input
-const { RangePicker } = DatePicker
-const { Option } = Select
+const { TextArea } = Input;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
 
 interface ContentPlanModalProps {
-  open: boolean
-  goal?: string
-  onClose: () => void
-  onSuccess: () => void
+  open: boolean;
+  goal?: string;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 export default function ContentPlanModal({
@@ -34,103 +32,109 @@ export default function ContentPlanModal({
   onClose,
   onSuccess,
 }: ContentPlanModalProps) {
-  const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
-  const [generatedPlan, setGeneratedPlan] = useState<any[]>([])
-  const [planGenerated, setPlanGenerated] = useState(false)
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<any[]>([]);
+  const [planGenerated, setPlanGenerated] = useState(false);
 
   const platformOptions = [
-    { value: PLATFORMS.INSTAGRAM_POST, label: 'Instagram Post' },
-    { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
-    { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
-    { value: PLATFORMS.TIKTOK, label: 'TikTok' },
-    { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
-    { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
-    { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
-  ]
+    { value: PLATFORMS.INSTAGRAM_POST, label: "Instagram Post" },
+    { value: PLATFORMS.INSTAGRAM_STORY, label: "Instagram Story" },
+    { value: PLATFORMS.INSTAGRAM_REELS, label: "Instagram Reels" },
+    { value: PLATFORMS.TIKTOK, label: "TikTok" },
+    { value: PLATFORMS.FACEBOOK, label: "Facebook" },
+    { value: PLATFORMS.TWITTER, label: "Twitter/X" },
+    { value: PLATFORMS.LINKEDIN, label: "LinkedIn" },
+  ];
 
   const handleGenerate = async () => {
     try {
-      const values = await form.validateFields(['goal', 'dateRange', 'platforms'])
-      setLoading(true)
+      const values = await form.validateFields([
+        "goal",
+        "dateRange",
+        "platforms",
+      ]);
+      setLoading(true);
 
-      const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs]
+      const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs];
 
-      const response = await fetch('/api/chat/generate-plan', {
-        method: 'POST',
+      const response = await fetch("/api/chat/generate-plan", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
           goal: values.goal,
-          startDate: startDate.format('YYYY-MM-DD'),
-          endDate: endDate.format('YYYY-MM-DD'),
+          startDate: startDate.format("YYYY-MM-DD"),
+          endDate: endDate.format("YYYY-MM-DD"),
           platforms: values.platforms,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to generate content plan')
+        throw new Error(data.message || "Failed to generate content plan");
       }
 
-      setGeneratedPlan(data.plan || [])
-      setPlanGenerated(true)
-      message.success(`Generated ${data.plan?.length || 0} content items`)
+      setGeneratedPlan(data.plan || []);
+      setPlanGenerated(true);
+      message.success(`Generated ${data.plan?.length || 0} content items`);
     } catch (error: any) {
-      console.error('Generate plan error:', error)
-      message.error(error.message || 'Failed to generate content plan')
+      console.error("Generate plan error:", error);
+      message.error(error.message || "Failed to generate content plan");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSendToCalendar = async () => {
     if (generatedPlan.length === 0) {
-      message.warning('Please generate a plan first')
-      return
+      message.warning("Please generate a plan first");
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const response = await fetch('/api/chat/send-to-calendar', {
-        method: 'POST',
+      const response = await fetch("/api/chat/send-to-calendar", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
           items: generatedPlan,
-          campaignId: form.getFieldValue('campaignId') || null,
+          campaignId: form.getFieldValue("campaignId") || null,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to send items to calendar')
+        throw new Error(data.message || "Failed to send items to calendar");
       }
 
-      message.success(`Successfully added ${data.count || 0} items to calendar`)
-      onSuccess()
-      handleClose()
+      message.success(
+        `Successfully added ${data.count || 0} items to calendar`
+      );
+      onSuccess();
+      handleClose();
     } catch (error: any) {
-      console.error('Send to calendar error:', error)
-      message.error(error.message || 'Failed to send items to calendar')
+      console.error("Send to calendar error:", error);
+      message.error(error.message || "Failed to send items to calendar");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    form.resetFields()
-    setGeneratedPlan([])
-    setPlanGenerated(false)
-    onClose()
-  }
+    form.resetFields();
+    setGeneratedPlan([]);
+    setPlanGenerated(false);
+    onClose();
+  };
 
   return (
     <Modal
@@ -144,7 +148,9 @@ export default function ContentPlanModal({
         <Form.Item
           name="goal"
           label="Marketing Goal"
-          rules={[{ required: true, message: 'Please enter your marketing goal' }]}
+          rules={[
+            { required: true, message: "Please enter your marketing goal" },
+          ]}
         >
           <TextArea
             rows={3}
@@ -155,15 +161,17 @@ export default function ContentPlanModal({
         <Form.Item
           name="dateRange"
           label="Campaign Date Range"
-          rules={[{ required: true, message: 'Please select date range' }]}
+          rules={[{ required: true, message: "Please select date range" }]}
         >
-          <RangePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+          <RangePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
         </Form.Item>
 
         <Form.Item
           name="platforms"
           label="Platforms"
-          rules={[{ required: true, message: 'Please select at least one platform' }]}
+          rules={[
+            { required: true, message: "Please select at least one platform" },
+          ]}
         >
           <Select mode="multiple" placeholder="Select platforms">
             {platformOptions.map((option) => (
@@ -203,13 +211,15 @@ export default function ContentPlanModal({
               size="small"
               bordered
               dataSource={generatedPlan}
-              renderItem={(item: any, index) => (
+              renderItem={(item: any) => (
                 <List.Item>
-                  <Space orientation="vertical" style={{ width: '100%' }}>
+                  <Space orientation="vertical" style={{ width: "100%" }}>
                     <div>
                       <Typography.Text strong>{item.date}</Typography.Text>
-                      {' - '}
-                      <Typography.Text type="secondary">{item.platform}</Typography.Text>
+                      {" - "}
+                      <Typography.Text type="secondary">
+                        {item.platform}
+                      </Typography.Text>
                     </div>
                     <Typography.Text strong>{item.title}</Typography.Text>
                     <Typography.Text type="secondary" ellipsis>
@@ -223,6 +233,5 @@ export default function ContentPlanModal({
         )}
       </Form>
     </Modal>
-  )
+  );
 }
-

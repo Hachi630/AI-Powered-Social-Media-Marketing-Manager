@@ -10,7 +10,8 @@ import chatRoutes from './routes/chat'
 import calendarRoutes from './routes/calendar'
 import campaignRoutes from './routes/campaign'
 import uploadRoutes from './routes/upload'
-import socialRoutes from './routes/social'
+import facebookRoutes from './routes/facebook'
+import instagramRoutes from './routes/instagram'
 import { errorHandler } from './middleware/errorHandler'
 import linkedinRoutes from "./routes/linkedin";
 import twitterRoutes from "./routes/twitter";
@@ -28,9 +29,30 @@ const app = express()
 const PORT = process.env.PORT || 5000
 
 // CORS configuration - must be FIRST, before any other middleware
-// Allow all origins in development to avoid CORS issues
+// In production, only allow frontend domain. In development, allow all origins.
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  'http://localhost:3000', // Development frontend
+].filter(Boolean) as string[]
+
 app.use(cors({
-  origin: true, // Allow all origins in development
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true)
+    }
+    
+    // In production, check against allowed origins
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -45,6 +67,8 @@ app.use(express.json({ limit: '250mb' }))
 app.use(express.urlencoded({ extended: true, limit: '250mb' }))
 
 // Static file serving for uploaded images
+// NOTE: On Render, the file system is ephemeral. Files will be lost when the service restarts.
+// This is acceptable for testing, but production should use cloud storage (AWS S3, Cloudinary, etc.)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 // Routes
@@ -53,7 +77,8 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
-app.use('/api/social', socialRoutes)
+app.use('/api/facebook', facebookRoutes)
+app.use('/api/instagram', instagramRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
 

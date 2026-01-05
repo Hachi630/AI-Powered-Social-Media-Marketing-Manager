@@ -1,171 +1,206 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 export interface AppSettings {
-  fontSize: number
-  fontFamily: string
-  accentColor: string
+  fontSize: number;
+  fontFamily: string;
+  accentColor: string;
+  darkMode: boolean;
 }
 
 interface AppSettingsContextType {
-  settings: AppSettings
-  pendingSettings: AppSettings
-  updatePendingSettings: (newSettings: Partial<AppSettings>) => void
-  applySettings: () => void
-  resetSettings: () => void
-  resetPendingSettings: () => void
+  settings: AppSettings;
+  pendingSettings: AppSettings;
+  updatePendingSettings: (newSettings: Partial<AppSettings>) => void;
+  applySettings: () => void;
+  resetSettings: () => void;
+  resetPendingSettings: () => void;
 }
 
-const AppSettingsContext = createContext<AppSettingsContextType | undefined>(undefined)
+const AppSettingsContext = createContext<AppSettingsContextType | undefined>(
+  undefined
+);
 
 const DEFAULT_SETTINGS: AppSettings = {
   fontSize: 14,
-  fontFamily: 'Inter, system-ui, sans-serif',
-  accentColor: '#bacf65',
-}
+  fontFamily: "Inter, system-ui, sans-serif",
+  accentColor: "#bacf65",
+  darkMode: false,
+};
 
-const STORAGE_KEY = 'melo_app_settings'
+const STORAGE_KEY = "melo_app_settings";
 
 // Helper function to calculate text color based on background
 const getContrastColor = (bgColor: string): string => {
-  if (!bgColor || typeof bgColor !== 'string') {
-    return '#1e1e1e'
+  if (!bgColor || typeof bgColor !== "string") {
+    return "#1e1e1e";
   }
-  
+
   try {
-    const hex = bgColor.replace('#', '')
+    const hex = bgColor.replace("#", "");
     if (hex.length !== 6) {
-      return '#1e1e1e'
+      return "#1e1e1e";
     }
-    
-    const r = parseInt(hex.substr(0, 2), 16)
-    const g = parseInt(hex.substr(2, 2), 16)
-    const b = parseInt(hex.substr(4, 2), 16)
-    
+
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return '#1e1e1e'
+      return "#1e1e1e";
     }
-    
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
-    return luminance > 0.5 ? '#1e1e1e' : '#ffffff'
+
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? "#1e1e1e" : "#ffffff";
   } catch (error) {
-    console.error('Error calculating contrast color:', error)
-    return '#1e1e1e'
+    console.error("Error calculating contrast color:", error);
+    return "#1e1e1e";
   }
-}
+};
 
 // Helper function to darken color for hover states
 const darkenColor = (color: string, amount: number): string => {
-  if (!color || typeof color !== 'string') {
-    return DEFAULT_SETTINGS.accentColor
+  if (!color || typeof color !== "string") {
+    return DEFAULT_SETTINGS.accentColor;
   }
-  
+
   try {
-    const hex = color.replace('#', '')
+    const hex = color.replace("#", "");
     if (hex.length !== 6) {
-      return DEFAULT_SETTINGS.accentColor
+      return DEFAULT_SETTINGS.accentColor;
     }
-    
-    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - amount)
-    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - amount)
-    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - amount)
-    
+
+    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) - amount);
+    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) - amount);
+    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) - amount);
+
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return DEFAULT_SETTINGS.accentColor
+      return DEFAULT_SETTINGS.accentColor;
     }
-    
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+
+    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
   } catch (error) {
-    console.error('Error darkening color:', error)
-    return DEFAULT_SETTINGS.accentColor
+    console.error("Error darkening color:", error);
+    return DEFAULT_SETTINGS.accentColor;
   }
-}
+};
 
 // Helper function to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
-  if (!hex || typeof hex !== 'string') {
-    return 'rgba(186, 207, 101, ' + alpha + ')'
+  if (!hex || typeof hex !== "string") {
+    return "rgba(186, 207, 101, " + alpha + ")";
   }
-  
+
   try {
-    const h = hex.replace('#', '')
+    const h = hex.replace("#", "");
     if (h.length !== 6) {
-      return 'rgba(186, 207, 101, ' + alpha + ')'
+      return "rgba(186, 207, 101, " + alpha + ")";
     }
-    
-    const r = parseInt(h.substr(0, 2), 16)
-    const g = parseInt(h.substr(2, 2), 16)
-    const b = parseInt(h.substr(4, 2), 16)
-    
+
+    const r = parseInt(h.substr(0, 2), 16);
+    const g = parseInt(h.substr(2, 2), 16);
+    const b = parseInt(h.substr(4, 2), 16);
+
     if (isNaN(r) || isNaN(g) || isNaN(b)) {
-      return 'rgba(186, 207, 101, ' + alpha + ')'
+      return "rgba(186, 207, 101, " + alpha + ")";
     }
-    
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   } catch (error) {
-    console.error('Error converting hex to rgba:', error)
-    return 'rgba(186, 207, 101, ' + alpha + ')'
+    console.error("Error converting hex to rgba:", error);
+    return "rgba(186, 207, 101, " + alpha + ")";
   }
-}
+};
 
 // Check if current page is an entry page
 const isEntryPage = (): boolean => {
-  const entryPagePaths = ['/home', '/privacy-policy', '/terms-of-service', '/contact-us', '/']
-  const pathname = window.location.pathname
-  return entryPagePaths.some(path => 
-    pathname === path || 
-    pathname === path + '/' ||
-    pathname.startsWith('/home')
-  )
-}
+  const entryPagePaths = [
+    "/home",
+    "/privacy-policy",
+    "/terms-of-service",
+    "/contact-us",
+    "/",
+  ];
+  const pathname = window.location.pathname;
+  return entryPagePaths.some(
+    (path) =>
+      pathname === path ||
+      pathname === path + "/" ||
+      pathname.startsWith("/home")
+  );
+};
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY)
+      const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved)
-        return { ...DEFAULT_SETTINGS, ...parsed }
+        const parsed = JSON.parse(saved);
+        return { ...DEFAULT_SETTINGS, ...parsed };
       }
     } catch (error) {
-      console.error('Failed to load app settings:', error)
+      console.error("Failed to load app settings:", error);
     }
-    return DEFAULT_SETTINGS
-  })
+    return DEFAULT_SETTINGS;
+  });
 
-  const [pendingSettings, setPendingSettings] = useState<AppSettings>(settings)
+  const [pendingSettings, setPendingSettings] = useState<AppSettings>(settings);
 
   // Sync pendingSettings with settings when settings change
   useEffect(() => {
-    setPendingSettings(settings)
-  }, [settings])
+    setPendingSettings(settings);
+  }, [settings]);
 
   // Apply settings to DOM
   useEffect(() => {
-    const accentColor = settings.accentColor || DEFAULT_SETTINGS.accentColor
-    
+    const accentColor = settings.accentColor || DEFAULT_SETTINGS.accentColor;
+
     // Set CSS variables on root
-    const root = document.documentElement
-    root.style.setProperty('--custom-font-size', `${settings.fontSize}px`)
-    root.style.setProperty('--custom-font-family', settings.fontFamily)
-    root.style.setProperty('--accent-color', accentColor)
-    root.style.setProperty('--accent-color-hover', darkenColor(accentColor, 20))
-    root.style.setProperty('--accent-color-text', getContrastColor(accentColor))
-    root.style.setProperty('--accent-color-rgba-08', hexToRgba(accentColor, 0.08))
-    root.style.setProperty('--accent-color-rgba-10', hexToRgba(accentColor, 0.1))
-    root.style.setProperty('--accent-color-rgba-12', hexToRgba(accentColor, 0.12))
-    root.style.setProperty('--accent-color-rgba-15', hexToRgba(accentColor, 0.15))
-    
+    const root = document.documentElement;
+    root.style.setProperty("--custom-font-size", `${settings.fontSize}px`);
+    root.style.setProperty("--custom-font-family", settings.fontFamily);
+    root.style.setProperty("--accent-color", accentColor);
+    root.style.setProperty(
+      "--accent-color-hover",
+      darkenColor(accentColor, 20)
+    );
+    root.style.setProperty(
+      "--accent-color-text",
+      getContrastColor(accentColor)
+    );
+    root.style.setProperty(
+      "--accent-color-rgba-08",
+      hexToRgba(accentColor, 0.08)
+    );
+    root.style.setProperty(
+      "--accent-color-rgba-10",
+      hexToRgba(accentColor, 0.1)
+    );
+    root.style.setProperty(
+      "--accent-color-rgba-12",
+      hexToRgba(accentColor, 0.12)
+    );
+    root.style.setProperty(
+      "--accent-color-rgba-15",
+      hexToRgba(accentColor, 0.15)
+    );
+
     // Function to apply styles based on current page
     const applyPageStyles = () => {
       // Remove old style if exists
-      const oldStyle = document.getElementById('app-settings-style')
+      const oldStyle = document.getElementById("app-settings-style");
       if (oldStyle) {
-        oldStyle.remove()
+        oldStyle.remove();
       }
-      
-      const style = document.createElement('style')
-      style.id = 'app-settings-style'
-      
+
+      const style = document.createElement("style");
+      style.id = "app-settings-style";
+
       // If on entry page, only apply ChatBox accent color (no font/size changes)
       if (isEntryPage()) {
         style.textContent = `
@@ -175,7 +210,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             color: ${getContrastColor(accentColor)} !important;
             border-color: ${accentColor} !important;
           }
-        `
+        `;
       } else {
         // Apply full settings to app pages (Dashboard, Calendar, etc.)
         style.textContent = `
@@ -381,101 +416,105 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
           .ant-modal .ant-tabs-tab:hover {
             color: ${accentColor} !important;
           }
-        `
+        `;
       }
-      
-      document.head.appendChild(style)
-    }
-    
+
+      document.head.appendChild(style);
+    };
+
     // Apply styles initially
-    applyPageStyles()
-    
+    applyPageStyles();
+
     // Listen for route changes
     const handleRouteChange = () => {
-      setTimeout(applyPageStyles, 50) // Small delay to ensure URL has updated
-    }
-    
-    window.addEventListener('popstate', handleRouteChange)
-    
+      setTimeout(applyPageStyles, 50); // Small delay to ensure URL has updated
+    };
+
+    window.addEventListener("popstate", handleRouteChange);
+
     // Override pushState and replaceState for SPA navigation
-    const originalPushState = history.pushState
-    const originalReplaceState = history.replaceState
-    
-    history.pushState = function(...args) {
-      originalPushState.apply(this, args)
-      handleRouteChange()
-    }
-    
-    history.replaceState = function(...args) {
-      originalReplaceState.apply(this, args)
-      handleRouteChange()
-    }
-    
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function (...args) {
+      originalPushState.apply(this, args);
+      handleRouteChange();
+    };
+
+    history.replaceState = function (...args) {
+      originalReplaceState.apply(this, args);
+      handleRouteChange();
+    };
+
     // Backup: check periodically for route changes
     const interval = setInterval(() => {
-      const styleEl = document.getElementById('app-settings-style')
+      const styleEl = document.getElementById("app-settings-style");
       if (styleEl) {
-        const onEntryPage = isEntryPage()
-        const hasAppStyles = styleEl.textContent?.includes('.ant-layout {')
-        
+        const onEntryPage = isEntryPage();
+        const hasAppStyles = styleEl.textContent?.includes(".ant-layout {");
+
         if ((onEntryPage && hasAppStyles) || (!onEntryPage && !hasAppStyles)) {
-          applyPageStyles()
+          applyPageStyles();
         }
       }
-    }, 300)
-    
+    }, 300);
+
     return () => {
-      window.removeEventListener('popstate', handleRouteChange)
-      history.pushState = originalPushState
-      history.replaceState = originalReplaceState
-      clearInterval(interval)
-    }
-  }, [settings])
+      window.removeEventListener("popstate", handleRouteChange);
+      history.pushState = originalPushState;
+      history.replaceState = originalReplaceState;
+      clearInterval(interval);
+    };
+  }, [settings]);
 
   // Save to localStorage when settings change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
-      console.error('Failed to save app settings:', error)
+      console.error("Failed to save app settings:", error);
     }
-  }, [settings])
+  }, [settings]);
 
   const updatePendingSettings = (newSettings: Partial<AppSettings>) => {
-    setPendingSettings((prev) => ({ ...prev, ...newSettings }))
-  }
+    setPendingSettings((prev) => ({ ...prev, ...newSettings }));
+  };
 
   const applySettingsFunc = () => {
-    setSettings(pendingSettings)
-  }
+    setSettings(pendingSettings);
+  };
 
   const resetSettings = () => {
-    setSettings(DEFAULT_SETTINGS)
-    setPendingSettings(DEFAULT_SETTINGS)
-  }
+    setSettings(DEFAULT_SETTINGS);
+    setPendingSettings(DEFAULT_SETTINGS);
+  };
 
   const resetPendingSettings = () => {
-    setPendingSettings(settings)
-  }
+    setPendingSettings(settings);
+  };
 
   return (
-    <AppSettingsContext.Provider value={{ 
-      settings, 
-      pendingSettings,
-      updatePendingSettings, 
-      applySettings: applySettingsFunc,
-      resetSettings,
-      resetPendingSettings
-    }}>
+    <AppSettingsContext.Provider
+      value={{
+        settings,
+        pendingSettings,
+        updatePendingSettings,
+        applySettings: applySettingsFunc,
+        resetSettings,
+        resetPendingSettings,
+      }}
+    >
       {children}
     </AppSettingsContext.Provider>
-  )
+  );
 }
 
 export function useAppSettings() {
-  const context = useContext(AppSettingsContext)
+  const context = useContext(AppSettingsContext);
   if (context === undefined) {
-    throw new Error('useAppSettings must be used within an AppSettingsProvider')
+    throw new Error(
+      "useAppSettings must be used within an AppSettingsProvider"
+    );
   }
-  return context
+  return context;
 }

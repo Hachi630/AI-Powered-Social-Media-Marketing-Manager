@@ -1,11 +1,27 @@
-// API base URL - using Vite proxy (no CORS issues)
-const API_URL = '/api/auth'
+// API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = `${BASE_API_URL}/api/auth`
+
+// Company data structure for multi-company support
+export interface CompanyData {
+  id: string
+  name: string
+  brandName: string
+  industry: string
+  toneOfVoice: string
+  customTone: string
+  knowledgeProducts: string[]
+  targetAudience: string[]
+  companyDescription: string
+  brandLogoUrl?: string
+}
 
 export interface User {
   id: string
   email: string
   name?: string
   brandName?: string
+  brandLogoUrl?: string
   phone?: string
   birthday?: string
   gender?: string
@@ -16,6 +32,7 @@ export interface User {
   toneOfVoice?: string
   knowledgeProducts?: string[]
   targetAudience?: string[]
+  companies?: CompanyData[]
   authProvider?: 'local' | 'google'
   createdAt: string
 }

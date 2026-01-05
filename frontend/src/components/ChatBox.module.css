@@ -379,7 +379,59 @@
   background-color: #ffffff !important;
   border: 1px solid var(--border-color, #e0e0e0) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-  transition: box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease, position 0.3s ease, bottom 0.3s ease;
+  position: relative;
+}
+
+/* Fixed at bottom when there are messages (desktop only) */
+@media (min-width: 768px) {
+  .chatCardFixed {
+    position: fixed !important;
+    bottom: 32px !important;
+    /* Center within content area (after sidebar) */
+    /* Sidebar is 360px when expanded, content area starts after it */
+    left: 360px !important;
+    right: 0 !important;
+    max-width: 978px !important;
+    width: 978px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    z-index: 100 !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+    transform: none !important;
+  }
+
+  /* When sidebar is collapsed (88px) */
+  :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout-content) .chatCardFixed,
+  :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout) :global(.ant-layout-content) .chatCardFixed {
+    left: 88px !important;
+  }
+
+  /* When sidebar is hidden (tablet breakpoint) */
+  @media (max-width: 991px) {
+    .chatCardFixed {
+      left: 0 !important;
+    }
+  }
+
+  /* Responsive: adjust width on smaller screens */
+  @media (max-width: 1400px) {
+    .chatCardFixed {
+      max-width: calc(100vw - 360px - 48px) !important;
+      width: calc(100vw - 360px - 48px) !important;
+    }
+
+    :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout-content) .chatCardFixed,
+    :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout) :global(.ant-layout-content) .chatCardFixed {
+      max-width: calc(100vw - 88px - 48px) !important;
+      width: calc(100vw - 88px - 48px) !important;
+    }
+  }
+
+  /* Ensure content area has padding bottom when chat is fixed */
+  .chatContainer:has(.chatCardFixed) {
+    padding-bottom: 120px !important;
+  }
 }
 
 .chatCard:hover {

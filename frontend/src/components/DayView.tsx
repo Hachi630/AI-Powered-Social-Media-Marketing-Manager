@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import styles from './DayView.module.css';
 import { CalendarItem } from '../services/calendarService';
+import PlatformIcon from './PlatformIcon';
 
 interface DayViewProps {
   currentDate: Dayjs;
@@ -22,7 +22,7 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
   // Update current time every minute
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(dayjs()), 60000);
-    
+
     // Scroll to current time on mount
     if (scrollRef.current) {
       const currentHour = dayjs().hour();
@@ -51,7 +51,7 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
   // Calculate item position and height based on time
   const getItemStyle = (item: CalendarItem) => {
     if (!item.time) return {};
-    
+
     const [hours, minutes] = item.time.split(':').map(Number);
     const top = (hours + minutes / 60) * CELL_HEIGHT;
     const height = 60; // Default 1 hour duration
@@ -91,16 +91,16 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
         <div className={styles.dayColumn}>
           {/* Horizontal Grid Lines */}
           {HOURS.map(hour => (
-            <div 
-              key={`line-${hour}`} 
-              className={styles.gridLine} 
-              style={{ top: hour * CELL_HEIGHT }} 
+            <div
+              key={`line-${hour}`}
+              className={styles.gridLine}
+              style={{ top: hour * CELL_HEIGHT }}
             />
           ))}
 
           {/* Current Time Indicator */}
           {isToday && (
-            <div 
+            <div
               className={styles.currentTimeIndicator}
               style={{ top: getCurrentTimePosition() }}
             >
@@ -119,7 +119,10 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
               style={getItemStyle(item)}
               onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
             >
-              <div className={styles.eventTitle}>{item.title}</div>
+              <div className={styles.eventTitle}>
+                <PlatformIcon platform={item.platform} style={{ marginRight: 4, fontSize: '12px', verticalAlign: 'text-top' }} />
+                {item.title}
+              </div>
               <div className={styles.eventTime}>{item.time}</div>
             </div>
           ))}

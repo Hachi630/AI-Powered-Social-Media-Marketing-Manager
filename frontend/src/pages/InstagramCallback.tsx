@@ -71,7 +71,7 @@ export default function InstagramCallback() {
         // The backend will exchange the code for tokens and save them
         const API_URL = import.meta.env.VITE_API_URL || ''
         const response = await fetch(
-          `${API_URL}/api/social/instagram/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
+          `${API_URL}/api/instagram/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
           {
             method: 'GET',
             headers: {

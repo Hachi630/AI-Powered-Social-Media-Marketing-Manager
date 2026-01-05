@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // Server configuration (only used in development mode)
+    // In production, VITE_API_URL environment variable should be set
+    // and the frontend will make direct API calls to the backend URL
     server: {
       port: 3000,
       proxy: {
@@ -27,11 +30,18 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    // Test configuration
     test: {
       globals: true,
       environment: 'jsdom',
       setupFiles: ['./src/__tests__/setup.ts'],
       include: ['src/**/*.{test,spec}.{js,ts,tsx}'],
+    },
+    // Build configuration
+    build: {
+      outDir: 'dist',
+      sourcemap: false,
+      minify: 'esbuild',
     },
   }
 })
