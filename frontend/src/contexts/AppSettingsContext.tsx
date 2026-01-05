@@ -319,6 +319,27 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             box-shadow: 0 0 0 2px ${hexToRgba(accentColor, 0.1)} !important;
           }
           
+          /* ===== PERSONAL PROFILE SELECT AND BUTTONS ===== */
+          [class*="personalModal"] .ant-select-focused .ant-select-selector,
+          [class*="personalModal"] .ant-select.ant-select-focused .ant-select-selector,
+          [class*="personalModal"] .ant-select-open .ant-select-selector,
+          [class*="personalModal"] .ant-select.ant-select-open .ant-select-selector {
+            border-color: ${accentColor} !important;
+            box-shadow: 0 0 0 2px ${hexToRgba(accentColor, 0.1)} !important;
+          }
+          
+          [class*="personalModal"] .ant-btn:not(.ant-btn-primary) {
+            border-color: ${accentColor} !important;
+            color: ${accentColor} !important;
+          }
+          
+          [class*="personalModal"] .ant-btn:not(.ant-btn-primary):hover,
+          [class*="personalModal"] .ant-btn:not(.ant-btn-primary):focus {
+            border-color: ${accentColor} !important;
+            color: ${accentColor} !important;
+            background-color: ${hexToRgba(accentColor, 0.1)} !important;
+          }
+          
           /* ===== CHATBOX SPECIFIC ===== */
           .userMessage .messageContent {
             background-color: ${accentColor} !important;

@@ -131,12 +131,12 @@
 }
 
 .nameInput:focus {
-  border-bottom-color: var(--primary-color, #646cff) !important;
+  border-bottom-color: var(--accent-color, #667eea) !important;
   box-shadow: none !important;
 }
 
 [data-theme="warm"] .nameInput:focus {
-  border-bottom-color: #AE906E !important;
+  border-bottom-color: var(--accent-color, #ae906e) !important;
 }
 
 .brandName {
@@ -162,12 +162,12 @@
 }
 
 .brandInput:focus {
-  border-bottom-color: var(--primary-color, #646cff) !important;
+  border-bottom-color: var(--accent-color, #667eea) !important;
   box-shadow: none !important;
 }
 
 [data-theme="warm"] .brandInput:focus {
-  border-bottom-color: #AE906E !important;
+  border-bottom-color: var(--accent-color, #ae906e) !important;
 }
 
 .editButtonSection {
@@ -302,40 +302,108 @@
 }
 
 /* Ensure all Input and Select have white background */
-:global(.ant-input),
-:global(.ant-input-affix-wrapper),
-:global(.ant-select-selector),
-:global(.ant-picker) {
+.personalModal :global(.ant-input),
+.personalModal :global(.ant-input-affix-wrapper),
+.personalModal :global(.ant-select-selector),
+.personalModal :global(.ant-picker) {
   background-color: var(--bg-secondary, #ffffff) !important;
   border: 1px solid var(--border-color, #e0e0e0) !important;
   color: var(--text-primary, #1e1e1e) !important;
   font-family: var(--font-family, 'Inter', sans-serif) !important;
 }
 
-[data-theme="warm"] :global(.ant-input),
-[data-theme="warm"] :global(.ant-input-affix-wrapper),
-[data-theme="warm"] :global(.ant-select-selector),
-[data-theme="warm"] :global(.ant-picker) {
+[data-theme="warm"] .personalModal :global(.ant-input),
+[data-theme="warm"] .personalModal :global(.ant-input-affix-wrapper),
+[data-theme="warm"] .personalModal :global(.ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-picker) {
   background-color: #FAF6EA !important;
   border: 1px solid #E1DBC3 !important;
   color: #908066 !important;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
 }
 
-:global(.ant-input):focus,
-:global(.ant-input-affix-wrapper):focus,
-:global(.ant-select-focused .ant-select-selector),
-:global(.ant-picker-focused) {
+.personalModal :global(.ant-input):focus,
+.personalModal :global(.ant-input-affix-wrapper):focus,
+.personalModal :global(.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select-focused .ant-select-selector:hover),
+.personalModal :global(.ant-picker-focused) {
   background-color: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--primary-color, #646cff) !important;
+  border-color: var(--accent-color, #667eea) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
 }
 
-[data-theme="warm"] :global(.ant-input):focus,
-[data-theme="warm"] :global(.ant-input-affix-wrapper):focus,
-[data-theme="warm"] :global(.ant-select-focused .ant-select-selector),
-[data-theme="warm"] :global(.ant-picker-focused) {
+[data-theme="warm"] .personalModal :global(.ant-input):focus,
+[data-theme="warm"] .personalModal :global(.ant-input-affix-wrapper):focus,
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector:hover),
+[data-theme="warm"] .personalModal :global(.ant-picker-focused) {
   background-color: #FAF6EA !important;
-  border-color: #AE906E !important;
+  border-color: var(--accent-color, #ae906e) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
+}
+
+/* Additional Select focus styles for better coverage - Higher priority */
+.personalModal :global(.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select-focused .ant-select-selector:hover),
+.personalModal :global(.ant-select.ant-select-focused .ant-select-selector:hover),
+.personalModal :global(.ant-select-open .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-open .ant-select-selector),
+.personalModal :global(.ant-select-focused),
+.personalModal :global(.ant-select.ant-select-focused) {
+  border-color: var(--accent-color, #667eea) !important;
+}
+
+.personalModal :global(.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select-open .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-open .ant-select-selector) {
+  border-color: var(--accent-color, #667eea) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector:hover),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused .ant-select-selector:hover),
+[data-theme="warm"] .personalModal :global(.ant-select-open .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-open .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-focused),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused) {
+  border-color: var(--accent-color, #ae906e) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-open .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-open .ant-select-selector) {
+  border-color: var(--accent-color, #ae906e) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
+}
+
+/* Cancel button styles */
+.personalModal :global(.ant-btn:not(.ant-btn-primary)) {
+  border-color: var(--accent-color, #667eea) !important;
+  color: var(--accent-color, #667eea) !important;
+}
+
+.personalModal :global(.ant-btn:not(.ant-btn-primary):hover),
+.personalModal :global(.ant-btn:not(.ant-btn-primary):focus) {
+  border-color: var(--accent-color, #667eea) !important;
+  color: var(--accent-color, #667eea) !important;
+  background-color: var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-btn:not(.ant-btn-primary)) {
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-btn:not(.ant-btn-primary):hover),
+[data-theme="warm"] .personalModal :global(.ant-btn:not(.ant-btn-primary):focus) {
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
+  background-color: var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
 }
 
 /* Upload component styles */
