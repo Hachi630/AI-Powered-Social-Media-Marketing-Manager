@@ -62,7 +62,7 @@ const UserSchema: Schema = new Schema(
     },
     password: {
       type: String,
-      required: function(this: IUser) {
+      required: function (this: IUser) {
         // Password is required only if user doesn't have googleId
         // If user has googleId, they are using Google OAuth and password is not required
         return !this.googleId
@@ -111,10 +111,6 @@ const UserSchema: Schema = new Schema(
       trim: true,
     },
     aboutMe: {
-      type: String,
-      trim: true,
-    },
-    avatar: {
       type: String,
       trim: true,
     },
@@ -187,7 +183,7 @@ const UserSchema: Schema = new Schema(
       }],
       default: [],
       validate: {
-        validator: function(companies: ICompanyData[]) {
+        validator: function (companies: ICompanyData[]) {
           return companies.length <= 10
         },
         message: 'Maximum 10 companies allowed',
