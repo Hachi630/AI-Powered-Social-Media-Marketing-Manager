@@ -340,6 +340,27 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
             background-color: ${hexToRgba(accentColor, 0.1)} !important;
           }
           
+          /* ===== PERSONAL PROFILE DATEPICKER ===== */
+          [class*="personalModal"] .ant-picker-focused,
+          [class*="personalModal"] .ant-picker.ant-picker-focused,
+          [class*="personalModal"] .ant-picker-open {
+            border-color: ${accentColor} !important;
+            box-shadow: 0 0 0 2px ${hexToRgba(accentColor, 0.1)} !important;
+          }
+          
+          /* DatePicker dropdown z-index */
+          .ant-picker-dropdown {
+            z-index: 1050 !important;
+          }
+          
+          .ant-picker-panel-container {
+            z-index: 1050 !important;
+          }
+          
+          .ant-picker-panel {
+            z-index: 1050 !important;
+          }
+          
           /* ===== CHATBOX SPECIFIC ===== */
           .userMessage .messageContent {
             background-color: ${accentColor} !important;
