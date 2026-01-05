@@ -409,7 +409,7 @@ export default function BrandProfile({
         toneOfVoice,
         knowledgeProducts,
         targetAudience: audienceTags,
-        companyDescription,
+        // Note: companyDescription is stored locally only, not sent to backend
       });
 
       if (response.success && response.user) {

@@ -99,7 +99,11 @@ export async function exchangeCodeForToken(code: string): Promise<{
   })
 
   try {
-    const response = await axios.get(
+    const response = await axios.get<{
+      access_token: string;
+      token_type?: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`
     )
 
@@ -133,7 +137,10 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<{
   })
 
   try {
-    const response = await axios.get(
+    const response = await axios.get<{
+      access_token: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`
     )
 
@@ -163,7 +170,20 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
 }>> {
   try {
     console.log('[Instagram Service] Requesting Facebook Pages with Instagram info...')
-    const pagesResponse = await axios.get(
+    const pagesResponse = await axios.get<{
+      data?: Array<{
+        id: string;
+        name: string;
+        category?: string;
+        access_token: string;
+        tasks?: string[];
+      }>;
+      error?: {
+        message: string;
+        type: string;
+        code: number;
+      };
+    }>(
       `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
     )
 
@@ -187,7 +207,14 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
           console.log(`[Instagram Service] Checking Instagram for page: ${page.name} (${page.id})`)
           
           // Try to get Instagram Business Account using page access token
-          const instagramResponse = await axios.get(
+          const instagramResponse = await axios.get<{
+            instagram_business_account?: {
+              id: string;
+            };
+            error?: {
+              message: string;
+            };
+          }>(
             `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`
           )
 
@@ -204,7 +231,10 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
             // Get Instagram account details (account_type is optional, may not be available)
             let instagramUsername: string;
             try {
-              const accountDetailsResponse = await axios.get(
+              const accountDetailsResponse = await axios.get<{
+                username: string;
+                account_type?: string;
+              }>(
                 `https://graph.facebook.com/v18.0/${instagramAccountId}?fields=username,account_type&access_token=${page.access_token}`
               )
               console.log(`[Instagram Service] Instagram account details:`, accountDetailsResponse.data)
@@ -212,7 +242,9 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
             } catch (accountError: any) {
               // If account_type field is not available, try without it
               console.log(`[Instagram Service] Failed to get account_type, trying username only:`, accountError.response?.data || accountError.message)
-              const usernameResponse = await axios.get(
+              const usernameResponse = await axios.get<{
+                username: string;
+              }>(
                 `https://graph.facebook.com/v18.0/${instagramAccountId}?fields=username&access_token=${page.access_token}`
               )
               instagramUsername = usernameResponse.data.username;
@@ -233,7 +265,14 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
             // Try alternative methods to find Instagram account
             try {
               // Method 1: Try nested fields query
-              const pageDetailsResponse = await axios.get(
+              const pageDetailsResponse = await axios.get<{
+                id: string;
+                name: string;
+                instagram_business_account?: {
+                  id: string;
+                  username: string;
+                };
+              }>(
                 `https://graph.facebook.com/v18.0/${page.id}?fields=id,name,instagram_business_account{id,username}&access_token=${page.access_token}`
               )
               console.log(`[Instagram Service] Method 1 - Nested fields:`, {
@@ -261,7 +300,11 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
               // Method 2: Try to query using business_management API
               try {
                 // First, try to get business account ID
-                const businessResponse = await axios.get(
+                const businessResponse = await axios.get<{
+                  business?: {
+                    id: string;
+                  };
+                }>(
                   `https://graph.facebook.com/v18.0/${page.id}?fields=business&access_token=${page.access_token}`
                 )
                 console.log(`[Instagram Service] Method 2a - Business info:`, businessResponse.data)
@@ -269,7 +312,11 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
                 if (businessResponse.data.business) {
                   const businessId = businessResponse.data.business.id
                   // Try to get Instagram accounts for this business
-                  const instagramAccountsResponse = await axios.get(
+                  const instagramAccountsResponse = await axios.get<{
+                    data?: Array<{
+                      id: string;
+                    }>;
+                  }>(
                     `https://graph.facebook.com/v18.0/${businessId}/owned_instagram_accounts?access_token=${page.access_token}`
                   )
                   console.log(`[Instagram Service] Method 2b - Instagram accounts:`, instagramAccountsResponse.data)
@@ -279,13 +326,18 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
                     // Try to get username (account_type may not be available)
                     let instagramUsername: string;
                     try {
-                      const accountDetailsResponse = await axios.get(
+                      const accountDetailsResponse = await axios.get<{
+                        username: string;
+                        account_type?: string;
+                      }>(
                         `https://graph.facebook.com/v18.0/${instagramAccount.id}?fields=username,account_type&access_token=${page.access_token}`
                       )
                       instagramUsername = accountDetailsResponse.data.username;
                     } catch (accountError: any) {
                       // If account_type field is not available, try without it
-                      const usernameResponse = await axios.get(
+                      const usernameResponse = await axios.get<{
+                        username: string;
+                      }>(
                         `https://graph.facebook.com/v18.0/${instagramAccount.id}?fields=username&access_token=${page.access_token}`
                       )
                       instagramUsername = usernameResponse.data.username;
@@ -309,7 +361,11 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
               
               // Method 3: Try using user's access token instead of page token
               try {
-                const userTokenResponse = await axios.get(
+                const userTokenResponse = await axios.get<{
+                  instagram_business_account?: {
+                    id: string;
+                  };
+                }>(
                   `https://graph.facebook.com/v18.0/${page.id}?fields=instagram_business_account&access_token=${accessToken}`
                 )
                 console.log(`[Instagram Service] Method 3 - Using user token:`, {
@@ -322,13 +378,18 @@ export async function getFacebookPagesWithInstagram(accessToken: string): Promis
                   // Try to get username (account_type may not be available)
                   let instagramUsername: string;
                   try {
-                    const accountDetailsResponse = await axios.get(
+                    const accountDetailsResponse = await axios.get<{
+                      username: string;
+                      account_type?: string;
+                    }>(
                       `https://graph.facebook.com/v18.0/${instagramAccountId}?fields=username,account_type&access_token=${accessToken}`
                     )
                     instagramUsername = accountDetailsResponse.data.username;
                   } catch (accountError: any) {
                     // If account_type field is not available, try without it
-                    const usernameResponse = await axios.get(
+                    const usernameResponse = await axios.get<{
+                      username: string;
+                    }>(
                       `https://graph.facebook.com/v18.0/${instagramAccountId}?fields=username&access_token=${accessToken}`
                     )
                     instagramUsername = usernameResponse.data.username;
@@ -408,9 +469,14 @@ export async function getInstagramAccountIdForPage(
     console.log(`[getInstagramAccountIdForPage] Getting Instagram for page: ${pageId}`)
     
     // Method 1: Try standard field query
-    let pageResponse
+    let pageResponse: { data: { instagram_business_account?: { id: string } } } | null = null
     try {
-      pageResponse = await axios.get(
+      pageResponse = await axios.get<{
+        name?: string;
+        instagram_business_account?: {
+          id: string;
+        };
+      }>(
         `https://graph.facebook.com/v18.0/${pageId}?fields=name,instagram_business_account&access_token=${accessToken}`
       )
       console.log(`[getInstagramAccountIdForPage] Method 1 response:`, {
@@ -441,7 +507,11 @@ export async function getInstagramAccountIdForPage(
     if (!pageResponse?.data?.instagram_business_account) {
       try {
         // Get business ID first
-        const businessResponse = await axios.get(
+        const businessResponse = await axios.get<{
+          business?: {
+            id: string;
+          };
+        }>(
           `https://graph.facebook.com/v18.0/${pageId}?fields=business&access_token=${accessToken}`
         )
         console.log(`[getInstagramAccountIdForPage] Method 3a - Business:`, businessResponse.data)
@@ -453,7 +523,11 @@ export async function getInstagramAccountIdForPage(
           // Method 3b: Try to get Instagram accounts using business ID
           // Note: This might require business_management permission
           try {
-            const instagramAccountsResponse = await axios.get(
+            const instagramAccountsResponse = await axios.get<{
+              data?: Array<{
+                id: string;
+              }>;
+            }>(
               `https://graph.facebook.com/v18.0/${businessId}/owned_instagram_accounts?access_token=${accessToken}`
             )
             console.log(`[getInstagramAccountIdForPage] Method 3b - Instagram accounts:`, instagramAccountsResponse.data)

@@ -57,7 +57,11 @@ export async function exchangeCodeForToken(code: string): Promise<{
   })
 
   try {
-    const response = await axios.get(
+    const response = await axios.get<{
+      access_token: string;
+      token_type?: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`
     )
 
@@ -91,7 +95,10 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<{
   })
 
   try {
-    const response = await axios.get(
+    const response = await axios.get<{
+      access_token: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`
     )
 
@@ -117,7 +124,20 @@ export async function getFacebookPages(accessToken: string): Promise<Array<{
 }>> {
   try {
     console.log('[Facebook Service] Requesting Facebook Pages...')
-    const pagesResponse = await axios.get(
+    const pagesResponse = await axios.get<{
+      data?: Array<{
+        id: string;
+        name: string;
+        category?: string;
+        access_token: string;
+        tasks?: string[];
+      }>;
+      error?: {
+        message: string;
+        type: string;
+        code: number;
+      };
+    }>(
       `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
     )
 
@@ -135,7 +155,7 @@ export async function getFacebookPages(accessToken: string): Promise<Array<{
     console.log('[Facebook Service] Found', pagesResponse.data.data.length, 'pages')
 
     // Return pages without Instagram checking (Facebook-only service)
-    return pagesResponse.data.data.map((page: any) => ({
+    return pagesResponse.data.data.map((page) => ({
       id: page.id,
       name: page.name,
       category: page.category || '',
@@ -173,7 +193,10 @@ export async function shareToFacebook(
 
     // If imageUrl is provided, create a post with photo
     if (content.imageUrl) {
-      const photoResponse = await axios.post(
+      const photoResponse = await axios.post<{
+        id: string;
+        post_id?: string;
+      }>(
         `https://graph.facebook.com/v24.0/${pageId}/photos`,
         {
           url: content.imageUrl,
@@ -187,7 +210,9 @@ export async function shareToFacebook(
         : undefined
     } else {
       // Create a text-only post
-      const postResponse = await axios.post(
+      const postResponse = await axios.post<{
+        id: string;
+      }>(
         `https://graph.facebook.com/v24.0/${pageId}/feed`,
         {
           message: content.text,

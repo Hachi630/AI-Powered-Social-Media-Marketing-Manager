@@ -22,43 +22,36 @@ const oauthStates = new Map<string, string>();
  * @route   GET /api/facebook/auth
  * @access  Private
  */
-router.get(
-  "/auth",
-  protect,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const user = req.user;
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      // Generate state for CSRF protection
-      const state = crypto.randomBytes(32).toString("hex");
-      oauthStates.set(
-        state,
-        JSON.stringify({ userId: user._id.toString() })
-      );
-
-      // Generate Facebook OAuth URL (without business_management scope)
-      // This allows personal accounts to connect and use Facebook sharing
-      const authUrl = getFacebookAuthUrl(state);
-
-      res.json({
-        success: true,
-        authUrl,
-        state,
-      });
-    } catch (error: any) {
-      console.error("[Facebook OAuth] Initiation error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to initiate Facebook OAuth",
-      });
+router.get("/auth", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
+
+    // Generate state for CSRF protection
+    const state = crypto.randomBytes(32).toString("hex");
+    oauthStates.set(state, JSON.stringify({ userId: user._id.toString() }));
+
+    // Generate Facebook OAuth URL (without business_management scope)
+    // This allows personal accounts to connect and use Facebook sharing
+    const authUrl = getFacebookAuthUrl(state);
+
+    res.json({
+      success: true,
+      authUrl,
+      state,
+    });
+  } catch (error: any) {
+    console.error("[Facebook OAuth] Initiation error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to initiate Facebook OAuth",
+    });
   }
-);
+});
 
 /**
  * @desc    Facebook OAuth callback (independent from Instagram)
@@ -145,10 +138,7 @@ router.get("/callback", async (req: Request, res: Response) => {
       userId = stateData as string;
     }
 
-    console.log(
-      "[Facebook OAuth Callback] State verified, userId:",
-      userId
-    );
+    console.log("[Facebook OAuth Callback] State verified, userId:", userId);
 
     // Delete state AFTER successful parsing to prevent reuse
     oauthStates.delete(stateString);
@@ -170,9 +160,7 @@ router.get("/callback", async (req: Request, res: Response) => {
     console.log("[Facebook OAuth Callback] Got short-lived token");
 
     // Exchange for long-lived token
-    console.log(
-      "[Facebook OAuth Callback] Exchanging for long-lived token..."
-    );
+    console.log("[Facebook OAuth Callback] Exchanging for long-lived token...");
     const longLivedToken = await getLongLivedToken(tokenData.accessToken);
     console.log("[Facebook OAuth Callback] Got long-lived token");
 
@@ -190,15 +178,13 @@ router.get("/callback", async (req: Request, res: Response) => {
 
       try {
         // Get page name
-        const pageNameResponse = await axios.get(
+        const pageNameResponse = await axios.get<{ name: string }>(
           `https://graph.facebook.com/v18.0/${firstPage.id}?fields=name&access_token=${firstPage.accessToken || longLivedToken.accessToken}`
         );
 
         // Calculate expiration date
         const expiresAt = new Date();
-        expiresAt.setSeconds(
-          expiresAt.getSeconds() + longLivedToken.expiresIn
-        );
+        expiresAt.setSeconds(expiresAt.getSeconds() + longLivedToken.expiresIn);
 
         // Save to user - Facebook only
         if (!user.socialConnections) {
@@ -216,13 +202,10 @@ router.get("/callback", async (req: Request, res: Response) => {
         // IMPORTANT: Do NOT touch Instagram connection - keep them independent
         await user.save();
 
-        console.log(
-          "[Facebook OAuth Callback] Saved Facebook connection:",
-          {
-            userId: user._id,
-            facebookPageId: firstPage.id,
-          }
-        );
+        console.log("[Facebook OAuth Callback] Saved Facebook connection:", {
+          userId: user._id,
+          facebookPageId: firstPage.id,
+        });
 
         const clientUrl =
           process.env.CLIENT_URL ||
@@ -294,213 +277,205 @@ router.get("/callback", async (req: Request, res: Response) => {
  * @route   POST /api/facebook/share
  * @access  Private
  */
-router.post(
-  "/share",
-  protect,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const user = req.user;
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
+router.post("/share", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-      // IMPORTANT: Reload user from database to get latest socialConnections
-      const freshUser = await User.findById(user._id);
-      if (!freshUser) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
+    // IMPORTANT: Reload user from database to get latest socialConnections
+    const freshUser = await User.findById(user._id);
+    if (!freshUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-      const { calendarItemId, content, imageUrl } = req.body;
+    const { calendarItemId, content, imageUrl } = req.body;
 
-      console.log("[Facebook Share] Request received:", {
-        userId: freshUser._id,
-        calendarItemId,
-        hasContent: !!content,
-        hasImageUrl: !!imageUrl,
-        socialConnections: freshUser.socialConnections ? "exists" : "null",
-        facebookToken: freshUser.socialConnections?.facebook?.accessToken
-          ? "exists"
-          : "missing",
-      });
+    console.log("[Facebook Share] Request received:", {
+      userId: freshUser._id,
+      calendarItemId,
+      hasContent: !!content,
+      hasImageUrl: !!imageUrl,
+      socialConnections: freshUser.socialConnections ? "exists" : "null",
+      facebookToken: freshUser.socialConnections?.facebook?.accessToken
+        ? "exists"
+        : "missing",
+    });
 
-      if (!calendarItemId || !content) {
-        return res.status(400).json({
-          success: false,
-          message: "calendarItemId and content are required",
-        });
-      }
-
-      // Check if user has Facebook connected
-      const facebook = freshUser.socialConnections?.facebook;
-
-      if (!facebook?.accessToken || !facebook?.userId) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Facebook account not connected. Please connect your Facebook Page first.",
-          requiresAuth: true,
-        });
-      }
-
-      // Check if token is expired
-      if (facebook.expiresAt && new Date() > facebook.expiresAt) {
-        return res.status(401).json({
-          success: false,
-          message:
-            "Facebook access token expired. Please reconnect your account.",
-          requiresAuth: true,
-        });
-      }
-
-      // Use the saved token directly (should already be a Page token)
-      // If it's a user token, we would need to exchange it, but since we save Page tokens
-      // during OAuth, we can use it directly
-      const pageAccessToken = facebook.accessToken;
-      
-      // Note: If the token is a user token and /me/accounts fails, we'll try using it directly
-      // The token should already be a Page token saved during OAuth callback
-
-      // Share to Facebook using Graph API
-      const result = await shareToFacebook(
-        facebook.userId,
-        pageAccessToken,
-        {
-          text: content,
-          imageUrl: imageUrl,
-        }
-      );
-
-      res.json({
-        success: true,
-        message: "Successfully shared to Facebook",
-        postId: result.postId,
-        permalink: result.permalink,
-      });
-    } catch (error: any) {
-      console.error("Facebook share error:", error);
-
-      // Check if it's an authentication error
-      if (
-        error.response?.status === 401 ||
-        error.response?.data?.error?.code === 190
-      ) {
-        return res.status(401).json({
-          success: false,
-          message: "Facebook access token expired or invalid. Please reconnect your account.",
-          requiresAuth: true,
-        });
-      }
-
-      res.status(500).json({
+    if (!calendarItemId || !content) {
+      return res.status(400).json({
         success: false,
-        message:
-          error.response?.data?.error?.message ||
-          error.message ||
-          "Failed to share to Facebook",
+        message: "calendarItemId and content are required",
       });
     }
+
+    // Check if user has Facebook connected
+    const facebook = freshUser.socialConnections?.facebook;
+
+    if (!facebook?.accessToken || !facebook?.userId) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Facebook account not connected. Please connect your Facebook Page first.",
+        requiresAuth: true,
+      });
+    }
+
+    // Check if token is expired
+    if (facebook.expiresAt && new Date() > facebook.expiresAt) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Facebook access token expired. Please reconnect your account.",
+        requiresAuth: true,
+      });
+    }
+
+    // Use the saved token directly (should already be a Page token)
+    // If it's a user token, we would need to exchange it, but since we save Page tokens
+    // during OAuth, we can use it directly
+    const pageAccessToken = facebook.accessToken;
+
+    // Note: If the token is a user token and /me/accounts fails, we'll try using it directly
+    // The token should already be a Page token saved during OAuth callback
+
+    // Share to Facebook using Graph API
+    const result = await shareToFacebook(facebook.userId, pageAccessToken, {
+      text: content,
+      imageUrl: imageUrl,
+    });
+
+    res.json({
+      success: true,
+      message: "Successfully shared to Facebook",
+      postId: result.postId,
+      permalink: result.permalink,
+    });
+  } catch (error: any) {
+    console.error("Facebook share error:", error);
+
+    // Check if it's an authentication error
+    if (
+      error.response?.status === 401 ||
+      error.response?.data?.error?.code === 190
+    ) {
+      return res.status(401).json({
+        success: false,
+        message:
+          "Facebook access token expired or invalid. Please reconnect your account.",
+        requiresAuth: true,
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message:
+        error.response?.data?.error?.message ||
+        error.message ||
+        "Failed to share to Facebook",
+    });
   }
-);
+});
 
 /**
  * @desc    Get Facebook connection status
  * @route   GET /api/facebook/status
  * @access  Private
  */
-router.get(
-  "/status",
-  protect,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const user = req.user;
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
+router.get("/status", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-      // Reload user from database to get latest socialConnections
-      const freshUser = await User.findById(user._id);
-      if (!freshUser) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
+    // Reload user from database to get latest socialConnections
+    const freshUser = await User.findById(user._id);
+    if (!freshUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-      const facebook = freshUser.socialConnections?.facebook;
+    const facebook = freshUser.socialConnections?.facebook;
 
-      // Check if Facebook connection exists and has valid data
-      const hasValidFacebook =
-        facebook &&
-        facebook.accessToken &&
-        facebook.userId &&
-        Object.keys(facebook).length > 0;
+    // Check if Facebook connection exists and has valid data
+    const hasValidFacebook =
+      facebook &&
+      facebook.accessToken &&
+      facebook.userId &&
+      Object.keys(facebook).length > 0;
 
-      if (!hasValidFacebook) {
-        console.log("[Facebook Status] No valid Facebook connection found");
-        return res.json({
-          success: true,
-          connected: false,
-          message:
-            "Facebook account not connected. Please connect your Facebook Page first.",
-        });
-      }
-
-      // Check if token is expired
-      const isExpired = facebook.expiresAt && new Date() > facebook.expiresAt;
-
-      if (isExpired) {
-        return res.json({
-          success: true,
-          connected: false,
-          message: "Facebook token has expired. Please reconnect your account.",
-        });
-      }
-
-      // Get Facebook Page information
-      let profile = null;
-      try {
-        const pageResponse = await axios.get(
-          `https://graph.facebook.com/v18.0/${facebook.userId}?fields=name,picture&access_token=${facebook.accessToken}`
-        );
-        profile = {
-          id: facebook.userId,
-          name: pageResponse.data.name || null,
-          picture: pageResponse.data.picture?.data?.url || null,
-        };
-      } catch (profileError: any) {
-        console.warn(
-          "[Facebook Status] Failed to get page profile:",
-          profileError.response?.data || profileError.message
-        );
-        // Still return connected status even if we can't get profile
-        profile = {
-          id: facebook.userId,
-          name: null,
-          picture: null,
-        };
-      }
-
-      res.json({
+    if (!hasValidFacebook) {
+      console.log("[Facebook Status] No valid Facebook connection found");
+      return res.json({
         success: true,
-        connected: true,
-        userId: facebook.userId,
-        expiresAt: facebook.expiresAt,
-        profile: profile,
-      });
-    } catch (error: any) {
-      console.error("Facebook status error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to get Facebook status",
+        connected: false,
+        message:
+          "Facebook account not connected. Please connect your Facebook Page first.",
       });
     }
+
+    // Check if token is expired
+    const isExpired = facebook.expiresAt && new Date() > facebook.expiresAt;
+
+    if (isExpired) {
+      return res.json({
+        success: true,
+        connected: false,
+        message: "Facebook token has expired. Please reconnect your account.",
+      });
+    }
+
+    // Get Facebook Page information
+    let profile = null;
+    try {
+      const pageResponse = await axios.get<{
+        name?: string;
+        picture?: { data?: { url?: string } };
+      }>(
+        `https://graph.facebook.com/v18.0/${facebook.userId}?fields=name,picture&access_token=${facebook.accessToken}`
+      );
+      profile = {
+        id: facebook.userId,
+        name: pageResponse.data.name || null,
+        picture: pageResponse.data.picture?.data?.url || null,
+      };
+    } catch (profileError: any) {
+      console.warn(
+        "[Facebook Status] Failed to get page profile:",
+        profileError.response?.data || profileError.message
+      );
+      // Still return connected status even if we can't get profile
+      profile = {
+        id: facebook.userId,
+        name: null,
+        picture: null,
+      };
+    }
+
+    res.json({
+      success: true,
+      connected: true,
+      userId: facebook.userId,
+      expiresAt: facebook.expiresAt,
+      profile: profile,
+    });
+  } catch (error: any) {
+    console.error("Facebook status error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to get Facebook status",
+    });
   }
-);
+});
 
 /**
  * @desc    Disconnect Facebook account
@@ -573,15 +548,12 @@ router.delete(
       });
     } catch (error: any) {
       console.error("[Facebook Disconnect] Error:", error);
-      res
-        .status(500)
-        .json({
-          success: false,
-          message: error.message || "Failed to disconnect Facebook account",
-        });
+      res.status(500).json({
+        success: false,
+        message: error.message || "Failed to disconnect Facebook account",
+      });
     }
   }
 );
 
 export default router;
-

@@ -689,12 +689,17 @@ router.post(
       // Get Page access token for posting
       let pageAccessToken = accessToken;
       try {
-        const pagesResponse = await axios.get(
+        const pagesResponse = await axios.get<{
+          data?: Array<{
+            id: string;
+            access_token?: string;
+          }>;
+        }>(
           `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
         );
         if (pagesResponse.data.data && pagesResponse.data.data.length > 0) {
           const targetPage = pagesResponse.data.data.find(
-            (page: any) => page.id === pageId
+            (page) => page.id === pageId
           );
           if (targetPage && targetPage.access_token) {
             pageAccessToken = targetPage.access_token;
@@ -827,7 +832,9 @@ router.get(
       let profile = null;
       try {
         // Only request username field, account_type may not be available
-        const profileResponse = await axios.get(
+        const profileResponse = await axios.get<{
+          username?: string;
+        }>(
           `https://graph.facebook.com/v18.0/${instagram.userId}?fields=username&access_token=${instagram.accessToken}`
         );
 

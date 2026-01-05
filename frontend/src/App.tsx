@@ -205,10 +205,10 @@ function AppContent() {
         path="/personal"
         element={
           <Personal
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
+            open={true}
+            onClose={() => {}}
             user={user}
+            onLoginSuccess={handleLoginSuccess}
           />
         }
       />
