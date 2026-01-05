@@ -1,4 +1,6 @@
 import axios from 'axios'
+import FormData from 'form-data'
+import fs from 'fs'
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET
@@ -57,11 +59,7 @@ export async function exchangeCodeForToken(code: string): Promise<{
   })
 
   try {
-    const response = await axios.get<{
-      access_token: string;
-      token_type?: string;
-      expires_in?: number;
-    }>(
+    const response = await axios.get(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`
     )
 
@@ -95,10 +93,7 @@ export async function getLongLivedToken(shortLivedToken: string): Promise<{
   })
 
   try {
-    const response = await axios.get<{
-      access_token: string;
-      expires_in?: number;
-    }>(
+    const response = await axios.get(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`
     )
 
@@ -124,20 +119,7 @@ export async function getFacebookPages(accessToken: string): Promise<Array<{
 }>> {
   try {
     console.log('[Facebook Service] Requesting Facebook Pages...')
-    const pagesResponse = await axios.get<{
-      data?: Array<{
-        id: string;
-        name: string;
-        category?: string;
-        access_token: string;
-        tasks?: string[];
-      }>;
-      error?: {
-        message: string;
-        type: string;
-        code: number;
-      };
-    }>(
+    const pagesResponse = await axios.get(
       `https://graph.facebook.com/v18.0/me/accounts?access_token=${accessToken}`
     )
 
@@ -155,7 +137,7 @@ export async function getFacebookPages(accessToken: string): Promise<Array<{
     console.log('[Facebook Service] Found', pagesResponse.data.data.length, 'pages')
 
     // Return pages without Instagram checking (Facebook-only service)
-    return pagesResponse.data.data.map((page) => ({
+    return pagesResponse.data.data.map((page: any) => ({
       id: page.id,
       name: page.name,
       category: page.category || '',
@@ -177,6 +159,12 @@ export async function shareToFacebook(
   content: {
     text: string
     imageUrl?: string
+    imagePath?: string  // Local file path for direct upload
+    videoUrl?: string
+    videoPath?: string  // Local file path for direct upload
+    linkUrl?: string
+    linkName?: string
+    linkDescription?: string
   }
 ): Promise<{
   postId: string
@@ -185,34 +173,103 @@ export async function shareToFacebook(
   try {
     console.log('[Facebook Service] Sharing to Facebook Page:', {
       pageId,
-      hasImage: !!content.imageUrl,
+      hasImage: !!(content.imageUrl || content.imagePath),
+      hasVideo: !!(content.videoUrl || content.videoPath),
+      hasLink: !!content.linkUrl,
     })
 
     let postId: string
     let permalink: string | undefined
 
-    // If imageUrl is provided, create a post with photo
-    if (content.imageUrl) {
-      const photoResponse = await axios.post<{
-        id: string;
-        post_id?: string;
-      }>(
-        `https://graph.facebook.com/v24.0/${pageId}/photos`,
+    // If video is provided, create a post with video
+    if (content.videoPath || content.videoUrl) {
+      // Facebook video upload uses graph-video.facebook.com endpoint
+      if (content.videoPath && fs.existsSync(content.videoPath)) {
+        // Direct file upload using FormData
+        const formData = new FormData()
+        formData.append('file', fs.createReadStream(content.videoPath))
+        formData.append('description', content.text)
+        formData.append('access_token', pageAccessToken)
+
+        const videoResponse = await axios.post(
+          `https://graph-video.facebook.com/v24.0/${pageId}/videos`,
+          formData,
+          {
+            headers: formData.getHeaders(),
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+          }
+        )
+        postId = videoResponse.data.id
+        permalink = `https://www.facebook.com/${postId}`
+      } else if (content.videoUrl) {
+        // Fallback to URL method
+        const videoResponse = await axios.post(
+          `https://graph-video.facebook.com/v24.0/${pageId}/videos`,
+          {
+            file_url: content.videoUrl,
+            description: content.text,
+            access_token: pageAccessToken,
+          }
+        )
+        postId = videoResponse.data.id
+        permalink = `https://www.facebook.com/${postId}`
+      }
+    }
+    // If image is provided, create a post with photo
+    else if (content.imagePath || content.imageUrl) {
+      if (content.imagePath && fs.existsSync(content.imagePath)) {
+        // Direct file upload using FormData
+        const formData = new FormData()
+        formData.append('source', fs.createReadStream(content.imagePath))
+        formData.append('message', content.text)
+        formData.append('access_token', pageAccessToken)
+
+        const photoResponse = await axios.post(
+          `https://graph.facebook.com/v24.0/${pageId}/photos`,
+          formData,
+          {
+            headers: formData.getHeaders(),
+          }
+        )
+        postId = photoResponse.data.id
+        permalink = photoResponse.data.post_id
+          ? `https://www.facebook.com/photo.php?fbid=${postId}`
+          : undefined
+      } else if (content.imageUrl) {
+        // Fallback to URL method (for publicly accessible URLs)
+        const photoResponse = await axios.post(
+          `https://graph.facebook.com/v24.0/${pageId}/photos`,
+          {
+            url: content.imageUrl,
+            message: content.text,
+            access_token: pageAccessToken,
+          }
+        )
+        postId = photoResponse.data.id
+        permalink = photoResponse.data.post_id
+          ? `https://www.facebook.com/photo.php?fbid=${postId}`
+          : undefined
+      }
+    }
+    // If linkUrl is provided, create a link post
+    else if (content.linkUrl) {
+      const linkResponse = await axios.post(
+        `https://graph.facebook.com/v24.0/${pageId}/feed`,
         {
-          url: content.imageUrl,
           message: content.text,
+          link: content.linkUrl,
+          name: content.linkName,
+          description: content.linkDescription,
           access_token: pageAccessToken,
         }
       )
-      postId = photoResponse.data.id
-      permalink = photoResponse.data.post_id
-        ? `https://www.facebook.com/photo.php?fbid=${postId}`
-        : undefined
-    } else {
-      // Create a text-only post
-      const postResponse = await axios.post<{
-        id: string;
-      }>(
+      postId = linkResponse.data.id
+      permalink = `https://www.facebook.com/${postId}`
+    }
+    // Create a text-only post
+    else {
+      const postResponse = await axios.post(
         `https://graph.facebook.com/v24.0/${pageId}/feed`,
         {
           message: content.text,

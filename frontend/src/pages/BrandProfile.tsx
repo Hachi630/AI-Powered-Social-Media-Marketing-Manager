@@ -24,13 +24,17 @@ import {
   Typography,
   message,
   Upload,
+  Dropdown,
 } from "antd";
-import type { UploadFile, UploadProps } from "antd";
+import type { UploadFile, UploadProps, MenuProps } from "antd";
 import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import { MELO_LOGO } from "../constants/assets";
 import styles from "./BrandProfile.module.css";
-import { User, authService } from "../services/authService";
+import { User, authService, CompanyData } from "../services/authService";
+import { uploadService } from "../services/uploadService";
+import { chatService } from "../services/chatService";
+import { PictureOutlined, RobotOutlined } from "@ant-design/icons";
 
 const { Content } = Layout;
 
@@ -49,18 +53,9 @@ const industryOptions = [
   { value: "food", label: "Food & Restaurant" },
 ];
 
-// Company data structure for multi-company support
-interface CompanyData {
-  id: string;
-  name: string;
-  brandName: string;
-  industry: string;
-  toneOfVoice: string;
-  customTone: string;
-  knowledgeProducts: string[];
-  targetAudience: string[];
-  companyDescription: string;
-}
+const initialAudience = ["Yoga lovers", "Interior design enthusiast"];
+
+// CompanyData is now imported from authService
 
 // Default company template
 const createDefaultCompany = (name: string): CompanyData => ({
@@ -73,6 +68,7 @@ const createDefaultCompany = (name: string): CompanyData => ({
   knowledgeProducts: [],
   targetAudience: [],
   companyDescription: "",
+  brandLogoUrl: "",
 });
 
 interface BrandProfileProps {
@@ -102,6 +98,9 @@ export default function BrandProfile({
   const [loading, setLoading] = useState(false);
   const [companyDescription, setCompanyDescription] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string>("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [generatingLogo, setGeneratingLogo] = useState(false);
 
   // Multi-company state management
   const [companies, setCompanies] = useState<CompanyData[]>([]);
@@ -111,74 +110,14 @@ export default function BrandProfile({
   const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
   const [editingCompanyName, setEditingCompanyName] = useState("");
 
-  // Load companies from localStorage on mount
-  useEffect(() => {
-    const savedCompanies = localStorage.getItem("melo_companies");
-    const savedSelectedId = localStorage.getItem("melo_selected_company");
+  // Track if data has been loaded to prevent race conditions
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
-    if (savedCompanies) {
-      const parsed = JSON.parse(savedCompanies) as CompanyData[];
-      if (parsed.length > 0) {
-        setCompanies(parsed);
-
-        // Restore selected company or select first one
-        if (savedSelectedId && parsed.find((c) => c.id === savedSelectedId)) {
-          setSelectedCompanyId(savedSelectedId);
-          loadCompanyData(parsed.find((c) => c.id === savedSelectedId)!);
-        } else {
-          setSelectedCompanyId(parsed[0].id);
-          loadCompanyData(parsed[0]);
-        }
-        return;
-      }
-    }
-
-    // Create default company if none exists
-    const defaultCompany = createDefaultCompany("My Company");
-    setCompanies([defaultCompany]);
-    setSelectedCompanyId(defaultCompany.id);
-    localStorage.setItem("melo_companies", JSON.stringify([defaultCompany]));
-    localStorage.setItem("melo_selected_company", defaultCompany.id);
-  }, []);
-
-  // Load user data on mount and when propUser changes
-  useEffect(() => {
-    const loadUser = async () => {
-      if (isLoggedIn) {
-        const currentUser = await authService.getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
-          // Only load from user if no companies exist (first time)
-          if (companies.length === 0) {
-            setBrandName(currentUser.brandName || "");
-            setIndustry(currentUser.industry || "");
-            const toneOfVoice = currentUser.toneOfVoice || "calm";
-            // Check if tone is a custom tone (not in predefined list)
-            const isCustomTone = !toneButtons.some(
-              (tone) => tone.key === toneOfVoice
-            );
-            if (isCustomTone && toneOfVoice) {
-              setSelectedTone("custom");
-              setCustomTone(toneOfVoice);
-              setShowCustomToneInput(true);
-            } else {
-              setSelectedTone(toneOfVoice);
-              setCustomTone("");
-              setShowCustomToneInput(false);
-            }
-            setKnowledgeProducts(currentUser.knowledgeProducts || []);
-            setAudienceTags(currentUser.targetAudience || []);
-          }
-        }
-      }
-    };
-    loadUser();
-  }, [isLoggedIn, propUser]);
-
-  // Load company data into form
+  // Load company data into form - define before useEffect to avoid reference issues
   const loadCompanyData = (company: CompanyData) => {
-    setBrandName(company.brandName);
-    setIndustry(company.industry);
+    console.log('[BrandProfile] Loading company data:', company.id, company.name);
+    setBrandName(company.brandName || "");
+    setIndustry(company.industry || "");
     const toneOfVoice = company.toneOfVoice || "calm";
     const isCustomTone = !toneButtons.some((tone) => tone.key === toneOfVoice);
     if (isCustomTone && toneOfVoice && toneOfVoice !== "calm") {
@@ -190,10 +129,113 @@ export default function BrandProfile({
       setCustomTone(company.customTone || "");
       setShowCustomToneInput(toneOfVoice === "custom");
     }
-    setKnowledgeProducts(company.knowledgeProducts);
-    setAudienceTags(company.targetAudience);
-    setCompanyDescription(company.companyDescription);
+    setKnowledgeProducts(company.knowledgeProducts || []);
+    setAudienceTags(company.targetAudience || []);
+    setCompanyDescription(company.companyDescription || "");
+    setBrandLogoUrl(company.brandLogoUrl || "");
   };
+
+  // Unified data loading - single useEffect to prevent race conditions
+  useEffect(() => {
+    // Skip if already loaded to prevent duplicate loads
+    if (isDataLoaded) {
+      console.log('[BrandProfile] Data already loaded, skipping');
+      return;
+    }
+
+    const loadAllData = async () => {
+      console.log('[BrandProfile] Starting data load, isLoggedIn:', isLoggedIn);
+
+      if (isLoggedIn) {
+        try {
+          const currentUser = await authService.getCurrentUser();
+          console.log('[BrandProfile] Got user from API:', currentUser?.email);
+
+          if (currentUser) {
+            setUser(currentUser);
+
+            // Check if user has companies in database
+            if (currentUser.companies && currentUser.companies.length > 0) {
+              console.log('[BrandProfile] Loading companies from database:', currentUser.companies.length);
+
+              // Load from database
+              setCompanies(currentUser.companies);
+              // Sync to localStorage
+              localStorage.setItem("melo_companies", JSON.stringify(currentUser.companies));
+
+              const savedSelectedId = localStorage.getItem("melo_selected_company");
+              let companyToLoad: CompanyData;
+
+              if (savedSelectedId && currentUser.companies.find((c) => c.id === savedSelectedId)) {
+                setSelectedCompanyId(savedSelectedId);
+                companyToLoad = currentUser.companies.find((c) => c.id === savedSelectedId)!;
+              } else {
+                setSelectedCompanyId(currentUser.companies[0].id);
+                localStorage.setItem("melo_selected_company", currentUser.companies[0].id);
+                companyToLoad = currentUser.companies[0];
+              }
+
+              // Load company data into form
+              loadCompanyData(companyToLoad);
+              setIsDataLoaded(true);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("[BrandProfile] Error loading data from database:", error);
+        }
+      }
+
+      // Fallback to localStorage
+      console.log('[BrandProfile] Falling back to localStorage');
+      const savedCompanies = localStorage.getItem("melo_companies");
+      const savedSelectedId = localStorage.getItem("melo_selected_company");
+
+      if (savedCompanies) {
+        try {
+          const parsed = JSON.parse(savedCompanies) as CompanyData[];
+          if (parsed.length > 0) {
+            console.log('[BrandProfile] Loaded companies from localStorage:', parsed.length);
+            setCompanies(parsed);
+
+            let companyToLoad: CompanyData;
+            if (savedSelectedId && parsed.find((c) => c.id === savedSelectedId)) {
+              setSelectedCompanyId(savedSelectedId);
+              companyToLoad = parsed.find((c) => c.id === savedSelectedId)!;
+            } else {
+              setSelectedCompanyId(parsed[0].id);
+              companyToLoad = parsed[0];
+            }
+
+            loadCompanyData(companyToLoad);
+            setIsDataLoaded(true);
+            return;
+          }
+        } catch (e) {
+          console.error('[BrandProfile] Error parsing localStorage companies:', e);
+        }
+      }
+
+      // Create default company if none exists
+      console.log('[BrandProfile] Creating default company');
+      const defaultCompany = createDefaultCompany("My Company");
+      setCompanies([defaultCompany]);
+      setSelectedCompanyId(defaultCompany.id);
+      localStorage.setItem("melo_companies", JSON.stringify([defaultCompany]));
+      localStorage.setItem("melo_selected_company", defaultCompany.id);
+      loadCompanyData(defaultCompany);
+      setIsDataLoaded(true);
+    };
+
+    loadAllData();
+  }, [isLoggedIn, isDataLoaded]);
+
+  // Update user when propUser changes (for header updates)
+  useEffect(() => {
+    if (propUser) {
+      setUser(propUser);
+    }
+  }, [propUser]);
 
   // Save current form data to selected company
   const saveCurrentToCompany = () => {
@@ -217,6 +259,7 @@ export default function BrandProfile({
           knowledgeProducts,
           targetAudience: audienceTags,
           companyDescription,
+          brandLogoUrl,
         };
       }
       return company;
@@ -244,6 +287,12 @@ export default function BrandProfile({
 
   // Add a new company - directly creates a new blank company
   const handleAddCompany = () => {
+    // Check company limit (max 10)
+    if (companies.length >= 10) {
+      message.warning("Maximum 10 companies allowed. Please delete a company before adding a new one.");
+      return;
+    }
+
     // Save current data first
     if (selectedCompanyId) {
       saveCurrentToCompany();
@@ -391,35 +440,155 @@ export default function BrandProfile({
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  // Handle logo upload
+  const handleLogoUpload = async (file: File) => {
+    setUploadingLogo(true);
+    try {
+      const response = await uploadService.uploadImage(file);
+      if (response.success && response.imageUrl) {
+        setBrandLogoUrl(response.imageUrl);
+        saveCurrentToCompany();
+        message.success("Logo uploaded successfully");
+      } else {
+        message.error(response.message || "Failed to upload logo");
+      }
+    } catch (error) {
+      message.error("Failed to upload logo");
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
+  // Handle logo generation
+  const handleGenerateLogo = async () => {
+    if (!brandName.trim()) {
+      message.warning("Please enter a brand name first");
+      return;
+    }
+
+    setGeneratingLogo(true);
+    try {
+      const industryText = industry ? `, a ${industry} company` : "";
+      const prompt = `Create a professional brand logo for ${brandName}${industryText}. The logo should be simple, modern, minimalist, and suitable for digital use. Use a clean design with good contrast.`;
+
+      const response = await chatService.generateImage(prompt);
+      if (response.success && response.imageUrl) {
+        setBrandLogoUrl(response.imageUrl);
+        saveCurrentToCompany();
+        message.success("Logo generated successfully");
+      } else {
+        message.error(response.message || "Failed to generate logo");
+      }
+    } catch (error) {
+      message.error("Failed to generate logo");
+    } finally {
+      setGeneratingLogo(false);
+    }
+  };
+
+  // Handle logo removal
+  const handleRemoveLogo = () => {
+    setBrandLogoUrl("");
+    saveCurrentToCompany();
+    message.success("Logo removed");
+  };
+
+  // Logo menu items for dropdown
+  const logoMenuItems: MenuProps['items'] = [
+    {
+      key: 'upload',
+      label: 'Upload Logo',
+      icon: <UploadOutlined />,
+      onClick: () => {
+        // Trigger file input click
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (file) {
+            handleLogoUpload(file);
+          }
+        };
+        input.click();
+      },
+    },
+    {
+      key: 'generate',
+      label: 'Generate Logo',
+      icon: <RobotOutlined />,
+      onClick: handleGenerateLogo,
+      disabled: !brandName.trim(),
+    },
+    ...(brandLogoUrl ? [{
+      key: 'remove',
+      label: 'Remove Logo',
+      icon: <DeleteOutlined />,
+      danger: true,
+      onClick: handleRemoveLogo,
+    }] : []),
+  ];
+
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
+      if (!selectedCompanyId) {
+        message.error("Please select a company first");
+        setLoading(false);
+        return;
+      }
+
       // Use custom tone if custom is selected and has value, otherwise use selected tone
       const toneOfVoice =
         selectedTone === "custom" && customTone.trim()
           ? customTone.trim()
           : selectedTone;
 
-      // Save to local company data
-      saveCurrentToCompany();
+      // Build updated companies array directly from current form values
+      // This ensures we use the latest form data, not stale state
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === selectedCompanyId) {
+          return {
+            ...company,
+            name: brandName.trim() || company.name,
+            brandName: brandName.trim(),
+            industry: industry.trim(),
+            toneOfVoice: toneOfVoice,
+            customTone: customTone.trim(),
+            knowledgeProducts: [...knowledgeProducts],
+            targetAudience: [...audienceTags],
+            companyDescription: companyDescription.trim(),
+            brandLogoUrl: brandLogoUrl.trim(),
+          };
+        }
+        return company;
+      });
 
+      // Update local state and localStorage
+      setCompanies(updatedCompanies);
+      localStorage.setItem("melo_companies", JSON.stringify(updatedCompanies));
+
+      // Save all companies to database
       const response = await authService.updateProfile({
-        brandName,
-        industry,
-        toneOfVoice,
-        knowledgeProducts,
-        targetAudience: audienceTags,
-        // Note: companyDescription is stored locally only, not sent to backend
+        companies: updatedCompanies,
       });
 
       if (response.success && response.user) {
         setUser(response.user);
         onLoginSuccess(response.user);
+
+        // Sync companies to localStorage from server response
+        if (response.user.companies) {
+          setCompanies(response.user.companies);
+          localStorage.setItem("melo_companies", JSON.stringify(response.user.companies));
+        }
+
         message.success("Profile saved successfully");
       } else {
         message.error(response.message || "Failed to save profile");
       }
     } catch (error) {
+      console.error("Error saving profile:", error);
       message.error("An error occurred while saving profile");
     } finally {
       setLoading(false);
@@ -512,9 +681,16 @@ export default function BrandProfile({
                 icon={<PlusOutlined />}
                 onClick={handleAddCompany}
                 className={styles.addCompanyBtn}
+                disabled={companies.length >= 10}
+                title={companies.length >= 10 ? "Maximum 10 companies allowed" : "Add a new company"}
               >
-                Add New Company
+                Add New Company {companies.length >= 10 && "(Max 10)"}
               </Button>
+              {companies.length >= 10 && (
+                <Typography.Text type="secondary" style={{ fontSize: '12px', display: 'block', marginTop: '8px', textAlign: 'center' }}>
+                  Maximum 10 companies allowed. Delete a company to add a new one.
+                </Typography.Text>
+              )}
             </div>
           </div>
         </Card>
@@ -525,6 +701,30 @@ export default function BrandProfile({
             <Card
               title="Basic Info"
               className={`${styles.card} ${styles.basicInfo}`}
+              extra={
+                <div className={styles.logoHeaderArea}>
+                  {brandLogoUrl ? (
+                    <img src={brandLogoUrl} alt="Brand Logo" className={styles.logoHeaderImage} />
+                  ) : (
+                    <div className={styles.logoHeaderPlaceholder}>
+                      {brandName ? brandName[0]?.toUpperCase() || '?' : '?'}
+                    </div>
+                  )}
+                  <Dropdown
+                    menu={{ items: logoMenuItems }}
+                    trigger={['click']}
+                    placement="bottomRight"
+                  >
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<EditOutlined />}
+                      className={styles.logoEditBtn}
+                      loading={uploadingLogo || generatingLogo}
+                    />
+                  </Dropdown>
+                </div>
+              }
             >
               <Space
                 direction="vertical"
@@ -611,9 +811,9 @@ export default function BrandProfile({
                       style={
                         selectedTone === tone.key
                           ? {
-                              backgroundColor: tone.color,
-                              borderColor: tone.color,
-                            }
+                            backgroundColor: tone.color,
+                            borderColor: tone.color,
+                          }
                           : undefined
                       }
                       onClick={() => handleToneSelect(tone.key)}
@@ -666,10 +866,10 @@ export default function BrandProfile({
             >
               <Space
                 direction="vertical"
-                size="middle"
+                size="small"
                 className={styles.fullWidth}
               >
-                <Typography.Text type="secondary">
+                <Typography.Text type="secondary" style={{ marginBottom: 0 }}>
                   Upload annual reports, financial data, product catalogs, or
                   any business documents
                 </Typography.Text>

@@ -807,7 +807,10 @@ export default function ChatBox({
       )}
 
       {/* Input area */}
-      <Card className={styles.chatCard} styles={{ body: { padding: 24 } }}>
+      <Card 
+        className={`${styles.chatCard} ${messages.length > 0 ? styles.chatCardFixed : ''}`} 
+        styles={{ body: { padding: 24 } }}
+      >
         {/* Image preview */}
         {uploadedImages.length > 0 && (
           <div className={styles.imagePreviewContainer}>

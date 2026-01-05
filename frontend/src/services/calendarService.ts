@@ -1,5 +1,6 @@
-// API base URL - using Vite proxy (no CORS issues)
-const API_URL = '/api/calendar'
+// API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = `${BASE_API_URL}/api/calendar`
 
 export interface CalendarItemVariants {
   tiktok?: string
@@ -15,6 +16,7 @@ export interface CalendarItem {
   userId: string
   campaignId: string | null
   campaignName?: string | null
+  companyId?: string | null
   platform: string
   date: string // YYYY-MM-DD
   time: string | null // HH:mm

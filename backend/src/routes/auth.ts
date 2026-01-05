@@ -16,9 +16,9 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
 
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || 
-    GOOGLE_CLIENT_ID === 'your_google_client_id_here' || 
-    GOOGLE_CLIENT_SECRET === 'your_google_client_secret_here') {
+if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET ||
+  GOOGLE_CLIENT_ID === 'your_google_client_id_here' ||
+  GOOGLE_CLIENT_SECRET === 'your_google_client_secret_here') {
   console.warn('⚠️  Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env')
 }
 
@@ -258,27 +258,48 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "User not found" });
     }
 
-      res.status(200).json({
-        success: true,
-        user: {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          brandName: user.brandName,
-          phone: user.phone,
-          birthday: user.birthday,
-          gender: user.gender,
-          address: user.address,
-          aboutMe: user.aboutMe,
-          avatar: user.avatar,
-          industry: user.industry,
-          toneOfVoice: user.toneOfVoice,
-          knowledgeProducts: user.knowledgeProducts,
-          targetAudience: user.targetAudience,
-          authProvider: user.authProvider,
-          createdAt: user.createdAt,
-        },
-      })
+    // If user has companies array, use it; otherwise, create from single company fields (backward compatibility)
+    let companies = user.companies || []
+
+    // If no companies but has single company fields, create a company from those fields
+    if (companies.length === 0 && (user.brandName || user.industry || user.toneOfVoice)) {
+      companies = [{
+        id: `company_${Date.now()}`,
+        name: user.brandName || 'My Company',
+        brandName: user.brandName || '',
+        industry: user.industry || '',
+        toneOfVoice: user.toneOfVoice || 'calm',
+        customTone: '',
+        knowledgeProducts: user.knowledgeProducts || [],
+        targetAudience: user.targetAudience || [],
+        companyDescription: '',
+        brandLogoUrl: user.brandLogoUrl || '',
+      }]
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        brandName: user.brandName,
+        brandLogoUrl: user.brandLogoUrl,
+        phone: user.phone,
+        birthday: user.birthday,
+        gender: user.gender,
+        address: user.address,
+        aboutMe: user.aboutMe,
+        avatar: user.avatar,
+        industry: user.industry,
+        toneOfVoice: user.toneOfVoice,
+        knowledgeProducts: user.knowledgeProducts,
+        targetAudience: user.targetAudience,
+        companies: companies,
+        authProvider: user.authProvider,
+        createdAt: user.createdAt,
+      },
+    })
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message })
   }
@@ -299,6 +320,7 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
     const {
       name,
       brandName,
+      brandLogoUrl,
       phone,
       birthday,
       gender,
@@ -309,11 +331,18 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
       toneOfVoice,
       knowledgeProducts,
       targetAudience,
+      companies,
     } = req.body
+
+    // Log incoming companies data for debugging
+    if (companies !== undefined) {
+      console.log('[Profile Update] Received companies data:', JSON.stringify(companies, null, 2))
+    }
 
     // Update user fields
     if (name !== undefined) user.name = name
     if (brandName !== undefined) user.brandName = brandName
+    if (brandLogoUrl !== undefined) user.brandLogoUrl = brandLogoUrl
     if (phone !== undefined) user.phone = phone
     if (birthday !== undefined) user.birthday = birthday
     if (gender !== undefined) user.gender = gender
@@ -325,8 +354,48 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
     if (knowledgeProducts !== undefined) user.knowledgeProducts = knowledgeProducts
     if (targetAudience !== undefined) user.targetAudience = targetAudience
 
+    // Update companies array if provided
+    if (companies !== undefined) {
+      // Validate companies array length (max 10)
+      if (Array.isArray(companies) && companies.length > 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 10 companies allowed',
+        })
+      }
+
+      // Sanitize and ensure all company fields are properly formatted
+      if (Array.isArray(companies)) {
+        const sanitizedCompanies = companies.map((company: any) => ({
+          id: String(company.id || `company_${Date.now()}`),
+          name: String(company.name || ''),
+          brandName: String(company.brandName || ''),
+          industry: String(company.industry || ''),
+          toneOfVoice: String(company.toneOfVoice || 'calm'),
+          customTone: String(company.customTone || ''),
+          knowledgeProducts: Array.isArray(company.knowledgeProducts)
+            ? company.knowledgeProducts.map((p: any) => String(p))
+            : [],
+          targetAudience: Array.isArray(company.targetAudience)
+            ? company.targetAudience.map((a: any) => String(a))
+            : [],
+          companyDescription: String(company.companyDescription || ''),
+          brandLogoUrl: String(company.brandLogoUrl || ''),
+        }))
+
+        console.log('[Profile Update] Sanitized companies:', JSON.stringify(sanitizedCompanies, null, 2))
+        user.companies = sanitizedCompanies
+      } else {
+        user.companies = companies
+      }
+      // Mark companies as modified to ensure Mongoose saves nested array changes
+      user.markModified('companies')
+    }
+
     // Save updated user
+    console.log('[Profile Update] Attempting to save user with companies count:', user.companies?.length || 0)
     await user.save()
+    console.log('[Profile Update] User saved successfully')
 
     res.status(200).json({
       success: true,
@@ -335,6 +404,7 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
         email: user.email,
         name: user.name,
         brandName: user.brandName,
+        brandLogoUrl: user.brandLogoUrl,
         phone: user.phone,
         birthday: user.birthday,
         gender: user.gender,
@@ -345,11 +415,17 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
+        companies: user.companies || [],
         authProvider: user.authProvider,
         createdAt: user.createdAt,
       },
     });
   } catch (error: any) {
+    console.error('[Profile Update] Error saving profile:', error)
+    console.error('[Profile Update] Error details:', error.message)
+    if (error.errors) {
+      console.error('[Profile Update] Validation errors:', JSON.stringify(error.errors, null, 2))
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -367,9 +443,9 @@ router.put('/password', protect, async (req: AuthRequest, res: Response) => {
 
     // Check if user is a local auth user (not Google)
     if (user.authProvider !== 'local') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Password change is only available for local authentication users' 
+      return res.status(400).json({
+        success: false,
+        message: 'Password change is only available for local authentication users'
       })
     }
 
@@ -451,7 +527,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
       audience: process.env.GOOGLE_CLIENT_ID,
     })
     const payload = ticket.getPayload()
-    
+
     if (!payload) {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=oauth_failed`)
     }
@@ -462,7 +538,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
       return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=no_email`)
     }
 
-    let user = await User.findOne({ 
+    let user = await User.findOne({
       $or: [
         { email },
         { googleId }

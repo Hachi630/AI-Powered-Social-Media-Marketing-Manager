@@ -17,6 +17,8 @@ const UPLOADS_DIR = path.join(__dirname, '../../uploads/images')
 const FILES_DIR = path.join(__dirname, '../../uploads/files')
 
 // Ensure uploads directories exist
+// NOTE: On Render, the file system is ephemeral. Files will be lost when the service restarts.
+// This is acceptable for testing, but production should use cloud storage (AWS S3, Cloudinary, etc.)
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true })
 }

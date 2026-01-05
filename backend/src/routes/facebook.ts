@@ -11,8 +11,53 @@ import {
   shareToFacebook,
 } from "../services/facebookService";
 import crypto from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = express.Router();
+
+// Configure multer for file uploads (images and videos)
+const UPLOADS_DIR = path.join(__dirname, '../../uploads/images');
+
+// Ensure uploads directory exists
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    const ext = path.extname(file.originalname) || '.png';
+    cb(null, `facebook-${timestamp}-${random}${ext}`);
+  },
+});
+
+const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  // Accept images and videos
+  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image and video files are allowed'));
+  }
+};
+
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 200 * 1024 * 1024, // 200MB limit (Facebook video limit)
+  },
+});
 
 // Store OAuth states temporarily (in production, use Redis or similar)
 const oauthStates = new Map<string, string>();
@@ -381,6 +426,258 @@ router.post("/share", protect, async (req: AuthRequest, res: Response) => {
     });
   }
 });
+
+/**
+ * @desc    Create a Facebook post (text, image, video, or link)
+ * @route   POST /api/facebook/posts
+ * @access  Private
+ */
+router.post(
+  "/posts",
+  protect,
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'video', maxCount: 1 }
+  ]),
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const user = req.user;
+      if (!user) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      // IMPORTANT: Reload user from database to get latest socialConnections
+      const freshUser = await User.findById(user._id);
+      if (!freshUser) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      const { text, postType, linkUrl, linkName, linkDescription } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const imageFile = files?.image?.[0];
+      const videoFile = files?.video?.[0];
+
+      console.log("[Facebook Post] Request received:", {
+        userId: freshUser._id,
+        postType,
+        hasText: !!text,
+        hasImage: !!imageFile,
+        hasVideo: !!videoFile,
+        hasLink: !!linkUrl,
+      });
+
+      // Validate text content
+      if (!text || text.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Post text is required",
+        });
+      }
+
+      if (text.length > 5000) {
+        return res.status(400).json({
+          success: false,
+          message: "Post text cannot exceed 5000 characters",
+        });
+      }
+
+      // Validate post type specific requirements
+      if (postType === "image" && !imageFile) {
+        return res.status(400).json({
+          success: false,
+          message: "Image is required for image posts",
+        });
+      }
+
+      if (postType === "video" && !videoFile) {
+        return res.status(400).json({
+          success: false,
+          message: "Video is required for video posts",
+        });
+      }
+
+      if (postType === "link" && !linkUrl) {
+        return res.status(400).json({
+          success: false,
+          message: "Link URL is required for link posts",
+        });
+      }
+
+      // Check if user has Facebook connected
+      const facebook = freshUser.socialConnections?.facebook;
+
+      if (!facebook?.accessToken || !facebook?.userId) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Facebook account not connected. Please connect your Facebook Page first.",
+          requiresAuth: true,
+        });
+      }
+
+      // Check if token is expired
+      if (facebook.expiresAt && new Date() > facebook.expiresAt) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Facebook access token expired. Please reconnect your account.",
+          requiresAuth: true,
+        });
+      }
+
+      const pageAccessToken = facebook.accessToken;
+
+      // Prepare content for Facebook API - use file paths for direct upload
+      let imagePath: string | undefined;
+      let videoPath: string | undefined;
+
+      // Handle image upload
+      if (imageFile) {
+        // Validate file size (Facebook image limit is typically 8MB, but we'll use 10MB for safety)
+        const maxImageSize = 10 * 1024 * 1024; // 10MB
+        if (imageFile.size > maxImageSize) {
+          // Clean up uploaded file
+          const filePath = path.join(UPLOADS_DIR, imageFile.filename);
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch (cleanupError) {
+              console.warn('Failed to delete oversized image file:', cleanupError);
+            }
+          }
+          return res.status(400).json({
+            success: false,
+            message: `Image file size (${(imageFile.size / 1024 / 1024).toFixed(2)}MB) exceeds Facebook's limit of 10MB`,
+          });
+        }
+        // Use file path for direct upload to Facebook
+        imagePath = path.join(UPLOADS_DIR, imageFile.filename);
+        console.log('[Facebook Post] Image file path:', imagePath);
+      }
+
+      // Handle video upload
+      if (videoFile) {
+        // Validate file size (Facebook video limit is 200MB)
+        const maxVideoSize = 200 * 1024 * 1024; // 200MB
+        if (videoFile.size > maxVideoSize) {
+          // Clean up uploaded file
+          const filePath = path.join(UPLOADS_DIR, videoFile.filename);
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch (cleanupError) {
+              console.warn('Failed to delete oversized video file:', cleanupError);
+            }
+          }
+          return res.status(400).json({
+            success: false,
+            message: `Video file size (${(videoFile.size / 1024 / 1024).toFixed(2)}MB) exceeds Facebook's limit of 200MB`,
+          });
+        }
+        // Use file path for direct upload to Facebook
+        videoPath = path.join(UPLOADS_DIR, videoFile.filename);
+        console.log('[Facebook Post] Video file path:', videoPath);
+      }
+
+      // Share to Facebook using Graph API with direct file upload
+      const result = await shareToFacebook(
+        facebook.userId,
+        pageAccessToken,
+        {
+          text: text.trim(),
+          imagePath,
+          videoPath,
+          linkUrl: linkUrl || undefined,
+          linkName: linkName || undefined,
+          linkDescription: linkDescription || undefined,
+        }
+      );
+
+      // Clean up uploaded files after successful post
+      if (imageFile) {
+        const filePath = path.join(UPLOADS_DIR, imageFile.filename);
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+            console.log('Temporary image file deleted:', filePath);
+          } catch (cleanupError) {
+            console.warn('Failed to delete temporary image file:', cleanupError);
+          }
+        }
+      }
+
+      if (videoFile) {
+        const filePath = path.join(UPLOADS_DIR, videoFile.filename);
+        if (fs.existsSync(filePath)) {
+          try {
+            fs.unlinkSync(filePath);
+            console.log('Temporary video file deleted:', filePath);
+          } catch (cleanupError) {
+            console.warn('Failed to delete temporary video file:', cleanupError);
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        message: "Successfully posted to Facebook",
+        postId: result.postId,
+        permalink: result.permalink,
+      });
+    } catch (error: any) {
+      console.error("Facebook post error:", error);
+
+      // Clean up uploaded files on error
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      if (files) {
+        if (files.image?.[0]) {
+          const filePath = path.join(UPLOADS_DIR, files.image[0].filename);
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch (cleanupError) {
+              console.warn('Failed to delete temporary image file on error:', cleanupError);
+            }
+          }
+        }
+        if (files.video?.[0]) {
+          const filePath = path.join(UPLOADS_DIR, files.video[0].filename);
+          if (fs.existsSync(filePath)) {
+            try {
+              fs.unlinkSync(filePath);
+            } catch (cleanupError) {
+              console.warn('Failed to delete temporary video file on error:', cleanupError);
+            }
+          }
+        }
+      }
+
+      // Check if it's an authentication error
+      if (
+        error.response?.status === 401 ||
+        error.response?.data?.error?.code === 190
+      ) {
+        return res.status(401).json({
+          success: false,
+          message: "Facebook access token expired or invalid. Please reconnect your account.",
+          requiresAuth: true,
+        });
+      }
+
+      res.status(500).json({
+        success: false,
+        message:
+          error.response?.data?.error?.message ||
+          error.message ||
+          "Failed to post to Facebook",
+      });
+    }
+  }
+);
 
 /**
  * @desc    Get Facebook connection status

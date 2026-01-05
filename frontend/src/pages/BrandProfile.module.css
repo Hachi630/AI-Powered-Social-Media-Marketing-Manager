@@ -192,6 +192,10 @@
   grid-column: span 1;
 }
 
+.uploadDatabase :global(.ant-card-body) {
+  padding: 20px !important;
+}
+
 .knowledgeBase {
   grid-column: span 1;
 }
@@ -491,6 +495,119 @@
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
 }
 
+/* Logo Upload Area */
+.logoUploadArea {
+  width: 100%;
+}
+
+.logoPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  background: var(--bg-secondary, #ffffff);
+}
+
+[data-theme="warm"] .logoPreview {
+  border-color: #e1dbc3;
+  background: #ffefd5;
+}
+
+.logoImage {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: #ffffff;
+}
+
+.removeLogoBtn {
+  margin-left: auto;
+}
+
+.logoPlaceholder {
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed var(--border-color, #d9d9d9);
+  border-radius: 8px;
+  background: var(--bg-secondary, #fafafa);
+  transition: border-color 0.3s;
+}
+
+[data-theme="warm"] .logoPlaceholder {
+  border-color: #e1dbc3;
+  background: #faf6ea;
+}
+
+.logoPlaceholder:hover {
+  border-color: var(--primary-color, #646cff);
+}
+
+[data-theme="warm"] .logoPlaceholder:hover {
+  border-color: #ae906e;
+}
+
+/* Logo Header Area (in card extra) */
+.logoHeaderArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoHeaderImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: #ffffff;
+  padding: 4px;
+}
+
+[data-theme="warm"] .logoHeaderImage {
+  border-color: #e1dbc3;
+}
+
+.logoHeaderPlaceholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="warm"] .logoHeaderPlaceholder {
+  border-color: #e1dbc3;
+  background: linear-gradient(135deg, #ae906e 0%, #908066 100%);
+}
+
+.logoEditBtn {
+  color: var(--text-primary, #1e1e1e);
+}
+
+.logoEditBtn:hover {
+  color: var(--primary-color, #646cff);
+  background: rgba(100, 108, 255, 0.1);
+}
+
+[data-theme="warm"] .logoEditBtn {
+  color: #908066;
+}
+
+[data-theme="warm"] .logoEditBtn:hover {
+  color: #ae906e;
+  background: rgba(174, 144, 110, 0.1);
+}
+
 .toneButton {
   min-width: 100px;
   font-weight: 500;
@@ -609,9 +726,29 @@
 /* Upload Database styles */
 .uploadDragger {
   border: 2px dashed var(--border-color, #d9d9d9) !important;
-  border-radius: 12px !important;
+  border-left: none !important;
+  border-radius: 0 12px 12px 0 !important;
   background: var(--bg-tertiary, #f0f0f0) !important;
   transition: all 0.2s ease;
+  padding: 16px 8px !important;
+  margin-left: 0 !important;
+}
+
+.uploadDragger :global(.ant-upload-drag-container) {
+  padding: 0 !important;
+}
+
+.uploadDragger :global(.ant-upload-drag) {
+  border-left: none !important;
+}
+
+.uploadDragger :global(.ant-upload-btn) {
+  border-left: none !important;
+}
+
+.uploadDragger::before,
+.uploadDragger::after {
+  display: none !important;
 }
 
 [data-theme="warm"] .uploadDragger {
@@ -630,9 +767,10 @@
 }
 
 .uploadIcon {
-  font-size: 40px;
+  font-size: 32px;
   color: var(--text-primary, #1e1e1e);
-  margin-bottom: 8px;
+  margin-bottom: 4px !important;
+  margin-top: 0 !important;
 }
 
 [data-theme="warm"] .uploadIcon {
@@ -640,10 +778,11 @@
 }
 
 .uploadText {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-primary, #1e1e1e);
   font-weight: 500;
-  margin-bottom: 4px !important;
+  margin-bottom: 2px !important;
+  margin-top: 0 !important;
   font-family: var(--font-family, "Inter", sans-serif);
 }
 
@@ -653,8 +792,10 @@
 }
 
 .uploadHint {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary, #757575);
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
 }
 
 [data-theme="warm"] .uploadHint {

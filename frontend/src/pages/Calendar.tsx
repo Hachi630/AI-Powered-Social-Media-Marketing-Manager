@@ -1,12 +1,10 @@
-import { Calendar, Layout, Button, Space, message, Grid, Segmented, Select, Input, Popover, Badge } from 'antd';
-import { 
-  PlusOutlined, 
-  LeftOutlined, 
-  RightOutlined, 
+import { Calendar, Layout, Button, message, Grid, Segmented, Select, Input } from 'antd';
+import {
+  PlusOutlined,
+  LeftOutlined,
+  RightOutlined,
   SearchOutlined,
   FilterOutlined,
-  AppstoreOutlined,
-  CalendarOutlined as CalendarIcon
 } from '@ant-design/icons';
 import dayjs, { Dayjs } from 'dayjs';
 import { useState, useEffect, useCallback } from 'react';
@@ -21,6 +19,7 @@ import CalendarDetailPanel from '../components/CalendarDetailPanel';
 import WeekView from '../components/WeekView';
 import DayView from '../components/DayView';
 import YearView from '../components/YearView';
+import PlatformIcon, { PLATFORM_COLORS } from '../components/PlatformIcon';
 
 const { useBreakpoint } = Grid;
 const { Option } = Select;
@@ -39,17 +38,7 @@ function DraggableCalendarItem({ item, onClick, isMonthView = false }: { item: C
     data: item,
   });
 
-  const platformColors: Record<string, string> = {
-    instagram_post: '#E1306C',
-    instagram_story: '#F77737',
-    instagram_reels: '#833AB4',
-    tiktok: '#000000',
-    facebook: '#1877F2',
-    twitter: '#1DA1F2',
-    linkedin: '#0077B5',
-  };
-
-  const color = platformColors[item.platform] || '#0071e3';
+  const color = PLATFORM_COLORS[item.platform] || '#0071e3';
   const style = isDragging ? { opacity: 0.5 } : undefined;
 
   if (isMonthView) {
@@ -62,7 +51,7 @@ function DraggableCalendarItem({ item, onClick, isMonthView = false }: { item: C
         onClick={onClick}
         style={{ ...style, borderLeftColor: color }}
       >
-        <span className={styles.eventDot} style={{ backgroundColor: color }} />
+        <PlatformIcon platform={item.platform} style={{ marginRight: 4, fontSize: '12px' }} />
         <span className={styles.eventLabelText}>{item.title}</span>
       </div>
     );
@@ -77,7 +66,7 @@ function DraggableCalendarItem({ item, onClick, isMonthView = false }: { item: C
       onClick={onClick}
       style={style}
     >
-      <span className={styles.platformDot} style={{ backgroundColor: color }} />
+      <PlatformIcon platform={item.platform} style={{ marginRight: 6, fontSize: '14px' }} />
       <span className={styles.itemTitle}>{item.title}</span>
     </div>
   );
@@ -93,19 +82,19 @@ function DroppableDateCell({ date, children, isToday, onDateClick }: { date: Day
   const style = isOver ? { backgroundColor: '#f0f7ff' } : undefined;
 
   return (
-    <div 
-      ref={setNodeRef} 
-      className={styles.dateCellContent} 
+    <div
+      ref={setNodeRef}
+      className={styles.dateCellContent}
       style={style}
       onClick={() => onDateClick(date)}
     >
       {children}
       <div className={styles.addBtnOverlay}>
-        <Button 
-          type="primary" 
-          size="small" 
-          shape="circle" 
-          icon={<PlusOutlined />} 
+        <Button
+          type="primary"
+          size="small"
+          shape="circle"
+          icon={<PlusOutlined />}
           onClick={(e) => {
             e.stopPropagation();
             onDateClick(date);
@@ -127,7 +116,7 @@ export default function CalendarPage({
   const [value, setValue] = useState(dayjs());
   const [selectedValue, setSelectedValue] = useState<Dayjs>(dayjs());
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  // const [loading, setLoading] = useState(false); // Unused
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<CalendarItem | null>(null);
   const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
@@ -135,12 +124,14 @@ export default function CalendarPage({
   const [activeDragItem, setActiveDragItem] = useState<CalendarItem | null>(null);
   const [viewMode, setViewMode] = useState<'Day' | 'Week' | 'Month' | 'Year'>('Week');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string>('all');
+  const [brands, setBrands] = useState<Array<{ id: string; name: string; brandName: string }>>([]);
 
   // Load calendar items
   const loadCalendarItems = useCallback(async () => {
     if (!isLoggedIn) return;
 
-    setLoading(true);
+    // setLoading(true);
     try {
       // Determine date range based on view mode
       let start: Dayjs, end: Dayjs;
@@ -169,7 +160,7 @@ export default function CalendarPage({
       console.error('Load calendar items error:', error);
       message.error('Failed to load calendar items');
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   }, [value, isLoggedIn, viewMode]);
 
@@ -177,10 +168,82 @@ export default function CalendarPage({
     loadCalendarItems();
   }, [loadCalendarItems]);
 
+  // Load brands from localStorage
+  useEffect(() => {
+    try {
+      const savedCompanies = localStorage.getItem("melo_companies");
+      if (savedCompanies) {
+        const companies = JSON.parse(savedCompanies);
+        const brandList = companies.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          brandName: c.brandName || c.name
+        }));
+        setBrands(brandList);
+        console.log("Loaded brands:", brandList);
+      }
+    } catch (error) {
+      console.error("Error loading brands:", error);
+    }
+  }, []);
+
+  // Auto-update items without companyId when a brand is selected
+  useEffect(() => {
+    if (selectedBrandId && selectedBrandId !== 'all' && calendarItems.length > 0) {
+      const itemsWithoutCompanyId = calendarItems.filter(item => !item.companyId || item.companyId === null);
+      if (itemsWithoutCompanyId.length > 0) {
+        console.log(`Found ${itemsWithoutCompanyId.length} items without companyId. Auto-updating them to selected brand: ${selectedBrandId}`);
+        
+        // Update items in batch
+        const updatePromises = itemsWithoutCompanyId.map(item =>
+          calendarService.updateCalendarItem(item.id, { companyId: selectedBrandId })
+        );
+        
+        Promise.all(updatePromises)
+          .then(() => {
+            console.log("Successfully updated items with companyId");
+            loadCalendarItems(); // Reload to get updated items
+          })
+          .catch(error => {
+            console.error("Error updating items with companyId:", error);
+          });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBrandId]); // Only run when brand selection changes
+
   // Helpers
   const getFilteredItems = (items: CalendarItem[]) => {
-    if (selectedPlatforms.length === 0) return items;
-    return items.filter(item => selectedPlatforms.includes(item.platform));
+    let filtered = items;
+    
+    // Filter by brand
+    if (selectedBrandId && selectedBrandId !== 'all') {
+      console.log("Filtering by brand:", selectedBrandId);
+      console.log("Available brands:", brands.map(b => ({ id: b.id, name: b.brandName })));
+      console.log("Calendar items before filter:", items.map(i => ({ id: i.id, title: i.title, companyId: i.companyId })));
+      
+      filtered = filtered.filter(item => {
+        // Strict match: companyId must exactly match selectedBrandId
+        const matches = item.companyId === selectedBrandId;
+        if (!matches) {
+          console.log(`Item ${item.id} (${item.title}) - companyId: "${item.companyId}" (type: ${typeof item.companyId}), expected: "${selectedBrandId}" (type: ${typeof selectedBrandId})`);
+        }
+        return matches;
+      });
+      
+      console.log("Calendar items after filter:", filtered.length);
+      if (filtered.length === 0 && items.length > 0) {
+        console.warn("No items matched the selected brand. This might mean existing items don't have companyId set.");
+        console.log("Items without companyId:", items.filter(i => !i.companyId || i.companyId === null).length);
+      }
+    }
+    
+    // Filter by platform
+    if (selectedPlatforms.length > 0) {
+      filtered = filtered.filter(item => selectedPlatforms.includes(item.platform));
+    }
+    
+    return filtered;
   };
 
   const getItemsForDate = (date: Dayjs): CalendarItem[] => {
@@ -223,7 +286,7 @@ export default function CalendarPage({
 
     if (item && item.date !== newDateStr) {
       // Optimistic update
-      const updatedItems = calendarItems.map(i => 
+      const updatedItems = calendarItems.map(i =>
         i.id === itemId ? { ...i, date: newDateStr } : i
       );
       setCalendarItems(updatedItems);
@@ -272,15 +335,15 @@ export default function CalendarPage({
           </div>
           <div className={styles.monthEventsList}>
             {displayItems.map(item => (
-              <DraggableCalendarItem 
-                key={item.id} 
-                item={item} 
+              <DraggableCalendarItem
+                key={item.id}
+                item={item}
                 isMonthView={true}
                 onClick={(e) => {
                   e.stopPropagation();
                   setSelectedItem(item);
                   setModalOpen(true);
-                }} 
+                }}
               />
             ))}
             {remainingCount > 0 && (
@@ -308,11 +371,11 @@ export default function CalendarPage({
       <div className={styles.headerBar}>
         <div className={styles.headerContent}>
           <div className={styles.headerLeft} />
-          
+
           <div className={styles.headerCenter}>
-            <Button 
-              type="text" 
-              icon={<LeftOutlined />} 
+            <Button
+              type="text"
+              icon={<LeftOutlined />}
               onClick={() => {
                 const mode = viewMode === 'Week' ? 'week' : viewMode === 'Day' ? 'day' : 'month';
                 const newValue = value.subtract(1, mode);
@@ -322,9 +385,9 @@ export default function CalendarPage({
             <div className={styles.currentDate}>
               {viewMode === 'Year' ? value.format('YYYY') : value.format('MMMM YYYY')}
             </div>
-            <Button 
-              type="text" 
-              icon={<RightOutlined />} 
+            <Button
+              type="text"
+              icon={<RightOutlined />}
               onClick={() => {
                 const mode = viewMode === 'Week' ? 'week' : viewMode === 'Day' ? 'day' : 'month';
                 const newValue = value.add(1, mode);
@@ -342,9 +405,9 @@ export default function CalendarPage({
             >
               Today
             </Button>
-            <Segmented 
-              options={['Day', 'Week', 'Month', 'Year']} 
-              value={viewMode} 
+            <Segmented
+              options={['Day', 'Week', 'Month', 'Year']}
+              value={viewMode}
               onChange={(v) => setViewMode(v as any)}
               style={{ marginLeft: 8 }}
             />
@@ -366,11 +429,21 @@ export default function CalendarPage({
 
       {/* Filter Bar */}
       <div className={styles.filterBar}>
-        <Select defaultValue="all" style={{ width: 120 }} bordered={false}>
-          <Option value="all">All Brands</Option>
-        </Select>
         <Select 
-          mode="multiple" 
+          value={selectedBrandId} 
+          onChange={setSelectedBrandId}
+          style={{ width: 150 }} 
+          bordered={false}
+        >
+          <Option value="all">All Brands</Option>
+          {brands.map(brand => (
+            <Option key={brand.id} value={brand.id}>
+              {brand.brandName || brand.name}
+            </Option>
+          ))}
+        </Select>
+        <Select
+          mode="multiple"
           placeholder="Filter by platform"
           allowClear
           style={{ minWidth: 200 }}
@@ -393,18 +466,18 @@ export default function CalendarPage({
           <Option value="scheduled">Scheduled</Option>
           <Option value="draft">Draft</Option>
         </Select>
-        <Input 
-          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />} 
-          placeholder="Search..." 
-          bordered={false} 
-          style={{ width: 200, background: 'rgba(0,0,0,0.03)', borderRadius: 8 }} 
+        <Input
+          prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+          placeholder="Search..."
+          bordered={false}
+          style={{ width: 200, background: 'rgba(0,0,0,0.03)', borderRadius: 8 }}
         />
       </div>
 
       <div className={styles.mainContent}>
         {viewMode === 'Day' ? (
           <div className={styles.calendarSection}>
-            <DayView 
+            <DayView
               currentDate={value}
               items={getFilteredItems(calendarItems)}
               onTimeSlotClick={handleTimeSlotClick}
@@ -413,7 +486,7 @@ export default function CalendarPage({
           </div>
         ) : viewMode === 'Week' ? (
           <div className={styles.calendarSection}>
-            <WeekView 
+            <WeekView
               currentDate={value}
               items={getFilteredItems(calendarItems)}
               onTimeSlotClick={handleTimeSlotClick}
@@ -421,7 +494,7 @@ export default function CalendarPage({
             />
           </div>
         ) : viewMode === 'Year' ? (
-          <div className={`${styles.calendarSection} ${styles.yearViewSection}`}>
+          <div className={`${styles.calendarSection} ${styles.yearViewSection} `}>
             <YearView
               currentDate={value}
               items={getFilteredItems(calendarItems)}
@@ -461,7 +534,7 @@ export default function CalendarPage({
         )}
 
         {viewMode !== 'Year' && (
-          <CalendarDetailPanel 
+          <CalendarDetailPanel
             selectedDate={selectedValue}
             items={getItemsForDate(selectedValue)}
             upcomingItems={getUpcomingWeekItems()}
