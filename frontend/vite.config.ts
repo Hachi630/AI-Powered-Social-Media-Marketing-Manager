@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -29,21 +28,21 @@ export default defineConfig(({ mode }) => {
           ws: true,
           rewrite: (path) => path, // Keep the path as is
           configure: (proxy, _options) => {
-            proxy.on('error', (err, req, _res) => {
+            proxy.on('error', (err: NodeJS.ErrnoException, req, _res) => {
               console.error(`\n❌ [Proxy Error] Cannot connect to backend server at http://localhost:${backendPort}`)
               console.error(`   Request: ${req.method} ${req.url}`)
               console.error(`   Error: ${err.message}`)
-              console.error(`   Error code: ${err.code}`)
+              console.error(`   Error code: ${err.code || 'unknown'}`)
               console.error(`\n💡 Solution: Make sure backend server is running:`)
               console.error(`   cd backend && npm run dev\n`)
             });
-            proxy.on('proxyReq', (proxyReq, req, _res) => {
+            proxy.on('proxyReq', (_proxyReq, req, _res) => {
               console.log(`[Proxy] ${req.method} ${req.url} -> http://localhost:${backendPort}${req.url}`);
             });
             proxy.on('proxyRes', (proxyRes, req, _res) => {
               console.log(`[Proxy Response] ${req.method} ${req.url} -> ${proxyRes.statusCode}`);
             });
-            proxy.on('proxyReqWs', (proxyReq, req, _socket) => {
+            proxy.on('proxyReqWs', (_proxyReq, req, _socket) => {
               console.log(`[Proxy WS] ${req.url} -> http://localhost:${backendPort}${req.url}`);
             });
           },
@@ -54,7 +53,7 @@ export default defineConfig(({ mode }) => {
           secure: false,
           timeout: 10000,
           configure: (proxy, _options) => {
-            proxy.on('error', (err, req, _res) => {
+            proxy.on('error', (err: NodeJS.ErrnoException, _req, _res) => {
               if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET') {
                 console.error(`[LinkedIn Proxy] Backend server not available at http://localhost:${backendPort}`)
               } else {
@@ -69,7 +68,7 @@ export default defineConfig(({ mode }) => {
           secure: false,
           timeout: 30000, // Longer timeout for file uploads
           configure: (proxy, _options) => {
-            proxy.on('error', (err, req, _res) => {
+            proxy.on('error', (err: NodeJS.ErrnoException, _req, _res) => {
               if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET') {
                 console.error(`[Uploads Proxy] Backend server not available at http://localhost:${backendPort}`)
               } else {
@@ -79,13 +78,6 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
-    },
-    // Test configuration
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: ['./src/__tests__/setup.ts'],
-      include: ['src/**/*.{test,spec}.{js,ts,tsx}'],
     },
     // Build configuration
     build: {
