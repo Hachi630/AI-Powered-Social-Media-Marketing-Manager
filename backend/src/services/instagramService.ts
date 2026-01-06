@@ -408,14 +408,14 @@ export async function getInstagramAccountIdForPage(
     console.log(`[getInstagramAccountIdForPage] Getting Instagram for page: ${pageId}`)
     
     // Method 1: Try standard field query
-    let pageResponse
+    let pageResponse: any = null
     try {
       pageResponse = await axios.get(
         `https://graph.facebook.com/v18.0/${pageId}?fields=name,instagram_business_account&access_token=${accessToken}`
       )
       console.log(`[getInstagramAccountIdForPage] Method 1 response:`, {
-        hasInstagram: !!pageResponse.data.instagram_business_account,
-        instagram: pageResponse.data.instagram_business_account,
+        hasInstagram: !!pageResponse?.data?.instagram_business_account,
+        instagram: pageResponse?.data?.instagram_business_account,
       })
     } catch (error: any) {
       console.log(`[getInstagramAccountIdForPage] Method 1 failed:`, error.response?.data || error.message)
@@ -429,11 +429,12 @@ export async function getInstagramAccountIdForPage(
           `https://graph.facebook.com/v18.0/${pageId}?fields=name,instagram_business_account{id,username}&access_token=${accessToken}`
         )
         console.log(`[getInstagramAccountIdForPage] Method 2 response:`, {
-          hasInstagram: !!pageResponse.data.instagram_business_account,
-          instagram: pageResponse.data.instagram_business_account,
+          hasInstagram: !!pageResponse?.data?.instagram_business_account,
+          instagram: pageResponse?.data?.instagram_business_account,
         })
       } catch (error: any) {
         console.log(`[getInstagramAccountIdForPage] Method 2 failed:`, error.response?.data || error.message)
+        pageResponse = null
       }
     }
 
@@ -525,6 +526,10 @@ export async function getInstagramAccountIdForPage(
 
     // If we found Instagram account in pageResponse
     if (pageResponse?.data?.instagram_business_account) {
+      // TypeScript guard: pageResponse is not null here due to the if condition
+      if (!pageResponse || !pageResponse.data || !pageResponse.data.instagram_business_account) {
+        throw new Error('Invalid pageResponse state')
+      }
       const instagramAccountId = pageResponse.data.instagram_business_account.id
       console.log(`[getInstagramAccountIdForPage] Found Instagram account ID: ${instagramAccountId}`)
 
@@ -553,7 +558,7 @@ export async function getInstagramAccountIdForPage(
         username: instagramUsername,
         accountType,
         facebookPageId: pageId,
-        facebookPageName: pageResponse.data.name,
+        facebookPageName: pageResponse?.data?.name || '',
       }
     }
 
@@ -660,6 +665,9 @@ export async function shareToInstagram(
 
   // Step 2: Publish the media
   const result = await publishMedia(instagramAccountId, accessToken, creationId)
+  if (!result || !result.id) {
+    throw new Error('Failed to publish media: No post ID returned')
+  }
   return {
     postId: result.id,
     permalink: result.permalink
