@@ -25,6 +25,7 @@ import {
 } from "@ant-design/icons";
 import { User } from "../services/authService";
 import { Avatar } from "antd";
+import { getImageUrl } from "../utils/imageUtils";
 
 const { useBreakpoint } = Grid;
 
@@ -173,7 +174,7 @@ export default function Header({
             <Dropdown menu={userMenu} placement="bottomRight" arrow>
               <Avatar
                 size="large"
-                src={user?.avatar}
+                src={getImageUrl(user?.avatar)}
                 style={{ backgroundColor: "#87d068", cursor: "pointer" }}
               >
                 {user?.name

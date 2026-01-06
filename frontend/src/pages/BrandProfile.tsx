@@ -35,6 +35,7 @@ import { User, authService, CompanyData } from "../services/authService";
 import { uploadService } from "../services/uploadService";
 import { chatService } from "../services/chatService";
 import { PictureOutlined, RobotOutlined } from "@ant-design/icons";
+import { getImageUrl } from "../utils/imageUtils";
 
 const { Content } = Layout;
 
@@ -704,7 +705,7 @@ export default function BrandProfile({
               extra={
                 <div className={styles.logoHeaderArea}>
                   {brandLogoUrl ? (
-                    <img src={brandLogoUrl} alt="Brand Logo" className={styles.logoHeaderImage} />
+                    <img src={getImageUrl(brandLogoUrl)} alt="Brand Logo" className={styles.logoHeaderImage} />
                   ) : (
                     <div className={styles.logoHeaderPlaceholder}>
                       {brandName ? brandName[0]?.toUpperCase() || '?' : '?'}

@@ -25,6 +25,7 @@ import { Campaign, campaignService } from '../services/campaignService'
 import { uploadService } from '../services/uploadService'
 import { chatService } from '../services/chatService'
 import ImageGenerationModal from './ImageGenerationModal'
+import { getImageUrl } from '../utils/imageUtils'
 import styles from './CalendarItemModal.module.css'
 
 const { Text } = Typography
@@ -455,13 +456,6 @@ export default function CalendarItemModal({
     setImageGenModalOpen(false)
   }
 
-  const getImageUrl = (url: string | null | undefined): string => {
-    if (!url) return ''
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url
-    }
-    return url
-  }
 
   const getPlatformLabel = (platform: string) => {
     return platformOptions.find((opt) => opt.value === platform)?.label || platform

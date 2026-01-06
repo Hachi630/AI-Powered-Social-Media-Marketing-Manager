@@ -104,6 +104,7 @@ import {
   disconnectInstagram,
 } from "../services/socialService";
 import { User } from "../services/authService";
+import { getImageUrl } from "../utils/imageUtils";
 
 interface LinkedInDashboardProps {
   isLoggedIn?: boolean;
@@ -1538,7 +1539,7 @@ export default function LinkedInDashboard({
                   <Select.Option key={org.id} value={org.id}>
                     <Space>
                       {org.logoUrl ? (
-                        <Avatar size="small" src={org.logoUrl} />
+                        <Avatar size="small" src={getImageUrl(org.logoUrl)} />
                       ) : (
                         <Avatar
                           size="small"
@@ -3819,7 +3820,7 @@ export default function LinkedInDashboard({
                   <Select.Option key={org.id} value={org.id}>
                     <Space>
                       {org.logoUrl ? (
-                        <Avatar size="small" src={org.logoUrl} />
+                        <Avatar size="small" src={getImageUrl(org.logoUrl)} />
                       ) : (
                         <Avatar
                           size="small"

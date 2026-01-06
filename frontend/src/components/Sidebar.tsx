@@ -24,6 +24,7 @@ import type { InputRef, MenuProps } from "antd";
 import { useState, useEffect, useRef } from "react";
 import styles from "./Sidebar.module.css";
 import { User } from "../services/authService";
+import { getImageUrl } from "../utils/imageUtils";
 import {
   chatService,
   ConversationListItem,
@@ -903,7 +904,7 @@ export default function Sidebar({
       <div className={styles.userSection}>
         <Avatar
           size={36}
-          src={user?.avatar}
+          src={getImageUrl(user?.avatar)}
           style={{ backgroundColor: "#87d068" }}
         >
           {user?.name
