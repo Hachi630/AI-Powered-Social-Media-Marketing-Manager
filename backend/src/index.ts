@@ -15,6 +15,8 @@ import instagramRoutes from './routes/instagram.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import linkedinRoutes from "./routes/linkedin.js";
 import twitterRoutes from "./routes/twitter.js";
+import cron from 'node-cron';
+import { checkAndPublishScheduledItems } from './services/schedulerService.js';
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -22,8 +24,32 @@ const __dirname = dirname(__filename)
 // Load env vars
 dotenv.config()
 
-// Connect to database
-connectDB()
+// Connect to database and start scheduler
+connectDB().then(() => {
+  // Start scheduled task to check and publish LinkedIn posts every 5 minutes
+  // Cron format: */5 * * * * means "every 5 minutes"
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      console.log('[Scheduler] Cron job triggered at', new Date().toISOString());
+      await checkAndPublishScheduledItems();
+    } catch (error: any) {
+      console.error('[Scheduler] Error in scheduled task:', error);
+      console.error('[Scheduler] Error stack:', error.stack);
+    }
+  });
+  
+  console.log('[Scheduler] LinkedIn auto-publish scheduler started (runs every 5 minutes)');
+  
+  // Also run immediately on startup to catch any missed items
+  console.log('[Scheduler] Running initial check...');
+  setTimeout(() => {
+    checkAndPublishScheduledItems().catch((error) => {
+      console.error('[Scheduler] Error in initial check:', error);
+    });
+  }, 5000); // Wait 5 seconds after server start to ensure everything is ready
+}).catch((error) => {
+  console.error('Failed to start scheduler:', error);
+});
 
 const app = express()
 const PORT = process.env.PORT || 5000
