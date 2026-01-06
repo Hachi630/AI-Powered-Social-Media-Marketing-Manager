@@ -1,11 +1,6 @@
 import { OAuth2Client } from 'google-auth-library'
 
 /**
- * Google OAuth2 Client for verifying ID tokens
- */
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-
-/**
  * Interface for Google user information from verified token
  */
 export interface GoogleUserInfo {
@@ -27,11 +22,17 @@ export interface GoogleUserInfo {
 export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo> {
   try {
     if (!process.env.GOOGLE_CLIENT_ID) {
+      console.error('[Google Auth] GOOGLE_CLIENT_ID is not set in environment variables')
       throw new Error('GOOGLE_CLIENT_ID environment variable is not set')
     }
 
+    console.log('[Google Auth] Verifying token with Client ID:', process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...')
+
+    // Create a new client instance to ensure fresh configuration
+    const verifyClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+
     // Verify the token
-    const ticket = await client.verifyIdToken({
+    const ticket = await verifyClient.verifyIdToken({
       idToken,
       audience: process.env.GOOGLE_CLIENT_ID,
     })
@@ -40,8 +41,11 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
     const payload = ticket.getPayload()
 
     if (!payload) {
+      console.error('[Google Auth] No payload found in token')
       throw new Error('Invalid token: No payload found')
     }
+
+    console.log('[Google Auth] Token verified successfully, email:', payload.email)
 
     // Extract and return user information
     const userInfo: GoogleUserInfo = {
@@ -56,25 +60,33 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
 
     // Validate required fields
     if (!userInfo.email) {
+      console.error('[Google Auth] Email not found in token payload')
       throw new Error('Invalid token: Email not found in token')
     }
 
     return userInfo
   } catch (error: any) {
-    console.error('[Google Auth] Token verification error:', error.message)
+    console.error('[Google Auth] Token verification error:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack,
+    })
     
     // Provide more specific error messages
-    if (error.message.includes('Token used too early')) {
+    if (error.message?.includes('Token used too early')) {
       throw new Error('Token is not yet valid')
     }
-    if (error.message.includes('Token used too late')) {
+    if (error.message?.includes('Token used too late')) {
       throw new Error('Token has expired')
     }
-    if (error.message.includes('Invalid token signature')) {
+    if (error.message?.includes('Invalid token signature')) {
       throw new Error('Invalid token signature')
     }
+    if (error.message?.includes('Wrong number of segments')) {
+      throw new Error('Invalid token format')
+    }
     
-    throw new Error(`Google token verification failed: ${error.message}`)
+    throw new Error(`Google token verification failed: ${error.message || 'Unknown error'}`)
   }
 }
 

@@ -135,7 +135,7 @@ export default function Dashboard({
             className={styles.sider}
           >
             <Sidebar
-              collapsed={collapsed}
+              collapsed={collapsed ?? false}
               onToggleSidebar={handleToggleSidebar}
               user={user}
               selectedConversationId={selectedConversationId}
