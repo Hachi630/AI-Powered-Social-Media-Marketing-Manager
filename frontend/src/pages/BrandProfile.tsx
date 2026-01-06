@@ -729,7 +729,7 @@ export default function BrandProfile({
                     value={industry}
                     onChange={(value) => setIndustry(value)}
                     options={industryOptions}
-                    className={styles.fullWidth}
+                    className={`${styles.fullWidth} ${styles.industrySelect}`}
                     placeholder="Select industry"
                   />
                 </div>
