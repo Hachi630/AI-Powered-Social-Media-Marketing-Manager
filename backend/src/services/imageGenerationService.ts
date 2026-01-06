@@ -18,25 +18,47 @@ export async function generateImage(prompt: string): Promise<string> {
     console.log('Using model:', model)
 
     // Call Gemini API with image generation request
-    const response = await ai.models.generateContent({
-      model,
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
+    // Note: Gemini API may not support direct image generation in all models
+    // We'll try multiple approaches
+    let response: any
+    try {
+      response = await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: 'user',
+            parts: [{ text: prompt }],
+          },
+        ],
+        // Request image response using responseModalities
+        generationConfig: {
+          responseModalities: ['IMAGE'],
         },
-      ],
-      // Request image response using responseModalities (plural)
-      generationConfig: {
-        responseModalities: ['IMAGE'],
-      },
-    } as any)
+      } as any)
+    } catch (apiError: any) {
+      // If responseModalities is not supported, try without it
+      console.warn('Image generation with responseModalities failed, trying alternative method:', apiError.message)
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `Generate an image: ${prompt}` }],
+            },
+          ],
+        })
+      } catch (fallbackError: any) {
+        throw new Error(`Gemini API call failed: ${fallbackError.message || 'Unknown error'}`)
+      }
+    }
 
     // Extract image from response
     const responseAny = response as any
 
-    // Log full response for debugging
-    console.log('API Response structure:', JSON.stringify(responseAny, null, 2))
+    // Log full response for debugging (but limit size to avoid huge logs)
+    const responseStr = JSON.stringify(responseAny, null, 2)
+    console.log('API Response structure (first 2000 chars):', responseStr.substring(0, 2000))
 
     // Check different possible response structures
     let imageData: string | null = null
@@ -95,10 +117,54 @@ export async function generateImage(prompt: string): Promise<string> {
       }
     }
 
+    // Method 4: Try accessing response directly (some SDKs may wrap it differently)
+    if (!imageData && responseAny.response) {
+      const nestedResponse = responseAny.response
+      if (nestedResponse.candidates && Array.isArray(nestedResponse.candidates) && nestedResponse.candidates.length > 0) {
+        const candidate = nestedResponse.candidates[0]
+        if (candidate.content && candidate.content.parts) {
+          for (const part of candidate.content.parts) {
+            if (part.inlineData && part.inlineData.data) {
+              imageData = part.inlineData.data
+              mimeType = part.inlineData.mimeType || 'image/png'
+              console.log('Found image in response.response.candidates[0].content.parts')
+              break
+            }
+          }
+        }
+      }
+    }
+
     if (!imageData) {
-      // If no image found, log the response structure for debugging
-      console.error('No image data found in response. Full response:', JSON.stringify(responseAny, null, 2))
-      throw new Error('Image generation failed: No image data in API response. Please check the console for the full response structure.')
+      // If no image found, provide more helpful error message
+      const errorDetails: string[] = []
+      if (responseAny.candidates && responseAny.candidates.length > 0) {
+        const candidate = responseAny.candidates[0]
+        if (candidate.finishReason) {
+          errorDetails.push(`Finish reason: ${candidate.finishReason}`)
+        }
+        if (candidate.safetyRatings) {
+          errorDetails.push(`Safety ratings: ${JSON.stringify(candidate.safetyRatings)}`)
+        }
+        if (candidate.content && candidate.content.parts) {
+          const partTypes = candidate.content.parts.map((p: any) => Object.keys(p)[0]).join(', ')
+          errorDetails.push(`Part types found: ${partTypes}`)
+        }
+      }
+      
+      console.error('No image data found in response.')
+      console.error('Response keys:', Object.keys(responseAny))
+      if (errorDetails.length > 0) {
+        console.error('Error details:', errorDetails.join('; '))
+      }
+      console.error('Full response (first 5000 chars):', responseStr.substring(0, 5000))
+      
+      throw new Error(
+        `Image generation failed: No image data in API response. ` +
+        `The model "${model}" may not support image generation, or the API response structure has changed. ` +
+        `Please check the backend console for the full response structure. ` +
+        (errorDetails.length > 0 ? `Details: ${errorDetails.join('; ')}` : '')
+      )
     }
 
     // Return as data URL
