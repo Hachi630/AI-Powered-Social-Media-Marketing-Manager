@@ -64,6 +64,7 @@ export default function ChatBox({
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isInitializingRef = useRef(false);
+  const previousHasMessagesRef = useRef(false);
 
   // Edit message state (from main branch)
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
@@ -113,7 +114,12 @@ export default function ChatBox({
       // Only notify parent if messages actually exist
       // Don't reset to false during loading to prevent title from flashing
       const hasActualMessages = messages.length > 0;
-      onContentChange(hasActualMessages);
+      // Only call onContentChange if the value actually changed
+      // This prevents unnecessary re-renders and UI jumps
+      if (hasActualMessages !== previousHasMessagesRef.current) {
+        previousHasMessagesRef.current = hasActualMessages;
+        onContentChange(hasActualMessages);
+      }
     }
   }, [messages.length, onContentChange]);
 
@@ -242,12 +248,10 @@ export default function ChatBox({
             setCurrentConversationId(response.conversationId);
             // Mark that we're done initializing
             isInitializingRef.current = false;
-            // Notify parent after a short delay to ensure state is updated
-            setTimeout(() => {
-              if (onConversationChange) {
-                onConversationChange(response.conversationId);
-              }
-            }, 0);
+            // Notify parent immediately - no need for setTimeout as state is already updated
+            if (onConversationChange) {
+              onConversationChange(response.conversationId);
+            }
           } else {
             isInitializingRef.current = false;
           }
