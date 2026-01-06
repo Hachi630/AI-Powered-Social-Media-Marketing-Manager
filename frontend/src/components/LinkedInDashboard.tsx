@@ -4104,7 +4104,7 @@ export default function LinkedInDashboard({
         {/* Social Sidebar */}
         {isLoggedIn && !isMobile && (
           <Sider
-            width={280}
+            width={360}
             collapsedWidth={isTablet ? 0 : 96}
             collapsed={sidebarCollapsed}
             theme="light"
