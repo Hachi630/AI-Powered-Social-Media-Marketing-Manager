@@ -32,7 +32,6 @@ export interface IUser extends Document {
   knowledgeProducts?: string[]
   targetAudience?: string[]
   companies?: ICompanyData[]
-  selectedConversationId?: mongoose.Types.ObjectId | null
   authProvider: 'local' | 'google'
   socialConnections?: {
     instagram?: {
@@ -189,11 +188,6 @@ const UserSchema: Schema = new Schema(
         },
         message: 'Maximum 10 companies allowed',
       },
-    },
-    selectedConversationId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Conversation',
-      default: null,
     },
     socialConnections: {
       type: {

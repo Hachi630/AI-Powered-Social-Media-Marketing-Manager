@@ -387,7 +387,7 @@
 @media (min-width: 768px) {
   .chatCardFixed {
     position: fixed !important;
-    bottom: 60px !important;
+    bottom: 32px !important;
     /* Center within content area (after sidebar) */
     /* Sidebar is 360px when expanded, content area starts after it */
     left: 360px !important;
