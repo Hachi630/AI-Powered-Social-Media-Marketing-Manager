@@ -90,10 +90,13 @@ export default function ChatBox({
     } else if (!conversationId && currentConversationId && !isInitializingRef.current) {
       // Reset to new conversation only if we had a conversation before
       // and we're not in the middle of initializing
-      setMessages([]);
-      setCurrentConversationId(null);
+      // Only clear messages if we're actually switching to a new conversation (not loading)
+      if (!loading) {
+        setMessages([]);
+        setCurrentConversationId(null);
+      }
     }
-  }, [conversationId, currentConversationId]);
+  }, [conversationId, currentConversationId, loading]);
 
   // Inform parent when typing state changes
   const updateTypingStatus = useCallback(
@@ -108,11 +111,11 @@ export default function ChatBox({
   useEffect(() => {
     if (onContentChange) {
       // Only notify parent if messages actually exist
-      // This prevents resetting the UI when messages are temporarily cleared during loading
-      const hasActualMessages = messages.length > 0 && !loading;
+      // Don't reset to false during loading to prevent title from flashing
+      const hasActualMessages = messages.length > 0;
       onContentChange(hasActualMessages);
     }
-  }, [messages.length, loading, onContentChange]);
+  }, [messages.length, onContentChange]);
 
   const loadConversation = async (id: string) => {
     // Don't reload if we're already loading or if it's the same conversation
@@ -122,6 +125,8 @@ export default function ChatBox({
     }
     
     setLoading(true);
+    // Don't clear messages immediately - wait until new messages are loaded
+    // This prevents the title from flashing when switching conversations
     try {
       const result = await chatService.getConversation(id);
       if (result.success && result.conversation) {
@@ -129,9 +134,13 @@ export default function ChatBox({
         setCurrentConversationId(id);
       } else {
         message.error(result.message || "Failed to load conversation");
+        // Only clear messages if loading failed
+        setMessages([]);
       }
     } catch {
       message.error("An error occurred while loading conversation");
+      // Only clear messages if loading failed
+      setMessages([]);
     } finally {
       setLoading(false);
     }
