@@ -23,7 +23,7 @@ const __dirname = dirname(__filename);
 const router = express.Router();
 
 // Configure multer for file uploads (images and videos)
-const UPLOADS_DIR = path.join(__dirname, '../../uploads/images');
+const UPLOADS_DIR = path.join(__dirname, "../../uploads/images");
 
 // Ensure uploads directory exists
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -37,17 +37,24 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 15);
-    const ext = path.extname(file.originalname) || '.png';
+    const ext = path.extname(file.originalname) || ".png";
     cb(null, `facebook-${timestamp}-${random}${ext}`);
   },
 });
 
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
   // Accept images and videos
-  if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+  if (
+    file.mimetype.startsWith("image/") ||
+    file.mimetype.startsWith("video/")
+  ) {
     cb(null, true);
   } else {
-    cb(new Error('Only image and video files are allowed'));
+    cb(new Error("Only image and video files are allowed"));
   }
 };
 
@@ -80,9 +87,9 @@ router.get("/auth", protect, async (req: AuthRequest, res: Response) => {
     const state = crypto.randomBytes(32).toString("hex");
     oauthStates.set(state, JSON.stringify({ userId: user._id.toString() }));
 
-    // Generate Facebook OAuth URL (without business_management scope)
-    // This allows personal accounts to connect and use Facebook sharing
-    const authUrl = getFacebookAuthUrl(state);
+    // Generate Facebook OAuth URL (with business_management scope for Business Account features and Instagram)
+    // This allows Business Accounts to connect and use Facebook/Instagram sharing
+    const authUrl = getFacebookAuthUrl(state, true); // true = include business_management for Business Accounts
 
     res.json({
       success: true,
@@ -436,8 +443,8 @@ router.post(
   "/posts",
   protect,
   upload.fields([
-    { name: 'image', maxCount: 1 },
-    { name: 'video', maxCount: 1 }
+    { name: "image", maxCount: 1 },
+    { name: "video", maxCount: 1 },
   ]),
   async (req: AuthRequest, res: Response) => {
     try {
@@ -457,7 +464,9 @@ router.post(
       }
 
       const { text, postType, linkUrl, linkName, linkDescription } = req.body;
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const files = req.files as
+        | { [fieldname: string]: Express.Multer.File[] }
+        | undefined;
       const imageFile = files?.image?.[0];
       const videoFile = files?.video?.[0];
 
@@ -546,7 +555,10 @@ router.post(
             try {
               fs.unlinkSync(filePath);
             } catch (cleanupError) {
-              console.warn('Failed to delete oversized image file:', cleanupError);
+              console.warn(
+                "Failed to delete oversized image file:",
+                cleanupError
+              );
             }
           }
           return res.status(400).json({
@@ -556,7 +568,7 @@ router.post(
         }
         // Use file path for direct upload to Facebook
         imagePath = path.join(UPLOADS_DIR, imageFile.filename);
-        console.log('[Facebook Post] Image file path:', imagePath);
+        console.log("[Facebook Post] Image file path:", imagePath);
       }
 
       // Handle video upload
@@ -570,7 +582,10 @@ router.post(
             try {
               fs.unlinkSync(filePath);
             } catch (cleanupError) {
-              console.warn('Failed to delete oversized video file:', cleanupError);
+              console.warn(
+                "Failed to delete oversized video file:",
+                cleanupError
+              );
             }
           }
           return res.status(400).json({
@@ -580,22 +595,18 @@ router.post(
         }
         // Use file path for direct upload to Facebook
         videoPath = path.join(UPLOADS_DIR, videoFile.filename);
-        console.log('[Facebook Post] Video file path:', videoPath);
+        console.log("[Facebook Post] Video file path:", videoPath);
       }
 
       // Share to Facebook using Graph API with direct file upload
-      const result = await shareToFacebook(
-        facebook.userId,
-        pageAccessToken,
-        {
-          text: text.trim(),
-          imagePath,
-          videoPath,
-          linkUrl: linkUrl || undefined,
-          linkName: linkName || undefined,
-          linkDescription: linkDescription || undefined,
-        }
-      );
+      const result = await shareToFacebook(facebook.userId, pageAccessToken, {
+        text: text.trim(),
+        imagePath,
+        videoPath,
+        linkUrl: linkUrl || undefined,
+        linkName: linkName || undefined,
+        linkDescription: linkDescription || undefined,
+      });
 
       // Clean up uploaded files after successful post
       if (imageFile) {
@@ -603,9 +614,12 @@ router.post(
         if (fs.existsSync(filePath)) {
           try {
             fs.unlinkSync(filePath);
-            console.log('Temporary image file deleted:', filePath);
+            console.log("Temporary image file deleted:", filePath);
           } catch (cleanupError) {
-            console.warn('Failed to delete temporary image file:', cleanupError);
+            console.warn(
+              "Failed to delete temporary image file:",
+              cleanupError
+            );
           }
         }
       }
@@ -615,9 +629,12 @@ router.post(
         if (fs.existsSync(filePath)) {
           try {
             fs.unlinkSync(filePath);
-            console.log('Temporary video file deleted:', filePath);
+            console.log("Temporary video file deleted:", filePath);
           } catch (cleanupError) {
-            console.warn('Failed to delete temporary video file:', cleanupError);
+            console.warn(
+              "Failed to delete temporary video file:",
+              cleanupError
+            );
           }
         }
       }
@@ -632,7 +649,9 @@ router.post(
       console.error("Facebook post error:", error);
 
       // Clean up uploaded files on error
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+      const files = req.files as
+        | { [fieldname: string]: Express.Multer.File[] }
+        | undefined;
       if (files) {
         if (files.image?.[0]) {
           const filePath = path.join(UPLOADS_DIR, files.image[0].filename);
@@ -640,7 +659,10 @@ router.post(
             try {
               fs.unlinkSync(filePath);
             } catch (cleanupError) {
-              console.warn('Failed to delete temporary image file on error:', cleanupError);
+              console.warn(
+                "Failed to delete temporary image file on error:",
+                cleanupError
+              );
             }
           }
         }
@@ -650,7 +672,10 @@ router.post(
             try {
               fs.unlinkSync(filePath);
             } catch (cleanupError) {
-              console.warn('Failed to delete temporary video file on error:', cleanupError);
+              console.warn(
+                "Failed to delete temporary video file on error:",
+                cleanupError
+              );
             }
           }
         }
@@ -663,7 +688,8 @@ router.post(
       ) {
         return res.status(401).json({
           success: false,
-          message: "Facebook access token expired or invalid. Please reconnect your account.",
+          message:
+            "Facebook access token expired or invalid. Please reconnect your account.",
           requiresAuth: true,
         });
       }

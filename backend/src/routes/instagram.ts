@@ -213,14 +213,23 @@ router.get("/callback", async (req: Request, res: Response) => {
         const firstPage = pages[0];
         console.log(
           "[Instagram OAuth Callback] Attempting to connect using first page:",
-          firstPage.name
+          firstPage.name,
+          "Page ID:",
+          firstPage.id
         );
 
         try {
           // Try to get Instagram account directly using the page
+          // Use long-lived token first, then fallback to page token
+          const tokenToUse = longLivedToken.accessToken;
+          console.log(
+            "[Instagram OAuth Callback] Using token to get Instagram account. Token length:",
+            tokenToUse.length
+          );
+          
           const instagramAccount = await getInstagramAccountIdForPage(
             firstPage.id,
-            firstPage.accessToken || longLivedToken.accessToken
+            tokenToUse
           );
 
           // If we can get Instagram account, proceed with connection
@@ -300,17 +309,122 @@ router.get("/callback", async (req: Request, res: Response) => {
         } catch (directError: any) {
           console.error(
             "[Instagram OAuth Callback] Direct method failed:",
-            directError.response?.data || directError.message
+            {
+              error: directError.message,
+              response: directError.response?.data,
+              status: directError.response?.status,
+              pageId: firstPage.id,
+              pageName: firstPage.name,
+            }
           );
+          
+          // Try with page access token as fallback
+          if (firstPage.accessToken && firstPage.accessToken !== longLivedToken.accessToken) {
+            console.log(
+              "[Instagram OAuth Callback] Trying with page access token as fallback..."
+            );
+            try {
+              const instagramAccount = await getInstagramAccountIdForPage(
+                firstPage.id,
+                firstPage.accessToken
+              );
+              
+              console.log(
+                "[Instagram OAuth Callback] ✅ Successfully found Instagram account with page token:",
+                {
+                  username: instagramAccount.username,
+                  accountType: instagramAccount.accountType,
+                  instagramAccountId: instagramAccount.instagramAccountId,
+                  facebookPageId: instagramAccount.facebookPageId,
+                }
+              );
+              
+              // Calculate expiration date
+              const expiresAt = new Date();
+              expiresAt.setSeconds(
+                expiresAt.getSeconds() + longLivedToken.expiresIn
+              );
+
+              // Save to user
+              if (!user.socialConnections) {
+                user.socialConnections = {};
+              }
+
+              // Save Instagram connection
+              user.socialConnections.instagram = {
+                accessToken: longLivedToken.accessToken,
+                userId: instagramAccount.instagramAccountId,
+                username: instagramAccount.username,
+                accountType: instagramAccount.accountType,
+                expiresAt,
+              };
+
+              // Also save Facebook Page connection (Instagram requires a Facebook Page)
+              const pageToken = firstPage.accessToken || longLivedToken.accessToken;
+              user.socialConnections.facebook = {
+                accessToken: pageToken,
+                userId: instagramAccount.facebookPageId,
+                expiresAt,
+              };
+
+              await user.save();
+
+              console.log(
+                "[Instagram OAuth Callback] Successfully connected:",
+                {
+                  userId: user._id,
+                  instagramUsername: instagramAccount.username,
+                  facebookPageId: instagramAccount.facebookPageId,
+                }
+              );
+
+              const clientUrl =
+                process.env.CLIENT_URL ||
+                process.env.FRONTEND_URL ||
+                "http://localhost:3000";
+              const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+
+              if (isFrontendCallback) {
+                return res.json({
+                  success: true,
+                  message: "Successfully connected Instagram and Facebook Page",
+                  redirectUrl,
+                  instagram: {
+                    userId: instagramAccount.instagramAccountId,
+                    username: instagramAccount.username,
+                    accountType: instagramAccount.accountType,
+                  },
+                  facebook: {
+                    pageId: instagramAccount.facebookPageId,
+                    pageName: instagramAccount.facebookPageName,
+                  },
+                });
+              } else {
+                return res.redirect(redirectUrl);
+              }
+            } catch (pageTokenError: any) {
+              console.error(
+                "[Instagram OAuth Callback] Page token method also failed:",
+                pageTokenError.response?.data || pageTokenError.message
+              );
+            }
+          }
+          
           // Fall through to error
         }
       }
 
-      // If we can't connect Instagram, return error
+      // If we can't connect Instagram, return detailed error
+      const errorDetails = pages.length > 0 
+        ? `Found ${pages.length} Facebook Page(s) but couldn't detect Instagram account. This might be due to: 1) Instagram account not connected to Facebook Page, 2) Insufficient permissions (business_management scope), or 3) Instagram account is not a Business/Creator account.`
+        : "No Facebook Pages found. Please create a Facebook Page and connect an Instagram Business/Creator account to it.";
+      
+      console.error("[Instagram OAuth Callback] Connection failed:", errorDetails);
+      
       if (isFrontendCallback) {
         return res.json({
           success: false,
-          message: `Failed to connect. Please ensure you have a Facebook Page with an Instagram Business/Creator account connected.`,
+          message: `Failed to connect. Please ensure you have a Facebook Page with an Instagram Business/Creator account connected. ${errorDetails}`,
         });
       }
       return res.redirect(

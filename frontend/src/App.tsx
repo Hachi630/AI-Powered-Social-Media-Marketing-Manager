@@ -24,6 +24,7 @@ import { AppSettingsProvider } from "./contexts/AppSettingsContext";
 import DarkModeProvider from "./components/DarkModeProvider";
 import LinkedInDashboard from "./components/LinkedInDashboard";
 import InstagramCallback from "./pages/InstagramCallback";
+import FacebookCallback from "./pages/FacebookCallback";
 
 function AuthCallback({
   onLoginSuccess,
@@ -122,6 +123,7 @@ function AppContent() {
         element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
       />
       <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
+      <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
       <Route
         path="/"
         element={
