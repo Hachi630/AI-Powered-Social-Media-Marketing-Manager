@@ -34,6 +34,7 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   process.env.FRONTEND_URL,
   'http://localhost:3000', // Development frontend
+  'https://main.d1sxixpats4kxg.amplifyapp.com', // Amplify deployment
 ].filter(Boolean) as string[]
 
 app.use(cors({

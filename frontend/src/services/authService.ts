@@ -117,20 +117,41 @@ export const authService = {
   // Login/Register with Google OAuth
   googleLogin: async (idToken: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_URL}/google`, {
+      const url = `${API_URL}/google`
+      console.log('[Auth Service] Google login request to:', url)
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ idToken }),
       })
+      
+      console.log('[Auth Service] Google login response status:', response.status)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
+        console.error('[Auth Service] Google login error:', errorData)
+        return { 
+          success: false, 
+          message: errorData.message || `Server error: ${response.status}` 
+        }
+      }
+      
       const data = await response.json()
+      console.log('[Auth Service] Google login success:', data.success)
+      
       if (data.token) {
         localStorage.setItem('token', data.token)
       }
       return data
-    } catch (error) {
-      return { success: false, message: 'Network error' }
+    } catch (error: any) {
+      console.error('[Auth Service] Google login network error:', error)
+      return { 
+        success: false, 
+        message: error.message || 'Network error: Unable to connect to server' 
+      }
     }
   },
 
