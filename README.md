@@ -159,7 +159,11 @@ Melo/
    
    Create a `.env` file in the `backend/` directory (see Environment Variables section below for required variables).
    
-   **Important**: Make sure to add Twitter and LinkedIn API credentials:
+   **Important Notes**:
+   - The `.env` file is automatically ignored by Git (see `.gitignore`)
+   - Never commit `.env` files to version control
+   - Copy `.env.example` to `.env` if available, or create a new `.env` file
+   - Make sure to add Twitter and LinkedIn API credentials:
 
    ```env
    # Twitter/X OAuth (Required for Twitter integration)
@@ -248,16 +252,33 @@ CLIENT_URL=http://localhost:3000
 
 ### Frontend
 
-The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to proxy API requests to the backend.
+The frontend uses Vite's proxy configuration (see `frontend/vite.config.ts`) to proxy API requests to the backend during development.
 
-### Frontend(.env)
+**For Development:**
+- No frontend `.env` file needed (Vite proxy handles API requests)
+- Optional: Create `frontend/.env` if you want to customize backend port:
 
 ```env
 VITE_BACKEND_PORT=5000
-VITE_GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
-# Optional: Set VITE_API_URL if not using vite proxy (default: empty string uses proxy)
-# VITE_API_URL=http://localhost:5000
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+# VITE_API_URL is not needed in development (uses proxy)
 ```
+
+**For Production/Deployment:**
+- **Required**: Create `frontend/.env` or set environment variables in your deployment platform:
+
+```env
+# Required: Backend API URL (for production)
+VITE_API_URL=https://your-backend-url.onrender.com
+
+# Required: Google OAuth Client ID
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+**Important**: 
+- `VITE_API_URL` is **required** in production for images and API calls to work correctly
+- Without `VITE_API_URL`, images generated/uploaded will not display properly in production
+- The frontend automatically prepends `VITE_API_URL` to image paths in production mode
 
 ### LinkedIn Integration (.env)
 
@@ -475,6 +496,46 @@ The LinkedIn integration allows users to connect their LinkedIn accounts and man
   ```
 - **Verify services**: Backend on port 5000, Frontend on port 3000
 
+## 🚀 Deployment
+
+### Production Environment Variables
+
+**Backend (Render/Vercel/etc.)**:
+```env
+NODE_ENV=production
+PORT=5000
+MONGODB_URI=your_mongodb_atlas_uri
+JWT_SECRET=your_jwt_secret
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_IMAGE_MODEL=gemini-3-pro-image-preview
+FRONTEND_URL=https://your-frontend-url.vercel.app
+BACKEND_URL=https://your-backend-url.onrender.com
+CLIENT_URL=https://your-frontend-url.vercel.app
+# ... other OAuth credentials
+```
+
+**Frontend (Vercel/etc.)**:
+```env
+VITE_API_URL=https://your-backend-url.onrender.com
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+```
+
+**Critical**: 
+- `VITE_API_URL` is **required** in production for images to display correctly
+- Without `VITE_API_URL`, generated/uploaded images will not load in production
+- The frontend automatically handles image URL resolution based on environment
+
+### Image Display in Production
+
+The application uses a utility function (`getImageUrl`) that:
+- **Development**: Uses relative paths (Vite proxy handles routing)
+- **Production**: Automatically prepends `VITE_API_URL` to image paths
+
+This ensures images work correctly in both environments without code changes.
+
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
 ## 🔧 Troubleshooting
 
 ### DOMMatrix is not defined Error
@@ -567,6 +628,53 @@ If you're experiencing issues with the Integrated Terminal in VS Code (or Cursor
    ```
 
 **For more detailed troubleshooting**, refer to the [VS Code Terminal Troubleshooting Guide](https://aka.ms/vscode-troubleshoot-terminal-launch).
+
+### Image Generation Issues
+
+**Error: "Image generation failed: No image data in API response"**
+
+This error indicates that the Gemini API response doesn't contain image data. Possible causes:
+
+1. **Model doesn't support image generation**: The model specified in `GEMINI_IMAGE_MODEL` may not support image generation in your region
+2. **API response structure changed**: Check backend console logs for the actual API response structure
+3. **API key issues**: Verify your `GEMINI_API_KEY` is valid and has proper permissions
+
+**Solutions**:
+- Check backend console for detailed error logs and API response structure
+- Try a different model or verify model availability in your region
+- Ensure your Gemini API key has image generation permissions
+
+### Production Image Display Issues
+
+**Images not showing in production deployment**
+
+**Cause**: Missing `VITE_API_URL` environment variable in frontend
+
+**Solution**: 
+1. Set `VITE_API_URL` in your deployment platform (Vercel, etc.)
+2. Value should be your backend URL: `https://your-backend-url.onrender.com`
+3. Redeploy the frontend
+
+**Verification**:
+- Check browser console for 404 errors on image requests
+- Verify image URLs in production start with your backend URL
+- Check that backend `/uploads` route is accessible
+
+### Local Login Issues
+
+**Login works in production but not locally**
+
+**Common causes**:
+1. Backend server not running on `http://localhost:5000`
+2. Database connection issues (check `MONGODB_URI` in `backend/.env`)
+3. Different databases used in local vs production environments
+4. Missing or incorrect environment variables
+
+**Solutions**:
+- Ensure backend server is running: `cd backend && npm run dev`
+- Verify database connection in backend console logs
+- Check `backend/.env` file exists and contains all required variables
+- Test API health endpoint: `http://localhost:5000/api/health`
 
 ## 📚 API Documentation
 
