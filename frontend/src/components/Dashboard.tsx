@@ -76,11 +76,15 @@ export default function Dashboard({
 
   const handleConversationChange = useCallback(
     (conversationId: string | null) => {
-      setSelectedConversationId(conversationId);
-      // Trigger conversations list update
-      setConversationsUpdateTrigger((prev) => prev + 1);
+      // Only update if conversationId actually changed
+      // This prevents unnecessary re-renders when the same conversation is set again
+      if (conversationId !== selectedConversationId) {
+        setSelectedConversationId(conversationId);
+        // Trigger conversations list update
+        setConversationsUpdateTrigger((prev) => prev + 1);
+      }
     },
-    []
+    [selectedConversationId]
   );
 
   const handleTypingStatus = useCallback((typing: boolean) => {
@@ -131,7 +135,7 @@ export default function Dashboard({
             className={styles.sider}
           >
             <Sidebar
-              collapsed={collapsed}
+              collapsed={collapsed ?? false}
               onToggleSidebar={handleToggleSidebar}
               user={user}
               selectedConversationId={selectedConversationId}

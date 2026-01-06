@@ -1,15 +1,15 @@
 import { Router, Request, Response } from "express";
 import { TwitterApi } from "twitter-api-v2";
-import TwitterToken from "../models/TwitterToken";
-import TwitterRequestToken from "../models/TwitterRequestToken";
-import { protect } from "../middleware/auth";
+import TwitterToken from "../models/TwitterToken.js";
+import TwitterRequestToken from "../models/TwitterRequestToken.js";
+import { protect } from "../middleware/auth.js";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import fs from "fs";
-import { AuthRequest } from "../types";
-import { twitterService } from "../services/twitterService";
+import { AuthRequest } from "../types/index.js";
+import { twitterService } from "../services/twitterService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -493,6 +493,12 @@ router.post(
   protect,
   upload.single("image"),
   async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
     const userId = req.user._id;
     const { text } = req.body;
 
@@ -652,21 +658,24 @@ router.post(
 
 // STEP 5 — Create a tweet (text and/or image)
 router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: "User not authenticated" });
+  }
   const userId = req.user._id;
   const { text } = req.body;
 
   // Validate text content
   if (!text || text.trim().length === 0) {
-    return res.status(400).json({ 
-      success: false, 
-      error: "Tweet text is required" 
+    return res.status(400).json({
+      success: false,
+      error: "Tweet text is required"
     });
   }
 
   if (text.length > 280) {
-    return res.status(400).json({ 
-      success: false, 
-      error: "Tweet text cannot exceed 280 characters" 
+    return res.status(400).json({
+      success: false,
+      error: "Tweet text cannot exceed 280 characters"
     });
   }
 
@@ -747,10 +756,10 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
       }
 
       // Return detailed error information
-      const errorMessage = result.error?.data?.detail || 
-                          result.error?.errors?.[0]?.message || 
-                          result.error?.message || 
-                          'Failed to post tweet';
+      const errorMessage = result.error?.data?.detail ||
+        result.error?.errors?.[0]?.message ||
+        result.error?.message ||
+        'Failed to post tweet';
       const errorCode = result.error?.code;
 
       console.error('Twitter posting failed:', {
@@ -788,8 +797,12 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
 });
 
 // STEP 4 — Check connection status
+// By default, uses cached data from database to avoid wasting API quota
+// Add ?verify=true to force verification with Twitter API
 router.get("/status", protect, async (req: any, res) => {
   const userId = req.user._id;
+  const shouldVerify = req.query.verify === 'true';
+
   const token = await TwitterToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.accessSecret) {
@@ -799,7 +812,28 @@ router.get("/status", protect, async (req: any, res) => {
     });
   }
 
+  // If we have cached data and don't need to verify, return cached data immediately
+  // This prevents wasting the 25 requests/day limit on page refreshes
+  if (!shouldVerify && token.twitterUserId) {
+    console.log("Twitter status: Using cached data (no API call)");
+    return res.json({
+      connected: true,
+      profile: {
+        id: token.twitterUserId,
+        username: token.twitterUsername || null,
+        name: token.twitterName || null,
+        picture: token.twitterPicture || null,
+        email: null,
+      },
+      cached: true,
+      message: "Using cached profile data. Add ?verify=true to verify token with Twitter API.",
+    });
+  }
+
+  // Only call Twitter API if verify=true or we don't have cached data
   try {
+    console.log("Twitter status: Verifying with Twitter API (verify=" + shouldVerify + ")");
+
     // Verify token is still valid by getting user info
     const appKey = process.env.TWITTER_API_KEY;
     const appSecret = process.env.TWITTER_API_SECRET;
@@ -844,6 +878,7 @@ router.get("/status", protect, async (req: any, res) => {
         // Twitter API doesn't provide email without special permissions
         email: null,
       },
+      verified: true,
     });
   } catch (error: any) {
     console.error("Error checking Twitter status:", error);
@@ -871,12 +906,12 @@ router.get("/status", protect, async (req: any, res) => {
         connected: true,
         profile: token.twitterUserId
           ? {
-              id: token.twitterUserId,
-              username: token.twitterUsername || null,
-              name: token.twitterName || null,
-              picture: token.twitterPicture || null,
-              email: null,
-            }
+            id: token.twitterUserId,
+            username: token.twitterUsername || null,
+            name: token.twitterName || null,
+            picture: token.twitterPicture || null,
+            email: null,
+          }
           : null,
         rateLimited: true,
         rateLimitReset: resetTime?.toISOString(),

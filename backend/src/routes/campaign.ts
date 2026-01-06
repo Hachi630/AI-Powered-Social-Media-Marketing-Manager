@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express'
-import { protect } from '../middleware/auth'
-import { AuthRequest } from '../types'
-import Campaign from '../models/Campaign'
+import { protect } from '../middleware/auth.js'
+import { AuthRequest } from '../types/index.js'
+import Campaign from '../models/Campaign.js'
 
 const router = express.Router()
 
@@ -22,7 +22,7 @@ router.get('/', protect, async (req: AuthRequest, res: Response) => {
 
     res.json({
       success: true,
-      campaigns: campaigns.map((campaign) => ({
+      campaigns: campaigns.map((campaign: any) => ({
         id: campaign._id.toString(),
         userId: campaign.userId.toString(),
         name: campaign.name,

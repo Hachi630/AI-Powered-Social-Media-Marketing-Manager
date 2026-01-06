@@ -1,32 +1,39 @@
-import express, { Request, Response } from 'express'
-import { OAuth2Client } from 'google-auth-library'
-import dotenv from 'dotenv'
-import User from '../models/User'
-import { generateToken } from '../utils/jwt'
-import { protect } from '../middleware/auth'
-import { AuthRequest } from '../types'
-import { verifyGoogleToken } from '../utils/googleAuth'
-import axios from 'axios'
-import crypto from 'crypto'
+import express, { Request, Response } from "express";
+import { OAuth2Client } from "google-auth-library";
+import dotenv from "dotenv";
+import User from "../models/User.js";
+import { generateToken } from "../utils/jwt.js";
+import { protect } from "../middleware/auth.js";
+import { AuthRequest } from "../types/index.js";
+import { verifyGoogleToken } from "../utils/googleAuth.js";
+import axios from "axios";
+import crypto from "crypto";
 
-dotenv.config()
+dotenv.config();
 
 // Validate Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI =
+  process.env.GOOGLE_REDIRECT_URI ||
+  "http://localhost:5000/api/auth/google/callback";
 
-if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || 
-    GOOGLE_CLIENT_ID === 'your_google_client_id_here' || 
-    GOOGLE_CLIENT_SECRET === 'your_google_client_secret_here') {
-  console.warn('⚠️  Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env')
+if (
+  !GOOGLE_CLIENT_ID ||
+  !GOOGLE_CLIENT_SECRET ||
+  GOOGLE_CLIENT_ID === "your_google_client_id_here" ||
+  GOOGLE_CLIENT_SECRET === "your_google_client_secret_here"
+) {
+  console.warn(
+    "⚠️  Google OAuth not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in backend/.env"
+  );
 }
 
 const oauth2Client = new OAuth2Client(
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI
-)
+);
 
 interface MicrosoftUser {
   mail?: string;
@@ -35,7 +42,7 @@ interface MicrosoftUser {
   id?: string;
 }
 
-const router = express.Router()
+const router = express.Router();
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -157,51 +164,51 @@ router.post("/login", async (req: Request, res: Response) => {
 // @desc    Login/Register with Google OAuth
 // @route   POST /api/auth/google
 // @access  Public
-router.post('/google', async (req: Request, res: Response) => {
+router.post("/google", async (req: Request, res: Response) => {
   try {
-    const { idToken } = req.body
+    const { idToken } = req.body;
 
     // Validate ID token
     if (!idToken) {
       return res.status(400).json({
         success: false,
-        message: 'Google ID token is required',
-      })
+        message: "Google ID token is required",
+      });
     }
 
     // Verify Google token
-    let googleUser
+    let googleUser;
     try {
-      googleUser = await verifyGoogleToken(idToken)
+      googleUser = await verifyGoogleToken(idToken);
     } catch (error: any) {
       return res.status(401).json({
         success: false,
-        message: error.message || 'Invalid Google token',
-      })
+        message: error.message || "Invalid Google token",
+      });
     }
 
     // Check if user exists by Google ID
-    let user = await User.findOne({ googleId: googleUser.sub })
+    let user = await User.findOne({ googleId: googleUser.sub });
 
     // If not found by Google ID, check by email
     if (!user) {
-      user = await User.findOne({ email: googleUser.email })
+      user = await User.findOne({ email: googleUser.email });
     }
 
     if (user) {
       // Update existing user with Google ID if not already set
       if (!user.googleId) {
-        user.googleId = googleUser.sub
-        user.authProvider = 'google' // Set auth provider for Google OAuth users
+        user.googleId = googleUser.sub;
+        user.authProvider = "google"; // Set auth provider for Google OAuth users
       }
       // Update user info from Google if available
       if (googleUser.name && !user.name) {
-        user.name = googleUser.name
+        user.name = googleUser.name;
       }
       if (googleUser.picture && !user.avatar) {
-        user.avatar = googleUser.picture
+        user.avatar = googleUser.picture;
       }
-      await user.save()
+      await user.save();
     } else {
       // Create new user
       user = await User.create({
@@ -209,9 +216,9 @@ router.post('/google', async (req: Request, res: Response) => {
         googleId: googleUser.sub,
         name: googleUser.name,
         avatar: googleUser.picture,
-        authProvider: 'google', // Set auth provider to avoid password validation
+        authProvider: "google", // Set auth provider to avoid password validation
         // Password is not required for Google OAuth users
-      })
+      });
     }
 
     // Return user and token
@@ -235,15 +242,20 @@ router.post('/google', async (req: Request, res: Response) => {
         createdAt: user.createdAt,
       },
       token: generateToken(user._id.toString()),
-    })
+    });
   } catch (error: any) {
-    console.error('[Google OAuth] Error:', error)
+    console.error("[Google OAuth] Error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    });
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to authenticate with Google',
-    })
+      message: error.message || "Failed to authenticate with Google",
+      error: process.env.NODE_ENV === "development" ? error.stack : undefined,
+    });
   }
-})
+});
 
 // @desc    Get current user
 // @route   GET /api/auth/me
@@ -258,62 +270,69 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "User not found" });
     }
 
-      // If user has companies array, use it; otherwise, create from single company fields (backward compatibility)
-      let companies = user.companies || []
-      
-      // If no companies but has single company fields, create a company from those fields
-      if (companies.length === 0 && (user.brandName || user.industry || user.toneOfVoice)) {
-        companies = [{
+    // If user has companies array, use it; otherwise, create from single company fields (backward compatibility)
+    let companies = user.companies || [];
+
+    // If no companies but has single company fields, create a company from those fields
+    if (
+      companies.length === 0 &&
+      (user.brandName || user.industry || user.toneOfVoice)
+    ) {
+      companies = [
+        {
           id: `company_${Date.now()}`,
-          name: user.brandName || 'My Company',
-          brandName: user.brandName || '',
-          industry: user.industry || '',
-          toneOfVoice: user.toneOfVoice || 'calm',
-          customTone: '',
+          name: user.brandName || "My Company",
+          brandName: user.brandName || "",
+          industry: user.industry || "",
+          toneOfVoice: user.toneOfVoice || "calm",
+          customTone: "",
           knowledgeProducts: user.knowledgeProducts || [],
           targetAudience: user.targetAudience || [],
-          companyDescription: '',
-          brandLogoUrl: user.brandLogoUrl || '',
-        }]
-      }
-
-      res.status(200).json({
-        success: true,
-        user: {
-          id: user._id.toString(),
-          email: user.email,
-          name: user.name,
-          brandName: user.brandName,
-          brandLogoUrl: user.brandLogoUrl,
-          phone: user.phone,
-          birthday: user.birthday,
-          gender: user.gender,
-          address: user.address,
-          aboutMe: user.aboutMe,
-          avatar: user.avatar,
-          industry: user.industry,
-          toneOfVoice: user.toneOfVoice,
-          knowledgeProducts: user.knowledgeProducts,
-          targetAudience: user.targetAudience,
-          companies: companies,
-          authProvider: user.authProvider,
-          createdAt: user.createdAt,
+          companyDescription: "",
+          brandLogoUrl: user.brandLogoUrl || "",
         },
-      })
+      ];
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        brandName: user.brandName,
+        brandLogoUrl: user.brandLogoUrl,
+        phone: user.phone,
+        birthday: user.birthday,
+        gender: user.gender,
+        address: user.address,
+        aboutMe: user.aboutMe,
+        avatar: user.avatar,
+        industry: user.industry,
+        toneOfVoice: user.toneOfVoice,
+        knowledgeProducts: user.knowledgeProducts,
+        targetAudience: user.targetAudience,
+        companies: companies,
+        authProvider: user.authProvider,
+        createdAt: user.createdAt,
+      },
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message });
   }
-})
+});
 
 // @desc    Update user profile
 // @route   PUT /api/auth/profile
 // @access  Private
-router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
+router.put("/profile", protect, async (req: AuthRequest, res: Response) => {
   try {
-    const user = req.user
+    const user = req.user;
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Extract allowed fields from request body
@@ -332,22 +351,31 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
       knowledgeProducts,
       targetAudience,
       companies,
-    } = req.body
+    } = req.body;
+
+    // Log incoming companies data for debugging
+    if (companies !== undefined) {
+      console.log(
+        "[Profile Update] Received companies data:",
+        JSON.stringify(companies, null, 2)
+      );
+    }
 
     // Update user fields
-    if (name !== undefined) user.name = name
-    if (brandName !== undefined) user.brandName = brandName
-    if (brandLogoUrl !== undefined) user.brandLogoUrl = brandLogoUrl
-    if (phone !== undefined) user.phone = phone
-    if (birthday !== undefined) user.birthday = birthday
-    if (gender !== undefined) user.gender = gender
-    if (address !== undefined) user.address = address
-    if (aboutMe !== undefined) user.aboutMe = aboutMe
-    if (avatar !== undefined) user.avatar = avatar
-    if (industry !== undefined) user.industry = industry
-    if (toneOfVoice !== undefined) user.toneOfVoice = toneOfVoice
-    if (knowledgeProducts !== undefined) user.knowledgeProducts = knowledgeProducts
-    if (targetAudience !== undefined) user.targetAudience = targetAudience
+    if (name !== undefined) user.name = name;
+    if (brandName !== undefined) user.brandName = brandName;
+    if (brandLogoUrl !== undefined) user.brandLogoUrl = brandLogoUrl;
+    if (phone !== undefined) user.phone = phone;
+    if (birthday !== undefined) user.birthday = birthday;
+    if (gender !== undefined) user.gender = gender;
+    if (address !== undefined) user.address = address;
+    if (aboutMe !== undefined) user.aboutMe = aboutMe;
+    if (avatar !== undefined) user.avatar = avatar;
+    if (industry !== undefined) user.industry = industry;
+    if (toneOfVoice !== undefined) user.toneOfVoice = toneOfVoice;
+    if (knowledgeProducts !== undefined)
+      user.knowledgeProducts = knowledgeProducts;
+    if (targetAudience !== undefined) user.targetAudience = targetAudience;
 
     // Update companies array if provided
     if (companies !== undefined) {
@@ -355,14 +383,48 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
       if (Array.isArray(companies) && companies.length > 10) {
         return res.status(400).json({
           success: false,
-          message: 'Maximum 10 companies allowed',
-        })
+          message: "Maximum 10 companies allowed",
+        });
       }
-      user.companies = companies
+
+      // Sanitize and ensure all company fields are properly formatted
+      if (Array.isArray(companies)) {
+        const sanitizedCompanies = companies.map((company: any) => ({
+          id: String(company.id || `company_${Date.now()}`),
+          name: String(company.name || ""),
+          brandName: String(company.brandName || ""),
+          industry: String(company.industry || ""),
+          toneOfVoice: String(company.toneOfVoice || "calm"),
+          customTone: String(company.customTone || ""),
+          knowledgeProducts: Array.isArray(company.knowledgeProducts)
+            ? company.knowledgeProducts.map((p: any) => String(p))
+            : [],
+          targetAudience: Array.isArray(company.targetAudience)
+            ? company.targetAudience.map((a: any) => String(a))
+            : [],
+          companyDescription: String(company.companyDescription || ""),
+          brandLogoUrl: String(company.brandLogoUrl || ""),
+        }));
+
+        console.log(
+          "[Profile Update] Sanitized companies:",
+          JSON.stringify(sanitizedCompanies, null, 2)
+        );
+        user.companies = sanitizedCompanies;
+      } else {
+        user.companies = companies;
+      }
+      // Mark companies as modified to ensure Mongoose saves nested array changes
+      user.markModified("companies");
     }
 
     // Save updated user
-    await user.save()
+    console.log(
+      "[Profile Update] Attempting to save user with companies count:",
+      user.companies?.length || 0
+    );
+    await user.save();
+    console.log("[Profile Update] User saved successfully");
 
     res.status(200).json({
       success: true,
@@ -388,6 +450,14 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
       },
     });
   } catch (error: any) {
+    console.error("[Profile Update] Error saving profile:", error);
+    console.error("[Profile Update] Error details:", error.message);
+    if (error.errors) {
+      console.error(
+        "[Profile Update] Validation errors:",
+        JSON.stringify(error.errors, null, 2)
+      );
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -395,41 +465,46 @@ router.put('/profile', protect, async (req: AuthRequest, res: Response) => {
 // @desc    Change user password
 // @route   PUT /api/auth/password
 // @access  Private
-router.put('/password', protect, async (req: AuthRequest, res: Response) => {
+router.put("/password", protect, async (req: AuthRequest, res: Response) => {
   try {
-    const user = req.user
+    const user = req.user;
 
     if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Check if user is a local auth user (not Google)
-    if (user.authProvider !== 'local') {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Password change is only available for local authentication users' 
-      })
+    if (user.authProvider !== "local") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password change is only available for local authentication users",
+      });
     }
 
-    const { newPassword } = req.body
+    const { newPassword } = req.body;
 
     // Validate new password
     if (!newPassword || newPassword.trim().length === 0) {
-      return res.status(400).json({ success: false, message: 'Please provide a new password' })
+      return res
+        .status(400)
+        .json({ success: false, message: "Please provide a new password" });
     }
 
     // Update password (plain text as per existing implementation)
-    user.password = newPassword.trim()
-    await user.save()
+    user.password = newPassword.trim();
+    await user.save();
 
     res.status(200).json({
       success: true,
-      message: 'Password updated successfully',
-    })
+      message: "Password updated successfully",
+    });
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({ success: false, message: error.message });
   }
-})
+});
 
 // @desc    Log user out
 // @route   POST /api/auth/logout
@@ -445,102 +520,110 @@ router.post("/logout", protect, (req: Request, res: Response) => {
 // @desc    Initiate Google OAuth login
 // @route   GET /api/auth/google
 // @access  Public
-router.get('/google', (req: Request, res: Response) => {
+router.get("/google", (req: Request, res: Response) => {
   try {
     const authUrl = oauth2Client.generateAuthUrl({
-      access_type: 'offline',
+      access_type: "offline",
       scope: [
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile',
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
       ],
-      prompt: 'consent',
-    })
-    res.redirect(authUrl)
+      prompt: "consent",
+    });
+    res.redirect(authUrl);
   } catch (error: any) {
-    console.error('Error generating Google OAuth URL:', error)
+    console.error("Error generating Google OAuth URL:", error);
     // Let Google show the error instead of redirecting to frontend
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000'
-    res.redirect(`${frontendUrl}/?error=google_oauth_error`)
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    res.redirect(`${frontendUrl}/?error=google_oauth_error`);
   }
-})
+});
 
 // Config check endpoints so frontend can quickly verify provider setup
-router.get('/google/config', (req: Request, res: Response) => {
-  const configured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)
-  res.json({ configured })
-})
+router.get("/google/config", (req: Request, res: Response) => {
+  const configured = !!(
+    process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+  );
+  res.json({ configured });
+});
 
 // @desc    Google OAuth callback
 // @route   GET /api/auth/google/callback
 // @access  Public
-router.get('/google/callback', async (req: Request, res: Response) => {
+router.get("/google/callback", async (req: Request, res: Response) => {
   try {
-    const { code } = req.query
+    const { code } = req.query;
 
     if (!code) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=oauth_failed`)
+      return res.redirect(
+        `${process.env.FRONTEND_URL || "http://localhost:5173"}/?error=oauth_failed`
+      );
     }
 
-    const { tokens } = await oauth2Client.getToken(code as string)
-    oauth2Client.setCredentials(tokens)
+    const { tokens } = await oauth2Client.getToken(code as string);
+    oauth2Client.setCredentials(tokens);
 
     const ticket = await oauth2Client.verifyIdToken({
       idToken: tokens.id_token!,
       audience: process.env.GOOGLE_CLIENT_ID,
-    })
-    const payload = ticket.getPayload()
-    
+    });
+    const payload = ticket.getPayload();
+
     if (!payload) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=oauth_failed`)
+      return res.redirect(
+        `${process.env.FRONTEND_URL || "http://localhost:5173"}/?error=oauth_failed`
+      );
     }
 
-    const { email, sub: googleId, name, picture } = payload
+    const { email, sub: googleId, name, picture } = payload;
 
     if (!email) {
-      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/?error=no_email`)
+      return res.redirect(
+        `${process.env.FRONTEND_URL || "http://localhost:5173"}/?error=no_email`
+      );
     }
 
-    let user = await User.findOne({ 
-      $or: [
-        { email },
-        { googleId }
-      ]
-    })
+    let user = await User.findOne({
+      $or: [{ email }, { googleId }],
+    });
 
     if (user) {
       if (!user.googleId) {
-        user.googleId = googleId
-        user.authProvider = 'google'
-        if (name) user.name = name
-        if (picture) user.avatar = picture
-        await user.save()
+        user.googleId = googleId;
+        user.authProvider = "google";
+        if (name) user.name = name;
+        if (picture) user.avatar = picture;
+        await user.save();
       }
     } else {
       user = await User.create({
         email,
         googleId,
-        name: name || '',
-        avatar: picture || '',
-        authProvider: 'google',
-      })
+        name: name || "",
+        avatar: picture || "",
+        authProvider: "google",
+      });
     }
 
-    const token = generateToken(user._id.toString())
+    const token = generateToken(user._id.toString());
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    res.redirect(`${frontendUrl}/auth/callback?token=${token}`)
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
   } catch (error: any) {
-    console.error('Google OAuth error:', error)
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
-    res.redirect(`${frontendUrl}/?error=oauth_failed`)
+    console.error("Google OAuth error:", error);
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    res.redirect(`${frontendUrl}/?error=oauth_failed`);
   }
-})
+});
 
 // ----------------------------
 // Microsoft OAuth
 // ----------------------------
 router.get("/microsoft", (req: Request, res: Response) => {
-  if (!process.env.MICROSOFT_CLIENT_ID || !process.env.MICROSOFT_CLIENT_SECRET) {
+  if (
+    !process.env.MICROSOFT_CLIENT_ID ||
+    !process.env.MICROSOFT_CLIENT_SECRET
+  ) {
     const html = `
       <html>
       <body style="font-family: Helvetica, Arial, sans-serif; text-align:center;">
@@ -548,8 +631,8 @@ router.get("/microsoft", (req: Request, res: Response) => {
         <p>Please add <code>MICROSOFT_CLIENT_ID</code> and <code>MICROSOFT_CLIENT_SECRET</code> to your backend <code>.env</code> and restart the server.</p>
         <p>See README for details.</p>
       </body>
-      </html>`
-    return res.status(500).send(html)
+      </html>`;
+    return res.status(500).send(html);
   }
   const state = crypto.randomBytes(16).toString("hex");
   const redirectUri = `${process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`}/api/auth/microsoft/callback`;
@@ -566,8 +649,10 @@ router.get("/microsoft", (req: Request, res: Response) => {
   );
 });
 
-router.get('/microsoft/config', (req: Request, res: Response) => {
-  const configured = !!(process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET);
+router.get("/microsoft/config", (req: Request, res: Response) => {
+  const configured = !!(
+    process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET
+  );
   res.json({ configured });
 });
 
@@ -624,7 +709,9 @@ router.get("/microsoft/callback", async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("Microsoft OAuth callback error", err);
     const frontendUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}`;
-    res.redirect(`${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message)}`);
+    res.redirect(
+      `${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message)}`
+    );
   }
 });
 

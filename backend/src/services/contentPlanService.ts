@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
-import { UserContext } from './geminiService'
+import { UserContext } from './geminiService.js'
 
 // Initialize Gemini client with API key from environment
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })

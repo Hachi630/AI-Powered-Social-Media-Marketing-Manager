@@ -63,6 +63,8 @@ export default function ChatBox({
   const [uploading, setUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isInitializingRef = useRef(false);
+  const previousHasMessagesRef = useRef(false);
 
   // Edit message state (from main branch)
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
@@ -79,14 +81,23 @@ export default function ChatBox({
 
   // Load conversation when conversationId changes
   useEffect(() => {
-    if (conversationId) {
-      loadConversation(conversationId);
-    } else {
-      // Reset to new conversation
-      setMessages([]);
-      setCurrentConversationId(null);
+    // Only load if conversationId is different from current one
+    // This prevents reloading when we just created a new conversation
+    if (conversationId && conversationId !== currentConversationId) {
+      // Skip if we're currently initializing (sending a message that creates a new conversation)
+      if (!isInitializingRef.current) {
+        loadConversation(conversationId);
+      }
+    } else if (!conversationId && currentConversationId && !isInitializingRef.current) {
+      // Reset to new conversation only if we had a conversation before
+      // and we're not in the middle of initializing
+      // Only clear messages if we're actually switching to a new conversation (not loading)
+      if (!loading) {
+        setMessages([]);
+        setCurrentConversationId(null);
+      }
     }
-  }, [conversationId]);
+  }, [conversationId, currentConversationId, loading]);
 
   // Inform parent when typing state changes
   const updateTypingStatus = useCallback(
@@ -100,12 +111,28 @@ export default function ChatBox({
 
   useEffect(() => {
     if (onContentChange) {
-      onContentChange(messages.length > 0);
+      // Only notify parent if messages actually exist
+      // Don't reset to false during loading to prevent title from flashing
+      const hasActualMessages = messages.length > 0;
+      // Only call onContentChange if the value actually changed
+      // This prevents unnecessary re-renders and UI jumps
+      if (hasActualMessages !== previousHasMessagesRef.current) {
+        previousHasMessagesRef.current = hasActualMessages;
+        onContentChange(hasActualMessages);
+      }
     }
   }, [messages.length, onContentChange]);
 
   const loadConversation = async (id: string) => {
+    // Don't reload if we're already loading or if it's the same conversation
+    // Also don't reload if we're currently initializing a new conversation
+    if (loading || id === currentConversationId || isInitializingRef.current) {
+      return;
+    }
+    
     setLoading(true);
+    // Don't clear messages immediately - wait until new messages are loaded
+    // This prevents the title from flashing when switching conversations
     try {
       const result = await chatService.getConversation(id);
       if (result.success && result.conversation) {
@@ -113,9 +140,13 @@ export default function ChatBox({
         setCurrentConversationId(id);
       } else {
         message.error(result.message || "Failed to load conversation");
+        // Only clear messages if loading failed
+        setMessages([]);
       }
     } catch {
       message.error("An error occurred while loading conversation");
+      // Only clear messages if loading failed
+      setMessages([]);
     } finally {
       setLoading(false);
     }
@@ -142,6 +173,14 @@ export default function ChatBox({
       "post schedule",
     ];
     return keywords.some((keyword) => lowerMessage.includes(keyword));
+  };
+
+  // Check if conversation history contains "calendar" keyword
+  const hasCalendarInHistory = (): boolean => {
+    const allMessages = messages.map(msg => 
+      msg.content ? msg.content.toLowerCase() : ''
+    ).join(' ');
+    return allMessages.includes('calendar');
   };
 
   const handleSend = async () => {
@@ -180,6 +219,7 @@ export default function ChatBox({
     setUploadedFiles([]);
     updateTypingStatus(false);
     setLoading(true);
+    isInitializingRef.current = true;
 
     try {
       const response = await chatService.sendMessage(
@@ -201,13 +241,25 @@ export default function ChatBox({
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Update conversation ID if it's a new conversation
-        if (response.conversationId && !currentConversationId) {
-          setCurrentConversationId(response.conversationId);
-          if (onConversationChange) {
-            onConversationChange(response.conversationId);
+        if (response.conversationId) {
+          // Only update if it's a new conversation or different from current
+          if (!currentConversationId || response.conversationId !== currentConversationId) {
+            // Update currentConversationId first to prevent useEffect from reloading
+            setCurrentConversationId(response.conversationId);
+            // Mark that we're done initializing
+            isInitializingRef.current = false;
+            // Notify parent immediately - no need for setTimeout as state is already updated
+            if (onConversationChange) {
+              onConversationChange(response.conversationId);
+            }
+          } else {
+            isInitializingRef.current = false;
           }
+        } else {
+          isInitializingRef.current = false;
         }
       } else {
+        isInitializingRef.current = false;
         message.error(response.message || "Failed to get response");
         // Remove the last user message if sending failed
         setMessages((prev) => prev.slice(0, -1));
@@ -217,6 +269,7 @@ export default function ChatBox({
         setUploadedFiles(currentFiles);
       }
     } catch {
+      isInitializingRef.current = false;
       message.error("An error occurred while sending message");
       setMessages((prev) => prev.slice(0, -1));
       setInputMessage(currentInput);
@@ -228,7 +281,22 @@ export default function ChatBox({
   };
 
   const handleOpenContentPlanModal = () => {
+    // Extract goal from conversation history
+    // Combine all user messages and assistant messages that mention calendar
+    const conversationText = messages
+      .map(msg => msg.content || '')
+      .join(' ');
     setContentPlanModalOpen(true);
+  };
+
+  // Get conversation goal from history for ContentPlanModal
+  const getConversationGoal = (): string => {
+    // Combine all messages to extract the goal
+    const allText = messages
+      .map(msg => msg.content || '')
+      .join(' ');
+    // Extract relevant parts that mention calendar, plan, or content
+    return allText || lastUserMessage || '';
   };
 
   const handleContentPlanSuccess = () => {
@@ -778,7 +846,7 @@ export default function ChatBox({
                     )}
                     {msg.role === "assistant" &&
                       index === messages.length - 1 &&
-                      hasContentPlanIntent(lastUserMessage) && (
+                      (hasContentPlanIntent(lastUserMessage) || hasCalendarInHistory()) && (
                         <div className={styles.actionButtons}>
                           <Button
                             type="primary"
@@ -932,7 +1000,7 @@ export default function ChatBox({
       {/* Content Plan Modal */}
       <ContentPlanModal
         open={contentPlanModalOpen}
-        goal={lastUserMessage}
+        goal={getConversationGoal()}
         onClose={() => setContentPlanModalOpen(false)}
         onSuccess={handleContentPlanSuccess}
       />
