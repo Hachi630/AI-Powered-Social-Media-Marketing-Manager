@@ -7,6 +7,7 @@ import Sidebar from "./Sidebar";
 import styles from "./Dashboard.module.css";
 import { DEFAULT_TAGLINE } from "../constants/assets";
 import { User } from "../services/authService";
+import { chatService } from "../services/chatService";
 
 interface DashboardProps {
   isLoggedIn?: boolean;
@@ -64,10 +65,18 @@ export default function Dashboard({
   }`;
 
   const handleConversationSelect = useCallback(
-    (conversationId: string | null) => {
+    async (conversationId: string | null) => {
       setSelectedConversationId(conversationId);
+      // Save selected conversation to backend
+      if (user) {
+        try {
+          await chatService.selectConversation(conversationId);
+        } catch (error) {
+          console.error("Failed to save selected conversation:", error);
+        }
+      }
     },
-    []
+    [user]
   );
 
   const handleNewConversation = useCallback(() => {

@@ -124,6 +124,17 @@ export default function Sidebar({
         setConversations(result.conversations || []);
         setFolders(result.folders || []);
         setFolderSearchResults(result.folders || []);
+        
+        // Restore selected conversation from backend
+        if (result.selectedConversationId && onConversationSelect) {
+          // Check if the conversation still exists
+          const conversationExists = result.conversations?.some(
+            (conv) => conv.id === result.selectedConversationId
+          );
+          if (conversationExists) {
+            onConversationSelect(result.selectedConversationId);
+          }
+        }
         // Load expanded folders from localStorage to restore user's last state
         if (result.folders && result.folders.length > 0) {
           const key = getExpandedFoldersKey();
