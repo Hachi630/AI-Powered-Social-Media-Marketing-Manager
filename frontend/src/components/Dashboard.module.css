@@ -35,6 +35,11 @@
   background: #f7f7f8 !important;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
   padding: 24px;
+  overflow: visible !important;
+}
+
+.sider :global(.ant-layout-sider-children) {
+  overflow: visible !important;
 }
 
 [data-theme="warm"] .sider {
