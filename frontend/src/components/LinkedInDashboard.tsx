@@ -413,21 +413,34 @@ export default function LinkedInDashboard({
         setLoadingInstagram(false);
       }
 
-      // Get Facebook/Instagram auth URL
+      // Get Facebook auth URL (separate from Instagram)
       try {
-        const authData = await getInstagramAuthUrl(jwt);
-        console.log("Facebook/Instagram auth URL response:", authData);
-        if (authData.success && authData.authUrl) {
-          setFacebookAuthUrl(authData.authUrl);
+        const facebookAuthData = await getFacebookAuthUrl(jwt);
+        console.log("Facebook auth URL response:", facebookAuthData);
+        if (facebookAuthData.success && facebookAuthData.authUrl) {
+          setFacebookAuthUrl(facebookAuthData.authUrl);
         } else {
-          console.error("Failed to get auth URL:", authData.error);
-          message.error(
-            authData.error || "Failed to get Facebook/Instagram auth URL"
-          );
+          console.error("Failed to get Facebook auth URL:", facebookAuthData.error);
+          // Don't show error message here, just log it
         }
       } catch (error) {
-        console.error("Failed to get Facebook/Instagram auth URL:", error);
-        message.error("Failed to get Facebook/Instagram auth URL");
+        console.error("Failed to get Facebook auth URL:", error);
+        // Don't show error message here, just log it
+      }
+
+      // Get Instagram auth URL (separate from Facebook)
+      try {
+        const instagramAuthData = await getInstagramAuthUrl(jwt);
+        console.log("Instagram auth URL response:", instagramAuthData);
+        if (instagramAuthData.success && instagramAuthData.authUrl) {
+          setInstagramAuthUrl(instagramAuthData.authUrl);
+        } else {
+          console.error("Failed to get Instagram auth URL:", instagramAuthData.error);
+          // Don't show error message here, just log it
+        }
+      } catch (error) {
+        console.error("Failed to get Instagram auth URL:", error);
+        // Don't show error message here, just log it
       }
     };
     loadSocialStatus();
