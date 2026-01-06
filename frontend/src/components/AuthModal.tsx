@@ -95,19 +95,39 @@ export default function AuthModal({
         return;
       }
 
+      console.log("[Google Sign-In] Received credential, sending to backend...");
+      
       // Send ID token to backend
       const result = await authService.googleLogin(response.credential);
+      
+      console.log("[Google Sign-In] Backend response:", result);
       
       if (result.success && result.user) {
         message.success("Successfully signed in with Google!");
         onLoginSuccess(result.user);
         onCancel();
       } else {
-        message.error(result.message || "Failed to sign in with Google");
+        const errorMsg = result.message || "Failed to sign in with Google";
+        console.error("[Google Sign-In] Backend error:", errorMsg);
+        message.error(errorMsg);
       }
     } catch (error: any) {
-      console.error("Google sign-in error:", error);
-      message.error("An error occurred during Google sign-in");
+      console.error("[Google Sign-In] Error details:", {
+        message: error.message,
+        stack: error.stack,
+        response: error.response,
+      });
+      
+      // Provide more specific error messages
+      if (error.message?.includes("Network") || error.message?.includes("fetch")) {
+        message.error("Network error: Unable to connect to server. Please check your connection and backend URL.");
+      } else if (error.response?.status === 401) {
+        message.error("Invalid Google token. Please try again.");
+      } else if (error.response?.status === 500) {
+        message.error("Server error. Please check backend logs.");
+      } else {
+        message.error(`Google sign-in failed: ${error.message || "Unknown error"}`);
+      }
     } finally {
       setLoading(false);
     }
