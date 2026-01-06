@@ -630,8 +630,8 @@ export async function getInstagramAccountIdForPage(
         `https://graph.facebook.com/v18.0/${pageId}?fields=name,instagram_business_account&access_token=${accessToken}`
       );
       console.log(`[getInstagramAccountIdForPage] Method 1 response:`, {
-        hasInstagram: !!pageResponse.data.instagram_business_account,
-        instagram: pageResponse.data.instagram_business_account,
+        hasInstagram: !!pageResponse?.data?.instagram_business_account,
+        instagram: pageResponse?.data?.instagram_business_account,
       });
     } catch (error: any) {
       console.log(
@@ -648,14 +648,15 @@ export async function getInstagramAccountIdForPage(
           `https://graph.facebook.com/v18.0/${pageId}?fields=name,instagram_business_account{id,username}&access_token=${accessToken}`
         );
         console.log(`[getInstagramAccountIdForPage] Method 2 response:`, {
-          hasInstagram: !!pageResponse.data.instagram_business_account,
-          instagram: pageResponse.data.instagram_business_account,
+          hasInstagram: !!pageResponse?.data?.instagram_business_account,
+          instagram: pageResponse?.data?.instagram_business_account,
         });
       } catch (error: any) {
         console.log(
           `[getInstagramAccountIdForPage] Method 2 failed:`,
           error.response?.data || error.message
         );
+        pageResponse = null;
       }
     }
 
@@ -989,9 +990,12 @@ export async function shareToInstagram(
   );
 
   // Step 2: Publish the media
-  const result = await publishMedia(instagramAccountId, accessToken, creationId)
-  return {
-    postId: result.id,
-    permalink: result.permalink
+  const result = await publishMedia(instagramAccountId, accessToken, creationId);
+  if (!result || !result.postId) {
+    throw new Error("Failed to publish media: No post ID returned");
   }
+  return {
+    postId: result.postId,
+    permalink: result.permalink,
+  };
 }
