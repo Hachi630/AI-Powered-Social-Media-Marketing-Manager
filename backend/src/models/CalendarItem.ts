@@ -7,6 +7,7 @@ export interface ICalendarItemVariants {
   instagram_reels?: string
   facebook?: string
   twitter?: string
+  linkedin?: string
 }
 
 export interface ICalendarItem extends Document {
@@ -33,6 +34,7 @@ const CalendarItemVariantsSchema: Schema = new Schema(
     instagram_reels: { type: String, trim: true },
     facebook: { type: String, trim: true },
     twitter: { type: String, trim: true },
+    linkedin: { type: String, trim: true },
   },
   { _id: false }
 )
@@ -105,6 +107,7 @@ const CalendarItemSchema: Schema = new Schema(
 CalendarItemSchema.index({ userId: 1, date: 1 })
 CalendarItemSchema.index({ userId: 1, campaignId: 1 })
 CalendarItemSchema.index({ userId: 1, status: 1 })
+CalendarItemSchema.index({ status: 1, platform: 1, date: 1, time: 1 })
 
 export default mongoose.model<ICalendarItem>('CalendarItem', CalendarItemSchema)
 
