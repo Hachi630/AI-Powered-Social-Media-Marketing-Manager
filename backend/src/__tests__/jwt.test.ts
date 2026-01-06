@@ -1,4 +1,4 @@
-import { generateToken, verifyToken } from '../utils/jwt'
+import { generateToken, verifyToken } from '../utils/jwt.js'
 
 describe('JWT Utils', () => {
   describe('generateToken', () => {

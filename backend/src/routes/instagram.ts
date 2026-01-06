@@ -1,8 +1,8 @@
 import express, { Request, Response } from "express";
 import axios from "axios";
-import { protect } from "../middleware/auth";
-import { AuthRequest } from "../types";
-import User from "../models/User";
+import { protect } from "../middleware/auth.js";
+import { AuthRequest } from "../types/index.js";
+import User from "../models/User.js";
 import {
   getInstagramAuthUrl,
   exchangeCodeForToken,
@@ -10,7 +10,7 @@ import {
   getInstagramAccountIdForPage,
   getFacebookPagesWithInstagram,
   shareToInstagram,
-} from "../services/instagramService";
+} from "../services/instagramService.js";
 import crypto from "crypto";
 
 const router = express.Router();
@@ -183,7 +183,7 @@ router.get("/callback", async (req: Request, res: Response) => {
     console.log("[Instagram OAuth Callback] Found pages:", pages.length);
     console.log(
       "[Instagram OAuth Callback] Pages details:",
-      pages.map((p) => ({
+      pages.map((p: any) => ({
         id: p.id,
         name: p.name,
         hasInstagramAccount: p.hasInstagramAccount,
@@ -192,14 +192,14 @@ router.get("/callback", async (req: Request, res: Response) => {
     );
 
     // Filter to only pages with Instagram accounts
-    const pagesWithInstagram = pages.filter((page) => page.hasInstagramAccount);
+    const pagesWithInstagram = pages.filter((page: any) => page.hasInstagramAccount);
     console.log(
       "[Instagram OAuth Callback] Pages with Instagram:",
       pagesWithInstagram.length
     );
 
     if (pagesWithInstagram.length === 0) {
-      const pageNames = pages.map((p) => p.name).join(", ");
+      const pageNames = pages.map((p: any) => p.name).join(", ");
       console.log(
         "[Instagram OAuth Callback] No pages with Instagram detected. Pages:",
         pageNames
@@ -615,8 +615,8 @@ router.post(
       if (!finalImageUrl) {
         // Try to generate an image from the text content using image generation service
         try {
-          const { generateImage } = await import('../services/imageGenerationService');
-          const { saveImage } = await import('../utils/imageStorage');
+          const { generateImage } = await import('../services/imageGenerationService.js');
+          const { saveImage } = await import('../utils/imageStorage.js');
           
           console.log("[Instagram Share] No image provided, generating text image...");
           

@@ -1,4 +1,4 @@
-import { geminiService, UserContext } from '../services/geminiService'
+import { geminiService, UserContext } from '../services/geminiService.js'
 
 describe('Gemini Service', () => {
   describe('buildSystemPrompt', () => {
