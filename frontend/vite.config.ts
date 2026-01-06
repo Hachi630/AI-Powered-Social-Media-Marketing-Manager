@@ -24,30 +24,26 @@ export default defineConfig(({ mode }) => {
           target: `http://localhost:${backendPort}`,
           changeOrigin: true,
           secure: false,
-          timeout: 10000,
+          timeout: 30000,
           ws: true,
+          rewrite: (path) => path, // Keep the path as is
           configure: (proxy, _options) => {
             proxy.on('error', (err, req, _res) => {
-              if (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET') {
-                console.error(`\n❌ [Proxy Error] Cannot connect to backend server at http://localhost:${backendPort}`)
-                console.error(`   Request: ${req.method} ${req.url}`)
-                console.error(`   Error: ${err.message}`)
-                console.error(`\n💡 Solution: Make sure backend server is running:`)
-                console.error(`   cd backend && npm run dev\n`)
-              } else {
-                console.error('Proxy error:', err);
-              }
+              console.error(`\n❌ [Proxy Error] Cannot connect to backend server at http://localhost:${backendPort}`)
+              console.error(`   Request: ${req.method} ${req.url}`)
+              console.error(`   Error: ${err.message}`)
+              console.error(`   Error code: ${err.code}`)
+              console.error(`\n💡 Solution: Make sure backend server is running:`)
+              console.error(`   cd backend && npm run dev\n`)
             });
             proxy.on('proxyReq', (proxyReq, req, _res) => {
-              // Only log in verbose mode to reduce noise
-              if (process.env.VITE_VERBOSE_PROXY === 'true') {
-                console.log(`[Proxy] ${req.method} ${req.url} -> http://localhost:${backendPort}${req.url}`);
-              }
+              console.log(`[Proxy] ${req.method} ${req.url} -> http://localhost:${backendPort}${req.url}`);
+            });
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              console.log(`[Proxy Response] ${req.method} ${req.url} -> ${proxyRes.statusCode}`);
             });
             proxy.on('proxyReqWs', (proxyReq, req, _socket) => {
-              if (process.env.VITE_VERBOSE_PROXY === 'true') {
-                console.log(`[Proxy WS] ${req.url} -> http://localhost:${backendPort}${req.url}`);
-              }
+              console.log(`[Proxy WS] ${req.url} -> http://localhost:${backendPort}${req.url}`);
             });
           },
         },
