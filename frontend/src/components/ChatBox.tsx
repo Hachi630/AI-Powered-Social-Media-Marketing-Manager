@@ -31,6 +31,7 @@ import { chatService, ChatMessage } from "../services/chatService";
 import { uploadService } from "../services/uploadService";
 import ImageGenerationModal from "./ImageGenerationModal";
 import ContentPlanModal from "./ContentPlanModal";
+import { getImageUrl } from "../utils/imageUtils";
 
 const { TextArea } = Input;
 
@@ -579,14 +580,6 @@ export default function ChatBox({
     }
   };
 
-  const getImageUrl = (imagePath: string): string => {
-    // If it's already a full URL, return as is
-    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-      return imagePath;
-    }
-    // Otherwise, use relative path (Vite proxy will handle it)
-    return imagePath;
-  };
 
   // Handle edit message
   const handleEditMessage = (index: number) => {

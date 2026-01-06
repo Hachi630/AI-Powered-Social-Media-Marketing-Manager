@@ -58,10 +58,14 @@ router.post("/register", async (req: Request, res: Response) => {
         .json({ success: false, message: "Please provide email and password" });
     }
 
+    // Normalize email to lowercase (matching schema behavior)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
+      console.log(`[Register] User already exists: ${normalizedEmail}`);
       return res
         .status(400)
         .json({ success: false, message: "User already exists" });
@@ -69,7 +73,7 @@ router.post("/register", async (req: Request, res: Response) => {
 
     // Create user (Store password in plain text as requested)
     const user = await User.create({
-      email,
+      email: normalizedEmail,
       password,
     });
 
@@ -118,10 +122,14 @@ router.post("/login", async (req: Request, res: Response) => {
         .json({ success: false, message: "Please provide email and password" });
     }
 
+    // Normalize email to lowercase (matching schema behavior)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check for user
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
+      console.log(`[Login] User not found for email: ${normalizedEmail}`);
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
@@ -129,6 +137,8 @@ router.post("/login", async (req: Request, res: Response) => {
 
     // Check password (plain text comparison as requested)
     if (user.password !== password) {
+      console.log(`[Login] Password mismatch for email: ${normalizedEmail}`);
+      console.log(`[Login] Expected: ${user.password}, Got: ${password}`);
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });

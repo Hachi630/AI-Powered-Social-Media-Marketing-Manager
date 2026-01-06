@@ -4,6 +4,7 @@ import { AuthRequest } from "../types/index.js";
 import { geminiService, ChatMessage } from "../services/geminiService.js";
 import Conversation from "../models/Conversation.js";
 import ProjectFolder from "../models/ProjectFolder.js";
+import User from "../models/User.js";
 import { generateImage } from "../services/imageGenerationService.js";
 import { saveImage } from "../utils/imageStorage.js";
 import { generateContentPlan } from "../services/contentPlanService.js";
