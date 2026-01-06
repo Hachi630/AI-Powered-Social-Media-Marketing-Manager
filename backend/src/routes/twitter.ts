@@ -652,6 +652,9 @@ router.post(
 
 // STEP 5 — Create a tweet (text and/or image)
 router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: "User not authenticated" });
+  }
   const userId = req.user._id;
   const { text } = req.body;
 

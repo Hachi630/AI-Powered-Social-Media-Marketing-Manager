@@ -131,12 +131,12 @@
 }
 
 .nameInput:focus {
-  border-bottom-color: var(--primary-color, #646cff) !important;
+  border-bottom-color: var(--accent-color, #667eea) !important;
   box-shadow: none !important;
 }
 
 [data-theme="warm"] .nameInput:focus {
-  border-bottom-color: #AE906E !important;
+  border-bottom-color: var(--accent-color, #ae906e) !important;
 }
 
 .brandName {
@@ -162,12 +162,12 @@
 }
 
 .brandInput:focus {
-  border-bottom-color: var(--primary-color, #646cff) !important;
+  border-bottom-color: var(--accent-color, #667eea) !important;
   box-shadow: none !important;
 }
 
 [data-theme="warm"] .brandInput:focus {
-  border-bottom-color: #AE906E !important;
+  border-bottom-color: var(--accent-color, #ae906e) !important;
 }
 
 .editButtonSection {
@@ -302,40 +302,108 @@
 }
 
 /* Ensure all Input and Select have white background */
-:global(.ant-input),
-:global(.ant-input-affix-wrapper),
-:global(.ant-select-selector),
-:global(.ant-picker) {
+.personalModal :global(.ant-input),
+.personalModal :global(.ant-input-affix-wrapper),
+.personalModal :global(.ant-select-selector),
+.personalModal :global(.ant-picker) {
   background-color: var(--bg-secondary, #ffffff) !important;
   border: 1px solid var(--border-color, #e0e0e0) !important;
   color: var(--text-primary, #1e1e1e) !important;
   font-family: var(--font-family, 'Inter', sans-serif) !important;
 }
 
-[data-theme="warm"] :global(.ant-input),
-[data-theme="warm"] :global(.ant-input-affix-wrapper),
-[data-theme="warm"] :global(.ant-select-selector),
-[data-theme="warm"] :global(.ant-picker) {
+[data-theme="warm"] .personalModal :global(.ant-input),
+[data-theme="warm"] .personalModal :global(.ant-input-affix-wrapper),
+[data-theme="warm"] .personalModal :global(.ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-picker) {
   background-color: #FAF6EA !important;
   border: 1px solid #E1DBC3 !important;
   color: #908066 !important;
   font-family: 'ZCOOL KuaiLe', 'Inter', sans-serif !important;
 }
 
-:global(.ant-input):focus,
-:global(.ant-input-affix-wrapper):focus,
-:global(.ant-select-focused .ant-select-selector),
-:global(.ant-picker-focused) {
+.personalModal :global(.ant-input):focus,
+.personalModal :global(.ant-input-affix-wrapper):focus,
+.personalModal :global(.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select-focused .ant-select-selector:hover),
+.personalModal :global(.ant-picker-focused) {
   background-color: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--primary-color, #646cff) !important;
+  border-color: var(--accent-color, #667eea) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
 }
 
-[data-theme="warm"] :global(.ant-input):focus,
-[data-theme="warm"] :global(.ant-input-affix-wrapper):focus,
-[data-theme="warm"] :global(.ant-select-focused .ant-select-selector),
-[data-theme="warm"] :global(.ant-picker-focused) {
+[data-theme="warm"] .personalModal :global(.ant-input):focus,
+[data-theme="warm"] .personalModal :global(.ant-input-affix-wrapper):focus,
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector:hover),
+[data-theme="warm"] .personalModal :global(.ant-picker-focused) {
   background-color: #FAF6EA !important;
-  border-color: #AE906E !important;
+  border-color: var(--accent-color, #ae906e) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
+}
+
+/* Additional Select focus styles for better coverage - Higher priority */
+.personalModal :global(.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select-focused .ant-select-selector:hover),
+.personalModal :global(.ant-select.ant-select-focused .ant-select-selector:hover),
+.personalModal :global(.ant-select-open .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-open .ant-select-selector),
+.personalModal :global(.ant-select-focused),
+.personalModal :global(.ant-select.ant-select-focused) {
+  border-color: var(--accent-color, #667eea) !important;
+}
+
+.personalModal :global(.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+.personalModal :global(.ant-select-open .ant-select-selector),
+.personalModal :global(.ant-select.ant-select-open .ant-select-selector) {
+  border-color: var(--accent-color, #667eea) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector:hover),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused .ant-select-selector:hover),
+[data-theme="warm"] .personalModal :global(.ant-select-open .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-open .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-focused),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused) {
+  border-color: var(--accent-color, #ae906e) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select-open .ant-select-selector),
+[data-theme="warm"] .personalModal :global(.ant-select.ant-select-open .ant-select-selector) {
+  border-color: var(--accent-color, #ae906e) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
+}
+
+/* Cancel button styles */
+.personalModal :global(.ant-btn:not(.ant-btn-primary)) {
+  border-color: var(--accent-color, #667eea) !important;
+  color: var(--accent-color, #667eea) !important;
+}
+
+.personalModal :global(.ant-btn:not(.ant-btn-primary):hover),
+.personalModal :global(.ant-btn:not(.ant-btn-primary):focus) {
+  border-color: var(--accent-color, #667eea) !important;
+  color: var(--accent-color, #667eea) !important;
+  background-color: var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-btn:not(.ant-btn-primary)) {
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-btn:not(.ant-btn-primary):hover),
+[data-theme="warm"] .personalModal :global(.ant-btn:not(.ant-btn-primary):focus) {
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
+  background-color: var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
 }
 
 /* Upload component styles */
@@ -349,6 +417,177 @@
 :global(.ant-upload-select-picture-card .ant-upload) {
   width: 100% !important;
   height: 100% !important;
+}
+
+/* DatePicker dropdown styles for Personal Profile modal */
+/* popupClassName is added directly to .ant-picker-dropdown element */
+:global(.personalDatePickerDropdown.ant-picker-dropdown) {
+  z-index: 1050 !important;
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) :global(.ant-picker-panel-container) {
+  z-index: 1050 !important;
+  max-height: 400px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Custom scrollbar styling for calendar dropdown */
+:global(.personalDatePickerDropdown.ant-picker-dropdown)::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown)::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 3px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown)::-webkit-scrollbar-thumb {
+  background: #c1c1c1 !important;
+  border-radius: 3px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown)::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8 !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) :global(.ant-picker-panel-container)::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) :global(.ant-picker-panel-container)::-webkit-scrollbar-track {
+  background: #f1f1f1 !important;
+  border-radius: 3px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) :global(.ant-picker-panel-container)::-webkit-scrollbar-thumb {
+  background: #c1c1c1 !important;
+  border-radius: 3px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) :global(.ant-picker-panel-container)::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8 !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) :global(.ant-picker-panel) {
+  z-index: 1050 !important;
+}
+
+/* Standard month calendar style for Personal Profile modal - compact design */
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-panel {
+  width: 280px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-content {
+  width: 100% !important;
+  padding: 4px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell {
+  width: auto !important;
+  height: 10px !important;
+  padding: 0 !important;
+  line-height: 10px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell-inner {
+  width: 10px !important;
+  height: 10px !important;
+  line-height: 10px !important;
+  font-size: 10px !important;
+  margin: 0 auto !important;
+  border-radius: 2px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-header {
+  padding: 6px 8px !important;
+  min-height: 32px !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-header-view {
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-prev-icon,
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-next-icon,
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-super-prev-icon,
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-super-next-icon {
+  font-size: 11px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-week-panel-row th {
+  width: auto !important;
+  height: 10px !important;
+  padding: 0 2px !important;
+  line-height: 10px !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  color: #666 !important;
+}
+
+/* Reduce spacing in calendar body */
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-body {
+  padding: 4px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-content tbody tr {
+  height: 10px !important;
+}
+
+/* Selected date color - use accent color */
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell-selected .ant-picker-cell-inner {
+  background-color: var(--accent-color, #667eea) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-color, #667eea) !important;
+  border-radius: 2px !important;
+}
+
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell-selected:hover .ant-picker-cell-inner {
+  background-color: var(--accent-color, #667eea) !important;
+  color: #ffffff !important;
+}
+
+/* Hover effect for date cells */
+:global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell:hover .ant-picker-cell-inner {
+  background-color: #f5f5f5 !important;
+  border-radius: 2px !important;
+}
+
+[data-theme="warm"] :global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell-selected .ant-picker-cell-inner {
+  background-color: var(--accent-color, #ae906e) !important;
+  color: #ffffff !important;
+  border-color: var(--accent-color, #ae906e) !important;
+  border-radius: 2px !important;
+}
+
+[data-theme="warm"] :global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell-selected:hover .ant-picker-cell-inner {
+  background-color: var(--accent-color, #ae906e) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="warm"] :global(.personalDatePickerDropdown.ant-picker-dropdown) .ant-picker-cell:hover .ant-picker-cell-inner {
+  background-color: #faf6ea !important;
+  border-radius: 2px !important;
+}
+
+/* Additional DatePicker focus styles for better coverage */
+.personalModal :global(.ant-picker-focused),
+.personalModal :global(.ant-picker.ant-picker-focused),
+.personalModal :global(.ant-picker-open) {
+  border-color: var(--accent-color, #667eea) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+}
+
+[data-theme="warm"] .personalModal :global(.ant-picker-focused),
+[data-theme="warm"] .personalModal :global(.ant-picker.ant-picker-focused),
+[data-theme="warm"] .personalModal :global(.ant-picker-open) {
+  border-color: var(--accent-color, #ae906e) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(174, 144, 110, 0.1)) !important;
 }
 
 

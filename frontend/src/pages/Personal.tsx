@@ -13,7 +13,7 @@ import {
   message,
   Modal,
 } from 'antd'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   EditOutlined,
   SaveOutlined,
@@ -74,6 +74,255 @@ export default function Personal({
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
+  // Inject calendar styles dynamically to ensure they apply
+  useEffect(() => {
+    const styleId = 'personal-datepicker-styles'
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style')
+      styleElement.id = styleId
+      document.head.appendChild(styleElement)
+    }
+    
+    styleElement.textContent = `
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell {
+        width: auto !important;
+        height: 28px !important;
+        padding: 0 !important;
+        line-height: 28px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-inner {
+        width: 28px !important;
+        height: 28px !important;
+        line-height: 28px !important;
+        font-size: 13px !important;
+        margin: 0 auto !important;
+        border-radius: 4px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-content tbody tr {
+        height: 28px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-week-panel-row th {
+        width: auto !important;
+        height: 28px !important;
+        padding: 0 4px !important;
+        line-height: 28px !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        color: #666 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-content {
+        width: 100% !important;
+        padding: 8px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-body {
+        padding: 8px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-header {
+        padding: 8px 12px !important;
+        min-height: 40px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-header-view {
+        font-size: 16px !important;
+        font-weight: 500 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-prev-icon,
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-next-icon,
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-super-prev-icon,
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-super-next-icon {
+        font-size: 12px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel {
+        width: 280px !important;
+      }
+      
+      /* Hide Today button */
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-footer {
+        display: none !important;
+      }
+      
+      /* Compact spacing */
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-content table {
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown {
+        z-index: 1050 !important;
+        max-height: 350px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel-container {
+        z-index: 1050 !important;
+        max-height: 350px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      
+      /* Scrollbar styling - always visible */
+      .personalDatePickerDropdown.ant-picker-dropdown::-webkit-scrollbar {
+        width: 8px !important;
+        display: block !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown::-webkit-scrollbar-track {
+        background: #f1f1f1 !important;
+        border-radius: 4px !important;
+        margin: 4px 0 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown::-webkit-scrollbar-thumb {
+        background: #c1c1c1 !important;
+        border-radius: 4px !important;
+        min-height: 20px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar {
+        width: 8px !important;
+        display: block !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar-track {
+        background: #f1f1f1 !important;
+        border-radius: 4px !important;
+        margin: 4px 0 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1 !important;
+        border-radius: 4px !important;
+        min-height: 20px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8 !important;
+      }
+      
+      /* Firefox scrollbar */
+      .personalDatePickerDropdown.ant-picker-dropdown {
+        scrollbar-width: thin !important;
+        scrollbar-color: #c1c1c1 #f1f1f1 !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-panel-container {
+        scrollbar-width: thin !important;
+        scrollbar-color: #c1c1c1 #f1f1f1 !important;
+      }
+      
+      /* Today's date - remove default inner border, use accent color for outer border only */
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner::before {
+        display: none !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner {
+        border: 1px solid var(--accent-color, #667eea) !important;
+        border-radius: 4px !important;
+        position: relative !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today:not(.ant-picker-cell-selected) .ant-picker-cell-inner {
+        border: 1px solid var(--accent-color, #667eea) !important;
+        background-color: transparent !important;
+        color: inherit !important;
+      }
+      
+      /* Remove any default today styling */
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner::after {
+        display: none !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-selected .ant-picker-cell-inner {
+        background-color: var(--accent-color, #667eea) !important;
+        color: #ffffff !important;
+        border-color: var(--accent-color, #667eea) !important;
+        border-radius: 4px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-selected:hover .ant-picker-cell-inner {
+        background-color: var(--accent-color, #667eea) !important;
+        color: #ffffff !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell:hover .ant-picker-cell-inner {
+        background-color: #f5f5f5 !important;
+        border-radius: 4px !important;
+      }
+      
+      .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today:hover .ant-picker-cell-inner {
+        border-color: var(--accent-color, #667eea) !important;
+        background-color: rgba(102, 126, 234, 0.1) !important;
+      }
+      
+      /* Warm theme - Today's date */
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner::before {
+        display: none !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner::after {
+        display: none !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner {
+        border: 1px solid var(--accent-color, #ae906e) !important;
+        border-radius: 4px !important;
+        position: relative !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today:not(.ant-picker-cell-selected) .ant-picker-cell-inner {
+        border: 1px solid var(--accent-color, #ae906e) !important;
+        background-color: transparent !important;
+        color: inherit !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-today:hover .ant-picker-cell-inner {
+        border-color: var(--accent-color, #ae906e) !important;
+        background-color: rgba(174, 144, 110, 0.1) !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-selected .ant-picker-cell-inner {
+        background-color: var(--accent-color, #ae906e) !important;
+        color: #ffffff !important;
+        border-color: var(--accent-color, #ae906e) !important;
+        border-radius: 4px !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell-selected:hover .ant-picker-cell-inner {
+        background-color: var(--accent-color, #ae906e) !important;
+        color: #ffffff !important;
+      }
+      
+      [data-theme="warm"] .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell:hover .ant-picker-cell-inner {
+        background-color: #faf6ea !important;
+        border-radius: 4px !important;
+      }
+    `
+    
+    return () => {
+      // Cleanup on unmount
+      const style = document.getElementById(styleId)
+      if (style) {
+        style.remove()
+      }
+    }
+  }, [])
 
   // Load user data when modal opens
   useEffect(() => {
@@ -286,6 +535,8 @@ export default function Personal({
               setFormData({ ...formData, birthday: date ? date.format('YYYY-MM-DD') : '' })
             }
             format="YYYY-MM-DD"
+            getPopupContainer={(trigger) => trigger.parentElement || document.body}
+            popupClassName="personalDatePickerDropdown"
           />
         )
       }
