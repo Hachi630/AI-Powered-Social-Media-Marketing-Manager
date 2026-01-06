@@ -1,16 +1,15 @@
 import express, { Request, Response } from "express";
-import { protect } from "../middleware/auth";
-import { AuthRequest } from "../types";
-import { geminiService, ChatMessage } from "../services/geminiService";
-import Conversation from "../models/Conversation";
-import ProjectFolder from "../models/ProjectFolder";
-import User from "../models/User";
-import { generateImage } from "../services/imageGenerationService";
-import { saveImage } from "../utils/imageStorage";
-import { generateContentPlan } from "../services/contentPlanService";
-import CalendarItem from "../models/CalendarItem";
-import { readImageAsBase64 } from "../utils/imageReader";
-import { extractTextFromFile } from "../utils/fileContentExtractor";
+import { protect } from "../middleware/auth.js";
+import { AuthRequest } from "../types/index.js";
+import { geminiService, ChatMessage } from "../services/geminiService.js";
+import Conversation from "../models/Conversation.js";
+import ProjectFolder from "../models/ProjectFolder.js";
+import { generateImage } from "../services/imageGenerationService.js";
+import { saveImage } from "../utils/imageStorage.js";
+import { generateContentPlan } from "../services/contentPlanService.js";
+import CalendarItem from "../models/CalendarItem.js";
+import { readImageAsBase64 } from "../utils/imageReader.js";
+import { extractTextFromFile } from "../utils/fileContentExtractor.js";
 
 const router = express.Router();
 
@@ -439,12 +438,6 @@ router.get("/", protect, async (req: AuthRequest, res: Response) => {
       .select("name updatedAt createdAt")
       .lean();
 
-    // Get user's selected conversation ID
-    const userDoc = await User.findById(user._id).select("selectedConversationId").lean();
-    const selectedConversationId = userDoc?.selectedConversationId 
-      ? userDoc.selectedConversationId.toString() 
-      : null;
-
     res.json({
       success: true,
       conversations: conversations.map((conv) => ({
@@ -460,7 +453,6 @@ router.get("/", protect, async (req: AuthRequest, res: Response) => {
         updatedAt: folder.updatedAt,
         createdAt: folder.createdAt,
       })),
-      selectedConversationId,
     });
   } catch (error: any) {
     console.error("Get conversations error:", error);
@@ -972,60 +964,6 @@ router.put(
       res.status(500).json({
         success: false,
         message: error.message || "Failed to move conversation",
-      });
-    }
-  }
-);
-
-// @desc    Update user's selected conversation
-// @route   PUT /api/chat/select/:conversationId
-// @access  Private
-router.put(
-  "/select/:conversationId",
-  protect,
-  async (req: AuthRequest, res: Response) => {
-    try {
-      const user = req.user;
-      const { conversationId } = req.params;
-
-      if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
-      }
-
-      // Validate conversation exists and belongs to user
-      if (conversationId !== "null" && conversationId !== "undefined") {
-        const conversation = await Conversation.findOne({
-          _id: conversationId,
-          userId: user._id,
-        });
-
-        if (!conversation) {
-          return res
-            .status(404)
-            .json({ success: false, message: "Conversation not found" });
-        }
-      }
-
-      // Update user's selected conversation
-      const selectedId = conversationId === "null" || conversationId === "undefined" 
-        ? null 
-        : conversationId;
-
-      await User.findByIdAndUpdate(user._id, {
-        selectedConversationId: selectedId,
-      });
-
-      res.json({
-        success: true,
-        selectedConversationId: selectedId,
-      });
-    } catch (error: any) {
-      console.error("Update selected conversation error:", error);
-      res.status(500).json({
-        success: false,
-        message: error.message || "Failed to update selected conversation",
       });
     }
   }
