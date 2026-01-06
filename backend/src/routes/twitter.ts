@@ -493,6 +493,12 @@ router.post(
   protect,
   upload.single("image"),
   async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized",
+      });
+    }
     const userId = req.user._id;
     const { text } = req.body;
 
