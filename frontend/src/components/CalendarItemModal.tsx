@@ -234,14 +234,15 @@ export default function CalendarItemModal({
     try {
       setLoading(true)
       
-      // Use calendar share endpoint for Twitter
-      if (platform === 'twitter') {
-        message.info('Sharing to Twitter/X...')
+      // Use calendar share endpoint for Twitter and LinkedIn
+      if (platform === 'twitter' || platform === 'linkedin') {
+        message.info(`Sharing to ${platform === 'twitter' ? 'Twitter/X' : 'LinkedIn'}...`)
         const response = await calendarService.shareCalendarItem(item.id, platform)
         if (response.success) {
-          message.success('Successfully posted to Twitter/X!')
+          message.success(`Successfully posted to ${platform === 'twitter' ? 'Twitter/X' : 'LinkedIn'}!`)
+          onSave() // Refresh the calendar
         } else {
-          message.error(response.message || 'Failed to post to Twitter/X')
+          message.error(response.message || `Failed to post to ${platform === 'twitter' ? 'Twitter/X' : 'LinkedIn'}`)
         }
         return
       }
