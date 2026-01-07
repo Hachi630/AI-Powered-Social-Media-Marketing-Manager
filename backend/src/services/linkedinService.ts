@@ -141,12 +141,12 @@ export async function createLinkedInPost(
   text: string,
   isOrganization: boolean = false
 ) {
+  // Determine the author URN based on whether it's a personal or organization post
+  const authorUrn = isOrganization 
+    ? `urn:li:organization:${authorId}` 
+    : `urn:li:person:${authorId}`;
+  
   try {
-    // Determine the author URN based on whether it's a personal or organization post
-    const authorUrn = isOrganization 
-      ? `urn:li:organization:${authorId}` 
-      : `urn:li:person:${authorId}`;
-    
     console.log(`Creating LinkedIn post as ${isOrganization ? 'organization' : 'person'}: ${authorUrn}`);
     
     // Use the v2 UGC Posts API (legacy but stable)

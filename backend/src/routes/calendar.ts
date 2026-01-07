@@ -684,7 +684,7 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
  */
 router.get('/test-scheduler', protect, async (req: AuthRequest, res: Response) => {
   try {
-    console.log('[Test Endpoint] Manual scheduler trigger requested by user:', req.user?.id);
+    console.log('[Test Endpoint] Manual scheduler trigger requested by user:', req.user?._id);
     
     // Run the scheduler check
     await checkAndPublishScheduledItems();
