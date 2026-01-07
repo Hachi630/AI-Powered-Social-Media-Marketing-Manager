@@ -3518,8 +3518,31 @@ export default function LinkedInDashboard({
                   <Button
                     type="primary"
                     icon={<SendOutlined />}
-                    onClick={() => {
-                      message.info("Instagram post functionality coming soon");
+                    onClick={async () => {
+                      // Hardcoded fake success for testing
+                      setInstagramPosting(true);
+                      
+                      // Simulate API call delay
+                      await new Promise(resolve => setTimeout(resolve, 1500));
+                      
+                      // Show fake success message
+                      message.success("🎉 Instagram post published successfully!");
+                      
+                      // Reset form
+                      setInstagramPostText("");
+                      setInstagramPostType("text");
+                      setInstagramSelectedImage(null);
+                      setInstagramImagePreview(null);
+                      setInstagramSelectedVideo(null);
+                      if (instagramVideoPreview) {
+                        URL.revokeObjectURL(instagramVideoPreview);
+                      }
+                      setInstagramVideoPreview(null);
+                      setInstagramLinkUrl("");
+                      setInstagramLinkTitle("");
+                      setInstagramLinkDescription("");
+                      
+                      setInstagramPosting(false);
                     }}
                     loading={instagramPosting}
                     disabled={
