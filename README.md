@@ -6,11 +6,14 @@ Melo is an AI-powered social media and marketing management platform that helps 
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
+- [Architecture](#-architecture)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Twitter/X Integration](#-twitterx-integration)
 - [LinkedIn Integration](#-linkedin-integration)
+- [Deployment](#-deployment)
+- [Additional Features](#-additional-features)
 - [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
@@ -26,7 +29,17 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **Calendar Item Images**: Upload images or generate images using AI for calendar items, with support for both file upload and base64 encoding
 - **AI Chat Interface**: AI-powered chat interface for content creation and marketing assistance with conversation history
 - **Image Generation**: Generate images using AI based on text prompts (manual input or auto-generated from content)
-- **Conversation Management**: Save and manage chat conversations with message history
+- **Conversation Management**: Save and manage chat conversations with message history, organized in project folders
+- **Content Plan Generation**: AI-powered content planning that generates multi-platform content schedules based on goals and dates
+- **Campaign Management**: Create and organize marketing campaigns, associate calendar items with campaigns
+- **Multi-Company Support**: Manage up to 10 companies per account, each with independent brand profiles and settings
+- **Project Folders**: Organize conversations into folders for better project management
+- **Message Editing**: Edit previous chat messages and regenerate AI responses
+- **File Upload & Processing**: Upload and process documents (PDF, DOCX) with automatic text extraction for AI analysis
+- **Auto-Publish Scheduler**: Automatic publishing of scheduled LinkedIn posts (runs every 5 minutes)
+- **Calendar Views**: Multiple calendar views (Day, Week, Year) for flexible content scheduling
+- **Facebook & Instagram Integration**: Connect Facebook and Instagram accounts via OAuth and publish content directly
+- **Dark Mode**: Built-in dark mode support with theme toggle
 - **Responsive Design**: Modern UI built with Ant Design, fully responsive across devices
 
 ## 🛠 Tech Stack
@@ -51,6 +64,105 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **dotenv** - Environment variable management
 - **multer** - File upload handling
 - **Google Gemini API** - AI chat and image generation
+
+## 🏗 Architecture
+
+### System Architecture Overview
+
+```
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│   Frontend      │         │    Backend      │         │   Database      │
+│   (React/Vite)  │◄───────►│  (Express/TS)   │◄───────►│   (MongoDB)     │
+│   Port: 3000    │  HTTP   │   Port: 5000    │  Mongoose│   (Atlas)       │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+       │                            │
+       │                            │
+       ▼                            ▼
+┌─────────────────┐         ┌─────────────────┐
+│  External APIs  │         │  File Storage   │
+│  - Gemini AI    │         │  - Local FS     │
+│  - Twitter OAuth│         │  - /uploads/    │
+│  - LinkedIn API │         │                 │
+│  - Facebook API │         │                 │
+│  - Instagram API│         │                 │
+└─────────────────┘         └─────────────────┘
+```
+
+### Frontend Architecture
+
+**Layered Architecture:**
+- **Presentation Layer**: React components (Pages & UI Components)
+- **Service Layer**: API communication services (authService, chatService, etc.)
+- **State Management**: React Context API (Theme, App Settings)
+- **Utilities**: Helper functions (imageUtils, etc.)
+
+**Key Features:**
+- Development: Vite proxy routes API requests to backend
+- Production: Direct API calls using `VITE_API_URL`
+- Automatic image URL resolution based on environment
+
+### Backend Architecture
+
+**Layered Architecture:**
+- **API Layer**: Express routes (`/api/auth`, `/api/chat`, etc.)
+- **Business Logic Layer**: Services (geminiService, imageGenerationService, etc.)
+- **Data Access Layer**: Mongoose models (User, Conversation, CalendarItem, etc.)
+- **Middleware**: Authentication (JWT), error handling
+- **Utilities**: Image storage, file processing, etc.
+
+**Key Features:**
+- RESTful API design
+- JWT authentication middleware
+- Scheduled tasks (cron jobs for auto-publishing)
+- File storage (local filesystem, production-ready for cloud storage)
+
+### Data Flow Example: AI Chat Request
+
+```
+User Input → ChatBox Component
+    ↓
+chatService.sendMessage()
+    ↓
+POST /api/chat
+    ├─► JWT Middleware (validates token)
+    ├─► Load/Update Conversation (MongoDB)
+    ├─► Process Images (convert to base64)
+    ├─► Process Files (extract text)
+    ├─► Build User Context (Brand Profile)
+    ├─► Call Gemini API (generate response)
+    ├─► Save Conversation (MongoDB)
+    └─► Return Response → Display in ChatBox
+```
+
+### Database Schema
+
+**Core Models:**
+- **Users**: Authentication, brand profiles, social connections
+- **Conversations**: Chat history with messages array
+- **CalendarItems**: Scheduled content with platform variants
+- **Campaigns**: Marketing campaign organization
+- **Social Tokens**: OAuth tokens for Twitter, LinkedIn, etc.
+
+**Relationships:**
+- Users → Conversations (one-to-many)
+- Users → CalendarItems (one-to-many)
+- Campaigns → CalendarItems (one-to-many)
+- Users → SocialTokens (one-to-many)
+
+### Authentication Flow
+
+1. User registers/logs in → Backend validates → Returns JWT token
+2. Frontend stores token in `localStorage`
+3. Authenticated requests include `Authorization: Bearer <token>` header
+4. Backend middleware validates token and attaches user to request
+
+### External Service Integration
+
+- **Google Gemini API**: AI content generation and image generation
+- **Twitter/X OAuth 1.0a**: User authentication and content posting
+- **LinkedIn API**: OAuth 2.0, organization management, content publishing
+- **Facebook API**: OAuth and content posting
+- **Instagram API**: OAuth and content posting
 
 ## 📁 Project Structure
 
@@ -317,6 +429,26 @@ CLIENT_URL=http://localhost:3000
 - `TWITTER_CALLBACK_URL` must match exactly what you set in Twitter Developer Portal
 - `CLIENT_URL` must match your frontend URL (default: `http://localhost:3000`)
 
+### Facebook & Instagram Integration (.env)
+
+For Facebook and Instagram integration, add the following to `backend/.env`:
+
+```env
+# Facebook API Configuration
+FACEBOOK_APP_ID=your_facebook_app_id
+FACEBOOK_APP_SECRET=your_facebook_app_secret
+
+# Instagram API Configuration (uses Facebook App)
+INSTAGRAM_APP_ID=your_instagram_app_id
+INSTAGRAM_APP_SECRET=your_instagram_app_secret
+```
+
+**Note**:
+- Facebook and Instagram use the same OAuth system (Meta for Developers)
+- Get credentials from [Meta for Developers](https://developers.facebook.com/)
+- Configure redirect URIs in Meta App settings
+- Enable required permissions for posting content
+
 ## 🐦 Twitter/X Integration
 
 ### Overview
@@ -535,6 +667,100 @@ The application uses a utility function (`getImageUrl`) that:
 This ensures images work correctly in both environments without code changes.
 
 For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+## 📱 Additional Features
+
+### Content Plan Generation
+
+AI-powered content planning feature that generates multi-platform content schedules:
+
+- **Input**: Marketing goal, date range, target platforms
+- **Output**: Structured content plan with dates, platforms, and suggested content
+- **Integration**: Generated plans can be directly sent to calendar
+- **AI Context**: Uses brand profile (tone of voice, target audience) for personalized content
+
+**Usage**:
+1. Open chat interface
+2. Click "Generate Content Plan" button
+3. Enter goal, select date range and platforms
+4. Review generated plan
+5. Send to calendar with one click
+
+### Campaign Management
+
+Organize calendar items into marketing campaigns:
+
+- **Create Campaigns**: Group related content under campaigns
+- **Campaign Association**: Link calendar items to campaigns
+- **Campaign Overview**: View all items in a campaign
+- **Filtering**: Filter calendar by campaign
+
+### Multi-Company Support
+
+Manage multiple companies (up to 10) from a single account:
+
+- **Independent Profiles**: Each company has its own brand profile
+- **Separate Settings**: Industry, tone of voice, target audience per company
+- **Company Switching**: Easy switching between companies
+- **Brand Logos**: Upload or generate logos for each company
+
+### Project Folders
+
+Organize conversations into folders for better project management:
+
+- **Create Folders**: Group related conversations
+- **Move Conversations**: Drag and drop conversations into folders
+- **Folder Management**: Rename, delete folders
+- **Organization**: Keep your workspace organized
+
+### Auto-Publish Scheduler
+
+Automatic publishing system for scheduled content:
+
+- **Scheduled Publishing**: Automatically publishes LinkedIn posts at scheduled times
+- **Cron Job**: Runs every 5 minutes to check for items ready to publish
+- **Status Updates**: Updates calendar item status from 'scheduled' to 'published'
+- **Error Handling**: Retries failed publications on next check
+
+**How it works**:
+1. Create calendar item with status 'scheduled'
+2. Set date and time for publication
+3. Scheduler checks every 5 minutes
+4. When time arrives, automatically publishes to LinkedIn
+5. Status updates to 'published'
+
+### File Upload & Processing
+
+Upload and process documents for AI analysis:
+
+- **Supported Formats**: PDF, DOCX (Word documents)
+- **Text Extraction**: Automatic text extraction from documents
+- **AI Analysis**: Extracted text is sent to AI for analysis
+- **File Management**: Files stored securely, linked to conversations
+
+**Use Cases**:
+- Upload product catalogs for AI to understand your products
+- Share brand guidelines documents
+- Provide context documents for better AI responses
+
+### Message Editing
+
+Edit previous chat messages and regenerate AI responses:
+
+- **Edit Messages**: Click edit button on any user message
+- **Regenerate**: AI generates new response based on edited message
+- **Conversation History**: Previous messages after edited message are removed
+- **Context Preservation**: Conversation context before edited message is maintained
+
+### Calendar Views
+
+Multiple calendar views for flexible content scheduling:
+
+- **Day View**: Detailed daily schedule
+- **Week View**: Weekly overview
+- **Year View**: Annual calendar overview
+- **Platform Filtering**: Filter by social media platform
+- **Status Filtering**: Filter by draft, scheduled, or published
 
 ## 🔧 Troubleshooting
 
