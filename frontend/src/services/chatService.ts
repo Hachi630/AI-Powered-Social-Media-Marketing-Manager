@@ -110,6 +110,7 @@ export const chatService = {
     success: boolean;
     conversations?: ConversationListItem[];
     folders?: ProjectFolder[];
+    selectedConversationId?: string | null;
     message?: string;
   }> {
     const token = localStorage.getItem("token");
@@ -436,6 +437,46 @@ export const chatService = {
         return {
           success: false,
           message: data.message || "Failed to move conversation",
+        };
+      }
+
+      return data;
+    } catch (error) {
+      return { success: false, message: "Network error" };
+    }
+  },
+
+  /**
+   * Select a conversation
+   */
+  async selectConversation(
+    conversationId: string | null
+  ): Promise<{
+    success: boolean;
+    selectedConversationId?: string | null;
+    message?: string;
+  }> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return { success: false, message: "Not authenticated" };
+    }
+
+    try {
+      const conversationIdParam = conversationId || "null";
+      const response = await fetch(`${API_URL}/select/${conversationIdParam}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: data.message || "Failed to select conversation",
         };
       }
 
