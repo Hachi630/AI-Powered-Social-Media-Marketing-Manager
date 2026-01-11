@@ -1,15 +1,19 @@
 import dayjs from 'dayjs';
 import CalendarItem from '../models/CalendarItem.js';
 import LinkedInToken from '../models/LinkedInToken.js';
+import TwitterToken from '../models/TwitterToken.js';
 import {
   createLinkedInPost,
   createLinkedInPostWithImage,
   initializeImageUpload,
   uploadImageToLinkedIn,
 } from './linkedinService.js';
+import { twitterService } from './twitterService.js';
 import { readImageAsBase64 } from '../utils/imageReader.js';
 import axios from 'axios';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
@@ -57,29 +61,29 @@ async function getImageBuffer(imageUrl: string): Promise<{ buffer: Buffer; conte
 }
 
 /**
- * Check and publish scheduled LinkedIn calendar items
+ * Check and publish scheduled calendar items (LinkedIn and Twitter)
  */
 export async function checkAndPublishScheduledItems(): Promise<void> {
   try {
     const now = dayjs();
     console.log(`[Scheduler] ========================================`);
-    console.log(`[Scheduler] Checking for scheduled LinkedIn posts at ${now.format('YYYY-MM-DD HH:mm:ss')}...`);
+    console.log(`[Scheduler] Checking for scheduled posts at ${now.format('YYYY-MM-DD HH:mm:ss')}...`);
     console.log(`[Scheduler] Current timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
     
-    // Query for ALL scheduled LinkedIn items (no date filter to avoid timezone issues)
+    // Query for ALL scheduled items (LinkedIn and Twitter, no date filter to avoid timezone issues)
     // We'll filter by date and time in code
     const scheduledItems = await CalendarItem.find({
       status: 'scheduled',
-      platform: 'linkedin',
+      platform: { $in: ['linkedin', 'twitter'] },
     }).lean();
     
     if (scheduledItems.length === 0) {
-      console.log('[Scheduler] No scheduled LinkedIn items found in database');
+      console.log('[Scheduler] No scheduled items found in database');
       console.log(`[Scheduler] ========================================`);
       return;
     }
     
-    console.log(`[Scheduler] Found ${scheduledItems.length} scheduled LinkedIn item(s) in database`);
+    console.log(`[Scheduler] Found ${scheduledItems.length} scheduled item(s) in database`);
     
     // Log all items for debugging
     scheduledItems.forEach((item) => {
@@ -144,17 +148,23 @@ export async function checkAndPublishScheduledItems(): Promise<void> {
     });
     
     if (itemsToPublish.length === 0) {
-      console.log('[Scheduler] No LinkedIn items ready to publish yet (all items are scheduled for future)');
+      console.log('[Scheduler] No items ready to publish yet (all items are scheduled for future)');
       console.log(`[Scheduler] ========================================`);
       return;
     }
     
-    console.log(`[Scheduler] Found ${itemsToPublish.length} LinkedIn item(s) ready to publish`);
+    console.log(`[Scheduler] Found ${itemsToPublish.length} item(s) ready to publish`);
     
     // Process each item
     for (const item of itemsToPublish) {
       try {
-        await publishLinkedInItem(item);
+        if (item.platform === 'linkedin') {
+          await publishLinkedInItem(item);
+        } else if (item.platform === 'twitter') {
+          await publishTwitterItem(item);
+        } else {
+          console.warn(`[Scheduler] Unknown platform for item ${item._id}: ${item.platform}`);
+        }
       } catch (error: any) {
         console.error(`[Scheduler] Failed to publish item ${item._id}:`, error.message);
         console.error(`[Scheduler] Error stack:`, error.stack);
@@ -162,7 +172,7 @@ export async function checkAndPublishScheduledItems(): Promise<void> {
       }
     }
     
-    console.log('[Scheduler] Finished checking scheduled LinkedIn posts');
+    console.log('[Scheduler] Finished checking scheduled posts');
     console.log(`[Scheduler] ========================================`);
   } catch (error: any) {
     console.error('[Scheduler] Error in checkAndPublishScheduledItems:', error);
@@ -357,6 +367,187 @@ async function publishLinkedInItem(item: any): Promise<void> {
       authorId: authorId,
       isOrganization: isOrganization,
       authorUrn: isOrganization ? `urn:li:organization:${authorId}` : `urn:li:person:${authorId}`,
+      hasContent: !!content && content.trim().length > 0,
+      contentLength: content?.length || 0,
+    });
+    // Keep status as 'scheduled' for retry
+  }
+}
+
+/**
+ * Publish a single Twitter calendar item
+ */
+async function publishTwitterItem(item: any): Promise<void> {
+  const itemId = item._id.toString();
+  console.log(`[Scheduler] Processing Twitter item ${itemId}`);
+  console.log(`[Scheduler] Item details:`, {
+    id: itemId,
+    userId: item.userId,
+    platform: item.platform,
+    date: item.date,
+    time: item.time,
+    title: item.title,
+    status: item.status,
+    hasContent: !!item.content,
+    hasTwitterVariant: !!item.variants?.twitter,
+    hasImage: !!item.imageUrl,
+  });
+  
+  // Get user's Twitter token
+  const twitterToken = await TwitterToken.findOne({ userId: item.userId });
+  
+  if (!twitterToken || !twitterToken.accessToken || !twitterToken.accessSecret) {
+    console.error(`[Scheduler] Twitter account not connected for user ${item.userId}`);
+    // Keep item as 'scheduled' - user needs to connect their account
+    return;
+  }
+  
+  console.log(`[Scheduler] Found Twitter token for user ${item.userId}, twitterUserId: ${twitterToken.twitterUserId}`);
+  
+  // Check if token is expired
+  if (twitterToken.expiresAt) {
+    const expiresAt = dayjs(twitterToken.expiresAt);
+    const isExpired = expiresAt.isBefore(dayjs());
+    console.log(`[Scheduler] Token expires at: ${expiresAt.format('YYYY-MM-DD HH:mm:ss')}, expired: ${isExpired}`);
+    if (isExpired) {
+      console.error(`[Scheduler] Twitter token expired for user ${item.userId}`);
+      // Keep item as 'scheduled' - user needs to reconnect their account
+      return;
+    }
+  } else {
+    console.log(`[Scheduler] Token has no expiration date`);
+  }
+  
+  // Determine content to post (prefer variant, fallback to content)
+  let content = item.variants?.twitter || item.content;
+  
+  if (!content || content.trim().length === 0) {
+    console.error(`[Scheduler] No content found for item ${itemId}`);
+    // Update status to published to prevent retrying empty content
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    return;
+  }
+  
+  // Twitter content length limit is 280 characters
+  if (content.length > 280) {
+    console.warn(`[Scheduler] Content length (${content.length}) exceeds Twitter limit (280), truncating...`);
+    content = content.substring(0, 277) + '...';
+  }
+  
+  let result;
+  let tempFilePath: string | null = null;
+  
+  // Handle image if present
+  if (item.imageUrl) {
+    console.log(`[Scheduler] Item ${itemId} has image, processing...`);
+    
+    try {
+      // Check if imageUrl is a URL or local path
+      if (item.imageUrl.startsWith('http://') || item.imageUrl.startsWith('https://')) {
+        // Download image from URL and save to temporary file
+        const imageData = await getImageBuffer(item.imageUrl);
+        
+        if (!imageData) {
+          console.error(`[Scheduler] Failed to download image for item ${itemId}, posting without image`);
+          // Post without image if download fails
+          result = await twitterService.postTweet(
+            content,
+            null,
+            twitterToken.accessToken,
+            twitterToken.accessSecret
+          );
+        } else {
+          // Create temporary file
+          const tempDir = os.tmpdir();
+          const fileExtension = imageData.contentType?.split('/')[1] || 'jpg';
+          tempFilePath = path.join(tempDir, `twitter-${itemId}-${Date.now()}.${fileExtension}`);
+          
+          try {
+            fs.writeFileSync(tempFilePath, imageData.buffer);
+            console.log(`[Scheduler] Image saved to temporary file: ${tempFilePath}`);
+            
+            // Post with image
+            result = await twitterService.postTweet(
+              content,
+              tempFilePath,
+              twitterToken.accessToken,
+              twitterToken.accessSecret
+            );
+          } catch (writeError: any) {
+            console.error(`[Scheduler] Failed to write temporary file for item ${itemId}:`, writeError.message);
+            // Post without image if file write fails
+            result = await twitterService.postTweet(
+              content,
+              null,
+              twitterToken.accessToken,
+              twitterToken.accessSecret
+            );
+          }
+        }
+      } else {
+        // Local file path - check if file exists
+        let filePath = item.imageUrl;
+        if (item.imageUrl.startsWith('/uploads')) {
+          filePath = path.join(process.cwd(), item.imageUrl);
+        }
+        
+        if (fs.existsSync(filePath)) {
+          // Post with image
+          result = await twitterService.postTweet(
+            content,
+            filePath,
+            twitterToken.accessToken,
+            twitterToken.accessSecret
+          );
+        } else {
+          console.warn(`[Scheduler] Image file not found at ${filePath}, posting without image`);
+          // Post without image if file doesn't exist
+          result = await twitterService.postTweet(
+            content,
+            null,
+            twitterToken.accessToken,
+            twitterToken.accessSecret
+          );
+        }
+      }
+    } catch (error: any) {
+      console.error(`[Scheduler] Error handling image for item ${itemId}:`, error.message);
+      // Post without image if any image-related error occurs
+      result = await twitterService.postTweet(
+        content,
+        null,
+        twitterToken.accessToken,
+        twitterToken.accessSecret
+      );
+    } finally {
+      // Clean up temporary file if it was created
+      if (tempFilePath && fs.existsSync(tempFilePath)) {
+        try {
+          fs.unlinkSync(tempFilePath);
+          console.log(`[Scheduler] Cleaned up temporary file: ${tempFilePath}`);
+        } catch (cleanupError: any) {
+          console.error(`[Scheduler] Failed to clean up temporary file ${tempFilePath}:`, cleanupError.message);
+        }
+      }
+    }
+  } else {
+    // Post without image
+    result = await twitterService.postTweet(
+      content,
+      null,
+      twitterToken.accessToken,
+      twitterToken.accessSecret
+    );
+  }
+  
+  // Update item status based on result
+  if (result.success) {
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    console.log(`[Scheduler] ✅ Successfully published Twitter item ${itemId}, tweetId: ${result.tweetId}`);
+  } else {
+    console.error(`[Scheduler] ❌ Failed to publish Twitter item ${itemId}`);
+    console.error(`[Scheduler] Error details:`, {
+      error: result.error,
       hasContent: !!content && content.trim().length > 0,
       contentLength: content?.length || 0,
     });
