@@ -162,3 +162,54 @@ export async function createFacebookPost(
   }
 }
 
+// Create an Instagram post (text with image or video)
+export async function createInstagramPost(
+  token: string,
+  text: string,
+  postType: "image" | "video",
+  imageFile?: File | null,
+  videoFile?: File | null,
+): Promise<{ success: boolean; message?: string; postId?: string; permalink?: string; error?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('content', text); // Use 'content' for Instagram backend
+
+    // Instagram API only supports image or video posts (no text-only or link posts)
+    if (postType === 'image' && imageFile) {
+      formData.append('image', imageFile);
+    } else if (postType === 'video' && videoFile) {
+      formData.append('video', videoFile);
+    } else {
+      // This case should ideally be prevented by UI, but as a fallback
+      return {
+        success: false,
+        error: 'Instagram posts require an image or video. Please upload media to share.',
+      };
+    }
+
+    const res = await fetch(`${API_URL}/api/instagram/share`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      return {
+        success: false,
+        error: error.message || 'Failed to post to Instagram',
+      };
+    }
+
+    return res.json();
+  } catch (error: any) {
+    console.error('Error creating Instagram post:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to post to Instagram',
+    };
+  }
+}
+
