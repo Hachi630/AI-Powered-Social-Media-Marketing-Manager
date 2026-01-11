@@ -12,8 +12,57 @@ import {
   shareToInstagram,
 } from "../services/instagramService.js";
 import crypto from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const router = express.Router();
+
+// Configure multer for image/video uploads
+const UPLOADS_DIR = path.join(__dirname, "../../uploads/images");
+
+// Ensure uploads directory exists
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOADS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    const ext = path.extname(file.originalname) || ".png";
+    cb(null, `instagram-${timestamp}-${random}${ext}`);
+  },
+});
+
+const fileFilter = (
+  req: Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  // Accept images and videos
+  if (file.mimetype.startsWith("image/") || file.mimetype.startsWith("video/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image and video files are allowed"));
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 200 * 1024 * 1024, // 200MB limit for videos
+  },
+});
 
 // Store OAuth states temporarily (in production, use Redis or similar)
 const oauthStates = new Map<string, string>();
@@ -119,18 +168,25 @@ router.get("/callback", async (req: Request, res: Response) => {
         }
       );
       // Silently redirect without error (invalid state is common during OAuth flow)
+      // This can happen if: 1) User refreshes the callback page, 2) OAuth callback is called multiple times
+      // If connection was already successful, state would have been consumed, so we redirect with params
+      // The frontend will check the actual connection status regardless
       console.log(
         "[Instagram OAuth Callback] Invalid state - but connection may already be successful, redirecting silently"
       );
+      const clientUrl =
+        process.env.CLIENT_URL ||
+        process.env.FRONTEND_URL ||
+        "http://localhost:3000";
       if (isFrontendCallback) {
         return res.json({
           success: true,
           message: "Redirecting to social dashboard",
-          redirectUrl: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard`,
+          redirectUrl: `${clientUrl}/socialdashboard?instagram=connected`,
         });
       }
       return res.redirect(
-        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard`
+        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?instagram=connected`
       );
     }
 
@@ -273,12 +329,17 @@ router.get("/callback", async (req: Request, res: Response) => {
 
           await user.save();
 
+          // Verify data was saved correctly
+          const savedUser = await User.findById(user._id);
           console.log(
             "[Instagram OAuth Callback] Successfully connected:",
             {
               userId: user._id,
               instagramUsername: instagramAccount.username,
               facebookPageId: instagramAccount.facebookPageId,
+              savedInstagramUserId: savedUser?.socialConnections?.instagram?.userId,
+              savedInstagramUsername: savedUser?.socialConnections?.instagram?.username,
+              savedInstagramAccessToken: savedUser?.socialConnections?.instagram?.accessToken ? "exists" : "missing",
             }
           );
 
@@ -369,12 +430,17 @@ router.get("/callback", async (req: Request, res: Response) => {
 
               await user.save();
 
+              // Verify data was saved correctly
+              const savedUser = await User.findById(user._id);
               console.log(
                 "[Instagram OAuth Callback] Successfully connected:",
                 {
                   userId: user._id,
                   instagramUsername: instagramAccount.username,
                   facebookPageId: instagramAccount.facebookPageId,
+                  savedInstagramUserId: savedUser?.socialConnections?.instagram?.userId,
+                  savedInstagramUsername: savedUser?.socialConnections?.instagram?.username,
+                  savedInstagramAccessToken: savedUser?.socialConnections?.instagram?.accessToken ? "exists" : "missing",
                 }
               );
 
@@ -470,11 +536,16 @@ router.get("/callback", async (req: Request, res: Response) => {
 
       await user.save();
 
+      // Verify data was saved correctly
+      const savedUser = await User.findById(user._id);
       console.log("[Instagram OAuth] Successfully connected single page:", {
         userId: user._id,
         instagramUserId: user.socialConnections.instagram?.userId,
         instagramUsername: user.socialConnections.instagram?.username,
         facebookPageId: user.socialConnections.facebook?.userId,
+        savedInstagramUserId: savedUser?.socialConnections?.instagram?.userId,
+        savedInstagramUsername: savedUser?.socialConnections?.instagram?.username,
+        savedInstagramAccessToken: savedUser?.socialConnections?.instagram?.accessToken ? "exists" : "missing",
       });
 
       const clientUrl =
@@ -544,13 +615,17 @@ router.get("/callback", async (req: Request, res: Response) => {
 });
 
 /**
- * @desc    Share calendar item to Instagram
+ * @desc    Share content to Instagram (with image/video upload support)
  * @route   POST /api/instagram/share
  * @access  Private
  */
 router.post(
   "/share",
   protect,
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
   async (req: AuthRequest, res: Response) => {
     try {
       const user = req.user;
@@ -560,31 +635,48 @@ router.post(
           .json({ success: false, message: "User not found" });
       }
 
+      // IMPORTANT: Reload user from database to get latest socialConnections
+      const freshUser = await User.findById(user._id);
+      if (!freshUser) {
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
+      }
+
+      // Parse FormData - content and calendarItemId come from req.body (multer parses FormData)
       const { calendarItemId, content, imageUrl } = req.body;
+      const files = req.files as
+        | { [fieldname: string]: Express.Multer.File[] }
+        | undefined;
+      const imageFile = files?.image?.[0];
+      const videoFile = files?.video?.[0];
 
       console.log("[Instagram Share] Request received:", {
-        userId: user._id,
+        userId: freshUser._id,
         calendarItemId,
         hasContent: !!content,
         hasImageUrl: !!imageUrl,
-        socialConnections: user.socialConnections ? "exists" : "null",
-        instagramToken: user.socialConnections?.instagram?.accessToken
+        hasImageFile: !!imageFile,
+        hasVideoFile: !!videoFile,
+        socialConnections: freshUser.socialConnections ? "exists" : "null",
+        instagramToken: freshUser.socialConnections?.instagram?.accessToken
           ? "exists"
           : "missing",
       });
 
-      if (!calendarItemId || !content) {
+      // Content is required, but calendarItemId is optional (for direct posts from Social Dashboard)
+      if (!content || content.trim().length === 0) {
         return res.status(400).json({
           success: false,
-          message: "calendarItemId and content are required",
+          message: "Post content is required",
         });
       }
 
       // Check if user has Instagram connected
-      if (!user.socialConnections?.instagram?.accessToken) {
+      if (!freshUser.socialConnections?.instagram?.accessToken) {
         console.log(
           "[Instagram Share] Instagram not connected for user:",
-          user._id
+          freshUser._id
         );
         return res.status(400).json({
           success: false,
@@ -596,7 +688,7 @@ router.post(
         });
       }
 
-      const instagram = user.socialConnections.instagram;
+      const instagram = freshUser.socialConnections.instagram;
 
       // Check if token is expired
       if (instagram.expiresAt && new Date() > instagram.expiresAt) {
@@ -608,11 +700,63 @@ router.post(
         });
       }
 
-      // Instagram requires an image URL for posts
-      // If no image is provided, we'll need to generate one or return an error
+      // Instagram requires an image or video for posts
+      // Handle file uploads first (if files were uploaded via FormData)
       let finalImageUrl = imageUrl;
+      let finalVideoUrl: string | undefined;
+
+      // If an image file was uploaded, convert it to a URL
+      if (imageFile) {
+        // For Instagram, we need a publicly accessible URL
+        // In production (with BACKEND_URL set), use the backend URL
+        // In development, localhost won't work, but we'll still try
+        const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+        // The file is saved in uploads/images directory
+        const relativePath = `/uploads/images/${imageFile.filename}`;
+        finalImageUrl = `${backendUrl}${relativePath}`;
+        console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+      }
       
-      if (!finalImageUrl) {
+      // If a video file was uploaded, convert it to a URL
+      if (videoFile) {
+        const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+        const relativePath = `/uploads/images/${videoFile.filename}`; // Multer saves to images dir
+        finalVideoUrl = `${backendUrl}${relativePath}`;
+        console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+      }
+
+      // Convert relative URLs to absolute URLs using BACKEND_URL
+      // Instagram API requires publicly accessible URLs
+      if (finalImageUrl) {
+        // Check if it's a relative URL (starts with / or ./)
+        if (finalImageUrl.startsWith('/') || finalImageUrl.startsWith('./')) {
+          const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+          // Remove leading slash if present, then append
+          const cleanPath = finalImageUrl.replace(/^\.?\//, '');
+          finalImageUrl = `${backendUrl}/${cleanPath}`;
+          console.log("[Instagram Share] Converted relative URL to absolute:", finalImageUrl);
+        }
+        // Check if it's already a full URL but localhost (in production, this won't work)
+        else if (finalImageUrl.startsWith('http://localhost') || finalImageUrl.startsWith('https://localhost')) {
+          if (process.env.NODE_ENV === 'production') {
+            return res.status(400).json({
+              success: false,
+              message: "Instagram API cannot access localhost URLs in production. Please use a publicly accessible image URL.",
+              imageUrl: finalImageUrl,
+            });
+          }
+          // In development, try to replace localhost with BACKEND_URL
+          const backendUrl = process.env.BACKEND_URL || 'http://localhost:5000';
+          if (backendUrl !== 'http://localhost:5000') {
+            const urlObj = new URL(finalImageUrl);
+            finalImageUrl = finalImageUrl.replace(urlObj.origin, backendUrl);
+            console.log("[Instagram Share] Replaced localhost with BACKEND_URL:", finalImageUrl);
+          }
+        }
+      }
+      
+      // If no image or video provided, try to generate one from text
+      if (!finalImageUrl && !finalVideoUrl) {
         // Try to generate an image from the text content using image generation service
         try {
           const { generateImage } = await import('../services/imageGenerationService.js');
@@ -654,13 +798,42 @@ router.post(
         }
       }
 
-      // Share to Instagram
+      // Final validation: we need either image or video
+      // For now, only support image (video support requires additional API changes)
+      if (!finalImageUrl && !finalVideoUrl) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Image or Video is required for Instagram posts. Instagram API only supports image or video posts, not text-only posts. Please provide an image/video.",
+        });
+      }
+
+      // Final check for publicly accessible URL
+      const mediaUrl = finalVideoUrl || finalImageUrl;
+      if (!mediaUrl || (!mediaUrl.startsWith('http://') && !mediaUrl.startsWith('https://'))) {
+        console.error("[Instagram Share] Final media URL is not a valid public HTTP/HTTPS URL:", mediaUrl);
+        return res.status(400).json({
+          success: false,
+          message: "Generated media URL is not publicly accessible. Instagram API requires a public HTTP/HTTPS URL for images/videos. Consider using ngrok for local testing or cloud storage for deployment.",
+          imageUrl: mediaUrl,
+        });
+      }
+
+      // Share to Instagram (currently only supports image, video support requires API changes)
+      // TODO: Add video support to shareToInstagram function
+      if (finalVideoUrl && !finalImageUrl) {
+        return res.status(400).json({
+          success: false,
+          message: "Video posts are not yet supported. Please use an image instead.",
+        });
+      }
+
       const result = await shareToInstagram(
         instagram.userId!,
         instagram.accessToken,
         {
           text: content,
-          imageUrl: finalImageUrl,
+          imageUrl: finalImageUrl!,
         }
       );
 
@@ -851,6 +1024,9 @@ router.post(
 
       await user.save();
 
+      // Verify data was saved correctly
+      const savedUser = await User.findById(user._id);
+
       // Clean up temporary token
       oauthStates.delete(tokenKey);
 
@@ -860,6 +1036,9 @@ router.post(
         instagramUsername: user.socialConnections.instagram?.username,
         facebookPageId: user.socialConnections.facebook?.userId,
         expiresAt: expiresAt.toISOString(),
+        savedInstagramUserId: savedUser?.socialConnections?.instagram?.userId,
+        savedInstagramUsername: savedUser?.socialConnections?.instagram?.username,
+        savedInstagramAccessToken: savedUser?.socialConnections?.instagram?.accessToken ? "exists" : "missing",
       });
 
       // Return JSON with redirect URL for frontend to handle
@@ -918,12 +1097,24 @@ router.get(
 
       const instagram = freshUser.socialConnections?.instagram;
 
+      // Debug logging to help diagnose connection issues
+      console.log("[Instagram Status] Checking connection for user:", user._id);
+      console.log("[Instagram Status] Instagram data:", {
+        hasInstagram: !!instagram,
+        hasAccessToken: !!instagram?.accessToken,
+        hasUserId: !!instagram?.userId,
+        userId: instagram?.userId,
+        username: instagram?.username,
+        accountType: instagram?.accountType,
+      });
+
       // Check Instagram connection
       if (
         !instagram ||
         !instagram.accessToken ||
         !instagram.userId
       ) {
+        console.log("[Instagram Status] Instagram not connected - missing required fields");
         return res.json({
           success: true,
           connected: false,

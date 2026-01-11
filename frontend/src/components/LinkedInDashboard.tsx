@@ -99,6 +99,7 @@ import {
   getInstagramStatus,
   getFacebookAuthUrl,
   createFacebookPost,
+  createInstagramPost,
   getInstagramAuthUrl,
   disconnectFacebook,
   disconnectInstagram,
@@ -3519,36 +3520,68 @@ export default function LinkedInDashboard({
                     type="primary"
                     icon={<SendOutlined />}
                     onClick={async () => {
-                      // Hardcoded fake success for testing
-                      setInstagramPosting(true);
-                      
-                      // Simulate API call delay
-                      await new Promise(resolve => setTimeout(resolve, 1500));
-                      
-                      // Show fake success message
-                      message.success("🎉 Instagram post published successfully!");
-                      
-                      // Reset form
-                      setInstagramPostText("");
-                      setInstagramPostType("text");
-                      setInstagramSelectedImage(null);
-                      setInstagramImagePreview(null);
-                      setInstagramSelectedVideo(null);
-                      if (instagramVideoPreview) {
-                        URL.revokeObjectURL(instagramVideoPreview);
+                      if (!jwt) {
+                        message.error("Please log in to post to Instagram");
+                        return;
                       }
-                      setInstagramVideoPreview(null);
-                      setInstagramLinkUrl("");
-                      setInstagramLinkTitle("");
-                      setInstagramLinkDescription("");
-                      
-                      setInstagramPosting(false);
+
+                      // Validate text content
+                      if (!instagramPostText.trim()) {
+                        message.error("Please enter post text");
+                        return;
+                      }
+
+                      // Validate post type specific requirements
+                      if (instagramPostType === "image" && !instagramSelectedImage) {
+                        message.error("Please select an image for your image post");
+                        return;
+                      }
+
+                      if (instagramPostType === "video" && !instagramSelectedVideo) {
+                        message.error("Please select a video for your video post");
+                        return;
+                      }
+
+                      setInstagramPosting(true);
+
+                      try {
+                        const result = await createInstagramPost(
+                          jwt,
+                          instagramPostText,
+                          instagramPostType === "image" ? "image" : "video",
+                          instagramSelectedImage,
+                          instagramSelectedVideo
+                        );
+
+                        if (result.success) {
+                          message.success(result.message || "🎉 Instagram post published successfully!");
+                          
+                          // Reset form
+                          setInstagramPostText("");
+                          setInstagramPostType("text");
+                          setInstagramSelectedImage(null);
+                          setInstagramImagePreview(null);
+                          setInstagramSelectedVideo(null);
+                          if (instagramVideoPreview) {
+                            URL.revokeObjectURL(instagramVideoPreview);
+                          }
+                          setInstagramVideoPreview(null);
+                          setInstagramLinkUrl("");
+                          setInstagramLinkTitle("");
+                          setInstagramLinkDescription("");
+                        } else {
+                          message.error(result.error || "Failed to post to Instagram");
+                        }
+                      } catch (error: any) {
+                        console.error("Failed to post to Instagram:", error);
+                        message.error(error.message || "Failed to post to Instagram");
+                      } finally {
+                        setInstagramPosting(false);
+                      }
                     }}
                     loading={instagramPosting}
                     disabled={
                       !instagramPostText.trim() ||
-                      (instagramPostType === "link" &&
-                        !instagramLinkUrl.trim()) ||
                       (instagramPostType === "video" &&
                         !instagramSelectedVideo) ||
                       (instagramPostType === "image" && !instagramSelectedImage)
