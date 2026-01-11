@@ -141,12 +141,12 @@ export async function createLinkedInPost(
   text: string,
   isOrganization: boolean = false
 ) {
+  // Determine the author URN based on whether it's a personal or organization post
+  const authorUrn = isOrganization 
+    ? `urn:li:organization:${authorId}` 
+    : `urn:li:person:${authorId}`;
+  
   try {
-    // Determine the author URN based on whether it's a personal or organization post
-    const authorUrn = isOrganization 
-      ? `urn:li:organization:${authorId}` 
-      : `urn:li:person:${authorId}`;
-    
     console.log(`Creating LinkedIn post as ${isOrganization ? 'organization' : 'person'}: ${authorUrn}`);
     
     // Use the v2 UGC Posts API (legacy but stable)
@@ -179,8 +179,18 @@ export async function createLinkedInPost(
     console.log("LinkedIn post created:", data);
     return { success: true, postId: data.id, data };
   } catch (error: any) {
-    console.error("Failed to create LinkedIn post:", error?.response?.data || error.message);
-    return { success: false, error: error?.response?.data?.message || JSON.stringify(error?.response?.data) || error.message };
+    const errorData = error?.response?.data;
+    const errorMessage = errorData?.message || JSON.stringify(errorData) || error.message;
+    console.error("Failed to create LinkedIn post:", {
+      authorUrn,
+      isOrganization,
+      authorId,
+      error: errorMessage,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      fullError: errorData,
+    });
+    return { success: false, error: errorMessage };
   }
 }
 

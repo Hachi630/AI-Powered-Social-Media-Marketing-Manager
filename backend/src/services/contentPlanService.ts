@@ -1,8 +1,8 @@
 import { GoogleGenAI } from '@google/genai'
 import { UserContext } from './geminiService.js'
 
-// Initialize Gemini client
-const ai = new GoogleGenAI({})
+// Initialize Gemini client with API key from environment
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
 export interface ContentPlanItem {
   date: string // YYYY-MM-DD

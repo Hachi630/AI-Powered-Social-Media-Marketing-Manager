@@ -24,6 +24,7 @@ import type { InputRef, MenuProps } from "antd";
 import { useState, useEffect, useRef } from "react";
 import styles from "./Sidebar.module.css";
 import { User } from "../services/authService";
+import { getImageUrl } from "../utils/imageUtils";
 import {
   chatService,
   ConversationListItem,
@@ -63,37 +64,6 @@ export default function Sidebar({
     type: "folder" | "conversation";
     id: string;
   } | null>(null);
-
-  // Get localStorage key for expanded folders
-  const getExpandedFoldersKey = () => {
-    return user ? `melo_expanded_folders_${user._id}` : 'melo_expanded_folders';
-  };
-
-  // Load expanded folders from localStorage
-  const loadExpandedFolders = (): Set<string> => {
-    try {
-      const key = getExpandedFoldersKey();
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const folderIds = JSON.parse(saved) as string[];
-        return new Set(folderIds);
-      }
-    } catch (error) {
-      console.error('Failed to load expanded folders from localStorage:', error);
-    }
-    return new Set();
-  };
-
-  // Save expanded folders to localStorage
-  const saveExpandedFolders = (folders: Set<string>) => {
-    try {
-      const key = getExpandedFoldersKey();
-      const folderIds = Array.from(folders);
-      localStorage.setItem(key, JSON.stringify(folderIds));
-    } catch (error) {
-      console.error('Failed to save expanded folders to localStorage:', error);
-    }
-  };
   const [editingValue, setEditingValue] = useState<string>("");
   const [draggedItem, setDraggedItem] = useState<{
     type: "conversation";
@@ -124,37 +94,9 @@ export default function Sidebar({
         setConversations(result.conversations || []);
         setFolders(result.folders || []);
         setFolderSearchResults(result.folders || []);
-        
-        // Restore selected conversation from backend
-        if (result.selectedConversationId && onConversationSelect) {
-          // Check if the conversation still exists
-          const conversationExists = result.conversations?.some(
-            (conv) => conv.id === result.selectedConversationId
-          );
-          if (conversationExists) {
-            onConversationSelect(result.selectedConversationId);
-          }
-        }
-        // Load expanded folders from localStorage to restore user's last state
-        if (result.folders && result.folders.length > 0) {
-          const key = getExpandedFoldersKey();
-          const hasSavedState = localStorage.getItem(key) !== null;
-          
-          if (hasSavedState) {
-            // User has saved state: restore only folders that still exist
-            const savedExpandedFolders = loadExpandedFolders();
-            const existingFolderIds = new Set(result.folders.map((f) => f.id));
-            const validExpandedFolders = new Set(
-              Array.from(savedExpandedFolders).filter((id) => existingFolderIds.has(id))
-            );
-            setExpandedFolders(validExpandedFolders);
-          } else {
-            // First time: default to all folders expanded
-            setExpandedFolders(new Set(result.folders.map((f) => f.id)));
-          }
-        } else {
-          // No folders, clear expanded state
-          setExpandedFolders(new Set());
+        // Expand all folders by default
+        if (result.folders) {
+          setExpandedFolders(new Set(result.folders.map((f) => f.id)));
         }
       }
     } catch (error) {
@@ -307,8 +249,6 @@ export default function Sidebar({
       } else {
         newSet.add(folderId);
       }
-      // Save to localStorage whenever state changes
-      saveExpandedFolders(newSet);
       return newSet;
     });
   };
@@ -903,7 +843,7 @@ export default function Sidebar({
       <div className={styles.userSection}>
         <Avatar
           size={36}
-          src={user?.avatar}
+          src={getImageUrl(user?.avatar)}
           style={{ backgroundColor: "#87d068" }}
         >
           {user?.name

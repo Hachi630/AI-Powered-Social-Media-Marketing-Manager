@@ -26,6 +26,7 @@ import {
 import styles from './Personal.module.css'
 import { User, authService } from '../services/authService'
 import type { UploadFile, UploadProps } from 'antd/es/upload/interface'
+import { getImageUrl } from '../utils/imageUtils'
 import dayjs from 'dayjs'
 
 const { TextArea } = Input
@@ -613,11 +614,11 @@ export default function Personal({
                   maxCount={1}
                 >
                   {formData.avatar && !formData.avatar.startsWith('data:') ? (
-                    <img src={formData.avatar} alt="avatar" className={styles.avatarImage} />
+                    <img src={getImageUrl(formData.avatar)} alt="avatar" className={styles.avatarImage} />
                   ) : formData.avatar && formData.avatar.startsWith('data:') ? (
                     <img src={formData.avatar} alt="avatar" className={styles.avatarImage} />
                   ) : user?.avatar ? (
-                    <img src={user.avatar} alt="avatar" className={styles.avatarImage} />
+                    <img src={getImageUrl(user.avatar)} alt="avatar" className={styles.avatarImage} />
                   ) : (
                     <div>
                       <UserOutlined />
@@ -628,7 +629,7 @@ export default function Personal({
               ) : (
                 <Avatar
                   size={106}
-                  src={user?.avatar || formData.avatar}
+                  src={getImageUrl(user?.avatar || formData.avatar)}
                   className={styles.avatar}
                 >
                   {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}

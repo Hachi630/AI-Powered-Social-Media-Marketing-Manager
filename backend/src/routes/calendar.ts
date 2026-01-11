@@ -4,8 +4,51 @@ import { AuthRequest } from '../types/index.js'
 import CalendarItem from '../models/CalendarItem.js'
 import { twitterService } from '../services/twitterService.js'
 import TwitterToken from '../models/TwitterToken.js'
+import LinkedInToken from '../models/LinkedInToken.js'
+import {
+  createLinkedInPost,
+  createLinkedInPostWithImage,
+  initializeImageUpload,
+  uploadImageToLinkedIn,
+} from '../services/linkedinService.js'
+import { readImageAsBase64 } from '../utils/imageReader.js'
+import axios from 'axios'
+import { checkAndPublishScheduledItems } from '../services/schedulerService.js'
 
 const router = express.Router()
+
+/**
+ * Get image buffer from imageUrl (handles both local paths and URLs)
+ */
+async function getImageBuffer(imageUrl: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+  // Check if it's a URL (starts with http:// or https://)
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    try {
+      const response = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000, // 30 second timeout
+      });
+      
+      const buffer = Buffer.from(response.data);
+      const contentType = response.headers['content-type'] || 'image/jpeg';
+      
+      return { buffer, contentType };
+    } catch (error: any) {
+      console.error('Failed to download image from URL:', imageUrl, error.message);
+      return null;
+    }
+  }
+  
+  // Otherwise, treat it as a local file path
+  const imageData = readImageAsBase64(imageUrl);
+  if (!imageData.success || !imageData.base64) {
+    console.error('Failed to read local image:', imageData.error);
+    return null;
+  }
+  
+  const buffer = Buffer.from(imageData.base64, 'base64');
+  return { buffer, contentType: imageData.mimeType };
+}
 
 // @desc    Get calendar items for date range
 // @route   GET /api/calendar
@@ -452,6 +495,173 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
           details: result.error?.data || result.error?.errors
         });
       }
+    } else if (platform === 'linkedin') {
+      // Check if user has connected their LinkedIn account
+      const linkedInToken = await LinkedInToken.findOne({ userId: user._id });
+      
+      if (!linkedInToken || !linkedInToken.accessToken || !linkedInToken.liMemberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'LinkedIn account not connected. Please connect your LinkedIn account first.',
+          requiresAuth: true
+        });
+      }
+      
+      // Check if token is expired
+      if (linkedInToken.expiresAt && new Date(linkedInToken.expiresAt) < new Date()) {
+        return res.status(401).json({
+          success: false,
+          message: 'LinkedIn token has expired. Please reconnect your LinkedIn account.',
+          requiresAuth: true
+        });
+      }
+      
+      // Check if item has content variant for LinkedIn
+      let content = item.variants?.linkedin || item.content;
+      
+      if (!content || content.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Content is required for LinkedIn post'
+        });
+      }
+      
+      // Determine if posting to organization or personal
+      // Validate companyId - it should be a numeric string (LinkedIn organization ID)
+      // If companyId exists but is invalid, fall back to personal account
+      let isOrganization = false;
+      let authorId = linkedInToken.liMemberId;
+      
+      if (item.companyId && item.companyId.trim().length > 0) {
+        // LinkedIn organization IDs are numeric strings
+        // Validate that companyId looks like a valid LinkedIn org ID (numeric)
+        const companyIdStr = item.companyId.trim();
+        if (/^\d+$/.test(companyIdStr)) {
+          isOrganization = true;
+          authorId = companyIdStr;
+          console.log(`[Calendar Share] Posting to organization: ${authorId}`);
+        } else {
+          console.warn(`[Calendar Share] Invalid companyId format: "${companyIdStr}". Expected numeric LinkedIn organization ID. Falling back to personal account.`);
+          // Fall back to personal account
+          isOrganization = false;
+          authorId = linkedInToken.liMemberId;
+        }
+      } else {
+        console.log(`[Calendar Share] Posting to personal account: ${authorId}`);
+      }
+      
+      // Validate authorId is not empty
+      if (!authorId || authorId.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid author ID. Please reconnect your LinkedIn account.'
+        });
+      }
+      
+      let result;
+      
+      // Handle image if present
+      if (item.imageUrl) {
+        try {
+          // Get image buffer
+          const imageData = await getImageBuffer(item.imageUrl);
+          
+          if (!imageData) {
+            // Post without image if image fails
+            result = await createLinkedInPost(
+              linkedInToken.accessToken,
+              authorId,
+              content,
+              isOrganization
+            );
+          } else {
+            // Initialize image upload
+            const uploadInit = await initializeImageUpload(
+              linkedInToken.accessToken,
+              authorId,
+              isOrganization
+            );
+            
+            if (!uploadInit.success || !uploadInit.uploadUrl || !uploadInit.imageUrn) {
+              // Post without image if upload init fails
+              result = await createLinkedInPost(
+                linkedInToken.accessToken,
+                authorId,
+                content,
+                isOrganization
+              );
+            } else {
+              // Upload image
+              const uploadResult = await uploadImageToLinkedIn(
+                uploadInit.uploadUrl,
+                imageData.buffer,
+                imageData.contentType
+              );
+              
+              if (!uploadResult.success) {
+                // Post without image if upload fails
+                result = await createLinkedInPost(
+                  linkedInToken.accessToken,
+                  authorId,
+                  content,
+                  isOrganization
+                );
+              } else {
+                // Post with image
+                result = await createLinkedInPostWithImage(
+                  linkedInToken.accessToken,
+                  authorId,
+                  content,
+                  uploadInit.imageUrn,
+                  isOrganization
+                );
+              }
+            }
+          }
+        } catch (error: any) {
+          console.error('Error handling image for LinkedIn post:', error);
+          // Post without image if any image-related error occurs
+          result = await createLinkedInPost(
+            linkedInToken.accessToken,
+            authorId,
+            content,
+            isOrganization
+          );
+        }
+      } else {
+        // Post without image
+        result = await createLinkedInPost(
+          linkedInToken.accessToken,
+          authorId,
+          content,
+          isOrganization
+        );
+      }
+      
+      if (result.success) {
+        // Update item status to published if successful
+        item.status = 'published';
+        await item.save();
+        
+        return res.json({
+          success: true,
+          message: 'Successfully posted to LinkedIn',
+          postId: result.postId
+        });
+      } else {
+        const errorMessage = result.error || 'Failed to post to LinkedIn';
+        
+        console.error('LinkedIn posting failed:', {
+          message: errorMessage,
+          fullError: result.error
+        });
+        
+        return res.status(500).json({
+          success: false,
+          message: errorMessage,
+          details: result.error
+        });
+      }
     } else {
       return res.status(400).json({
         success: false,
@@ -465,5 +675,31 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
       success: false,
       message: error.message || 'Failed to share calendar item',
     })
+  }
+})
+
+/**
+ * Test endpoint to manually trigger the LinkedIn scheduler
+ * GET /api/calendar/test-scheduler
+ */
+router.get('/test-scheduler', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    console.log('[Test Endpoint] Manual scheduler trigger requested by user:', req.user?._id);
+    
+    // Run the scheduler check
+    await checkAndPublishScheduledItems();
+    
+    res.json({
+      success: true,
+      message: 'Scheduler check completed. Check server logs for details.',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error('[Test Endpoint] Error in test-scheduler:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to run scheduler check',
+      error: error.stack,
+    });
   }
 })
