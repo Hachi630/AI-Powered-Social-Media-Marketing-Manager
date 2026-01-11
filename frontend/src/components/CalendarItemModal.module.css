@@ -2,6 +2,18 @@
   /* Modal specific styles if needed */
 }
 
+.modal :global(.ant-modal-wrap) {
+  z-index: 2000 !important;
+}
+
+.modal :global(.ant-modal) {
+  z-index: 2000 !important;
+}
+
+.modal :global(.ant-modal-mask) {
+  z-index: 1999 !important;
+}
+
 .modal :global(.ant-modal-body) {
   padding: 24px;
 }

@@ -44,12 +44,9 @@ function DraggableCalendarItem({ item, onClick, isMonthView = false }: { item: C
   if (isMonthView) {
     return (
       <div
-        ref={setNodeRef}
-        {...listeners}
-        {...attributes}
         className={styles.monthEventLabel}
         onClick={onClick}
-        style={{ ...style, borderLeftColor: color }}
+        style={{ borderLeftColor: color }}
       >
         <PlatformIcon platform={item.platform} style={{ marginRight: 4, fontSize: '12px' }} />
         <span className={styles.eventLabelText}>{item.title}</span>
