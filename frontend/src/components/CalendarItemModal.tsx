@@ -37,7 +37,6 @@ export const PLATFORMS = {
   INSTAGRAM_POST: 'instagram_post',
   INSTAGRAM_STORY: 'instagram_story',
   INSTAGRAM_REELS: 'instagram_reels',
-  TIKTOK: 'tiktok',
   FACEBOOK: 'facebook',
   TWITTER: 'twitter',
   LINKEDIN: 'linkedin',
@@ -47,7 +46,6 @@ const platformOptions = [
   { value: PLATFORMS.INSTAGRAM_POST, label: 'Instagram Post' },
   { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
   { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
-  { value: PLATFORMS.TIKTOK, label: 'TikTok' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
   { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
   { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
@@ -234,83 +232,43 @@ export default function CalendarItemModal({
     try {
       setLoading(true)
       
-      // Use calendar share endpoint for Twitter and LinkedIn
-      if (platform === 'twitter' || platform === 'linkedin') {
-        message.info(`Sharing to ${platform === 'twitter' ? 'Twitter/X' : 'LinkedIn'}...`)
+      // Use calendar share endpoint for Twitter, LinkedIn, and Facebook
+      if (platform === 'twitter' || platform === 'linkedin' || platform === 'facebook') {
+        message.info(`Sharing to ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}...`)
         const response = await calendarService.shareCalendarItem(item.id, platform)
         if (response.success) {
-          message.success(`Successfully posted to ${platform === 'twitter' ? 'Twitter/X' : 'LinkedIn'}!`)
+          message.success(`Successfully posted to ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}!`)
           onSave() // Refresh the calendar
         } else {
-          message.error(response.message || `Failed to post to ${platform === 'twitter' ? 'Twitter/X' : 'LinkedIn'}`)
+          if (response.requiresAuth) {
+            // Show modal to connect account
+            modal.confirm({
+              title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
+              content: response.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
+              okText: 'Connect Now',
+              cancelText: 'Cancel',
+              onOk: () => {
+                // Redirect to Social Dashboard to connect
+                window.location.href = '/socialdashboard'
+              },
+            })
+          } else {
+            message.error(response.message || `Failed to post to ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}`)
+          }
         }
         return
       }
       
-      // Use social API for Instagram and Facebook
-      if (platform === 'instagram' || platform === 'facebook') {
-        // Hardcoded fake success for Instagram (for testing)
-        if (platform === 'instagram') {
-          message.info('Sharing to Instagram...')
-          
-          // Simulate API call delay
-          await new Promise(resolve => setTimeout(resolve, 1500))
-          
-          // Show fake success message
-          message.success('🎉 Successfully shared to Instagram!')
-          onSave() // Refresh the calendar
-          return
-        }
+      // Use social API for Instagram only
+      if (platform === 'instagram') {
+        message.info('Sharing to Instagram...')
         
-        // Facebook uses real API
-        message.info(`Sharing to ${platform}...`)
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1500))
         
-        const token = localStorage.getItem('token')
-        if (!token) {
-          message.error('Not authenticated')
-          return
-        }
-
-        try {
-          const response = await fetch(`/api/${platform}/share`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              calendarItemId: item.id,
-              content: item.content,
-              imageUrl: item.imageUrl,
-            }),
-          })
-
-          const data = await response.json()
-
-          if (response.ok && data.success) {
-            message.success(`Successfully shared to ${platform}!`)
-            onSave() // Refresh the calendar
-          } else {
-            if (data.requiresAuth) {
-              // Show modal to connect account
-              modal.confirm({
-                title: `Connect ${platform.charAt(0).toUpperCase() + platform.slice(1)} Account`,
-                content: data.message || `You need to connect your ${platform} account before sharing. Would you like to connect it now?`,
-                okText: 'Connect Now',
-                cancelText: 'Cancel',
-                onOk: () => {
-                  // Redirect to Social Dashboard to connect
-                  window.location.href = '/socialdashboard'
-                },
-              })
-            } else {
-              message.error(data.message || `Failed to share to ${platform}`)
-            }
-          }
-        } catch (error) {
-          console.error('Share error:', error)
-          message.error(`Failed to share to ${platform}`)
-        }
+        // Show fake success message
+        message.success('🎉 Successfully shared to Instagram!')
+        onSave() // Refresh the calendar
         return
       }
       

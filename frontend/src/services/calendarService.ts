@@ -3,7 +3,6 @@ const BASE_API_URL = import.meta.env.VITE_API_URL || ''
 const API_URL = `${BASE_API_URL}/api/calendar`
 
 export interface CalendarItemVariants {
-  tiktok?: string
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
@@ -248,7 +247,7 @@ export const calendarService = {
   /**
    * Share a calendar item to a platform
    */
-  async shareCalendarItem(id: string, platform: string): Promise<{ success: boolean; message?: string }> {
+  async shareCalendarItem(id: string, platform: string): Promise<{ success: boolean; message?: string; requiresAuth?: boolean }> {
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -267,7 +266,7 @@ export const calendarService = {
       const data = await response.json()
 
       if (!response.ok) {
-        return { success: false, message: data.message || 'Failed to share calendar item' }
+        return { success: false, message: data.message || 'Failed to share calendar item', requiresAuth: data.requiresAuth }
       }
 
       return data

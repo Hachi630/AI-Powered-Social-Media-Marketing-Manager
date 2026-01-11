@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
 
 export interface ICalendarItemVariants {
-  tiktok?: string
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
@@ -28,7 +27,6 @@ export interface ICalendarItem extends Document {
 
 const CalendarItemVariantsSchema: Schema = new Schema(
   {
-    tiktok: { type: String, trim: true },
     instagram_post: { type: String, trim: true },
     instagram_story: { type: String, trim: true },
     instagram_reels: { type: String, trim: true },

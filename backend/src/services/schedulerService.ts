@@ -2,6 +2,7 @@ import dayjs from 'dayjs';
 import CalendarItem from '../models/CalendarItem.js';
 import LinkedInToken from '../models/LinkedInToken.js';
 import TwitterToken from '../models/TwitterToken.js';
+import User from '../models/User.js';
 import {
   createLinkedInPost,
   createLinkedInPostWithImage,
@@ -9,6 +10,7 @@ import {
   uploadImageToLinkedIn,
 } from './linkedinService.js';
 import { twitterService } from './twitterService.js';
+import { shareToFacebook } from './facebookService.js';
 import { readImageAsBase64 } from '../utils/imageReader.js';
 import axios from 'axios';
 import path from 'path';
@@ -61,7 +63,7 @@ async function getImageBuffer(imageUrl: string): Promise<{ buffer: Buffer; conte
 }
 
 /**
- * Check and publish scheduled calendar items (LinkedIn and Twitter)
+ * Check and publish scheduled calendar items (LinkedIn, Twitter, and Facebook)
  */
 export async function checkAndPublishScheduledItems(): Promise<void> {
   try {
@@ -70,11 +72,11 @@ export async function checkAndPublishScheduledItems(): Promise<void> {
     console.log(`[Scheduler] Checking for scheduled posts at ${now.format('YYYY-MM-DD HH:mm:ss')}...`);
     console.log(`[Scheduler] Current timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
     
-    // Query for ALL scheduled items (LinkedIn and Twitter, no date filter to avoid timezone issues)
+    // Query for ALL scheduled items (LinkedIn, Twitter, and Facebook, no date filter to avoid timezone issues)
     // We'll filter by date and time in code
     const scheduledItems = await CalendarItem.find({
       status: 'scheduled',
-      platform: { $in: ['linkedin', 'twitter'] },
+      platform: { $in: ['linkedin', 'twitter', 'facebook'] },
     }).lean();
     
     if (scheduledItems.length === 0) {
@@ -162,6 +164,8 @@ export async function checkAndPublishScheduledItems(): Promise<void> {
           await publishLinkedInItem(item);
         } else if (item.platform === 'twitter') {
           await publishTwitterItem(item);
+        } else if (item.platform === 'facebook') {
+          await publishFacebookItem(item);
         } else {
           console.warn(`[Scheduler] Unknown platform for item ${item._id}: ${item.platform}`);
         }
@@ -265,42 +269,21 @@ async function publishLinkedInItem(item: any): Promise<void> {
     console.log(`[Scheduler] Posting to personal account: ${authorId}`);
   }
   
-  // Validate authorId is not empty
-  if (!authorId || authorId.trim().length === 0) {
-    console.error(`[Scheduler] Invalid authorId for item ${itemId}`);
-    return;
-  }
-  
   let result;
   
   // Handle image if present
   if (item.imageUrl) {
-    console.log(`[Scheduler] Item ${itemId} has image, uploading...`);
+    console.log(`[Scheduler] Item ${itemId} has image, processing...`);
     
     try {
-      // Get image buffer
-      const imageData = await getImageBuffer(item.imageUrl);
-      
-      if (!imageData) {
-        console.error(`[Scheduler] Failed to get image for item ${itemId}, posting without image`);
-        // Post without image if image fails
-        result = await createLinkedInPost(
-          linkedInToken.accessToken,
-          authorId,
-          content,
-          isOrganization
-        );
-      } else {
-        // Initialize image upload
-        const uploadInit = await initializeImageUpload(
-          linkedInToken.accessToken,
-          authorId,
-          isOrganization
-        );
+      // Check if imageUrl is a URL or local path
+      if (item.imageUrl.startsWith('http://') || item.imageUrl.startsWith('https://')) {
+        // Download image from URL
+        const imageData = await getImageBuffer(item.imageUrl);
         
-        if (!uploadInit.success || !uploadInit.uploadUrl || !uploadInit.imageUrn) {
-          console.error(`[Scheduler] Failed to initialize image upload for item ${itemId}:`, uploadInit.error);
-          // Post without image if upload init fails
+        if (!imageData) {
+          console.error(`[Scheduler] Failed to download image for item ${itemId}, posting without image`);
+          // Post without image if download fails
           result = await createLinkedInPost(
             linkedInToken.accessToken,
             authorId,
@@ -308,16 +291,15 @@ async function publishLinkedInItem(item: any): Promise<void> {
             isOrganization
           );
         } else {
-          // Upload image
-          const uploadResult = await uploadImageToLinkedIn(
-            uploadInit.uploadUrl,
-            imageData.buffer,
-            imageData.contentType
+          // Initialize image upload
+          const uploadInit = await initializeImageUpload(
+            linkedInToken.accessToken,
+            authorId,
+            isOrganization
           );
           
-          if (!uploadResult.success) {
-            console.error(`[Scheduler] Failed to upload image for item ${itemId}:`, uploadResult.error);
-            // Post without image if upload fails
+          if (!uploadInit.success || !uploadInit.uploadUrl || !uploadInit.imageUrn) {
+            // Post without image if upload init fails
             result = await createLinkedInPost(
               linkedInToken.accessToken,
               authorId,
@@ -325,15 +307,107 @@ async function publishLinkedInItem(item: any): Promise<void> {
               isOrganization
             );
           } else {
-            // Post with image
-            result = await createLinkedInPostWithImage(
+            // Upload image
+            const uploadResult = await uploadImageToLinkedIn(
+              uploadInit.uploadUrl,
+              imageData.buffer,
+              imageData.contentType
+            );
+            
+            if (!uploadResult.success) {
+              // Post without image if upload fails
+              result = await createLinkedInPost(
+                linkedInToken.accessToken,
+                authorId,
+                content,
+                isOrganization
+              );
+            } else {
+              // Post with image
+              result = await createLinkedInPostWithImage(
+                linkedInToken.accessToken,
+                authorId,
+                content,
+                uploadInit.imageUrn,
+                isOrganization
+              );
+            }
+          }
+        }
+      } else {
+        // Local file path - check if file exists
+        let filePath = item.imageUrl;
+        if (item.imageUrl.startsWith('/uploads')) {
+          filePath = path.join(process.cwd(), item.imageUrl);
+        }
+        
+        if (fs.existsSync(filePath)) {
+          // Read image as base64
+          const imageData = readImageAsBase64(filePath);
+          if (!imageData.success || !imageData.base64) {
+            console.error(`[Scheduler] Failed to read local image for item ${itemId}, posting without image`);
+            // Post without image if read fails
+            result = await createLinkedInPost(
               linkedInToken.accessToken,
               authorId,
               content,
-              uploadInit.imageUrn,
               isOrganization
             );
+          } else {
+            const buffer = Buffer.from(imageData.base64, 'base64');
+            
+            // Initialize image upload
+            const uploadInit = await initializeImageUpload(
+              linkedInToken.accessToken,
+              authorId,
+              isOrganization
+            );
+            
+            if (!uploadInit.success || !uploadInit.uploadUrl || !uploadInit.imageUrn) {
+              // Post without image if upload init fails
+              result = await createLinkedInPost(
+                linkedInToken.accessToken,
+                authorId,
+                content,
+                isOrganization
+              );
+            } else {
+              // Upload image
+              const uploadResult = await uploadImageToLinkedIn(
+                uploadInit.uploadUrl,
+                buffer,
+                imageData.mimeType
+              );
+              
+              if (!uploadResult.success) {
+                // Post without image if upload fails
+                result = await createLinkedInPost(
+                  linkedInToken.accessToken,
+                  authorId,
+                  content,
+                  isOrganization
+                );
+              } else {
+                // Post with image
+                result = await createLinkedInPostWithImage(
+                  linkedInToken.accessToken,
+                  authorId,
+                  content,
+                  uploadInit.imageUrn,
+                  isOrganization
+                );
+              }
+            }
           }
+        } else {
+          console.warn(`[Scheduler] Image file not found at ${filePath}, posting without image`);
+          // Post without image if file doesn't exist
+          result = await createLinkedInPost(
+            linkedInToken.accessToken,
+            authorId,
+            content,
+            isOrganization
+          );
         }
       }
     } catch (error: any) {
@@ -555,3 +629,94 @@ async function publishTwitterItem(item: any): Promise<void> {
   }
 }
 
+/**
+ * Publish a single Facebook calendar item
+ */
+async function publishFacebookItem(item: any): Promise<void> {
+  const itemId = item._id.toString();
+  console.log(`[Scheduler] Processing Facebook item ${itemId}`);
+  console.log(`[Scheduler] Item details:`, {
+    id: itemId,
+    userId: item.userId,
+    platform: item.platform,
+    date: item.date,
+    time: item.time,
+    title: item.title,
+    status: item.status,
+    hasContent: !!item.content,
+    hasFacebookVariant: !!item.variants?.facebook,
+    hasImage: !!item.imageUrl,
+  });
+  
+  // Get user's Facebook token
+  const user = await User.findById(item.userId);
+  
+  if (!user) {
+    console.error(`[Scheduler] User not found for item ${itemId}`);
+    // Update status to published to prevent retrying
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    return;
+  }
+  
+  const facebook = user.socialConnections?.facebook;
+  
+  if (!facebook?.accessToken || !facebook?.userId) {
+    console.error(`[Scheduler] Facebook account not connected for user ${item.userId}`);
+    // Keep item as 'scheduled' - user needs to connect their account
+    return;
+  }
+  
+  console.log(`[Scheduler] Found Facebook token for user ${item.userId}, pageId: ${facebook.userId}`);
+  
+  // Check if token is expired
+  if (facebook.expiresAt) {
+    const expiresAt = dayjs(facebook.expiresAt);
+    const isExpired = expiresAt.isBefore(dayjs());
+    console.log(`[Scheduler] Token expires at: ${expiresAt.format('YYYY-MM-DD HH:mm:ss')}, expired: ${isExpired}`);
+    if (isExpired) {
+      console.error(`[Scheduler] Facebook token expired for user ${item.userId}`);
+      // Keep item as 'scheduled' - user needs to reconnect their account
+      return;
+    }
+  } else {
+    console.log(`[Scheduler] Token has no expiration date`);
+  }
+  
+  // Determine content to post (prefer variant, fallback to content)
+  const content = item.variants?.facebook || item.content;
+  
+  if (!content || content.trim().length === 0) {
+    console.error(`[Scheduler] No content found for item ${itemId}`);
+    // Update status to published to prevent retrying empty content
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    return;
+  }
+  
+  let result;
+  
+  try {
+    // Share to Facebook using Graph API
+    result = await shareToFacebook(facebook.userId, facebook.accessToken, {
+      text: content,
+      imageUrl: item.imageUrl,
+    });
+    
+    // Update item status based on result
+    if (result.postId) {
+      await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+      console.log(`[Scheduler] ✅ Successfully published Facebook item ${itemId}, postId: ${result.postId}`);
+    } else {
+      console.error(`[Scheduler] ❌ Failed to publish Facebook item ${itemId}: no postId returned`);
+      // Keep status as 'scheduled' for retry
+    }
+  } catch (error: any) {
+    console.error(`[Scheduler] ❌ Failed to publish Facebook item ${itemId}`);
+    console.error(`[Scheduler] Error details:`, {
+      error: error.message,
+      response: error.response?.data,
+      hasContent: !!content && content.trim().length > 0,
+      contentLength: content?.length || 0,
+    });
+    // Keep status as 'scheduled' for retry
+  }
+}
