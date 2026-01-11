@@ -41,6 +41,8 @@ export interface IUser extends Document {
       username?: string
       accountType?: string
       expiresAt?: Date
+      pageId?: string
+      pageName?: string
     }
     facebook?: {
       accessToken: string
@@ -198,6 +200,8 @@ const UserSchema: Schema = new Schema(
           username: String,
           accountType: String,
           expiresAt: Date,
+          pageId: String,
+          pageName: String,
         },
         facebook: {
           accessToken: String,
