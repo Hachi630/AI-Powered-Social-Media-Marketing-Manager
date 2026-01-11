@@ -453,7 +453,6 @@ export default function CalendarPage({
           <Option value={PLATFORMS.INSTAGRAM_POST}>Instagram Post</Option>
           <Option value={PLATFORMS.INSTAGRAM_STORY}>Instagram Story</Option>
           <Option value={PLATFORMS.INSTAGRAM_REELS}>Instagram Reels</Option>
-          <Option value={PLATFORMS.TIKTOK}>TikTok</Option>
           <Option value={PLATFORMS.FACEBOOK}>Facebook</Option>
           <Option value={PLATFORMS.TWITTER}>Twitter/X</Option>
           <Option value={PLATFORMS.LINKEDIN}>LinkedIn</Option>

@@ -233,7 +233,6 @@ export default function ContentPlanModal({
       instagram_post: "#E4405F",
       instagram_story: "#E4405F",
       instagram_reels: "#E4405F",
-      tiktok: "#000000",
       facebook: "#1877F2",
       twitter: "#1DA1F2",
       linkedin: "#0A66C2",
