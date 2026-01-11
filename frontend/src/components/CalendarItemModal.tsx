@@ -299,10 +299,8 @@ export default function CalendarItemModal({
                 okText: 'Connect Now',
                 cancelText: 'Cancel',
                 onOk: () => {
-                  if (platform === 'instagram' || platform === 'facebook') {
-                    // Redirect to Social Dashboard to connect
-                    window.location.href = '/socialdashboard'
-                  }
+                  // Redirect to Social Dashboard to connect
+                  window.location.href = '/socialdashboard'
                 },
               })
             } else {
