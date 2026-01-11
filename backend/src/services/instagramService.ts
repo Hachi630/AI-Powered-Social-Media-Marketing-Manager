@@ -896,22 +896,51 @@ export async function createMediaContainer(
   caption: string
 ): Promise<string> {
   try {
-    const response = await axios.post<{
-      id: string;
-    }>(`https://graph.facebook.com/v18.0/${instagramAccountId}/media`, {
-      image_url: imageUrl,
-      caption: caption.substring(0, 2200), // Instagram caption limit
-      access_token: accessToken,
+    console.log("[Instagram Service] Creating media container:", {
+      instagramAccountId,
+      imageUrl: imageUrl.substring(0, 100) + (imageUrl.length > 100 ? '...' : ''),
+      captionLength: caption.length,
+      captionPreview: caption.substring(0, 50) + (caption.length > 50 ? '...' : ''),
     });
 
+    const requestData = {
+      image_url: imageUrl,
+      caption: caption.substring(0, 2200), // Instagram caption limit (2200 characters)
+      access_token: accessToken,
+    };
+
+    console.log("[Instagram Service] Request data:", {
+      image_url: requestData.image_url.substring(0, 100) + '...',
+      captionLength: requestData.caption.length,
+      hasAccessToken: !!requestData.access_token,
+    });
+
+    const response = await axios.post<{
+      id: string;
+    }>(`https://graph.facebook.com/v18.0/${instagramAccountId}/media`, requestData);
+
+    console.log("[Instagram Service] Media container created successfully:", response.data.id);
     return response.data.id; // Returns creation_id
   } catch (error: any) {
     console.error(
-      "Error creating media container:",
-      error.response?.data || error.message
+      "[Instagram Service] Error creating media container:",
+      {
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+        imageUrl: imageUrl.substring(0, 100) + '...',
+      }
     );
+    
+    // Provide more helpful error messages
+    const errorMessage = error.response?.data?.error?.message || error.message;
+    if (errorMessage.includes("Only photo or video can be accepted")) {
+      throw new Error(
+        `Failed to create media container: ${errorMessage}. This usually means Instagram API cannot access the image URL. Ensure the image URL is publicly accessible (not localhost). For local testing, use ngrok or deploy to a public URL.`
+      );
+    }
+    
     throw new Error(
-      `Failed to create media container: ${error.response?.data?.error?.message || error.message}`
+      `Failed to create media container: ${errorMessage}`
     );
   }
 }

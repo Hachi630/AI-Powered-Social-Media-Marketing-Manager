@@ -199,6 +199,8 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 :global(.ant-picker-calendar-header) {
@@ -211,16 +213,22 @@
   flex: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 :global(.ant-picker-body) {
   flex: 1;
   padding: 0 24px 24px 24px;
   background: #FFFFFF !important;
+  position: relative;
+  z-index: 1;
 }
 
 :global(.ant-picker-content) {
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 :global(.ant-picker-cell) {
@@ -245,6 +253,8 @@
   transition: none !important;
   border-radius: 0 !important;
   background: #FFFFFF !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 :global(.ant-picker-cell-selected .ant-picker-calendar-date) {
@@ -258,6 +268,13 @@
 :global(.ant-picker-calendar-date-content) {
   height: 100% !important;
   padding: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+:global(.ant-picker-cell) {
+  position: relative !important;
+  z-index: 0 !important;
 }
 
 .dateCellContent {
@@ -266,6 +283,7 @@
   display: flex;
   flex-direction: column;
   padding: 6px 8px;
+  z-index: 1;
 }
 
 /* Month View Date Cell */
@@ -274,6 +292,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+  z-index: 1;
 }
 
 .monthDateNumber {
@@ -309,6 +329,8 @@
   gap: 2px;
   flex: 1;
   overflow: hidden;
+  position: relative;
+  z-index: 2;
 }
 
 .monthEventLabel {
@@ -327,6 +349,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   min-height: 18px;
+  position: relative;
+  z-index: 100;
+  pointer-events: auto;
 }
 
 .monthEventLabel:hover {

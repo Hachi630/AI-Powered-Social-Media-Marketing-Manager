@@ -10,6 +10,7 @@ import {
   getFacebookPages,
   shareToFacebook,
 } from "../services/facebookService.js";
+import { getInstagramAccountIdForPage } from "../services/instagramService.js";
 import crypto from "crypto";
 import multer from "multer";
 import path from "path";
@@ -251,30 +252,92 @@ router.get("/callback", async (req: Request, res: Response) => {
           expiresAt,
         };
 
-        // IMPORTANT: Do NOT touch Instagram connection - keep them independent
+        // OPTIONAL: Auto-connect Instagram if Facebook Page has Instagram Business Account
+        // This makes it easier for users - they only need to connect Facebook, Instagram connects automatically
+        try {
+          const instagramAccount = await getInstagramAccountIdForPage(
+            firstPage.id,
+            pageToken
+          );
+          
+          if (instagramAccount) {
+            console.log(
+              "[Facebook OAuth Callback] Found Instagram Business Account, auto-connecting:",
+              {
+                instagramUserId: instagramAccount.instagramAccountId,
+                instagramUsername: instagramAccount.username,
+              }
+            );
+            
+            // Save Instagram connection using the same token (Instagram uses Facebook Page token)
+            user.socialConnections.instagram = {
+              accessToken: pageToken, // Instagram uses Facebook Page access token
+              userId: instagramAccount.instagramAccountId,
+              username: instagramAccount.username,
+              accountType: instagramAccount.accountType,
+              expiresAt,
+              pageId: firstPage.id,
+              pageName: pageNameResponse.data.name,
+            };
+            
+            console.log(
+              "[Facebook OAuth Callback] Auto-connected Instagram successfully"
+            );
+          } else {
+            console.log(
+              "[Facebook OAuth Callback] No Instagram Business Account found for this Facebook Page"
+            );
+          }
+        } catch (instagramError: any) {
+          // If Instagram auto-connection fails, don't fail Facebook connection
+          console.warn(
+            "[Facebook OAuth Callback] Failed to auto-connect Instagram (non-fatal):",
+            instagramError.message
+          );
+          // Continue with Facebook connection only
+        }
+
         await user.save();
 
         console.log("[Facebook OAuth Callback] Saved Facebook connection:", {
           userId: user._id,
           facebookPageId: firstPage.id,
+          instagramConnected: !!user.socialConnections?.instagram?.userId,
         });
 
         const clientUrl =
           process.env.CLIENT_URL ||
           process.env.FRONTEND_URL ||
           "http://localhost:3000";
-        const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected`;
+        // Include instagram=connected if Instagram was auto-connected
+        const instagramConnected = !!user.socialConnections?.instagram?.userId;
+        const redirectUrl = instagramConnected
+          ? `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`
+          : `${clientUrl}/socialdashboard?facebook=connected`;
 
         if (isFrontendCallback) {
-          return res.json({
+          const response: any = {
             success: true,
-            message: "Successfully connected Facebook Page",
+            message: instagramConnected
+              ? "Successfully connected Facebook Page and Instagram"
+              : "Successfully connected Facebook Page",
             redirectUrl,
             facebook: {
               pageId: firstPage.id,
               pageName: pageNameResponse.data.name,
             },
-          });
+          };
+          
+          // Include Instagram info if auto-connected
+          if (instagramConnected && user.socialConnections?.instagram) {
+            response.instagram = {
+              userId: user.socialConnections.instagram.userId,
+              username: user.socialConnections.instagram.username,
+              accountType: user.socialConnections.instagram.accountType,
+            };
+          }
+          
+          return res.json(response);
         } else {
           return res.redirect(redirectUrl);
         }
