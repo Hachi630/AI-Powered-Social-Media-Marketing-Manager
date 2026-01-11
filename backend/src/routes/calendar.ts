@@ -11,6 +11,8 @@ import {
   initializeImageUpload,
   uploadImageToLinkedIn,
 } from '../services/linkedinService.js'
+import { shareToFacebook } from '../services/facebookService.js'
+import User from '../models/User.js'
 import { readImageAsBase64 } from '../utils/imageReader.js'
 import axios from 'axios'
 import { checkAndPublishScheduledItems } from '../services/schedulerService.js'
@@ -660,6 +662,80 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
           success: false,
           message: errorMessage,
           details: result.error
+        });
+      }
+    } else if (platform === 'facebook') {
+      // Reload user from database to get latest socialConnections
+      const freshUser = await User.findById(user._id);
+      
+      if (!freshUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      // Check if user has Facebook connected
+      const facebook = freshUser.socialConnections?.facebook;
+
+      if (!facebook?.accessToken || !facebook?.userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Facebook account not connected. Please connect your Facebook Page first.',
+          requiresAuth: true
+        });
+      }
+
+      // Check if token is expired
+      if (facebook.expiresAt && new Date() > facebook.expiresAt) {
+        return res.status(401).json({
+          success: false,
+          message: 'Facebook access token expired. Please reconnect your account.',
+          requiresAuth: true
+        });
+      }
+
+      // Check if item has content variant for Facebook
+      let content = item.variants?.facebook || item.content;
+      
+      try {
+        // Share to Facebook using Graph API
+        const result = await shareToFacebook(facebook.userId, facebook.accessToken, {
+          text: content,
+          imageUrl: item.imageUrl || undefined,
+        });
+        
+        // Update item status to published if successful
+        item.status = 'published';
+        await item.save();
+        
+        return res.json({
+          success: true,
+          message: 'Successfully posted to Facebook',
+          postId: result.postId,
+          permalink: result.permalink
+        });
+      } catch (error: any) {
+        console.error('Facebook posting failed:', error);
+        
+        // Check if it's an authentication error
+        if (
+          error.response?.status === 401 ||
+          error.response?.data?.error?.code === 190
+        ) {
+          return res.status(401).json({
+            success: false,
+            message: 'Facebook access token expired or invalid. Please reconnect your account.',
+            requiresAuth: true
+          });
+        }
+        
+        const errorMessage = error.response?.data?.error?.message || error.message || 'Failed to post to Facebook';
+        
+        return res.status(500).json({
+          success: false,
+          message: errorMessage,
+          details: error.response?.data
         });
       }
     } else {

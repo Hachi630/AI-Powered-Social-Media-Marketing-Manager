@@ -38,7 +38,6 @@ export default function CalendarDetailPanel({
     instagram_post: '🟣',
     instagram_story: '📸',
     instagram_reels: '🎬',
-    tiktok: '🎵',
     facebook: '📘',
     twitter: '🐦',
     linkedin: '💼'
@@ -49,7 +48,6 @@ export default function CalendarDetailPanel({
       instagram_post: 'Post',
       instagram_story: 'Story',
       instagram_reels: 'Reels',
-      tiktok: 'TikTok',
       facebook: 'Facebook',
       twitter: 'X',
       linkedin: 'LinkedIn'
