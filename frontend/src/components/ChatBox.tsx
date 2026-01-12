@@ -80,6 +80,9 @@ export default function ChatBox({
     Array<{ url: string; name: string; type: string; size: number }>
   >([]);
 
+  // Store pending ELO message in ref
+  const pendingELOMessageRef = useRef<string | null>(null);
+
   // Load conversation when conversationId changes
   useEffect(() => {
     // Only load if conversationId is different from current one
@@ -325,6 +328,36 @@ export default function ChatBox({
       updateTypingStatus(false);
     };
   }, [updateTypingStatus]);
+
+  // Listen for messages from ELO widget
+  useEffect(() => {
+    const handleELOMessage = (event: CustomEvent) => {
+      const message = event.detail?.message;
+      if (message && typeof message === 'string') {
+        pendingELOMessageRef.current = message;
+        setInputMessage(message);
+      }
+    };
+
+    window.addEventListener('elo-send-message', handleELOMessage as EventListener);
+    return () => {
+      window.removeEventListener('elo-send-message', handleELOMessage as EventListener);
+    };
+  }, []);
+
+  // Auto-send pending ELO message when input is set and component is ready
+  useEffect(() => {
+    if (pendingELOMessageRef.current && inputMessage === pendingELOMessageRef.current && !loading && inputMessage.trim()) {
+      const messageToSend = pendingELOMessageRef.current;
+      pendingELOMessageRef.current = null;
+      // Small delay to ensure state is updated
+      setTimeout(() => {
+        if (inputMessage.trim()) {
+          handleSend();
+        }
+      }, 150);
+    }
+  }, [inputMessage, loading, handleSend]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

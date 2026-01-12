@@ -46,6 +46,40 @@ export default function Dashboard({
     useState(0);
   const [, setIsTyping] = useState(false);
   const [hasMessages, setHasMessages] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  // Listen for messages from ELO widget
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'elo-pending-message' && e.newValue) {
+        setPendingMessage(e.newValue);
+        // Clear the storage after reading
+        localStorage.removeItem('elo-pending-message');
+      }
+    };
+
+    // Check for pending message on mount
+    const storedMessage = localStorage.getItem('elo-pending-message');
+    if (storedMessage) {
+      setPendingMessage(storedMessage);
+      localStorage.removeItem('elo-pending-message');
+    }
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Handle pending message by creating new conversation
+  useEffect(() => {
+    if (pendingMessage) {
+      setSelectedConversationId(null);
+      // Trigger a custom event that ChatBox can listen to
+      window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message: pendingMessage } }));
+      setPendingMessage(null);
+    }
+  }, [pendingMessage]);
 
   // Update collapsed state when screen size changes
   useEffect(() => {

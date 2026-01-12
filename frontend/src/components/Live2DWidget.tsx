@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import * as PIXI from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display';
+import { useLocation } from 'react-router-dom';
+import ELOChatDialog from './ELOChatDialog';
 import styles from './Live2DWidget.module.css';
 
 // Configure Live2D runtime on module load
@@ -27,9 +29,10 @@ if (typeof window !== 'undefined') {
 interface Live2DWidgetProps {
   onChatClick?: () => void;
   modelPath: string;
+  onSendToDashboard?: (message: string) => void;
 }
 
-export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetProps) {
+export default function Live2DWidget({ onChatClick, modelPath, onSendToDashboard }: Live2DWidgetProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel | null>(null);
@@ -38,24 +41,65 @@ export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetPro
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const location = useLocation();
 
-  // Initialize default position (bottom right)
+  // Initialize default position (bottom right corner)
   useEffect(() => {
-    const defaultX = window.innerWidth - 200;
-    const defaultY = window.innerHeight - 200;
+    const widgetWidth = 200;
+    const widgetHeight = 200;
+    const margin = 20; // Margin from edges
+    
+    // Calculate bottom right position - ensure it's in the bottom right corner
+    const calculatePosition = () => {
+      const defaultX = window.innerWidth - widgetWidth - margin;
+      const defaultY = window.innerHeight - widgetHeight - margin;
+      return { x: defaultX, y: defaultY };
+    };
 
     // Load saved position from localStorage
     const savedPosition = localStorage.getItem('live2d-widget-position');
     if (savedPosition) {
       try {
         const parsed = JSON.parse(savedPosition);
-        setPosition({ x: parsed.x || defaultX, y: parsed.y || defaultY });
+        const defaultPos = calculatePosition();
+        // If saved position is too far from bottom right, reset to default
+        const distanceFromBottomRight = Math.sqrt(
+          Math.pow((window.innerWidth - margin - widgetWidth) - (parsed.x || defaultPos.x), 2) +
+          Math.pow((window.innerHeight - margin - widgetHeight) - (parsed.y || defaultPos.y), 2)
+        );
+        // If saved position is more than 100px away from bottom right, use default
+        if (distanceFromBottomRight > 100) {
+          setPosition(defaultPos);
+          localStorage.setItem('live2d-widget-position', JSON.stringify(defaultPos));
+        } else {
+          // Ensure saved position is valid (within viewport)
+          const validX = Math.max(margin, Math.min(parsed.x || defaultPos.x, window.innerWidth - widgetWidth - margin));
+          const validY = Math.max(margin, Math.min(parsed.y || defaultPos.y, window.innerHeight - widgetHeight - margin));
+          setPosition({ x: validX, y: validY });
+        }
       } catch {
-        setPosition({ x: defaultX, y: defaultY });
+        const defaultPos = calculatePosition();
+        setPosition(defaultPos);
       }
     } else {
-      setPosition({ x: defaultX, y: defaultY });
+      const defaultPos = calculatePosition();
+      setPosition(defaultPos);
     }
+
+    // Update position on window resize
+    const handleResize = () => {
+      const defaultPos = calculatePosition();
+      setPosition(prev => {
+        // Keep relative position, but ensure it stays in bottom right area
+        const newX = Math.min(prev.x, window.innerWidth - widgetWidth - margin);
+        const newY = Math.min(prev.y, window.innerHeight - widgetHeight - margin);
+        return { x: newX, y: newY };
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Initialize PIXI Application
@@ -211,6 +255,9 @@ export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetPro
 
         // Set up click handler
         model.on('pointertap', async () => {
+          // Open ELO dialog
+          setDialogOpen(true);
+          // Also call onChatClick if provided (for backward compatibility)
           if (onChatClick) {
             onChatClick();
           }
@@ -359,11 +406,14 @@ export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetPro
         const newX = e.clientX - dragOffsetRef.current.x;
         const newY = e.clientY - dragOffsetRef.current.y;
 
-        // Constrain to viewport
-        const maxX = window.innerWidth - 200;
-        const maxY = window.innerHeight - 200;
-        const constrainedX = Math.max(0, Math.min(newX, maxX));
-        const constrainedY = Math.max(0, Math.min(newY, maxY));
+        // Constrain to viewport (with margin)
+        const margin = 20;
+        const widgetWidth = 200;
+        const widgetHeight = 200;
+        const maxX = window.innerWidth - widgetWidth - margin;
+        const maxY = window.innerHeight - widgetHeight - margin;
+        const constrainedX = Math.max(margin, Math.min(newX, maxX));
+        const constrainedY = Math.max(margin, Math.min(newY, maxY));
 
         setPosition({ x: constrainedX, y: constrainedY });
       }
@@ -411,10 +461,14 @@ export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetPro
       const newX = touch.clientX - dragOffsetRef.current.x;
       const newY = touch.clientY - dragOffsetRef.current.y;
 
-      const maxX = window.innerWidth - 200;
-      const maxY = window.innerHeight - 200;
-      const constrainedX = Math.max(0, Math.min(newX, maxX));
-      const constrainedY = Math.max(0, Math.min(newY, maxY));
+      // Constrain to viewport (with margin)
+      const margin = 20;
+      const widgetWidth = 200;
+      const widgetHeight = 200;
+      const maxX = window.innerWidth - widgetWidth - margin;
+      const maxY = window.innerHeight - widgetHeight - margin;
+      const constrainedX = Math.max(margin, Math.min(newX, maxX));
+      const constrainedY = Math.max(margin, Math.min(newY, maxY));
 
       setPosition({ x: constrainedX, y: constrainedY });
     };
@@ -433,19 +487,50 @@ export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetPro
     };
   }, [isDragging, position]);
 
+  // Determine current page from location
+  const getCurrentPage = (): 'calendar' | 'dashboard' | 'chat' | 'campaign' => {
+    const path = location.pathname;
+    if (path.includes('/calendar')) return 'calendar';
+    if (path.includes('/dashboard')) return 'dashboard';
+    if (path.includes('/socialdashboard')) return 'campaign';
+    return 'dashboard';
+  };
+
+  // Handle send to dashboard
+  const handleSendToDashboard = useCallback((message: string) => {
+    if (onSendToDashboard) {
+      onSendToDashboard(message);
+    }
+    // Store message in localStorage for Dashboard to pick up
+    localStorage.setItem('elo-pending-message', message);
+    // Trigger storage event for same-window listeners
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'elo-pending-message',
+      newValue: message,
+    }));
+    // Navigate to dashboard if not already there
+    if (!location.pathname.includes('/dashboard')) {
+      window.location.href = '/dashboard';
+    } else {
+      // If already on dashboard, trigger the event directly
+      window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message } }));
+    }
+  }, [onSendToDashboard, location.pathname]);
+
   // Always render container, even if model is not loaded yet
   return (
-    <div
-      ref={canvasRef}
-      className={`${styles.live2dWidget} ${isDragging ? styles.dragging : ''}`}
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        opacity: isLoaded ? 1 : 0.5,
-      }}
-      onMouseDown={handleMouseDown}
-      onTouchStart={handleTouchStart}
-    >
+    <>
+      <div
+        ref={canvasRef}
+        className={`${styles.live2dWidget} ${isDragging ? styles.dragging : ''}`}
+        style={{
+          left: `${position.x}px`,
+          top: `${position.y}px`,
+          opacity: isLoaded ? 1 : 0.5,
+        }}
+        onMouseDown={handleMouseDown}
+        onTouchStart={handleTouchStart}
+      >
       {!isLoaded && !loadError && (
         <div style={{
           position: 'absolute',
@@ -472,6 +557,14 @@ export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetPro
           Live2D Error
         </div>
       )}
-    </div>
+      </div>
+      <ELOChatDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        position={position}
+        onSendToDashboard={handleSendToDashboard}
+        currentPage={getCurrentPage()}
+      />
+    </>
   );
 }
