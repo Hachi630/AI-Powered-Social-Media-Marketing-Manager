@@ -1,8 +1,8 @@
-// API base URL - using Vite proxy (no CORS issues)
-const API_URL = '/api/calendar'
+// API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = `${BASE_API_URL}/api/calendar`
 
 export interface CalendarItemVariants {
-  tiktok?: string
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
@@ -15,6 +15,7 @@ export interface CalendarItem {
   userId: string
   campaignId: string | null
   campaignName?: string | null
+  companyId?: string | null
   platform: string
   date: string // YYYY-MM-DD
   time: string | null // HH:mm
@@ -246,7 +247,7 @@ export const calendarService = {
   /**
    * Share a calendar item to a platform
    */
-  async shareCalendarItem(id: string, platform: string): Promise<{ success: boolean; message?: string }> {
+  async shareCalendarItem(id: string, platform: string): Promise<{ success: boolean; message?: string; requiresAuth?: boolean }> {
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -265,7 +266,7 @@ export const calendarService = {
       const data = await response.json()
 
       if (!response.ok) {
-        return { success: false, message: data.message || 'Failed to share calendar item' }
+        return { success: false, message: data.message || 'Failed to share calendar item', requiresAuth: data.requiresAuth }
       }
 
       return data

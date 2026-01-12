@@ -1,17 +1,18 @@
 import mongoose, { Document, Schema, Types } from 'mongoose'
 
 export interface ICalendarItemVariants {
-  tiktok?: string
   instagram_post?: string
   instagram_story?: string
   instagram_reels?: string
   facebook?: string
   twitter?: string
+  linkedin?: string
 }
 
 export interface ICalendarItem extends Document {
   userId: Types.ObjectId
   campaignId?: Types.ObjectId | null
+  companyId?: string | null
   platform: string
   date: Date
   time?: string | null
@@ -26,12 +27,12 @@ export interface ICalendarItem extends Document {
 
 const CalendarItemVariantsSchema: Schema = new Schema(
   {
-    tiktok: { type: String, trim: true },
     instagram_post: { type: String, trim: true },
     instagram_story: { type: String, trim: true },
     instagram_reels: { type: String, trim: true },
     facebook: { type: String, trim: true },
     twitter: { type: String, trim: true },
+    linkedin: { type: String, trim: true },
   },
   { _id: false }
 )
@@ -47,6 +48,11 @@ const CalendarItemSchema: Schema = new Schema(
     campaignId: {
       type: Schema.Types.ObjectId,
       ref: 'Campaign',
+      default: null,
+    },
+    companyId: {
+      type: String,
+      trim: true,
       default: null,
     },
     platform: {
@@ -99,6 +105,7 @@ const CalendarItemSchema: Schema = new Schema(
 CalendarItemSchema.index({ userId: 1, date: 1 })
 CalendarItemSchema.index({ userId: 1, campaignId: 1 })
 CalendarItemSchema.index({ userId: 1, status: 1 })
+CalendarItemSchema.index({ status: 1, platform: 1, date: 1, time: 1 })
 
 export default mongoose.model<ICalendarItem>('CalendarItem', CalendarItemSchema)
 

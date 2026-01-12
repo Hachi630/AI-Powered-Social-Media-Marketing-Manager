@@ -23,11 +23,18 @@ dist-ssr
 *.sln
 *.sw?
 
+# Cursor IDE files
+.cursor/
+
 # Environment variables
 .env
 .env.local
 .env.*
 !.env.example
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
 
 # Uploaded files
 backend/uploads/images/*

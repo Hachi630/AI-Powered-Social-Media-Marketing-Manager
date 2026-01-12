@@ -2,6 +2,18 @@
   /* Modal specific styles if needed */
 }
 
+.modal :global(.ant-modal-wrap) {
+  z-index: 2000 !important;
+}
+
+.modal :global(.ant-modal) {
+  z-index: 2000 !important;
+}
+
+.modal :global(.ant-modal-mask) {
+  z-index: 1999 !important;
+}
+
 .modal :global(.ant-modal-body) {
   padding: 24px;
 }
@@ -79,5 +91,47 @@
 
 .imageUploadArea:hover {
   border-color: #1890ff;
+}
+
+/* Mobile responsive styles for image upload buttons */
+@media (max-width: 768px) {
+  /* Make nested Space (containing AI Generate buttons) vertical on mobile */
+  .imageUploadArea :global(.ant-space) :global(.ant-space) {
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+  
+  .imageUploadArea :global(.ant-space) :global(.ant-space) :global(.ant-space-item) {
+    width: 100% !important;
+  }
+  
+  .imageUploadArea :global(.ant-space) :global(.ant-space) :global(.ant-space-item) :global(.ant-btn) {
+    width: 100% !important;
+  }
+  
+  /* Make Status and Campaign fields vertical on mobile */
+  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) {
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+  
+  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-bottom: 16px !important;
+  }
+  
+  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-select),
+  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-input) {
+    width: 100% !important;
+  }
 }
 

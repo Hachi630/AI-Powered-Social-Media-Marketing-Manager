@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import AuthModal from "../components/AuthModal";
 import styles from "./HomePage.module.css";
 import { User } from "../services/authService";
+import { getImageUrl } from "../utils/imageUtils";
 import lulinYangImg from "../img/Lulin Yang.png";
 import kikiXingImg from "../img/Kiki Xing.png";
 import tazwarHabibImg from "../img/Tazwar Habib.png";
@@ -443,7 +444,7 @@ export default function HomePage({
                   <div className={styles.teamMemberAvatar}>
                     {member.avatar ? (
                       <img
-                        src={member.avatar}
+                        src={getImageUrl(member.avatar)}
                         alt={member.name || `Team member ${member.id}`}
                       />
                     ) : (

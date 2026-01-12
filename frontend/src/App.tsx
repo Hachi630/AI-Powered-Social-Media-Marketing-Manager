@@ -15,6 +15,9 @@ import { authService, User } from './services/authService'
 import { ThemeProvider, useTheme } from './contexts/ThemeContext'
 import { AppSettingsProvider } from './contexts/AppSettingsContext'
 import LinkedInDashboard from './components/LinkedInDashboard'
+import InstagramCallback from './pages/InstagramCallback'
+import Analytics from './pages/Analytics'
+import Messaging from './pages/Messaging'
 
 function AuthCallback({ onLoginSuccess }: { onLoginSuccess: (user: User) => void }) {
   const [searchParams] = useSearchParams()
@@ -107,6 +110,10 @@ function AppContent() {
         element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
       />
       <Route
+        path="/auth/instagram/callback"
+        element={<InstagramCallback />}
+      />
+      <Route
         path="/"
         element={
           isLoggedIn ? (
@@ -182,6 +189,28 @@ function AppContent() {
             user={user}
             jwt={localStorage.getItem('token') || ''}
             userId={user?.id}
+          />
+        }
+      />
+      <Route
+        path="/analytics"
+        element={
+          <Analytics
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            user={user}
+          />
+        }
+      />
+      <Route
+        path="/messaging"
+        element={
+          <Messaging
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={handleLoginSuccess}
+            onLogout={handleLogout}
+            user={user}
           />
         }
       />

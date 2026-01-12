@@ -1,5 +1,8 @@
-export const MELO_LOGO =
-  'https://www.figma.com/api/mcp/asset/09d00121-bb61-4079-9df2-75f93894e7c2'
+import meloLogo from "../img/melo-logo.jpg";
+import meloLogoNight from "../img/melo-logo-night.png";
 
-export const DEFAULT_TAGLINE = 'AI Social Media & Marketing Manager For Your Business'
+export const MELO_LOGO = meloLogo;
+export const MELO_LOGO_NIGHT = meloLogoNight;
 
+export const DEFAULT_TAGLINE =
+  "AI Social Media & Marketing Manager For Your Business";
