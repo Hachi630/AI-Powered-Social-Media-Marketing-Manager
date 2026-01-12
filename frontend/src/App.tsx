@@ -1,5 +1,5 @@
 import { ConfigProvider, App as AntApp } from "antd";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -25,6 +25,40 @@ import DarkModeProvider from "./components/DarkModeProvider";
 import LinkedInDashboard from "./components/LinkedInDashboard";
 import InstagramCallback from "./pages/InstagramCallback";
 import FacebookCallback from "./pages/FacebookCallback";
+
+// Lazy load Live2D Widget to prevent import-time errors
+const Live2DWidgetLazy = lazy(() => 
+  import("./components/Live2DWidget").catch((error) => {
+    console.error('Failed to load Live2D Widget:', error);
+    // Return a dummy component that does nothing
+    return { default: () => null };
+  })
+);
+// Simple Error Boundary for Live2D Widget
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Live2D Widget error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
 
 function AuthCallback({
   onLoginSuccess,
@@ -117,11 +151,12 @@ function AppContent() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/auth/callback"
-        element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
-      />
+    <>
+      <Routes>
+        <Route
+          path="/auth/callback"
+          element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
+        />
       <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
       <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
       <Route
@@ -218,7 +253,24 @@ function AppContent() {
       <Route path="/terms-of-service" element={<TermsOfService />} />
       <Route path="/contact-us" element={<ContactUs />} />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+      {/* Live2D Widget - shown on all pages when logged in */}
+      {/* Using dynamic import to prevent import-time errors */}
+      {isLoggedIn && (
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <Live2DWidgetLazy
+              onChatClick={() => {
+                // Navigate to dashboard with chat focus
+                if (window.location.pathname !== '/dashboard') {
+                  window.location.href = '/dashboard';
+                }
+              }}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+    </>
   );
 }
 
