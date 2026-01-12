@@ -32,7 +32,6 @@ export interface IUser extends Document {
   knowledgeProducts?: string[]
   targetAudience?: string[]
   companies?: ICompanyData[]
-  selectedConversationId?: mongoose.Types.ObjectId | null
   authProvider: 'local' | 'google'
   socialConnections?: {
     instagram?: {
@@ -206,11 +205,6 @@ const UserSchema: Schema = new Schema(
         },
       },
       default: {},
-    },
-    selectedConversationId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Conversation',
-      default: null,
     },
   },
   {
