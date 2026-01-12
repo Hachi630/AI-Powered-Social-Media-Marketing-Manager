@@ -17,6 +17,9 @@ export async function saveSocialMediaPost(data: {
   organizationName?: string
   platformPostId?: string
   platformAuthorId?: string
+  recipientPhoneNumber?: string
+  senderPhoneNumber?: string
+  direction?: 'incoming' | 'outgoing'
   status?: 'draft' | 'scheduled' | 'published' | 'failed'
   publishedAt?: Date
   aiGenerated?: boolean
@@ -34,6 +37,9 @@ export async function saveSocialMediaPost(data: {
     organizationName: data.organizationName,
     platformPostId: data.platformPostId,
     platformAuthorId: data.platformAuthorId,
+    recipientPhoneNumber: data.recipientPhoneNumber,
+    senderPhoneNumber: data.senderPhoneNumber,
+    direction: data.direction,
     status: data.status || 'published',
     publishedAt: data.publishedAt || new Date(),
     aiGenerated: data.aiGenerated || false,

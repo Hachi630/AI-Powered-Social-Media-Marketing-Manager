@@ -16,6 +16,7 @@ import linkedinRoutes from "./routes/linkedin";
 import twitterRoutes from "./routes/twitter";
 import analyticsRoutes from "./routes/analytics";
 import messagingRoutes from "./routes/messaging";
+import ayrshareRoutes from "./routes/ayrshare";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -60,6 +61,7 @@ app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/messaging", messagingRoutes);
+app.use("/api/ayrshare", ayrshareRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })

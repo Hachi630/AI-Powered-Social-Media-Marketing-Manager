@@ -29,6 +29,9 @@ export interface ISocialMediaPost extends Document {
   // Platform-specific IDs
   platformPostId?: string // LinkedIn post URN, Twitter tweet ID, etc.
   platformAuthorId?: string // LinkedIn author URN
+  recipientPhoneNumber?: string // For SMS/WhatsApp messages (outgoing)
+  senderPhoneNumber?: string // For SMS/WhatsApp messages (incoming)
+  direction?: 'incoming' | 'outgoing' // Message direction for SMS/WhatsApp
   
   // Engagement metrics (updated from platform APIs)
   likes?: number
@@ -155,6 +158,19 @@ const SocialMediaPostSchema: Schema = new Schema(
     },
     platformAuthorId: {
       type: String,
+    },
+    recipientPhoneNumber: {
+      type: String,
+      index: true,
+    },
+    senderPhoneNumber: {
+      type: String,
+      index: true,
+    },
+    direction: {
+      type: String,
+      enum: ['incoming', 'outgoing'],
+      index: true,
     },
     likes: {
       type: Number,

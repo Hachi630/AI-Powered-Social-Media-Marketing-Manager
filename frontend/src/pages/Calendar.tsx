@@ -265,9 +265,21 @@ export default function CalendarPage({
         <div className={styles.monthDateCell}>
           <div className={styles.monthDateNumber}>
             {isToday ? (
-              <span className={styles.monthTodayCircle}>{date.date()}</span>
+              <span className={styles.monthTodayCircle} style={{ fontVariantNumeric: 'normal' }}>
+                {date.date().toLocaleString('en-US', { 
+                  style: 'decimal',
+                  useGrouping: false,
+                  minimumIntegerDigits: 1
+                })}
+              </span>
             ) : (
-              <span className={styles.monthDateText}>{date.date()}</span>
+              <span className={styles.monthDateText} style={{ fontVariantNumeric: 'normal' }}>
+                {date.date().toLocaleString('en-US', { 
+                  style: 'decimal',
+                  useGrouping: false,
+                  minimumIntegerDigits: 1
+                })}
+              </span>
             )}
           </div>
           <div className={styles.monthEventsList}>

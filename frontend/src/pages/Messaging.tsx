@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import {
   Layout,
   Card,
@@ -17,25 +17,31 @@ import {
   Spin,
   Empty,
   Popconfirm,
-  Tag,
   Tabs,
   Divider,
+  Grid,
+  Drawer,
 } from 'antd'
 import {
-  MessageOutlined,
   UserAddOutlined,
   SendOutlined,
   DeleteOutlined,
   EditOutlined,
   PhoneOutlined,
   MailOutlined,
-  PictureOutlined,
   VideoCameraOutlined,
   PaperClipOutlined,
   WhatsAppOutlined,
+  BarChartOutlined,
+  MessageOutlined,
+  ReloadOutlined,
 } from '@ant-design/icons'
 import Header from '../components/Header'
+import MessagingSidebar, { type MessagingSection } from '../components/MessagingSidebar'
 import { User } from '../services/authService'
+import styles from '../components/Dashboard.module.css'
+
+const { useBreakpoint } = Grid
 import {
   getContacts,
   createContact,
@@ -44,11 +50,13 @@ import {
   sendSMS,
   sendMMS,
   sendWhatsApp,
+  getWhatsAppConversations,
   Contact,
+  type WhatsAppConversation,
 } from '../services/messagingService'
 import { uploadService } from '../services/uploadService'
 
-const { Content } = Layout
+const { Content, Sider } = Layout
 const { Title, Text } = Typography
 const { TextArea } = Input
 
@@ -65,6 +73,13 @@ export default function Messaging({
   onLogout,
   user,
 }: MessagingProps) {
+  const screens = useBreakpoint()
+  const isMobile = !screens.lg
+  const isTablet = screens.md && !screens.lg
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(Boolean(isMobile || isTablet))
+  const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false)
+  const [selectedSection, setSelectedSection] = useState<MessagingSection>('new-number')
+  
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -73,8 +88,11 @@ export default function Messaging({
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [messageType, setMessageType] = useState<'sms' | 'whatsapp'>('whatsapp') // Default to WhatsApp
-  const [activeTab, setActiveTab] = useState<'new' | 'contact'>('new') // Tab: 'new' for unknown contacts, 'contact' for saved contacts
+  const [activeTab, setActiveTab] = useState<'new' | 'contact' | 'history'>('new') // Tab: 'new' for unknown contacts, 'contact' for saved contacts, 'history' for conversation history
   const [phoneNumber, setPhoneNumber] = useState('') // Direct phone number input
+  const [conversations, setConversations] = useState<WhatsAppConversation[]>([])
+  const [loadingConversations, setLoadingConversations] = useState(false)
+  const [selectedConversation, setSelectedConversation] = useState<WhatsAppConversation | null>(null)
 
   // Modal states
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false)
@@ -84,9 +102,59 @@ export default function Messaging({
   const [addContactForm] = Form.useForm()
   const [editContactForm] = Form.useForm()
 
+  const fetchConversations = useCallback(async () => {
+    try {
+      setLoadingConversations(true)
+      const data = await getWhatsAppConversations()
+      console.log('[Messaging] Fetched conversations:', data.length, 'conversations')
+      setConversations(data)
+      if (data.length === 0) {
+        message.info('No WhatsApp conversations found. Send a message to start a conversation.')
+      }
+    } catch (error: any) {
+      console.error('[Messaging] Error fetching conversations:', error)
+      message.error(error.message || 'Failed to fetch conversation history')
+    } finally {
+      setLoadingConversations(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchContacts()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchConversations()
+    }
+  }, [activeTab, fetchConversations])
+
+  // Update collapsed state when screen size changes
+  useEffect(() => {
+    if (isMobile || isTablet) {
+      setSidebarCollapsed(true)
+    } else {
+      setSidebarCollapsed(false)
+    }
+  }, [isMobile, isTablet])
+
+  // Sync selectedSection with activeTab (only when tab changes directly, not from sidebar)
+  useEffect(() => {
+    if (activeTab === 'new') {
+      setSelectedSection('new-number')
+    } else if (activeTab === 'contact') {
+      setSelectedSection('contacts')
+    }
+    // History tab doesn't have a corresponding sidebar section, so don't change selectedSection
+  }, [activeTab])
+
+  const handleToggleSidebar = () => {
+    if (isMobile) {
+      setSidebarDrawerOpen((prev) => !prev)
+    } else {
+      setSidebarCollapsed((prev) => !prev)
+    }
+  }
 
   const fetchContacts = async () => {
     try {
@@ -223,6 +291,10 @@ export default function Messaging({
       if (activeTab === 'new') {
         setPhoneNumber('')
       }
+      // Refresh conversations if on history tab
+      if (activeTab === 'history') {
+        fetchConversations()
+      }
     } catch (error: any) {
       console.error('Send message error:', error)
       const errorMessage = error.message || 'Failed to send message'
@@ -243,7 +315,6 @@ export default function Messaging({
       
       // Check if it's an image or video
       const isImage = file.type.startsWith('image/')
-      const isVideo = file.type.startsWith('video/')
 
       let fileUrl: string | undefined
 
@@ -314,24 +385,164 @@ export default function Messaging({
         onLogout={onLogout}
         user={user}
       />
-      <Content style={{ padding: '24px', background: '#f0f2f5' }}>
-        <div style={{ marginBottom: 24 }}>
-          <Title level={2} style={{ margin: 0 }}>
-            <MessageOutlined style={{ marginRight: 8 }} />
-            Messaging
-          </Title>
-          <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
-            Send WhatsApp or SMS messages to any number or your saved contacts
-          </Text>
-        </div>
+      <Layout style={{ background: '#f0f2f5' }}>
+        {/* Sidebar */}
+        {!isMobile && (
+          <Sider
+            width={280}
+            collapsedWidth={80}
+            collapsed={sidebarCollapsed}
+            theme="light"
+            trigger={null}
+            breakpoint="lg"
+            style={{
+              background: '#fafafa',
+              borderRight: '1px solid rgba(0, 0, 0, 0.06)',
+              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
+              position: 'sticky',
+              top: 99,
+              height: 'calc(100vh - 99px)',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+            }}
+          >
+            <MessagingSidebar
+              collapsed={sidebarCollapsed}
+              onToggleSidebar={handleToggleSidebar}
+              selectedSection={selectedSection}
+              onSectionSelect={(section) => {
+                setSelectedSection(section)
+                // Update activeTab based on section selection
+                if (section === 'new-number') {
+                  setActiveTab('new')
+                } else if (section === 'contacts') {
+                  setActiveTab('contact')
+                }
+              }}
+            />
+          </Sider>
+        )}
+        {isMobile && (
+          <Drawer
+            title="Navigation"
+            placement="left"
+            onClose={() => setSidebarDrawerOpen(false)}
+            open={sidebarDrawerOpen}
+            width={280}
+            className={styles.sidebarDrawer}
+          >
+            <MessagingSidebar
+              collapsed={false}
+              onToggleSidebar={() => setSidebarDrawerOpen(false)}
+              selectedSection={selectedSection}
+              onSectionSelect={(section) => {
+                setSelectedSection(section)
+                // Update activeTab based on section selection
+                if (section === 'new-number') {
+                  setActiveTab('new')
+                } else if (section === 'contacts') {
+                  setActiveTab('contact')
+                }
+                setSidebarDrawerOpen(false)
+              }}
+            />
+          </Drawer>
+        )}
+        <Content 
+          className={`${styles.content} ${styles.contentLight}`}
+          style={{ 
+            padding: isMobile ? '16px 0' : '32px 0',
+            background: '#f0f2f5',
+            minHeight: 'calc(100vh - 99px)',
+            overflow: 'auto',
+            flex: '1 1 auto',
+          }}
+        >
+        {/* Unified Container for all content - ensures left alignment matching Analytics */}
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 1200,
+            margin: '0 auto',
+            paddingLeft: isMobile ? 16 : screens.xl ? 32 : 24,
+            paddingRight: isMobile ? 16 : screens.xl ? 32 : 24,
+          }}
+        >
+          {/* Global Header Section - Matching Analytics Dashboard Style */}
+          <div
+            style={{
+              marginTop: isMobile ? 16 : 24,
+              marginBottom: isMobile ? 8 : 12,
+            }}
+          >
+            <Row
+              gutter={[16, 16]}
+              align="middle"
+              justify="space-between"
+              style={{ width: '100%' }}
+            >
+              <Col
+                xs={24}
+                sm={24}
+                md={16}
+                lg={18}
+              >
+                {isMobile && (
+                  <Button
+                    icon={<BarChartOutlined />}
+                    onClick={() => setSidebarDrawerOpen(true)}
+                    style={{ 
+                      marginBottom: 16,
+                      border: '1px solid #d9d9d9',
+                      background: '#fff',
+                      color: '#595959'
+                    }}
+                  />
+                )}
+                <Title
+                  level={isMobile ? 3 : 2}
+                  style={{
+                    margin: 0,
+                    marginBottom: isMobile ? 4 : 8,
+                    fontSize: isMobile
+                      ? 20
+                      : screens.xl
+                        ? 32
+                        : screens.lg
+                          ? 28
+                          : 24,
+                    fontWeight: 600,
+                    lineHeight: 1.2,
+                    color: '#262626',
+                  }}
+                >
+                  Messaging Platform
+                </Title>
+                <Text
+                  type="secondary"
+                  style={{
+                    fontSize: isMobile ? 13 : 14,
+                    display: 'block',
+                    lineHeight: 1.5,
+                    color: '#8c8c8c',
+                  }}
+                >
+                  Send WhatsApp or SMS messages to any number or your saved contacts
+                </Text>
+              </Col>
+            </Row>
+          </div>
 
-        <Card>
+          <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
           <Tabs
             activeKey={activeTab}
             onChange={(key) => {
-              setActiveTab(key as 'new' | 'contact')
+              const newTab = key as 'new' | 'contact' | 'history'
+              setActiveTab(newTab)
               setSelectedContact(null)
               setPhoneNumber('')
+              setSelectedConversation(null)
+              // fetchConversations will be called by useEffect when activeTab changes
             }}
             items={[
               {
@@ -352,7 +563,7 @@ export default function Messaging({
                             <span>Send Message to New Number</span>
                           </Space>
                         }
-                        style={{ minHeight: '500px' }}
+                        style={{ minHeight: '500px', borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                       >
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                           {/* Phone Number Input */}
@@ -382,6 +593,13 @@ export default function Messaging({
                                 icon={<WhatsAppOutlined />}
                                 onClick={() => setMessageType('whatsapp')}
                                 size="large"
+                                style={{
+                                  borderRadius: 8,
+                                  height: 44,
+                                  backgroundColor: messageType === 'whatsapp' ? '#25D366' : undefined,
+                                  borderColor: messageType === 'whatsapp' ? '#25D366' : undefined,
+                                  color: messageType === 'whatsapp' ? '#fff' : undefined
+                                }}
                               >
                                 WhatsApp
                               </Button>
@@ -390,6 +608,10 @@ export default function Messaging({
                                 icon={<PhoneOutlined />}
                                 onClick={() => setMessageType('sms')}
                                 size="large"
+                                style={{
+                                  borderRadius: 8,
+                                  height: 44
+                                }}
                               >
                                 SMS
                               </Button>
@@ -472,7 +694,14 @@ export default function Messaging({
                           </div>
 
                           {/* Action Buttons */}
-                          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                          <div style={{ 
+                            display: 'flex', 
+                            gap: 12, 
+                            justifyContent: 'flex-end',
+                            marginTop: 8,
+                            paddingTop: 16,
+                            borderTop: '1px solid #f0f0f0'
+                          }}>
                             <Upload
                               beforeUpload={(file) => {
                                 handleFileUpload(file)
@@ -486,6 +715,13 @@ export default function Messaging({
                                 loading={uploading}
                                 disabled={uploading}
                                 size="large"
+                                style={{
+                                  borderRadius: 8,
+                                  height: 44,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center'
+                                }}
                               >
                                 Attach Media
                               </Button>
@@ -501,6 +737,16 @@ export default function Messaging({
                                 !phoneNumber.trim()
                               }
                               size="large"
+                              style={{
+                                borderRadius: 8,
+                                height: 44,
+                                minWidth: 140,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: messageType === 'whatsapp' ? '#25D366' : undefined,
+                                borderColor: messageType === 'whatsapp' ? '#25D366' : undefined
+                              }}
                             >
                               Send {messageType === 'whatsapp' 
                                 ? 'WhatsApp' 
@@ -513,7 +759,10 @@ export default function Messaging({
                       </Card>
                     </Col>
                     <Col xs={24} lg={8}>
-                      <Card title="Quick Tips" style={{ minHeight: '500px' }}>
+                      <Card 
+                        title="Quick Tips" 
+                        style={{ minHeight: '500px', borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
+                      >
                         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                           <div>
                             <Text strong>📱 Phone Number Format</Text>
@@ -568,7 +817,13 @@ export default function Messaging({
                             Add
                           </Button>
                         }
-                        style={{ height: 'calc(100vh - 300px)', overflow: 'auto' }}
+                        style={{ 
+                          height: 'calc(100vh - 300px)', 
+                          overflow: 'auto',
+                          borderRadius: 16, 
+                          border: 'none', 
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)' 
+                        }}
                       >
                         {contacts.length === 0 ? (
                           <Empty description="No contacts yet" />
@@ -584,7 +839,18 @@ export default function Messaging({
                                   borderRadius: 8,
                                   padding: '12px',
                                   marginBottom: 8,
-                                  border: selectedContact?._id === contact._id ? '1px solid #1890ff' : '1px solid transparent',
+                                  border: selectedContact?._id === contact._id ? '1px solid #1890ff' : '1px solid #f0f0f0',
+                                  transition: 'all 0.2s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (selectedContact?._id !== contact._id) {
+                                    e.currentTarget.style.backgroundColor = '#fafafa'
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (selectedContact?._id !== contact._id) {
+                                    e.currentTarget.style.backgroundColor = 'transparent'
+                                  }
                                 }}
                                 onClick={() => setSelectedContact(contact)}
                                 actions={[
@@ -626,13 +892,35 @@ export default function Messaging({
                                   }
                                   title={contact.name}
                                   description={
-                                    <Space direction="vertical" size={0}>
-                                      <Text type="secondary" style={{ fontSize: 12 }}>
-                                        <PhoneOutlined /> {contact.phoneNumber}
+                                    <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                                      <Text 
+                                        type="secondary" 
+                                        style={{ 
+                                          fontSize: 12,
+                                          display: 'block',
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          lineHeight: '1.5'
+                                        }}
+                                      >
+                                        <PhoneOutlined style={{ marginRight: 4 }} />
+                                        {contact.phoneNumber}
                                       </Text>
                                       {contact.email && (
-                                        <Text type="secondary" style={{ fontSize: 12 }}>
-                                          <MailOutlined /> {contact.email}
+                                        <Text 
+                                          type="secondary" 
+                                          style={{ 
+                                            fontSize: 12,
+                                            display: 'block',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            lineHeight: '1.5'
+                                          }}
+                                        >
+                                          <MailOutlined style={{ marginRight: 4 }} />
+                                          {contact.email}
                                         </Text>
                                       )}
                                     </Space>
@@ -662,7 +950,7 @@ export default function Messaging({
                               </div>
                             </Space>
                           }
-                          style={{ minHeight: '500px' }}
+                          style={{ minHeight: '500px', borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}
                         >
                           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                             {/* Message Type Selector */}
@@ -676,6 +964,13 @@ export default function Messaging({
                                   icon={<WhatsAppOutlined />}
                                   onClick={() => setMessageType('whatsapp')}
                                   size="large"
+                                  style={{
+                                    borderRadius: 8,
+                                    height: 44,
+                                    backgroundColor: messageType === 'whatsapp' ? '#25D366' : undefined,
+                                    borderColor: messageType === 'whatsapp' ? '#25D366' : undefined,
+                                    color: messageType === 'whatsapp' ? '#fff' : undefined
+                                  }}
                                 >
                                   WhatsApp
                                 </Button>
@@ -684,6 +979,10 @@ export default function Messaging({
                                   icon={<PhoneOutlined />}
                                   onClick={() => setMessageType('sms')}
                                   size="large"
+                                  style={{
+                                    borderRadius: 8,
+                                    height: 44
+                                  }}
                                 >
                                   SMS
                                 </Button>
@@ -766,7 +1065,14 @@ export default function Messaging({
                             </div>
 
                             {/* Action Buttons */}
-                            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                            <div style={{ 
+                              display: 'flex', 
+                              gap: 12, 
+                              justifyContent: 'flex-end',
+                              marginTop: 8,
+                              paddingTop: 16,
+                              borderTop: '1px solid #f0f0f0'
+                            }}>
                               <Upload
                                 beforeUpload={(file) => {
                                   handleFileUpload(file)
@@ -780,6 +1086,13 @@ export default function Messaging({
                                   loading={uploading}
                                   disabled={uploading}
                                   size="large"
+                                  style={{
+                                    borderRadius: 8,
+                                    height: 44,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
                                 >
                                   Attach Media
                                 </Button>
@@ -794,6 +1107,16 @@ export default function Messaging({
                                   (!messageText.trim() && mediaFiles.length === 0)
                                 }
                                 size="large"
+                                style={{
+                                  borderRadius: 8,
+                                  height: 44,
+                                  minWidth: 140,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  backgroundColor: messageType === 'whatsapp' ? '#25D366' : undefined,
+                                  borderColor: messageType === 'whatsapp' ? '#25D366' : undefined
+                                }}
                               >
                                 Send {messageType === 'whatsapp' 
                                   ? 'WhatsApp' 
@@ -805,7 +1128,15 @@ export default function Messaging({
                           </div>
                         </Card>
                       ) : (
-                        <Card style={{ minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Card style={{ 
+                          minHeight: '500px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          borderRadius: 16, 
+                          border: 'none', 
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)' 
+                        }}>
                           <Empty
                             description="Select a contact from the list to send a message"
                             image={Empty.PRESENTED_IMAGE_SIMPLE}
@@ -816,12 +1147,228 @@ export default function Messaging({
                   </Row>
                 ),
               },
+              {
+                key: 'history',
+                label: (
+                  <Space>
+                    <MessageOutlined />
+                    <span>Conversation History</span>
+                  </Space>
+                ),
+                children: (
+                  <Row gutter={[24, 24]}>
+                    {/* Conversations List */}
+                    <Col xs={24} md={8} lg={6}>
+                      <Card 
+                        title="WhatsApp Conversations" 
+                        extra={
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<ReloadOutlined />}
+                            onClick={fetchConversations}
+                            loading={loadingConversations}
+                          />
+                        }
+                        style={{ 
+                          height: 'calc(100vh - 300px)', 
+                          overflow: 'auto',
+                          borderRadius: 16, 
+                          border: 'none', 
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)' 
+                        }}
+                      >
+                        {loadingConversations ? (
+                          <div style={{ textAlign: 'center', padding: '40px' }}>
+                            <Spin />
+                            <div style={{ marginTop: 16 }}>
+                              <Text type="secondary">Loading conversations...</Text>
+                            </div>
+                          </div>
+                        ) : conversations.length === 0 ? (
+                          <Empty 
+                            description={
+                              <div>
+                                <Text>No WhatsApp conversations yet</Text>
+                                <br />
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  Send a WhatsApp message to start a conversation
+                                </Text>
+                              </div>
+                            }
+                          />
+                        ) : (
+                          <List
+                            dataSource={conversations}
+                            renderItem={(conversation) => (
+                              <List.Item
+                                style={{
+                                  cursor: 'pointer',
+                                  backgroundColor:
+                                    selectedConversation?.phoneNumber === conversation.phoneNumber ? '#e6f7ff' : 'transparent',
+                                  borderRadius: 8,
+                                  padding: '12px',
+                                  marginBottom: 8,
+                                  border: selectedConversation?.phoneNumber === conversation.phoneNumber ? '1px solid #1890ff' : '1px solid #f0f0f0',
+                                  transition: 'all 0.2s ease',
+                                }}
+                                onMouseEnter={(e) => {
+                                  if (selectedConversation?.phoneNumber !== conversation.phoneNumber) {
+                                    e.currentTarget.style.backgroundColor = '#fafafa'
+                                  }
+                                }}
+                                onMouseLeave={(e) => {
+                                  if (selectedConversation?.phoneNumber !== conversation.phoneNumber) {
+                                    e.currentTarget.style.backgroundColor = 'transparent'
+                                  }
+                                }}
+                                onClick={() => setSelectedConversation(conversation)}
+                              >
+                                <List.Item.Meta
+                                  avatar={
+                                    <Avatar style={{ backgroundColor: '#25D366' }}>
+                                      <WhatsAppOutlined />
+                                    </Avatar>
+                                  }
+                                  title={
+                                    <Space direction="vertical" size={0}>
+                                      <Text strong style={{ fontSize: 14 }}>
+                                        {conversation.phoneNumber}
+                                      </Text>
+                                      <Text type="secondary" style={{ fontSize: 11 }}>
+                                        {conversation.messageCount} message{conversation.messageCount !== 1 ? 's' : ''}
+                                      </Text>
+                                    </Space>
+                                  }
+                                  description={
+                                    <Text 
+                                      type="secondary" 
+                                      style={{ 
+                                        fontSize: 11,
+                                        display: 'block',
+                                        marginTop: 4,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                      }}
+                                    >
+                                      {new Date(conversation.lastMessageAt).toLocaleString()}
+                                    </Text>
+                                  }
+                                />
+                              </List.Item>
+                            )}
+                          />
+                        )}
+                      </Card>
+                    </Col>
+
+                    {/* Conversation Messages */}
+                    <Col xs={24} md={16} lg={18}>
+                      {selectedConversation ? (
+                        <Card
+                          title={
+                            <Space>
+                              <Avatar style={{ backgroundColor: '#25D366' }}>
+                                <WhatsAppOutlined />
+                              </Avatar>
+                              <div>
+                                <div style={{ fontWeight: 500 }}>{selectedConversation.phoneNumber}</div>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {selectedConversation.messageCount} message{selectedConversation.messageCount !== 1 ? 's' : ''}
+                                </Text>
+                              </div>
+                            </Space>
+                          }
+                          style={{ 
+                            height: 'calc(100vh - 300px)', 
+                            overflow: 'auto',
+                            borderRadius: 16, 
+                            border: 'none', 
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)' 
+                          }}
+                        >
+                          {selectedConversation.messages.length === 0 ? (
+                            <Empty description="No messages in this conversation" />
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                              {selectedConversation.messages.map((message, index) => {
+                                const isOutgoing = message.direction === 'outgoing' || !message.direction
+                                return (
+                                  <div
+                                    key={message._id || index}
+                                    style={{
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      alignItems: isOutgoing ? 'flex-end' : 'flex-start',
+                                      padding: '12px 16px',
+                                      background: isOutgoing ? '#e7f3ff' : '#f0f0f0',
+                                      borderRadius: 12,
+                                      maxWidth: '70%',
+                                      marginLeft: isOutgoing ? 'auto' : 0,
+                                      marginRight: isOutgoing ? 0 : 'auto',
+                                    }}
+                                  >
+                                    {message.mediaAttachments && message.mediaAttachments.length > 0 && (
+                                      <div style={{ marginBottom: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                                        {message.mediaAttachments.map((media, mediaIndex) => (
+                                          <div key={mediaIndex}>
+                                            {media.type === 'image' ? (
+                                              <img
+                                                src={media.url}
+                                                alt={`Media ${mediaIndex + 1}`}
+                                                style={{ maxWidth: 200, maxHeight: 200, borderRadius: 8 }}
+                                              />
+                                            ) : (
+                                              <div style={{ padding: 16, background: '#f0f0f0', borderRadius: 8 }}>
+                                                <VideoCameraOutlined style={{ fontSize: 24 }} />
+                                              </div>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    <Text style={{ fontSize: 14, wordBreak: 'break-word' }}>
+                                      {message.content || '(No content)'}
+                                    </Text>
+                                    <Text 
+                                      type="secondary" 
+                                      style={{ fontSize: 11, marginTop: 4, alignSelf: isOutgoing ? 'flex-end' : 'flex-start' }}
+                                    >
+                                      {new Date(message.publishedAt || message.createdAt).toLocaleString()}
+                                    </Text>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </Card>
+                      ) : (
+                        <Card style={{ 
+                          height: 'calc(100vh - 300px)', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          borderRadius: 16, 
+                          border: 'none', 
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)' 
+                        }}>
+                          <Empty
+                            description="Select a conversation to view messages"
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          />
+                        </Card>
+                      )}
+                    </Col>
+                  </Row>
+                ),
+              },
             ]}
           />
-        </Card>
+          </Card>
 
-        {/* Add Contact Modal */}
-        <Modal
+          {/* Add Contact Modal */}
+          <Modal
           title="Add Contact"
           open={isAddContactModalOpen}
           onCancel={() => {
@@ -917,8 +1464,10 @@ export default function Messaging({
               </Button>
             </Form.Item>
           </Form>
-        </Modal>
+          </Modal>
+        </div>
       </Content>
+      </Layout>
     </Layout>
   )
 }

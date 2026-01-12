@@ -220,3 +220,55 @@ export async function sendWhatsApp(request: SendMessageRequest): Promise<SendMes
   return data
 }
 
+export interface WhatsAppMessage {
+  _id: string
+  content: string
+  mediaAttachments?: Array<{
+    type: 'image' | 'video' | 'link' | 'document'
+    url: string
+    thumbnailUrl?: string
+  }>
+  publishedAt?: string
+  createdAt: string
+  platformPostId?: string
+  postType: 'text' | 'image' | 'video' | 'link' | 'mixed'
+  direction?: 'incoming' | 'outgoing'
+}
+
+export interface WhatsAppConversation {
+  phoneNumber: string
+  messages: WhatsAppMessage[]
+  lastMessageAt: string
+  messageCount: number
+}
+
+export async function getWhatsAppConversations(): Promise<WhatsAppConversation[]> {
+  const token = localStorage.getItem('token')
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const response = await fetch(`${API_URL}/api/messaging/whatsapp/conversations`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: 'Failed to fetch WhatsApp conversations' }))
+    throw new Error(errorData.message || `Failed to fetch WhatsApp conversations (${response.status})`)
+  }
+
+  const data = await response.json()
+  console.log('[MessagingService] API response:', {
+    success: data.success,
+    conversationCount: data.conversations?.length || 0,
+    totalMessages: data.totalMessages || 0,
+  })
+  
+  if (!data.success) {
+    throw new Error(data.message || 'Failed to fetch WhatsApp conversations')
+  }
+  
+  return data.conversations || []
+}

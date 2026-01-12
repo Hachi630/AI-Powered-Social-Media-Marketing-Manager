@@ -71,6 +71,12 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
     }
 
     const imageUrl = `/uploads/images/${req.file.filename}`
+    
+    // Generate absolute URL for external access (needed for Ayrshare)
+    const backendUrl = process.env.BACKEND_URL || 
+                      process.env.SERVER_URL || 
+                      `http://localhost:${process.env.PORT || 5000}`
+    const absoluteImageUrl = `${backendUrl}${imageUrl}`
 
     // Save to database
     try {
@@ -91,7 +97,8 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
 
     res.json({
       success: true,
-      imageUrl,
+      imageUrl, // Relative URL for frontend
+      absoluteUrl: absoluteImageUrl, // Absolute URL for external services like Ayrshare
     })
   } catch (error: any) {
     console.error('Upload image error:', error)

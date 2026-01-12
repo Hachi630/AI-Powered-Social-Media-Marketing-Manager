@@ -253,6 +253,8 @@ router.post('/send-sms', requireAuth, async (req: any, res) => {
       content: body,
       status: 'published',
       platformPostId: result.messageSid,
+      recipientPhoneNumber: to,
+      direction: 'outgoing',
     })
 
     res.json({
@@ -333,6 +335,8 @@ router.post('/send-mms', requireAuth, async (req: any, res) => {
         thumbnailUrl: url,
       })),
       platformPostId: result.messageSid,
+      recipientPhoneNumber: to,
+      direction: 'outgoing',
     })
 
     res.json({
@@ -440,6 +444,8 @@ router.post('/send-whatsapp', requireAuth, async (req: any, res) => {
         thumbnailUrl: url,
       })) : undefined,
       platformPostId: result.messageSid,
+      recipientPhoneNumber: to,
+      direction: 'outgoing',
     })
 
     res.json({
@@ -475,6 +481,269 @@ router.post('/upload-media', requireAuth, async (req: any, res) => {
       success: false,
       message: error.message || 'Failed to upload media',
     })
+  }
+})
+
+// @desc    Get WhatsApp conversation history
+// @route   GET /api/messaging/whatsapp/conversations
+// @access  Private
+router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated',
+      })
+    }
+
+    const { default: SocialMediaPost } = await import('../models/SocialMediaPost')
+    const { Types } = await import('mongoose')
+
+    // Fetch all WhatsApp messages for this user (both incoming and outgoing)
+    // First try to find messages with phone numbers, then fallback to all WhatsApp messages
+    let messages = await SocialMediaPost.find({
+      userId: new Types.ObjectId(req.user._id),
+      platform: 'whatsapp',
+      $or: [
+        { recipientPhoneNumber: { $exists: true, $nin: [null, ''] } },
+        { senderPhoneNumber: { $exists: true, $nin: [null, ''] } },
+      ],
+    })
+      .sort({ publishedAt: -1, createdAt: -1 })
+      .limit(2000)
+      .lean()
+
+    // If no messages found with phone numbers, try finding all WhatsApp messages (for debugging)
+    if (messages.length === 0) {
+      console.log('[WhatsApp Conversations] No messages with phone numbers found, checking all WhatsApp messages...')
+      const allWhatsAppMessages = await SocialMediaPost.find({
+        userId: new Types.ObjectId(req.user._id),
+        platform: 'whatsapp',
+      })
+        .sort({ createdAt: -1 })
+        .limit(100)
+        .lean()
+      
+      console.log(`[WhatsApp Conversations] Found ${allWhatsAppMessages.length} total WhatsApp messages (without phone number filter)`)
+      if (allWhatsAppMessages.length > 0) {
+        console.log('[WhatsApp Conversations] Sample message structure:', {
+          _id: allWhatsAppMessages[0]._id,
+          hasRecipientPhoneNumber: !!allWhatsAppMessages[0].recipientPhoneNumber,
+          hasSenderPhoneNumber: !!allWhatsAppMessages[0].senderPhoneNumber,
+          hasDirection: !!allWhatsAppMessages[0].direction,
+          recipientPhoneNumber: allWhatsAppMessages[0].recipientPhoneNumber,
+          senderPhoneNumber: allWhatsAppMessages[0].senderPhoneNumber,
+          direction: allWhatsAppMessages[0].direction,
+        })
+      }
+    }
+
+    console.log(`[WhatsApp Conversations] Found ${messages.length} messages with phone numbers for user ${req.user._id}`)
+    
+    // Debug: Log sample messages to understand structure
+    if (messages.length > 0) {
+      console.log('[WhatsApp Conversations] Sample message:', {
+        _id: messages[0]._id,
+        direction: messages[0].direction,
+        recipientPhoneNumber: messages[0].recipientPhoneNumber,
+        senderPhoneNumber: messages[0].senderPhoneNumber,
+        platform: messages[0].platform,
+        content: messages[0].content?.substring(0, 50),
+      })
+    }
+
+    // Group messages by phone number (use recipientPhoneNumber for outgoing, senderPhoneNumber for incoming)
+    const conversations: Record<string, any[]> = {}
+    
+    messages.forEach((message: any) => {
+      // Determine the other party's phone number
+      let phoneNumber: string | null = null
+      
+      if (message.direction === 'incoming' && message.senderPhoneNumber) {
+        phoneNumber = message.senderPhoneNumber
+      } else if (message.direction === 'outgoing' && message.recipientPhoneNumber) {
+        phoneNumber = message.recipientPhoneNumber
+      } else if (!message.direction) {
+        // Fallback: if no direction is set, assume outgoing and use recipientPhoneNumber
+        phoneNumber = message.recipientPhoneNumber || message.senderPhoneNumber
+      } else if (message.recipientPhoneNumber) {
+        // Fallback: use recipientPhoneNumber if available
+        phoneNumber = message.recipientPhoneNumber
+      } else if (message.senderPhoneNumber) {
+        // Fallback: use senderPhoneNumber if available
+        phoneNumber = message.senderPhoneNumber
+      }
+      
+      if (!phoneNumber || phoneNumber.trim() === '') {
+        console.warn('[WhatsApp Conversations] Skipping message without phone number:', {
+          messageId: message._id,
+          direction: message.direction,
+          recipientPhoneNumber: message.recipientPhoneNumber,
+          senderPhoneNumber: message.senderPhoneNumber,
+        })
+        return
+      }
+      
+      // Normalize phone number (remove whatsapp: prefix if present)
+      phoneNumber = phoneNumber.replace(/^whatsapp:/, '').trim()
+      
+      if (!conversations[phoneNumber]) {
+        conversations[phoneNumber] = []
+      }
+      conversations[phoneNumber].push({
+        _id: message._id.toString(),
+        content: message.content || '',
+        mediaAttachments: message.mediaAttachments || [],
+        publishedAt: message.publishedAt || message.createdAt,
+        createdAt: message.createdAt,
+        platformPostId: message.platformPostId,
+        postType: message.postType,
+        direction: message.direction || 'outgoing',
+      })
+    })
+
+    console.log(`[WhatsApp Conversations] Grouped into ${Object.keys(conversations).length} conversations`)
+
+    // Convert to array format and sort by most recent message
+    const conversationList = Object.entries(conversations)
+      .map(([phoneNumber, msgs]) => {
+        // Sort messages within conversation by date (most recent first)
+        const sortedMessages = msgs.sort((a, b) => {
+          const dateA = new Date(a.publishedAt || a.createdAt).getTime()
+          const dateB = new Date(b.publishedAt || b.createdAt).getTime()
+          return dateB - dateA
+        })
+        
+        return {
+          phoneNumber,
+          messages: sortedMessages,
+          lastMessageAt: sortedMessages[0]?.publishedAt || sortedMessages[0]?.createdAt,
+          messageCount: sortedMessages.length,
+        }
+      })
+      .filter(conv => conv.messageCount > 0) // Filter out empty conversations
+      .sort((a, b) => {
+        const dateA = new Date(a.lastMessageAt).getTime()
+        const dateB = new Date(b.lastMessageAt).getTime()
+        return dateB - dateA
+      })
+
+    console.log(`[WhatsApp Conversations] Returning ${conversationList.length} conversations`)
+
+    res.json({
+      success: true,
+      conversations: conversationList,
+      totalMessages: messages.length,
+    })
+  } catch (error: any) {
+    console.error('Get WhatsApp conversations error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch WhatsApp conversations',
+    })
+  }
+})
+
+// @desc    Webhook endpoint for incoming WhatsApp messages from Twilio
+// @route   POST /api/messaging/whatsapp/webhook
+// @access  Public (Twilio webhook)
+router.post('/whatsapp/webhook', async (req: any, res) => {
+  try {
+    const { From, To, Body, MessageSid, NumMedia, MediaUrl0, MediaContentType0 } = req.body
+
+    console.log('WhatsApp webhook received:', {
+      From,
+      To,
+      Body: Body ? Body.substring(0, 50) : 'No body',
+      MessageSid,
+      NumMedia,
+    })
+
+    if (!From || !MessageSid) {
+      console.warn('Missing required fields in webhook:', { From, MessageSid })
+      return res.status(400).json({ success: false, message: 'Missing required fields' })
+    }
+
+    // Extract user ID from the "To" number or find user by phone number
+    // For now, we'll need to find the user associated with the Twilio WhatsApp number
+    // This assumes you have a way to map Twilio numbers to users
+    // For simplicity, we'll try to find a user or use a default approach
+    
+    const { default: SocialMediaPost } = await import('../models/SocialMediaPost')
+    const { default: User } = await import('../models/User')
+    const { Types } = await import('mongoose')
+    const { saveSocialMediaPost } = await import('../services/databaseService')
+
+    // Find user by checking who has sent messages to this phone number before
+    // This associates incoming messages with the user who initiated the conversation
+    let userId: any = null
+    
+    // Format phone number (remove whatsapp: prefix if present)
+    const senderPhoneNumber = From.replace(/^whatsapp:/, '')
+    
+    // Try to find a user who has sent messages to this phone number
+    const existingMessage = await SocialMediaPost.findOne({
+      platform: 'whatsapp',
+      recipientPhoneNumber: senderPhoneNumber,
+      direction: 'outgoing',
+    }).sort({ createdAt: -1 })
+    
+    if (existingMessage) {
+      userId = existingMessage.userId
+    } else {
+      // If no existing conversation, try to find user by Twilio number mapping
+      // For now, use the first user as fallback (you can improve this with a mapping table)
+      const firstUser = await User.findOne().limit(1)
+      if (firstUser) {
+        userId = firstUser._id
+      } else {
+        console.warn('No users found to associate incoming WhatsApp message')
+        return res.status(200).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>')
+      }
+    }
+
+    // Prepare media attachments if present
+    const mediaAttachments: any[] = []
+    if (NumMedia && parseInt(NumMedia) > 0) {
+      for (let i = 0; i < parseInt(NumMedia); i++) {
+        const mediaUrl = req.body[`MediaUrl${i}`]
+        const mediaType = req.body[`MediaContentType${i}`]
+        if (mediaUrl) {
+          mediaAttachments.push({
+            type: mediaType?.startsWith('image/') ? 'image' : mediaType?.startsWith('video/') ? 'video' : 'document',
+            url: mediaUrl,
+            thumbnailUrl: mediaUrl,
+          })
+        }
+      }
+    }
+
+    // Save incoming message to database
+    await saveSocialMediaPost({
+      userId: userId,
+      platform: 'whatsapp',
+      postType: mediaAttachments.length > 0 ? (mediaAttachments.length > 0 && Body ? 'mixed' : 'image') : 'text',
+      content: Body || (mediaAttachments.length > 0 ? `Received ${mediaAttachments.length} media file(s)` : ''),
+      status: 'published',
+      mediaAttachments: mediaAttachments.length > 0 ? mediaAttachments : undefined,
+      platformPostId: MessageSid,
+      senderPhoneNumber: senderPhoneNumber,
+      direction: 'incoming',
+      publishedAt: new Date(),
+    })
+
+    console.log('Incoming WhatsApp message saved:', {
+      userId: userId.toString(),
+      senderPhoneNumber,
+      messageSid: MessageSid,
+    })
+
+    // Respond to Twilio (required)
+    res.status(200).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>')
+  } catch (error: any) {
+    console.error('WhatsApp webhook error:', error)
+    // Still respond to Twilio to avoid retries
+    res.status(200).type('text/xml').send('<?xml version="1.0" encoding="UTF-8"?><Response></Response>')
   }
 })
 

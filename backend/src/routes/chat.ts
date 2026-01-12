@@ -160,25 +160,25 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
 
     // Add current user message (if not in edit mode)
     if (editMessageIndex === undefined || editMessageIndex === null) {
-      const userMessageContent = message
-        ? message.trim()
-        : images && images.length > 0
-          ? `Uploaded ${images.length} image(s)`
-          : files && files.length > 0
-            ? `Uploaded ${files.length} file(s)`
+    const userMessageContent = message
+      ? message.trim()
+      : images && images.length > 0
+        ? `Uploaded ${images.length} image(s)`
+        : files && files.length > 0
+          ? `Uploaded ${files.length} file(s)`
             : "";
-      messages.push({
+    messages.push({
         role: "user",
-        content: userMessageContent,
-        images: images && Array.isArray(images) ? images : undefined,
-        files:
-          files && Array.isArray(files)
-            ? files.map((f: any) => ({
-                url: f.url,
-                name: f.name,
-                type: f.type,
-              }))
-            : undefined,
+      content: userMessageContent,
+      images: images && Array.isArray(images) ? images : undefined,
+      files:
+        files && Array.isArray(files)
+          ? files.map((f: any) => ({
+              url: f.url,
+              name: f.name,
+              type: f.type,
+            }))
+          : undefined,
       });
     }
 
@@ -312,20 +312,20 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
             : files && files.length > 0
               ? `Uploaded ${files.length} file(s)`
               : "";
-        conversation.messages.push({
+      conversation.messages.push({
           role: "user",
-          content: userMessageContent,
-          images: images && Array.isArray(images) ? images : undefined,
-          files:
-            files && Array.isArray(files)
-              ? files.map((f: any) => ({
-                  url: f.url,
-                  name: f.name,
-                  type: f.type,
-                  size: f.size,
-                }))
-              : undefined,
-          timestamp: new Date(),
+        content: userMessageContent,
+        images: images && Array.isArray(images) ? images : undefined,
+        files:
+          files && Array.isArray(files)
+            ? files.map((f: any) => ({
+                url: f.url,
+                name: f.name,
+                type: f.type,
+                size: f.size,
+              }))
+            : undefined,
+        timestamp: new Date(),
         });
       }
       // Add assistant response
@@ -358,8 +358,8 @@ router.post(
   "/generate-image",
   protect,
   async (req: AuthRequest, res: Response) => {
-    try {
-      const user = req.user
+  try {
+    const user = req.user
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' })
@@ -475,12 +475,12 @@ router.post(
       images: [imageUrl],
       conversationId: conversation?._id.toString(),
     })
-    } catch (error: any) {
+  } catch (error: any) {
       console.error("Image generation error:", error)
-      res.status(500).json({
-        success: false,
+    res.status(500).json({
+      success: false,
         message: error.message || "Failed to generate image",
-      })
+    })
     }
   }
 )
@@ -540,91 +540,91 @@ router.get(
   "/:conversationId",
   protect,
   async (req: AuthRequest, res: Response) => {
-    try {
+  try {
       const user = req.user;
 
-      if (!user) {
+    if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-      }
+    }
 
       const { conversationId } = req.params;
 
-      const conversation = await Conversation.findOne({
-        _id: conversationId,
-        userId: user._id,
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      userId: user._id,
       });
 
-      if (!conversation) {
+    if (!conversation) {
         return res
           .status(404)
           .json({ success: false, message: "Conversation not found" });
-      }
+    }
 
-      res.json({
-        success: true,
-        conversation: {
-          id: conversation._id.toString(),
-          title: conversation.title,
-          messages: conversation.messages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-            images: msg.images,
-            files: msg.files,
-            timestamp: msg.timestamp,
-          })),
-          createdAt: conversation.createdAt,
-          updatedAt: conversation.updatedAt,
-        },
+    res.json({
+      success: true,
+      conversation: {
+        id: conversation._id.toString(),
+        title: conversation.title,
+        messages: conversation.messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+          images: msg.images,
+          files: msg.files,
+          timestamp: msg.timestamp,
+        })),
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      },
       });
-    } catch (error: any) {
+  } catch (error: any) {
       console.error("Get conversation error:", error);
-      res.status(500).json({
-        success: false,
+    res.status(500).json({
+      success: false,
         message: error.message || "Failed to get conversation",
       });
     }
   }
 );
 
-// @desc    Delete conversation 
+// @desc    Delete conversation
 // @route   DELETE /api/chat/:conversationId
 // @access  Private
 router.delete(
   "/:conversationId",
   protect,
   async (req: AuthRequest, res: Response) => {
-    try {
+  try {
       const user = req.user;
 
-      if (!user) {
+    if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-      }
+    }
 
       const { conversationId } = req.params;
 
-      const conversation = await Conversation.findOneAndDelete({
-        _id: conversationId,
-        userId: user._id,
+    const conversation = await Conversation.findOneAndDelete({
+      _id: conversationId,
+      userId: user._id,
       });
 
-      if (!conversation) {
+    if (!conversation) {
         return res
           .status(404)
           .json({ success: false, message: "Conversation not found" });
-      }
+    }
 
-      res.json({
-        success: true,
+    res.json({
+      success: true,
         message: "Conversation deleted successfully",
       });
-    } catch (error: any) {
+  } catch (error: any) {
       console.error("Delete conversation error:", error);
-      res.status(500).json({
-        success: false,
+    res.status(500).json({
+      success: false,
         message: error.message || "Failed to delete conversation",
       });
     }
@@ -638,18 +638,18 @@ router.post(
   "/generate-plan",
   protect,
   async (req: AuthRequest, res: Response) => {
-    try {
+  try {
       const user = req.user;
 
-      if (!user) {
+    if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-      }
+    }
 
       const { goal, startDate, endDate, platforms } = req.body;
 
-      // Validate required fields
+    // Validate required fields
       if (
         !goal ||
         !startDate ||
@@ -657,31 +657,31 @@ router.post(
         !platforms ||
         !Array.isArray(platforms)
       ) {
-        return res.status(400).json({
-          success: false,
+      return res.status(400).json({
+        success: false,
           message: "goal, startDate, endDate, and platforms array are required",
         });
-      }
+    }
 
       // Get user context from Brand Profile (saved by unique user ID)
-      const userContext = {
-        brandName: user.brandName,
-        industry: user.industry,
+    const userContext = {
+      brandName: user.brandName,
+      industry: user.industry,
         aboutMe: user.aboutMe, // Company description
-        toneOfVoice: user.toneOfVoice,
-        knowledgeProducts: user.knowledgeProducts,
-        targetAudience: user.targetAudience,
-      }
+      toneOfVoice: user.toneOfVoice,
+      knowledgeProducts: user.knowledgeProducts,
+      targetAudience: user.targetAudience,
+    }
 
-      // Generate content plan
+    // Generate content plan
       const startTime = Date.now()
-      const plan = await generateContentPlan({
-        userContext,
-        goal,
-        startDate,
-        endDate,
-        platforms,
-      })
+    const plan = await generateContentPlan({
+      userContext,
+      goal,
+      startDate,
+      endDate,
+      platforms,
+    })
       const processingTime = Date.now() - startTime
 
       // Save AI-generated content plan to database
@@ -704,17 +704,17 @@ router.post(
         // Don't fail the request if DB save fails
       }
 
-      res.json({
-        success: true,
-        plan,
-      })
-    } catch (error: any) {
-      console.error('Generate content plan error:', error)
-      res.status(500).json({
-        success: false,
-        message: error.message || 'Failed to generate content plan',
-      })
-    }
+    res.json({
+      success: true,
+      plan,
+    })
+  } catch (error: any) {
+    console.error('Generate content plan error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate content plan',
+    })
+  }
   }
 )
 
@@ -732,23 +732,23 @@ router.post(
   "/send-to-calendar",
   protect,
   async (req: AuthRequest, res: Response) => {
-    try {
+  try {
       const user = req.user;
 
-      if (!user) {
+    if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-      }
+    }
 
       const { items, campaignId } = req.body;
 
-      if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({
-          success: false,
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
           message: "items array is required and must not be empty",
         });
-      }
+    }
 
     // Validate and create calendar items
     const itemsToCreate = items.map((item: any) => ({
@@ -802,7 +802,7 @@ router.post(
       })),
       count: createdItems.length,
     })
-    } catch (error: any) {
+  } catch (error: any) {
       console.error("Send to calendar error:", error);
       res.status(500).json({
         success: false,
