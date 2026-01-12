@@ -4,19 +4,22 @@ import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
-import { connectDB } from './config/database'
-import authRoutes from './routes/auth'
-import chatRoutes from './routes/chat'
-import calendarRoutes from './routes/calendar'
-import campaignRoutes from './routes/campaign'
-import uploadRoutes from './routes/upload'
-import socialRoutes from './routes/social'
-import { errorHandler } from './middleware/errorHandler'
-import linkedinRoutes from "./routes/linkedin";
-import twitterRoutes from "./routes/twitter";
-import analyticsRoutes from "./routes/analytics";
-import messagingRoutes from "./routes/messaging";
-import ayrshareRoutes from "./routes/ayrshare";
+import { connectDB } from './config/database.js'
+import authRoutes from './routes/auth.js'
+import chatRoutes from './routes/chat.js'
+import calendarRoutes from './routes/calendar.js'
+import campaignRoutes from './routes/campaign.js'
+import uploadRoutes from './routes/upload.js'
+import facebookRoutes from './routes/facebook.js'
+import instagramRoutes from './routes/instagram.js'
+import { errorHandler } from './middleware/errorHandler.js'
+import linkedinRoutes from "./routes/linkedin.js";
+import twitterRoutes from "./routes/twitter.js";
+import analyticsRoutes from "./routes/analytics.js";
+import messagingRoutes from "./routes/messaging.js";
+import ayrshareRoutes from "./routes/ayrshare.js";
+import cron from 'node-cron';
+import { checkAndPublishScheduledItems } from './services/schedulerService.js';
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -24,16 +27,62 @@ const __dirname = dirname(__filename)
 // Load env vars
 dotenv.config()
 
-// Connect to database
-connectDB()
+// Connect to database and start scheduler
+connectDB().then(() => {
+  // Start scheduled task to check and publish LinkedIn posts every 5 minutes
+  // Cron format: */5 * * * * means "every 5 minutes"
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      console.log('[Scheduler] Cron job triggered at', new Date().toISOString());
+      await checkAndPublishScheduledItems();
+    } catch (error: any) {
+      console.error('[Scheduler] Error in scheduled task:', error);
+      console.error('[Scheduler] Error stack:', error.stack);
+    }
+  });
+  
+  console.log('[Scheduler] LinkedIn auto-publish scheduler started (runs every 5 minutes)');
+  
+  // Also run immediately on startup to catch any missed items
+  console.log('[Scheduler] Running initial check...');
+  setTimeout(() => {
+    checkAndPublishScheduledItems().catch((error) => {
+      console.error('[Scheduler] Error in initial check:', error);
+    });
+  }, 5000); // Wait 5 seconds after server start to ensure everything is ready
+}).catch((error) => {
+  console.error('Failed to start scheduler:', error);
+});
 
 const app = express()
 const PORT = process.env.PORT || 5000
 
 // CORS configuration - must be FIRST, before any other middleware
-// Allow all origins in development to avoid CORS issues
+// In production, only allow frontend domain. In development, allow all origins.
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  'http://localhost:3000', // Development frontend
+  'https://main.d1sxixpats4kxg.amplifyapp.com', // Amplify deployment
+].filter(Boolean) as string[]
+
 app.use(cors({
-  origin: true, // Allow all origins in development
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true)
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true)
+    }
+    
+    // In production, check against allowed origins
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
@@ -48,6 +97,8 @@ app.use(express.json({ limit: '250mb' }))
 app.use(express.urlencoded({ extended: true, limit: '250mb' }))
 
 // Static file serving for uploaded images
+// NOTE: On Render, the file system is ephemeral. Files will be lost when the service restarts.
+// This is acceptable for testing, but production should use cloud storage (AWS S3, Cloudinary, etc.)
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')))
 
 // Routes
@@ -56,7 +107,8 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/calendar', calendarRoutes)
 app.use('/api/campaigns', campaignRoutes)
 app.use('/api/upload', uploadRoutes)
-app.use('/api/social', socialRoutes)
+app.use('/api/facebook', facebookRoutes)
+app.use('/api/instagram', instagramRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
 app.use("/api/analytics", analyticsRoutes);

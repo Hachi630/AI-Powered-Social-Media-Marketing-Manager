@@ -71,7 +71,7 @@ export default function InstagramCallback() {
         // The backend will exchange the code for tokens and save them
         const API_URL = import.meta.env.VITE_API_URL || ''
         const response = await fetch(
-          `${API_URL}/api/social/instagram/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
+          `${API_URL}/api/instagram/callback?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state)}`,
           {
             method: 'GET',
             headers: {
@@ -120,9 +120,25 @@ export default function InstagramCallback() {
 
           // Always redirect to social dashboard (like Twitter connection)
           // Backend provides redirectUrl which points to social dashboard with query params
-          const redirectUrl = data.redirectUrl || '/socialdashboard?facebook=connected'
+          // Ensure redirectUrl always includes instagram=connected parameter
+          let redirectUrl = data.redirectUrl || '/socialdashboard'
+          // Extract path and query from redirectUrl
+          const urlObj = new URL(redirectUrl, window.location.origin)
+          const path = urlObj.pathname || '/socialdashboard'
+          const params = new URLSearchParams(urlObj.search)
+          
+          // Ensure instagram=connected parameter is present
+          if (!params.has('instagram')) {
+            params.set('instagram', 'connected')
+          }
+          // Also ensure facebook=connected if not present (Instagram connection also connects Facebook)
+          if (!params.has('facebook')) {
+            params.set('facebook', 'connected')
+          }
+          
+          const finalUrl = `${path}?${params.toString()}`
           setTimeout(() => {
-            navigate(redirectUrl.replace(window.location.origin, '').replace(/^https?:\/\/[^/]+/, ''))
+            navigate(finalUrl)
           }, 1500)
         } else {
           setStatus('error')

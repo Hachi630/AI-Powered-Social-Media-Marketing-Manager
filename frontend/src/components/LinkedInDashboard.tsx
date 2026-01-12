@@ -100,11 +100,14 @@ import {
   getFacebookStatus,
   getInstagramStatus,
   getFacebookAuthUrl,
+  createFacebookPost,
+  createInstagramPost,
   getInstagramAuthUrl,
   disconnectFacebook,
   disconnectInstagram,
 } from "../services/socialService";
 import { User } from "../services/authService";
+import { getImageUrl } from "../utils/imageUtils";
 
 interface LinkedInDashboardProps {
   isLoggedIn?: boolean;
@@ -415,21 +418,34 @@ export default function LinkedInDashboard({
         setLoadingInstagram(false);
       }
 
-      // Get Facebook/Instagram auth URL
+      // Get Facebook auth URL (separate from Instagram)
       try {
-        const authData = await getInstagramAuthUrl(jwt);
-        console.log("Facebook/Instagram auth URL response:", authData);
-        if (authData.success && authData.authUrl) {
-          setFacebookAuthUrl(authData.authUrl);
+        const facebookAuthData = await getFacebookAuthUrl(jwt);
+        console.log("Facebook auth URL response:", facebookAuthData);
+        if (facebookAuthData.success && facebookAuthData.authUrl) {
+          setFacebookAuthUrl(facebookAuthData.authUrl);
         } else {
-          console.error("Failed to get auth URL:", authData.error);
-          message.error(
-            authData.error || "Failed to get Facebook/Instagram auth URL"
-          );
+          console.error("Failed to get Facebook auth URL:", facebookAuthData.error);
+          // Don't show error message here, just log it
         }
       } catch (error) {
-        console.error("Failed to get Facebook/Instagram auth URL:", error);
-        message.error("Failed to get Facebook/Instagram auth URL");
+        console.error("Failed to get Facebook auth URL:", error);
+        // Don't show error message here, just log it
+      }
+
+      // Get Instagram auth URL (separate from Facebook)
+      try {
+        const instagramAuthData = await getInstagramAuthUrl(jwt);
+        console.log("Instagram auth URL response:", instagramAuthData);
+        if (instagramAuthData.success && instagramAuthData.authUrl) {
+          setInstagramAuthUrl(instagramAuthData.authUrl);
+        } else {
+          console.error("Failed to get Instagram auth URL:", instagramAuthData.error);
+          // Don't show error message here, just log it
+        }
+      } catch (error) {
+        console.error("Failed to get Instagram auth URL:", error);
+        // Don't show error message here, just log it
       }
     };
     loadSocialStatus();
@@ -1142,6 +1158,81 @@ export default function LinkedInDashboard({
     setFacebookVideoPreview(null);
   };
 
+  // Facebook Post handler
+  const handleFacebookPost = async () => {
+    if (!jwt) {
+      message.error("Please log in to post to Facebook");
+      return;
+    }
+
+    // Validate text content
+    if (!facebookPostText.trim()) {
+      message.error("Please enter post text");
+      return;
+    }
+
+    if (facebookPostText.length > 5000) {
+      message.error("Post text cannot exceed 5000 characters");
+      return;
+    }
+
+    // Validate post type specific requirements
+    if (facebookPostType === "image" && !facebookSelectedImage) {
+      message.error("Please select an image for your image post");
+      return;
+    }
+
+    if (facebookPostType === "video" && !facebookSelectedVideo) {
+      message.error("Please select a video for your video post");
+      return;
+    }
+
+    if (facebookPostType === "link" && !facebookLinkUrl.trim()) {
+      message.error("Please enter a link URL for your link post");
+      return;
+    }
+
+    setFacebookPosting(true);
+
+    try {
+      const result = await createFacebookPost(
+        jwt,
+        facebookPostText.trim(),
+        facebookPostType,
+        facebookPostType === "image" ? facebookSelectedImage : null,
+        facebookPostType === "video" ? facebookSelectedVideo : null,
+        facebookPostType === "link" ? facebookLinkUrl.trim() : undefined,
+        facebookPostType === "link" ? facebookLinkTitle.trim() : undefined,
+        facebookPostType === "link" ? facebookLinkDescription.trim() : undefined
+      );
+
+      if (result.success) {
+        message.success("🎉 Facebook post published successfully!");
+        
+        // Reset form
+        setFacebookPostText("");
+        setFacebookPostType("text");
+        setFacebookSelectedImage(null);
+        setFacebookImagePreview(null);
+        setFacebookSelectedVideo(null);
+        if (facebookVideoPreview) {
+          URL.revokeObjectURL(facebookVideoPreview);
+        }
+        setFacebookVideoPreview(null);
+        setFacebookLinkUrl("");
+        setFacebookLinkTitle("");
+        setFacebookLinkDescription("");
+      } else {
+        message.error(result.error || "Failed to post to Facebook. Please try again.");
+      }
+    } catch (error: any) {
+      console.error("Failed to create Facebook post:", error);
+      message.error(error.message || "Failed to post to Facebook. Please try again.");
+    } finally {
+      setFacebookPosting(false);
+    }
+  };
+
   // Load events for a specific organization
   const handleLoadOrgEvents = async (orgId: string) => {
     if (!jwt) return;
@@ -1452,7 +1543,7 @@ export default function LinkedInDashboard({
                   <Select.Option key={org.id} value={org.id}>
                     <Space>
                       {org.logoUrl ? (
-                        <Avatar size="small" src={org.logoUrl} />
+                        <Avatar size="small" src={getImageUrl(org.logoUrl)} />
                       ) : (
                         <Avatar
                           size="small"
@@ -2906,9 +2997,7 @@ export default function LinkedInDashboard({
                   <Button
                     type="primary"
                     icon={<SendOutlined />}
-                    onClick={() => {
-                      message.info("Facebook post functionality coming soon");
-                    }}
+                    onClick={handleFacebookPost}
                     loading={facebookPosting}
                     disabled={
                       !facebookPostText.trim() ||
@@ -3433,14 +3522,69 @@ export default function LinkedInDashboard({
                   <Button
                     type="primary"
                     icon={<SendOutlined />}
-                    onClick={() => {
-                      message.info("Instagram post functionality coming soon");
+                    onClick={async () => {
+                      if (!jwt) {
+                        message.error("Please log in to post to Instagram");
+                        return;
+                      }
+
+                      // Validate text content
+                      if (!instagramPostText.trim()) {
+                        message.error("Please enter post text");
+                        return;
+                      }
+
+                      // Validate post type specific requirements
+                      if (instagramPostType === "image" && !instagramSelectedImage) {
+                        message.error("Please select an image for your image post");
+                        return;
+                      }
+
+                      if (instagramPostType === "video" && !instagramSelectedVideo) {
+                        message.error("Please select a video for your video post");
+                        return;
+                      }
+
+                      setInstagramPosting(true);
+
+                      try {
+                        const result = await createInstagramPost(
+                          jwt,
+                          instagramPostText,
+                          instagramPostType === "image" ? "image" : "video",
+                          instagramSelectedImage,
+                          instagramSelectedVideo
+                        );
+
+                        if (result.success) {
+                          message.success(result.message || "🎉 Instagram post published successfully!");
+                          
+                          // Reset form
+                          setInstagramPostText("");
+                          setInstagramPostType("text");
+                          setInstagramSelectedImage(null);
+                          setInstagramImagePreview(null);
+                          setInstagramSelectedVideo(null);
+                          if (instagramVideoPreview) {
+                            URL.revokeObjectURL(instagramVideoPreview);
+                          }
+                          setInstagramVideoPreview(null);
+                          setInstagramLinkUrl("");
+                          setInstagramLinkTitle("");
+                          setInstagramLinkDescription("");
+                        } else {
+                          message.error(result.error || "Failed to post to Instagram");
+                        }
+                      } catch (error: any) {
+                        console.error("Failed to post to Instagram:", error);
+                        message.error(error.message || "Failed to post to Instagram");
+                      } finally {
+                        setInstagramPosting(false);
+                      }
                     }}
                     loading={instagramPosting}
                     disabled={
                       !instagramPostText.trim() ||
-                      (instagramPostType === "link" &&
-                        !instagramLinkUrl.trim()) ||
                       (instagramPostType === "video" &&
                         !instagramSelectedVideo) ||
                       (instagramPostType === "image" && !instagramSelectedImage)
@@ -3735,7 +3879,7 @@ export default function LinkedInDashboard({
                   <Select.Option key={org.id} value={org.id}>
                     <Space>
                       {org.logoUrl ? (
-                        <Avatar size="small" src={org.logoUrl} />
+                        <Avatar size="small" src={getImageUrl(org.logoUrl)} />
                       ) : (
                         <Avatar
                           size="small"
@@ -4020,7 +4164,7 @@ export default function LinkedInDashboard({
         {/* Social Sidebar */}
         {isLoggedIn && !isMobile && (
           <Sider
-            width={280}
+            width={360}
             collapsedWidth={isTablet ? 0 : 96}
             collapsed={sidebarCollapsed}
             theme="light"
@@ -4029,7 +4173,7 @@ export default function LinkedInDashboard({
             className={styles.sider}
           >
             <SocialSidebar
-              collapsed={sidebarCollapsed}
+              collapsed={sidebarCollapsed ?? false}
               onToggleSidebar={handleToggleSidebar}
               selectedPlatform={selectedPlatform}
               onPlatformSelect={handlePlatformSelect}
@@ -4126,7 +4270,7 @@ export default function LinkedInDashboard({
                             icon={<SyncOutlined />}
                             onClick={handleRefreshMetrics}
                             loading={loading}
-                            size={isMobile ? "middle" : "default"}
+                            size={isMobile ? "middle" : "large"}
                             style={{
                               width: 150,
                               height: 44,
@@ -4142,7 +4286,7 @@ export default function LinkedInDashboard({
                             onClick={handleDisconnect}
                             loading={disconnecting}
                             danger
-                            size={isMobile ? "middle" : "default"}
+                            size={isMobile ? "middle" : "large"}
                             style={{
                               width: 150,
                               height: 44,
@@ -4176,7 +4320,7 @@ export default function LinkedInDashboard({
                             // Redirect to LinkedIn OAuth
                             window.location.href = authUrl;
                           }}
-                          size={isMobile ? "middle" : "default"}
+                          size={isMobile ? "middle" : "large"}
                           block={isMobile}
                           style={{
                             backgroundColor: "#0077B5",

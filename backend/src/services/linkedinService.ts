@@ -141,12 +141,12 @@ export async function createLinkedInPost(
   text: string,
   isOrganization: boolean = false
 ) {
+  // Determine the author URN based on whether it's a personal or organization post
+  const authorUrn = isOrganization 
+    ? `urn:li:organization:${authorId}` 
+    : `urn:li:person:${authorId}`;
+  
   try {
-    // Determine the author URN based on whether it's a personal or organization post
-    const authorUrn = isOrganization 
-      ? `urn:li:organization:${authorId}` 
-      : `urn:li:person:${authorId}`;
-    
     console.log(`Creating LinkedIn post as ${isOrganization ? 'organization' : 'person'}: ${authorUrn}`);
     
     // Use the v2 UGC Posts API (legacy but stable)
@@ -179,8 +179,18 @@ export async function createLinkedInPost(
     console.log("LinkedIn post created:", data);
     return { success: true, postId: data.id, data };
   } catch (error: any) {
-    console.error("Failed to create LinkedIn post:", error?.response?.data || error.message);
-    return { success: false, error: error?.response?.data?.message || JSON.stringify(error?.response?.data) || error.message };
+    const errorData = error?.response?.data;
+    const errorMessage = errorData?.message || JSON.stringify(errorData) || error.message;
+    console.error("Failed to create LinkedIn post:", {
+      authorUrn,
+      isOrganization,
+      authorId,
+      error: errorMessage,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      fullError: errorData,
+    });
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -285,8 +295,18 @@ export async function initializeImageUpload(
     console.log("Image upload registered:", data);
     
     // Extract upload URL and asset URN
-    const uploadUrl = data.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
-    const asset = data.value.asset;
+    const responseData = data as {
+      value: {
+        uploadMechanism: {
+          "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest": {
+            uploadUrl: string;
+          };
+        };
+        asset: string;
+      };
+    };
+    const uploadUrl = responseData.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
+    const asset = responseData.value.asset;
     
     return {
       success: true,
@@ -346,8 +366,18 @@ export async function initializeDocumentUpload(token: string, memberId: string) 
       }
     );
     
-    const uploadUrl = data.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
-    const asset = data.value.asset;
+    const responseData = data as {
+      value: {
+        uploadMechanism: {
+          "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest": {
+            uploadUrl: string;
+          };
+        };
+        asset: string;
+      };
+    };
+    const uploadUrl = responseData.value.uploadMechanism["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"].uploadUrl;
+    const asset = responseData.value.asset;
     
     return {
       success: true,
@@ -439,7 +469,10 @@ export async function getOrganizationEvents(token: string, organizationId: strin
     
     console.log("Organization events (REST API):", JSON.stringify(data, null, 2));
     
-    const events: LinkedInEvent[] = (data.elements || []).map(parseEventResponse);
+    const responseData = data as {
+      elements?: Array<any>;
+    };
+    const events: LinkedInEvent[] = (responseData.elements || []).map(parseEventResponse);
     return { success: true, events };
   } catch (error: any) {
     console.error("Failed to get organization events:", error?.response?.data || error.message);
@@ -466,7 +499,10 @@ export async function getMyEvents(token: string) {
     );
     
     console.log("My events (REST API):", JSON.stringify(data, null, 2));
-    const events: LinkedInEvent[] = (data.elements || []).map(parseEventResponse);
+    const responseData = data as {
+      elements?: Array<any>;
+    };
+    const events: LinkedInEvent[] = (responseData.elements || []).map(parseEventResponse);
     return { success: true, events };
   } catch (error: any) {
     console.error("Failed to get my events:", error?.response?.data || error.message);
@@ -550,7 +586,8 @@ export async function createLinkedInEvent(
     );
     
     console.log("Event created:", data);
-    return { success: true, eventId: data.id || data.eventUrn, data };
+    const responseData = data as { id?: string; eventUrn?: string; [key: string]: any };
+    return { success: true, eventId: responseData.id || responseData.eventUrn || '', data: responseData };
   } catch (error: any) {
     console.error("Failed to create event:", error?.response?.data || error.message);
     return { success: false, error: error?.response?.data?.message || JSON.stringify(error?.response?.data) || error.message };
@@ -684,7 +721,20 @@ export async function getPostComments(token: string, postUrn: string) {
     
     console.log("Post comments:", JSON.stringify(data, null, 2));
     
-    const comments: LinkedInComment[] = (data.elements || []).map((comment: any) => ({
+    const responseData = data as {
+      elements?: Array<{
+        "$URN"?: string;
+        id?: string;
+        message?: { text?: string };
+        comment?: string;
+        actor?: string;
+        commenter?: string;
+        created?: { time?: number };
+        parentComment?: string;
+      }>;
+    };
+    
+    const comments: LinkedInComment[] = (responseData.elements || []).map((comment: any) => ({
       id: comment["$URN"]?.split(":").pop() || comment.id,
       urn: comment["$URN"] || `urn:li:comment:${comment.id}`,
       text: comment.message?.text || comment.comment || "",
@@ -732,7 +782,8 @@ export async function createComment(
     );
     
     console.log("Comment created:", data);
-    return { success: true, commentUrn: data["$URN"] || data.id, data };
+    const responseData = data as { "$URN"?: string; id?: string; [key: string]: any };
+    return { success: true, commentUrn: responseData["$URN"] || responseData.id || '', data: responseData };
   } catch (error: any) {
     console.error("Failed to create comment:", error?.response?.data || error.message);
     return { success: false, error: error?.response?.data?.message || JSON.stringify(error?.response?.data) || error.message };
@@ -832,13 +883,22 @@ export async function getPostReactions(token: string, postUrn: string) {
     
     console.log("Post reactions:", JSON.stringify(data, null, 2));
     
-    const reactions: LinkedInReaction[] = (data.elements || []).map((reaction: any) => ({
+    const responseData = data as {
+      elements?: Array<{
+        reactionType?: string;
+        actor?: string;
+        created?: { time?: number };
+      }>;
+      paging?: { total?: number };
+    };
+    
+    const reactions: LinkedInReaction[] = (responseData.elements || []).map((reaction: any) => ({
       reactionType: reaction.reactionType || "LIKE",
       actorUrn: reaction.actor,
       createdAt: reaction.created?.time ? new Date(reaction.created.time).toISOString() : undefined
     }));
     
-    return { success: true, reactions, totalCount: data.paging?.total || reactions.length };
+    return { success: true, reactions, totalCount: responseData.paging?.total || reactions.length };
   } catch (error: any) {
     console.error("Failed to get post reactions:", error?.response?.data || error.message);
     return { success: false, reactions: [], error: error?.response?.data?.message || error.message };
@@ -956,8 +1016,18 @@ export async function initializeVideoUpload(
     
     console.log("Video upload initialized:", data);
     
-    const uploadUrl = data.value?.uploadMechanism?.["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]?.uploadUrl;
-    const videoUrn = data.value?.asset;
+    const responseData = data as {
+      value?: {
+        uploadMechanism?: {
+          "com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"?: {
+            uploadUrl?: string;
+          };
+        };
+        asset?: string;
+      };
+    };
+    const uploadUrl = responseData.value?.uploadMechanism?.["com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest"]?.uploadUrl;
+    const videoUrn = responseData.value?.asset;
     
     return { success: true, uploadUrl, videoUrn };
   } catch (error: any) {
@@ -977,6 +1047,7 @@ export async function uploadVideoToLinkedIn(
       headers: {
         "Content-Type": contentType,
       },
+      // @ts-ignore - maxContentLength and maxBodyLength are valid axios options
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
     });
@@ -1038,7 +1109,8 @@ export async function createLinkedInPostWithVideo(
     );
 
     console.log("Video post created:", data);
-    return { success: true, postId: data.id };
+    const responseData = data as { id?: string };
+    return { success: true, postId: responseData.id || '' };
   } catch (error: any) {
     console.error("Failed to create video post:", error?.response?.data || error.message);
     return { success: false, error: error?.response?.data?.message || JSON.stringify(error?.response?.data) || error.message };
@@ -1105,7 +1177,8 @@ export async function createLinkedInPostWithLink(
     );
 
     console.log("Link post created:", data);
-    return { success: true, postId: data.id };
+    const responseData = data as { id?: string };
+    return { success: true, postId: responseData.id || '' };
   } catch (error: any) {
     console.error("Failed to create link post:", error?.response?.data || error.message);
     return { success: false, error: error?.response?.data?.message || JSON.stringify(error?.response?.data) || error.message };

@@ -9,23 +9,36 @@ import {
   message,
   List,
   Typography,
-} from 'antd'
-import { CalendarOutlined } from '@ant-design/icons'
-import dayjs, { Dayjs } from 'dayjs'
-import { useState } from 'react'
-import { PLATFORMS } from './CalendarItemModal'
-import { calendarService, CalendarItem } from '../services/calendarService'
-import { chatService } from '../services/chatService'
+  Card,
+  Divider,
+  Tag,
+  Row,
+  Col,
+  Badge,
+  Spin,
+} from "antd";
+import {
+  CalendarOutlined,
+  RocketOutlined,
+  BulbOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  GlobalOutlined,
+} from "@ant-design/icons";
+import { Dayjs } from "dayjs";
+import { useState } from "react";
+import { PLATFORMS } from "./CalendarItemModal";
 
-const { TextArea } = Input
-const { RangePicker } = DatePicker
-const { Option } = Select
+const { TextArea } = Input;
+const { RangePicker } = DatePicker;
+const { Option } = Select;
+const { Title, Text } = Typography;
 
 interface ContentPlanModalProps {
-  open: boolean
-  goal?: string
-  onClose: () => void
-  onSuccess: () => void
+  open: boolean;
+  goal?: string;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 export default function ContentPlanModal({
@@ -34,195 +47,472 @@ export default function ContentPlanModal({
   onClose,
   onSuccess,
 }: ContentPlanModalProps) {
-  const [form] = Form.useForm()
-  const [loading, setLoading] = useState(false)
-  const [generatedPlan, setGeneratedPlan] = useState<any[]>([])
-  const [planGenerated, setPlanGenerated] = useState(false)
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<any[]>([]);
+  const [planGenerated, setPlanGenerated] = useState(false);
 
   const platformOptions = [
-    { value: PLATFORMS.INSTAGRAM_POST, label: 'Instagram Post' },
-    { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
-    { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
-    { value: PLATFORMS.TIKTOK, label: 'TikTok' },
-    { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
-    { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
-    { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
-  ]
+    { value: PLATFORMS.INSTAGRAM_POST, label: "Instagram Post" },
+    { value: PLATFORMS.INSTAGRAM_STORY, label: "Instagram Story" },
+    { value: PLATFORMS.INSTAGRAM_REELS, label: "Instagram Reels" },
+    { value: PLATFORMS.FACEBOOK, label: "Facebook" },
+    { value: PLATFORMS.TWITTER, label: "Twitter/X" },
+    { value: PLATFORMS.LINKEDIN, label: "LinkedIn" },
+  ];
 
   const handleGenerate = async () => {
     try {
-      const values = await form.validateFields(['goal', 'dateRange', 'platforms'])
-      setLoading(true)
+      const values = await form.validateFields([
+        "goal",
+        "dateRange",
+        "platforms",
+      ]);
+      setLoading(true);
 
-      const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs]
+      const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs];
 
-      const response = await fetch('/api/chat/generate-plan', {
-        method: 'POST',
+      // Use BASE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+      const BASE_API_URL = import.meta.env.VITE_API_URL || '';
+      const API_URL = BASE_API_URL 
+        ? `${BASE_API_URL}/api/chat/generate-plan`
+        : '/api/chat/generate-plan';
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Not authenticated. Please login first.");
+      }
+
+      console.log('Making request to:', API_URL);
+      console.log('Token exists:', !!token);
+
+      const response = await fetch(API_URL, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           goal: values.goal,
-          startDate: startDate.format('YYYY-MM-DD'),
-          endDate: endDate.format('YYYY-MM-DD'),
+          startDate: startDate.format("YYYY-MM-DD"),
+          endDate: endDate.format("YYYY-MM-DD"),
           platforms: values.platforms,
         }),
-      })
+      });
 
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to generate content plan')
+      if (!response.ok) {
+        // Try to parse error message
+        let errorMessage = "Failed to generate content plan";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      setGeneratedPlan(data.plan || [])
-      setPlanGenerated(true)
-      message.success(`Generated ${data.plan?.length || 0} content items`)
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to generate content plan");
+      }
+
+      setGeneratedPlan(data.plan || []);
+      setPlanGenerated(true);
+      message.success(`Generated ${data.plan?.length || 0} content items`);
     } catch (error: any) {
-      console.error('Generate plan error:', error)
-      message.error(error.message || 'Failed to generate content plan')
+      console.error("Generate plan error:", error);
+      const BASE_API_URL = import.meta.env.VITE_API_URL || '';
+      const API_URL = BASE_API_URL 
+        ? `${BASE_API_URL}/api/chat/generate-plan`
+        : '/api/chat/generate-plan';
+      
+      console.error("Error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        API_URL: API_URL,
+      });
+      
+      // Check if it's a network error
+      if (error.message === "Failed to fetch" || error.name === "TypeError" || error.message?.includes("NetworkError")) {
+        const isDev = !import.meta.env.VITE_API_URL;
+        const backendPort = import.meta.env.VITE_BACKEND_PORT || '5000';
+        const errorMsg = isDev 
+          ? `Cannot connect to backend server (port ${backendPort}). Please check: 1) Backend is running on port ${backendPort}, 2) Frontend dev server is running, 3) Check browser console for details`
+          : "Network error: Cannot connect to backend server. Please check your network connection and backend service status.";
+        message.error(errorMsg, 8);
+      } else {
+        message.error(error.message || "Failed to generate content plan");
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleSendToCalendar = async () => {
     if (generatedPlan.length === 0) {
-      message.warning('Please generate a plan first')
-      return
+      message.warning("Please generate a plan first");
+      return;
     }
 
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const response = await fetch('/api/chat/send-to-calendar', {
-        method: 'POST',
+      // Use BASE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+      const BASE_API_URL = import.meta.env.VITE_API_URL || '';
+      const API_URL = BASE_API_URL 
+        ? `${BASE_API_URL}/api/chat/send-to-calendar`
+        : '/api/chat/send-to-calendar';
+
+      const response = await fetch(API_URL, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({
           items: generatedPlan,
-          campaignId: form.getFieldValue('campaignId') || null,
+          campaignId: form.getFieldValue("campaignId") || null,
         }),
-      })
+      });
 
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to send items to calendar')
+      if (!response.ok) {
+        // Try to parse error message
+        let errorMessage = "Failed to send items to calendar";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      message.success(`Successfully added ${data.count || 0} items to calendar`)
-      onSuccess()
-      handleClose()
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to send items to calendar");
+      }
+
+      message.success(
+        `Successfully added ${data.count || 0} items to calendar`
+      );
+      onSuccess();
+      handleClose();
     } catch (error: any) {
-      console.error('Send to calendar error:', error)
-      message.error(error.message || 'Failed to send items to calendar')
+      console.error("Send to calendar error:", error);
+      // Check if it's a network error
+      if (error.message === "Failed to fetch" || error.name === "TypeError") {
+        const isDev = !import.meta.env.VITE_API_URL;
+        const backendPort = import.meta.env.VITE_BACKEND_PORT || '5000';
+        const errorMsg = isDev 
+          ? `Cannot connect to backend server (port ${backendPort}). Please run: cd backend && npm run dev`
+          : "Network error: Cannot connect to backend server. Please check your network connection and backend service status.";
+        message.error(errorMsg, 8);
+      } else {
+        message.error(error.message || "Failed to send items to calendar");
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    form.resetFields()
-    setGeneratedPlan([])
-    setPlanGenerated(false)
-    onClose()
-  }
+    form.resetFields();
+    setGeneratedPlan([]);
+    setPlanGenerated(false);
+    onClose();
+  };
+
+  const getPlatformColor = (platform: string) => {
+    const colors: Record<string, string> = {
+      instagram_post: "#E4405F",
+      instagram_story: "#E4405F",
+      instagram_reels: "#E4405F",
+      facebook: "#1877F2",
+      twitter: "#1DA1F2",
+      linkedin: "#0A66C2",
+    };
+    return colors[platform] || "#AE906E";
+  };
+
+  const getPlatformLabel = (platform: string) => {
+    return platformOptions.find((opt) => opt.value === platform)?.label || platform;
+  };
 
   return (
     <Modal
-      title="Generate Content Plan"
+      title={
+        <Space>
+          <RocketOutlined style={{ color: "#AE906E", fontSize: 20 }} />
+          <Title level={4} style={{ margin: 0 }}>
+            Generate Content Plan
+          </Title>
+        </Space>
+      }
       open={open}
       onCancel={handleClose}
       footer={null}
-      width={800}
+      width={900}
+      styles={{
+        body: { padding: "24px", maxHeight: "80vh", overflowY: "auto" },
+      }}
     >
-      <Form form={form} layout="vertical" initialValues={{ goal: initialGoal }}>
-        <Form.Item
-          name="goal"
-          label="Marketing Goal"
-          rules={[{ required: true, message: 'Please enter your marketing goal' }]}
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ goal: initialGoal }}
+        requiredMark={true}
+      >
+        <Card
+          size="small"
+          style={{
+            marginBottom: 24,
+            border: "1px solid #f0f0f0",
+            borderRadius: 8,
+          }}
         >
-          <TextArea
-            rows={3}
-            placeholder="e.g., Promote Lavender Candle sale, increase brand awareness..."
+          <Form.Item
+            name="goal"
+            label={
+              <Space>
+                <BulbOutlined style={{ color: "#AE906E" }} />
+                <Text strong>Marketing Goal</Text>
+              </Space>
+            }
+            rules={[
+              { required: true, message: "Please enter your marketing goal" },
+            ]}
+            style={{ marginBottom: 0 }}
+          >
+            <TextArea
+              rows={4}
+              placeholder="Describe your marketing campaign goals, target audience, key messages, and any specific requirements..."
+              showCount
+              maxLength={10000}
+              style={{ fontSize: 14 }}
+            />
+          </Form.Item>
+        </Card>
+
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="dateRange"
+              label={
+                <Space>
+                  <CalendarOutlined style={{ color: "#AE906E" }} />
+                  <Text strong>Campaign Date Range</Text>
+                </Space>
+              }
+              rules={[{ required: true, message: "Please select date range" }]}
+            >
+              <RangePicker
+                style={{ width: "100%" }}
+                format="YYYY-MM-DD"
+                size="large"
+                placeholder={["Start date", "End date"]}
+              />
+            </Form.Item>
+          </Col>
+
+          <Col xs={24} sm={12}>
+            <Form.Item
+              name="platforms"
+              label={
+                <Space>
+                  <GlobalOutlined style={{ color: "#AE906E" }} />
+                  <Text strong>Platforms</Text>
+                </Space>
+              }
+              rules={[
+                {
+                  required: true,
+                  message: "Please select at least one platform",
+                },
+              ]}
+            >
+              <Select
+                mode="multiple"
+                placeholder="Select platforms"
+                size="large"
+                maxTagCount="responsive"
+                showArrow
+              >
+                {platformOptions.map((option) => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Form.Item
+          name="campaignId"
+          label={<Text type="secondary">Campaign ID (Optional)</Text>}
+        >
+          <Input
+            placeholder="Enter campaign ID if linking to existing campaign"
+            size="large"
           />
         </Form.Item>
 
-        <Form.Item
-          name="dateRange"
-          label="Campaign Date Range"
-          rules={[{ required: true, message: 'Please select date range' }]}
-        >
-          <RangePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
-        </Form.Item>
+        <Divider style={{ margin: "24px 0" }} />
 
-        <Form.Item
-          name="platforms"
-          label="Platforms"
-          rules={[{ required: true, message: 'Please select at least one platform' }]}
-        >
-          <Select mode="multiple" placeholder="Select platforms">
-            {platformOptions.map((option) => (
-              <Option key={option.value} value={option.value}>
-                {option.label}
-              </Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item name="campaignId" label="Campaign (Optional)">
-          <Input placeholder="Campaign ID (optional)" />
-        </Form.Item>
-
-        <Form.Item>
-          <Space>
-            <Button type="primary" onClick={handleGenerate} loading={loading}>
+        <Form.Item style={{ marginBottom: 0 }}>
+          <Space size="middle" style={{ width: "100%", justifyContent: "flex-end" }}>
+            <Button size="large" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              size="large"
+              icon={<RocketOutlined />}
+              onClick={handleGenerate}
+              loading={loading}
+              style={{
+                backgroundColor: "#AE906E",
+                borderColor: "#AE906E",
+                minWidth: 140,
+              }}
+            >
               Generate Plan
             </Button>
-            {planGenerated && (
-              <Button
-                type="default"
-                icon={<CalendarOutlined />}
-                onClick={handleSendToCalendar}
-                loading={loading}
-              >
-                Send to Calendar
-              </Button>
-            )}
-            <Button onClick={handleClose}>Cancel</Button>
           </Space>
         </Form.Item>
 
         {planGenerated && generatedPlan.length > 0 && (
-          <Form.Item label="Generated Plan Preview">
-            <List
-              size="small"
-              bordered
-              dataSource={generatedPlan}
-              renderItem={(item: any, index) => (
-                <List.Item>
-                  <Space orientation="vertical" style={{ width: '100%' }}>
-                    <div>
-                      <Typography.Text strong>{item.date}</Typography.Text>
-                      {' - '}
-                      <Typography.Text type="secondary">{item.platform}</Typography.Text>
-                    </div>
-                    <Typography.Text strong>{item.title}</Typography.Text>
-                    <Typography.Text type="secondary" ellipsis>
-                      {item.content}
-                    </Typography.Text>
-                  </Space>
-                </List.Item>
-              )}
-            />
-          </Form.Item>
+          <>
+            <Divider style={{ margin: "24px 0" }}>
+              <Space>
+                <CheckCircleOutlined style={{ color: "#52c41a" }} />
+                <Text strong style={{ fontSize: 16 }}>
+                  Generated Plan Preview ({generatedPlan.length} items)
+                </Text>
+              </Space>
+            </Divider>
+
+            <Card
+              style={{
+                marginTop: 16,
+                maxHeight: 400,
+                overflowY: "auto",
+                border: "1px solid #e8e8e8",
+              }}
+              bodyStyle={{ padding: "16px" }}
+            >
+              <List
+                dataSource={generatedPlan}
+                renderItem={(item: any, index: number) => (
+                  <List.Item
+                    style={{
+                      padding: "16px",
+                      marginBottom: 12,
+                      border: "1px solid #f0f0f0",
+                      borderRadius: 8,
+                      backgroundColor: "#fafafa",
+                    }}
+                  >
+                    <Space
+                      direction="vertical"
+                      style={{ width: "100%" }}
+                      size="small"
+                    >
+                      <Row justify="space-between" align="middle">
+                        <Col>
+                          <Space>
+                            <Badge
+                              count={index + 1}
+                              style={{
+                                backgroundColor: "#AE906E",
+                              }}
+                            />
+                            <Tag
+                              color={getPlatformColor(item.platform)}
+                              style={{
+                                margin: 0,
+                                padding: "4px 12px",
+                                borderRadius: 4,
+                                fontWeight: 500,
+                              }}
+                            >
+                              {getPlatformLabel(item.platform)}
+                            </Tag>
+                            {item.time && (
+                              <Space>
+                                <ClockCircleOutlined />
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                  {item.time}
+                                </Text>
+                              </Space>
+                            )}
+                          </Space>
+                        </Col>
+                        <Col>
+                          <Tag color="blue" style={{ borderRadius: 4 }}>
+                            {item.date}
+                          </Tag>
+                        </Col>
+                      </Row>
+
+                      <div style={{ marginTop: 8 }}>
+                        <Text strong style={{ fontSize: 15, display: "block", marginBottom: 4 }}>
+                          {item.title}
+                        </Text>
+                        <Text
+                          type="secondary"
+                          style={{
+                            fontSize: 13,
+                            lineHeight: 1.6,
+                            display: "block",
+                            maxHeight: "3.2em",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {item.content}
+                        </Text>
+                      </div>
+                    </Space>
+                  </List.Item>
+                )}
+              />
+            </Card>
+
+            <div style={{ marginTop: 24, textAlign: "right" }}>
+              <Button
+                type="primary"
+                size="large"
+                icon={<CalendarOutlined />}
+                onClick={handleSendToCalendar}
+                loading={loading}
+                style={{
+                  backgroundColor: "#52c41a",
+                  borderColor: "#52c41a",
+                  minWidth: 180,
+                }}
+              >
+                Send to Calendar
+              </Button>
+            </div>
+          </>
+        )}
+
+        {loading && !planGenerated && (
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <Spin size="large" />
+            <div style={{ marginTop: 16 }}>
+              <Text type="secondary">Generating your content plan...</Text>
+            </div>
+          </div>
         )}
       </Form>
     </Modal>
-  )
+  );
 }
-

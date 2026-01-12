@@ -7,7 +7,7 @@ import {
   MenuUnfoldOutlined,
 } from "@ant-design/icons";
 import { Layout, Button, Typography, Avatar, Tooltip } from "antd";
-import { useState } from "react";
+import React from "react";
 import styles from "./SocialSidebar.module.css";
 
 const { Sider } = Layout;
@@ -76,7 +76,7 @@ export default function SocialSidebar({
 
   return (
     <Sider
-      width={280}
+      width={360}
       collapsedWidth={80}
       collapsed={collapsed}
       theme="light"
@@ -137,12 +137,15 @@ export default function SocialSidebar({
                 >
                   <div className={styles.platformContent}>
                     <Avatar
-                      size={collapsed ? 32 : 40}
+                      size={collapsed ? 36 : 40}
                       icon={PlatformIcon}
                       style={{
                         backgroundColor: platform.color,
                         color: "#fff",
                         flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     />
                     {!collapsed && (
@@ -165,12 +168,6 @@ export default function SocialSidebar({
                       </div>
                     )}
                   </div>
-                  {!collapsed && isSelected && (
-                    <div
-                      className={styles.selectedIndicator}
-                      style={{ backgroundColor: platform.color }}
-                    />
-                  )}
                 </div>
               </Tooltip>
             );

@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Get Facebook connection status
 export async function getFacebookStatus(token: string) {
-  const res = await fetch(`${API_URL}/api/social/facebook/status`, {
+  const res = await fetch(`${API_URL}/api/facebook/status`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -21,7 +21,7 @@ export async function getFacebookStatus(token: string) {
 
 // Get Instagram connection status
 export async function getInstagramStatus(token: string) {
-  const res = await fetch(`${API_URL}/api/social/instagram/status`, {
+  const res = await fetch(`${API_URL}/api/instagram/status`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -38,7 +38,7 @@ export async function getInstagramStatus(token: string) {
 
 // Generate Facebook OAuth URL (for Facebook sharing only)
 export async function getFacebookAuthUrl(token: string): Promise<{ success: boolean; authUrl?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/facebook/auth`, {
+  const res = await fetch(`${API_URL}/api/facebook/auth`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -55,7 +55,7 @@ export async function getFacebookAuthUrl(token: string): Promise<{ success: bool
 
 // Generate Instagram OAuth URL (requires Facebook Page, includes business_management)
 export async function getInstagramAuthUrl(token: string): Promise<{ success: boolean; authUrl?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/instagram/auth`, {
+  const res = await fetch(`${API_URL}/api/instagram/auth`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -72,7 +72,7 @@ export async function getInstagramAuthUrl(token: string): Promise<{ success: boo
 
 // Disconnect Facebook account
 export async function disconnectFacebook(token: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/facebook/disconnect`, {
+  const res = await fetch(`${API_URL}/api/facebook/disconnect`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -90,7 +90,7 @@ export async function disconnectFacebook(token: string): Promise<{ success: bool
 
 // Disconnect Instagram account
 export async function disconnectInstagram(token: string): Promise<{ success: boolean; message?: string; error?: string }> {
-  const res = await fetch(`${API_URL}/api/social/instagram/disconnect`, {
+  const res = await fetch(`${API_URL}/api/instagram/disconnect`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -104,5 +104,112 @@ export async function disconnectInstagram(token: string): Promise<{ success: boo
   }
   
   return res.json();
+}
+
+// Create a Facebook post (text, image, video, or link)
+export async function createFacebookPost(
+  token: string,
+  text: string,
+  postType: "text" | "image" | "video" | "link",
+  imageFile?: File | null,
+  videoFile?: File | null,
+  linkUrl?: string,
+  linkName?: string,
+  linkDescription?: string
+): Promise<{ success: boolean; message?: string; postId?: string; permalink?: string; error?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('text', text);
+    formData.append('postType', postType);
+    
+    if (postType === 'image' && imageFile) {
+      formData.append('image', imageFile);
+    }
+    
+    if (postType === 'video' && videoFile) {
+      formData.append('video', videoFile);
+    }
+    
+    if (postType === 'link') {
+      if (linkUrl) formData.append('linkUrl', linkUrl);
+      if (linkName) formData.append('linkName', linkName);
+      if (linkDescription) formData.append('linkDescription', linkDescription);
+    }
+
+    const res = await fetch(`${API_URL}/api/facebook/posts`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      return {
+        success: false,
+        error: error.message || 'Failed to post to Facebook',
+      };
+    }
+
+    return res.json();
+  } catch (error: any) {
+    console.error('Error creating Facebook post:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to post to Facebook',
+    };
+  }
+}
+
+// Create an Instagram post (text with image or video)
+export async function createInstagramPost(
+  token: string,
+  text: string,
+  postType: "image" | "video",
+  imageFile?: File | null,
+  videoFile?: File | null,
+): Promise<{ success: boolean; message?: string; postId?: string; permalink?: string; error?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('content', text); // Use 'content' for Instagram backend
+
+    // Instagram API only supports image or video posts (no text-only or link posts)
+    if (postType === 'image' && imageFile) {
+      formData.append('image', imageFile);
+    } else if (postType === 'video' && videoFile) {
+      formData.append('video', videoFile);
+    } else {
+      // This case should ideally be prevented by UI, but as a fallback
+      return {
+        success: false,
+        error: 'Instagram posts require an image or video. Please upload media to share.',
+      };
+    }
+
+    const res = await fetch(`${API_URL}/api/instagram/share`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      return {
+        success: false,
+        error: error.message || 'Failed to post to Instagram',
+      };
+    }
+
+    return res.json();
+  } catch (error: any) {
+    console.error('Error creating Instagram post:', error);
+    return {
+      success: false,
+      error: error.message || 'Failed to post to Instagram',
+    };
+  }
 }
 

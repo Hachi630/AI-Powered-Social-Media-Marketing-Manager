@@ -1,5 +1,6 @@
-// API base URL - using Vite proxy (no CORS issues)
-const API_URL = "/api/chat";
+// API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = `${BASE_API_URL}/api/chat`
 
 export interface ChatFile {
   url: string;
@@ -109,6 +110,7 @@ export const chatService = {
     success: boolean;
     conversations?: ConversationListItem[];
     folders?: ProjectFolder[];
+    selectedConversationId?: string | null;
     message?: string;
   }> {
     const token = localStorage.getItem("token");
@@ -435,6 +437,46 @@ export const chatService = {
         return {
           success: false,
           message: data.message || "Failed to move conversation",
+        };
+      }
+
+      return data;
+    } catch (error) {
+      return { success: false, message: "Network error" };
+    }
+  },
+
+  /**
+   * Select a conversation
+   */
+  async selectConversation(
+    conversationId: string | null
+  ): Promise<{
+    success: boolean;
+    selectedConversationId?: string | null;
+    message?: string;
+  }> {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      return { success: false, message: "Not authenticated" };
+    }
+
+    try {
+      const conversationIdParam = conversationId || "null";
+      const response = await fetch(`${API_URL}/select/${conversationIdParam}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          message: data.message || "Failed to select conversation",
         };
       }
 

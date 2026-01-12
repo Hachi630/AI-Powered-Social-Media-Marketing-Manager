@@ -1,11 +1,26 @@
 import mongoose, { Document, Schema } from 'mongoose'
 
+// Company data structure for multi-company support
+export interface ICompanyData {
+  id: string
+  name: string
+  brandName: string
+  industry: string
+  toneOfVoice: string
+  customTone: string
+  knowledgeProducts: string[]
+  targetAudience: string[]
+  companyDescription: string
+  brandLogoUrl?: string
+}
+
 export interface IUser extends Document {
   email: string
   password?: string
   googleId?: string
   name?: string
   brandName?: string
+  brandLogoUrl?: string
   phone?: string
   birthday?: string
   gender?: string
@@ -16,6 +31,8 @@ export interface IUser extends Document {
   toneOfVoice?: string
   knowledgeProducts?: string[]
   targetAudience?: string[]
+  companies?: ICompanyData[]
+  selectedConversationId?: mongoose.Types.ObjectId | null
   authProvider: 'local' | 'google'
   socialConnections?: {
     instagram?: {
@@ -24,6 +41,8 @@ export interface IUser extends Document {
       username?: string
       accountType?: string
       expiresAt?: Date
+      pageId?: string
+      pageName?: string
     }
     facebook?: {
       accessToken: string
@@ -46,7 +65,7 @@ const UserSchema: Schema = new Schema(
     },
     password: {
       type: String,
-      required: function(this: IUser) {
+      required: function (this: IUser) {
         // Password is required only if user doesn't have googleId
         // If user has googleId, they are using Google OAuth and password is not required
         return !this.googleId
@@ -74,6 +93,10 @@ const UserSchema: Schema = new Schema(
       type: String,
       trim: true,
     },
+    brandLogoUrl: {
+      type: String,
+      trim: true,
+    },
     phone: {
       type: String,
       trim: true,
@@ -94,10 +117,6 @@ const UserSchema: Schema = new Schema(
       type: String,
       trim: true,
     },
-    avatar: {
-      type: String,
-      trim: true,
-    },
     industry: {
       type: String,
       trim: true,
@@ -114,6 +133,65 @@ const UserSchema: Schema = new Schema(
       type: [String],
       default: [],
     },
+    companies: {
+      type: [{
+        id: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        name: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        brandName: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        industry: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        toneOfVoice: {
+          type: String,
+          trim: true,
+          default: 'calm',
+        },
+        customTone: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        knowledgeProducts: {
+          type: [String],
+          default: [],
+        },
+        targetAudience: {
+          type: [String],
+          default: [],
+        },
+        companyDescription: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+        brandLogoUrl: {
+          type: String,
+          trim: true,
+          default: '',
+        },
+      }],
+      default: [],
+      validate: {
+        validator: function (companies: ICompanyData[]) {
+          return companies.length <= 10
+        },
+        message: 'Maximum 10 companies allowed',
+      },
+    },
     socialConnections: {
       type: {
         instagram: {
@@ -122,6 +200,8 @@ const UserSchema: Schema = new Schema(
           username: String,
           accountType: String,
           expiresAt: Date,
+          pageId: String,
+          pageName: String,
         },
         facebook: {
           accessToken: String,
@@ -130,6 +210,11 @@ const UserSchema: Schema = new Schema(
         },
       },
       default: {},
+    },
+    selectedConversationId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Conversation',
+      default: null,
     },
   },
   {

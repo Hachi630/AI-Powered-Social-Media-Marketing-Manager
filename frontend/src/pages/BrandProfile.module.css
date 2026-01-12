@@ -61,7 +61,7 @@
 .card {
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--border-color, #e0e0e0) !important;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff)) !important;
   background: var(--bg-secondary, #ffffff) !important;
   transition:
     transform 0.2s ease,
@@ -77,7 +77,7 @@
 
 [data-theme="warm"] .card {
   box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3);
-  border: 1px solid #e1dbc3 !important;
+  border: 1px solid var(--accent-color, #ae906e) !important;
   background: #ffefd5 !important;
 }
 
@@ -112,7 +112,7 @@
 
 .card :global(.ant-card-head) {
   background: var(--bg-secondary, #ffffff) !important;
-  border-bottom: 1px solid var(--border-color, #e0e0e0) !important;
+  border-bottom: 1px solid var(--accent-color, var(--primary-color, #646cff)) !important;
   padding: 16px 24px;
   min-height: auto;
   flex-shrink: 0;
@@ -122,7 +122,7 @@
 
 [data-theme="warm"] .card :global(.ant-card-head) {
   background: #fff0d6 !important;
-  border-bottom: 1px solid #e1dbc3 !important;
+  border-bottom: 1px solid var(--accent-color, #ae906e) !important;
 }
 
 .card :global(.ant-card-head-wrapper) {
@@ -192,6 +192,10 @@
   grid-column: span 1;
 }
 
+.uploadDatabase :global(.ant-card-body) {
+  padding: 20px !important;
+}
+
 .knowledgeBase {
   grid-column: span 1;
 }
@@ -232,13 +236,13 @@
   margin-bottom: 32px;
   border-radius: 20px !important;
   background: var(--bg-secondary, #ffffff) !important;
-  border: 1px solid var(--border-color, #e0e0e0) !important;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff)) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="warm"] .companySelector {
   background: #ffefd5 !important;
-  border: 1px solid #e1dbc3 !important;
+  border: 1px solid var(--accent-color, #ae906e) !important;
   box-shadow: 0 2px 8px rgba(225, 219, 195, 0.3);
 }
 
@@ -299,7 +303,7 @@
   gap: 8px;
   padding: 10px 16px;
   background: var(--bg-secondary, #f5f5f5);
-  border: 2px solid var(--border-color, #e0e0e0);
+  border: 2px solid var(--accent-color, var(--primary-color, #646cff));
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -308,28 +312,28 @@
 
 [data-theme="warm"] .companyItem {
   background: #fff0d6;
-  border: 2px solid #e1dbc3;
+  border: 2px solid var(--accent-color, #ae906e);
 }
 
 .companyItem:hover {
   background: var(--bg-secondary, #ffffff);
-  border-color: var(--primary-color, #646cff);
+  border-color: var(--accent-color, var(--primary-color, #646cff));
 }
 
 [data-theme="warm"] .companyItem:hover {
   background: #ffefd5;
-  border-color: #ae906e;
+  border-color: var(--accent-color, #ae906e);
 }
 
 .companyItemActive {
   background: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--primary-color, #646cff) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 [data-theme="warm"] .companyItemActive {
   background: #fff0d6 !important;
-  border-color: #ae906e !important;
+  border-color: var(--accent-color, #ae906e) !important;
   box-shadow: 0 2px 8px rgba(174, 144, 110, 0.3);
 }
 
@@ -411,18 +415,18 @@
   gap: 12px;
   padding: 8px 12px;
   background: var(--bg-secondary, #f5f5f5);
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
   border-radius: 12px;
 }
 
 [data-theme="warm"] .addCompanyForm {
   background: #fff0d6;
-  border: 1px solid #e1dbc3;
+  border: 1px solid var(--accent-color, #ae906e);
 }
 
 .addCompanyForm :global(.ant-input) {
   background: var(--bg-secondary, #ffffff) !important;
-  border: 1px solid var(--border-color, #e0e0e0) !important;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff)) !important;
   color: var(--text-primary, #1e1e1e) !important;
   min-width: 160px;
   font-family: var(--font-family, "Inter", sans-serif);
@@ -430,7 +434,7 @@
 
 [data-theme="warm"] .addCompanyForm :global(.ant-input) {
   background: #faf6ea !important;
-  border: 1px solid #e1dbc3 !important;
+  border: 1px solid var(--accent-color, #ae906e) !important;
   color: #908066 !important;
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
 }
@@ -445,7 +449,7 @@
 
 .addCompanyBtn {
   color: var(--text-primary, #1e1e1e) !important;
-  border-color: var(--border-color, #e0e0e0) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   background: var(--bg-secondary, #f5f5f5) !important;
   border-radius: 10px !important;
   height: 42px;
@@ -456,20 +460,20 @@
 
 [data-theme="warm"] .addCompanyBtn {
   color: #908066 !important;
-  border-color: #e1dbc3 !important;
+  border-color: var(--accent-color, #ae906e) !important;
   background: #fff0d6 !important;
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
 }
 
 .addCompanyBtn:hover {
-  color: var(--primary-color, #646cff) !important;
-  border-color: var(--primary-color, #646cff) !important;
+  color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   background: var(--bg-secondary, #ffffff) !important;
 }
 
 [data-theme="warm"] .addCompanyBtn:hover {
-  color: #ae906e !important;
-  border-color: #ae906e !important;
+  color: var(--accent-color, #ae906e) !important;
+  border-color: var(--accent-color, #ae906e) !important;
   background: #ffefd5 !important;
 }
 
@@ -491,17 +495,130 @@
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
 }
 
+/* Logo Upload Area */
+.logoUploadArea {
+  width: 100%;
+}
+
+.logoPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
+  border-radius: 8px;
+  background: var(--bg-secondary, #ffffff);
+}
+
+[data-theme="warm"] .logoPreview {
+  border-color: var(--accent-color, #ae906e);
+  background: #ffefd5;
+}
+
+.logoImage {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
+  background: #ffffff;
+}
+
+.removeLogoBtn {
+  margin-left: auto;
+}
+
+.logoPlaceholder {
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed var(--accent-color, var(--primary-color, #646cff));
+  border-radius: 8px;
+  background: var(--bg-secondary, #fafafa);
+  transition: border-color 0.3s;
+}
+
+[data-theme="warm"] .logoPlaceholder {
+  border-color: var(--accent-color, #ae906e);
+  background: #faf6ea;
+}
+
+.logoPlaceholder:hover {
+  border-color: var(--accent-color, var(--primary-color, #646cff));
+}
+
+[data-theme="warm"] .logoPlaceholder:hover {
+  border-color: var(--accent-color, #ae906e);
+}
+
+/* Logo Header Area (in card extra) */
+.logoHeaderArea {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoHeaderImage {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
+  background: #ffffff;
+  padding: 4px;
+}
+
+[data-theme="warm"] .logoHeaderImage {
+  border-color: var(--accent-color, #ae906e);
+}
+
+.logoHeaderPlaceholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+[data-theme="warm"] .logoHeaderPlaceholder {
+  border-color: var(--accent-color, #ae906e);
+  background: linear-gradient(135deg, #ae906e 0%, #908066 100%);
+}
+
+.logoEditBtn {
+  color: var(--text-primary, #1e1e1e);
+}
+
+.logoEditBtn:hover {
+  color: var(--primary-color, #646cff);
+  background: rgba(100, 108, 255, 0.1);
+}
+
+[data-theme="warm"] .logoEditBtn {
+  color: #908066;
+}
+
+[data-theme="warm"] .logoEditBtn:hover {
+  color: #ae906e;
+  background: rgba(174, 144, 110, 0.1);
+}
+
 .toneButton {
   min-width: 100px;
   font-weight: 500;
   font-family: var(--font-family, "Inter", sans-serif);
-  border-color: var(--border-color, #e0e0e0) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   color: var(--text-primary, #1e1e1e) !important;
 }
 
 [data-theme="warm"] .toneButton {
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
-  border-color: #e1dbc3 !important;
+  border-color: var(--accent-color, #ae906e) !important;
   color: #908066 !important;
 }
 
@@ -526,13 +643,13 @@
 }
 
 .toneButton:hover:not(.ant-btn-primary) {
-  border-color: var(--primary-color, #646cff) !important;
-  color: var(--primary-color, #646cff) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  color: var(--accent-color, var(--primary-color, #646cff)) !important;
 }
 
 [data-theme="warm"] .toneButton:hover:not(.ant-btn-primary) {
-  border-color: #ae906e !important;
-  color: #ae906e !important;
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
 }
 
 .helperText {
@@ -576,14 +693,14 @@
   font-size: 14px;
   line-height: 1.6;
   background-color: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--border-color, #e0e0e0) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   color: var(--text-primary, #1e1e1e) !important;
   font-family: var(--font-family, "Inter", sans-serif);
 }
 
 [data-theme="warm"] .textArea :global(.ant-input) {
   background-color: #faf6ea !important;
-  border-color: #e1dbc3 !important;
+  border-color: var(--accent-color, #ae906e) !important;
   color: #908066 !important;
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
 }
@@ -597,42 +714,72 @@
 }
 
 .textArea :global(.ant-input):focus {
-  border-color: var(--primary-color, #646cff) !important;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.1) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
 }
 
 [data-theme="warm"] .textArea :global(.ant-input):focus {
-  border-color: #ae906e !important;
+  border-color: var(--accent-color, #ae906e) !important;
   box-shadow: 0 0 0 2px rgba(174, 144, 110, 0.1) !important;
 }
 
 /* Upload Database styles */
 .uploadDragger {
-  border: 2px dashed var(--border-color, #d9d9d9) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  transition: all 0.2s ease;
+  padding: 0 !important;
+  margin-left: 0 !important;
+}
+
+.uploadDragger :global(.ant-upload-drag-container) {
+  padding: 0 !important;
+}
+
+.uploadDragger :global(.ant-upload-drag) {
+  border: 2px dashed var(--accent-color, var(--primary-color, #646cff)) !important;
   border-radius: 12px !important;
   background: var(--bg-tertiary, #f0f0f0) !important;
+  padding: 16px 8px !important;
   transition: all 0.2s ease;
 }
 
-[data-theme="warm"] .uploadDragger {
-  border: 2px dashed #e1dbc3 !important;
+.uploadDragger :global(.ant-upload-btn) {
+  border: none !important;
+  padding: 0 !important;
+}
+
+.uploadDragger::before,
+.uploadDragger::after {
+  display: none !important;
+}
+
+.uploadDragger :global(.ant-upload-drag)::before,
+.uploadDragger :global(.ant-upload-drag)::after {
+  display: none !important;
+}
+
+[data-theme="warm"] .uploadDragger :global(.ant-upload-drag) {
+  border: 2px dashed var(--accent-color, #ae906e) !important;
   background: #faf6ea !important;
 }
 
-.uploadDragger:hover {
-  border-color: var(--primary-color, #646cff) !important;
+.uploadDragger:hover :global(.ant-upload-drag) {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   background: var(--bg-secondary, #ffffff) !important;
 }
 
-[data-theme="warm"] .uploadDragger:hover {
-  border-color: #ae906e !important;
+[data-theme="warm"] .uploadDragger:hover :global(.ant-upload-drag) {
+  border-color: var(--accent-color, #ae906e) !important;
   background: #fff0d6 !important;
 }
 
 .uploadIcon {
-  font-size: 40px;
+  font-size: 32px;
   color: var(--text-primary, #1e1e1e);
-  margin-bottom: 8px;
+  margin-bottom: 4px !important;
+  margin-top: 0 !important;
 }
 
 [data-theme="warm"] .uploadIcon {
@@ -640,10 +787,11 @@
 }
 
 .uploadText {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-primary, #1e1e1e);
   font-weight: 500;
-  margin-bottom: 4px !important;
+  margin-bottom: 2px !important;
+  margin-top: 0 !important;
   font-family: var(--font-family, "Inter", sans-serif);
 }
 
@@ -653,8 +801,10 @@
 }
 
 .uploadHint {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary, #757575);
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
 }
 
 [data-theme="warm"] .uploadHint {
@@ -673,7 +823,7 @@
   justify-content: space-between;
   padding: 12px 16px;
   background: var(--bg-tertiary, #f0f0f0);
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
   border-radius: 10px;
   margin-bottom: 8px;
   transition: background 0.2s ease;
@@ -681,17 +831,17 @@
 
 [data-theme="warm"] .fileItem {
   background: #faf6ea;
-  border: 1px solid #e1dbc3;
+  border: 1px solid var(--accent-color, #ae906e);
 }
 
 .fileItem:hover {
   background: var(--bg-secondary, #ffffff);
-  border-color: var(--primary-color, #646cff);
+  border-color: var(--accent-color, var(--primary-color, #646cff));
 }
 
 [data-theme="warm"] .fileItem:hover {
   background: #fff0d6;
-  border-color: #ae906e;
+  border-color: var(--accent-color, #ae906e);
 }
 
 .fileInfo {
@@ -754,7 +904,7 @@
   justify-content: space-between;
   padding: 10px 14px;
   background: var(--bg-tertiary, #f0f0f0);
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid var(--accent-color, var(--primary-color, #646cff));
   border-radius: 8px;
   margin-bottom: 8px;
   transition: background 0.2s ease;
@@ -762,17 +912,17 @@
 
 [data-theme="warm"] .list li {
   background: #faf6ea;
-  border: 1px solid #e1dbc3;
+  border: 1px solid var(--accent-color, #ae906e);
 }
 
 .list li:hover {
   background: var(--bg-secondary, #ffffff);
-  border-color: var(--primary-color, #646cff);
+  border-color: var(--accent-color, var(--primary-color, #646cff));
 }
 
 [data-theme="warm"] .list li:hover {
   background: #fff0d6;
-  border-color: #ae906e;
+  border-color: var(--accent-color, #ae906e);
 }
 
 .productName {
@@ -803,6 +953,29 @@
   flex-wrap: wrap;
   gap: 8px;
   min-height: 32px;
+}
+
+/* Add New Product button - dashed button with accent color */
+.card :global(.ant-btn-dashed) {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  color: var(--accent-color, var(--primary-color, #646cff)) !important;
+}
+
+[data-theme="warm"] .card :global(.ant-btn-dashed) {
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
+}
+
+.card :global(.ant-btn-dashed):hover {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  background-color: rgba(102, 126, 234, 0.1) !important;
+}
+
+[data-theme="warm"] .card :global(.ant-btn-dashed):hover {
+  border-color: var(--accent-color, #ae906e) !important;
+  color: var(--accent-color, #ae906e) !important;
+  background-color: rgba(174, 144, 110, 0.1) !important;
 }
 
 /* Save button */
@@ -844,10 +1017,9 @@
 /* Input and Select styles */
 .card :global(.ant-input),
 .card :global(.ant-input-affix-wrapper),
-.card :global(.ant-select-selector),
 .card :global(.ant-input) {
   background-color: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--border-color, #e0e0e0) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
   color: var(--text-primary, #1e1e1e) !important;
   border-radius: 10px !important;
   font-family: var(--font-family, "Inter", sans-serif);
@@ -855,10 +1027,29 @@
 
 [data-theme="warm"] .card :global(.ant-input),
 [data-theme="warm"] .card :global(.ant-input-affix-wrapper),
-[data-theme="warm"] .card :global(.ant-select-selector),
 [data-theme="warm"] .card :global(.ant-input) {
   background-color: #faf6ea !important;
-  border-color: #e1dbc3 !important;
+  border-color: var(--accent-color, #ae906e) !important;
+  color: #908066 !important;
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
+}
+
+/* Select component - separate styling for better control with higher specificity */
+.card :global(.ant-select .ant-select-selector),
+.card :global(.ant-select-selector),
+.card :global(.ant-select) .ant-select-selector {
+  background-color: var(--bg-secondary, #ffffff) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  color: var(--text-primary, #1e1e1e) !important;
+  border-radius: 10px !important;
+  font-family: var(--font-family, "Inter", sans-serif);
+}
+
+[data-theme="warm"] .card :global(.ant-select .ant-select-selector),
+[data-theme="warm"] .card :global(.ant-select-selector),
+[data-theme="warm"] .card :global(.ant-select) .ant-select-selector {
+  background-color: #faf6ea !important;
+  border-color: var(--accent-color, #ae906e) !important;
   color: #908066 !important;
   font-family: "ZCOOL KuaiLe", "Inter", sans-serif;
 }
@@ -873,19 +1064,39 @@
   color: #b1a285 !important;
 }
 
+/* Select component - ensure border uses accent color in all states with maximum specificity */
+/* Remove hover border color change - keep accent color always */
+.card :global(.ant-select:not(.ant-select-disabled)) .ant-select-selector,
+.card :global(.ant-select:not(.ant-select-disabled):hover) .ant-select-selector,
+.card :global(.ant-select:not(.ant-select-disabled)):hover .ant-select-selector,
+.card :global(.ant-select) .ant-select-selector,
+.card :global(.ant-select:hover) .ant-select-selector {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+}
+
+[data-theme="warm"] .card :global(.ant-select:not(.ant-select-disabled)) .ant-select-selector,
+[data-theme="warm"] .card :global(.ant-select:not(.ant-select-disabled):hover) .ant-select-selector,
+[data-theme="warm"] .card :global(.ant-select:not(.ant-select-disabled)):hover .ant-select-selector,
+[data-theme="warm"] .card :global(.ant-select) .ant-select-selector,
+[data-theme="warm"] .card :global(.ant-select:hover) .ant-select-selector {
+  border-color: var(--accent-color, #ae906e) !important;
+}
+
 .card :global(.ant-input):focus,
 .card :global(.ant-input-affix-wrapper):focus,
-.card :global(.ant-select-focused .ant-select-selector) {
+.card :global(.ant-select-focused .ant-select-selector),
+.card :global(.ant-select-open .ant-select-selector) {
   background-color: var(--bg-secondary, #ffffff) !important;
-  border-color: var(--primary-color, #646cff) !important;
-  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.1) !important;
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1) !important;
 }
 
 [data-theme="warm"] .card :global(.ant-input):focus,
 [data-theme="warm"] .card :global(.ant-input-affix-wrapper):focus,
-[data-theme="warm"] .card :global(.ant-select-focused .ant-select-selector) {
+[data-theme="warm"] .card :global(.ant-select-focused .ant-select-selector),
+[data-theme="warm"] .card :global(.ant-select-open .ant-select-selector) {
   background-color: #faf6ea !important;
-  border-color: #ae906e !important;
+  border-color: var(--accent-color, #ae906e) !important;
   box-shadow: 0 0 0 2px rgba(174, 144, 110, 0.1) !important;
 }
 
@@ -897,6 +1108,43 @@
 [data-theme="warm"] .card :global(.ant-select-selection-item),
 [data-theme="warm"] .card :global(.ant-select-selection-placeholder) {
   color: #908066 !important;
+}
+
+/* Industry Select - ensure border uses accent color */
+.industrySelect :global(.ant-select-selector),
+.industrySelect:global(.ant-select) .ant-select-selector {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+}
+
+[data-theme="warm"] .industrySelect :global(.ant-select-selector),
+[data-theme="warm"] .industrySelect:global(.ant-select) .ant-select-selector {
+  border-color: var(--accent-color, #ae906e) !important;
+}
+
+.industrySelect :global(.ant-select:hover) .ant-select-selector,
+.industrySelect:global(.ant-select:hover) .ant-select-selector {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+}
+
+[data-theme="warm"] .industrySelect :global(.ant-select:hover) .ant-select-selector,
+[data-theme="warm"] .industrySelect:global(.ant-select:hover) .ant-select-selector {
+  border-color: var(--accent-color, #ae906e) !important;
+}
+
+.industrySelect :global(.ant-select-focused) .ant-select-selector,
+.industrySelect :global(.ant-select-open) .ant-select-selector,
+.industrySelect:global(.ant-select-focused) .ant-select-selector,
+.industrySelect:global(.ant-select-open) .ant-select-selector {
+  border-color: var(--accent-color, var(--primary-color, #646cff)) !important;
+  box-shadow: 0 0 0 2px var(--accent-color-rgba-10, rgba(102, 126, 234, 0.1)) !important;
+}
+
+[data-theme="warm"] .industrySelect :global(.ant-select-focused) .ant-select-selector,
+[data-theme="warm"] .industrySelect :global(.ant-select-open) .ant-select-selector,
+[data-theme="warm"] .industrySelect:global(.ant-select-focused) .ant-select-selector,
+[data-theme="warm"] .industrySelect:global(.ant-select-open) .ant-select-selector {
+  border-color: var(--accent-color, #ae906e) !important;
+  box-shadow: 0 0 0 2px rgba(174, 144, 110, 0.1) !important;
 }
 
 /* Responsive Design */
