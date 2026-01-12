@@ -1,5 +1,5 @@
 import { ConfigProvider, App as AntApp } from "antd";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, lazy, Suspense } from "react";
 import {
   BrowserRouter,
   Navigate,
@@ -20,11 +20,46 @@ import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
 import { authService, User } from "./services/authService";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
-import { AppSettingsProvider } from "./contexts/AppSettingsContext";
+import { AppSettingsProvider, useAppSettings } from "./contexts/AppSettingsContext";
 import DarkModeProvider from "./components/DarkModeProvider";
 import LinkedInDashboard from "./components/LinkedInDashboard";
 import InstagramCallback from "./pages/InstagramCallback";
 import FacebookCallback from "./pages/FacebookCallback";
+import OnboardingModal from "./components/OnboardingModal";
+
+// Lazy load Live2D Widget to prevent import-time errors
+const Live2DWidgetLazy = lazy(() =>
+  import("./components/Live2DWidget").catch((error) => {
+    console.error('Failed to load Live2D Widget:', error);
+    // Return a dummy component that does nothing
+    return { default: (_props: any) => <div style={{ display: 'none' }} /> };
+  })
+);
+// Simple Error Boundary for Live2D Widget
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Live2D Widget error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
 
 function AuthCallback({
   onLoginSuccess,
@@ -60,6 +95,7 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { message } = AntApp.useApp();
 
   useEffect(() => {
@@ -69,6 +105,10 @@ function AppContent() {
         if (currentUser) {
           setIsLoggedIn(true);
           setUser(currentUser);
+          // Check if user needs onboarding
+          if (!currentUser.onboardingCompleted) {
+            setShowOnboarding(true);
+          }
         } else {
           // Token invalid
           authService.logout();
@@ -104,6 +144,15 @@ function AppContent() {
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true);
     setUser(user);
+    // Check if user needs onboarding
+    if (!user.onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  };
+
+  const handleOnboardingComplete = (updatedUser: User) => {
+    setUser(updatedUser);
+    setShowOnboarding(false);
   };
 
   const handleLogout = () => {
@@ -117,108 +166,141 @@ function AppContent() {
   }
 
   return (
-    <Routes>
-      <Route
-        path="/auth/callback"
-        element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
-      />
-      <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
-      <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
-      <Route
-        path="/"
-        element={
-          isLoggedIn ? (
-            <Navigate to="/dashboard" replace />
-          ) : (
+    <>
+      <Routes>
+        <Route
+          path="/auth/callback"
+          element={<AuthCallback onLoginSuccess={handleLoginSuccess} />}
+        />
+        <Route path="/auth/instagram/callback" element={<InstagramCallback />} />
+        <Route path="/auth/facebook/callback" element={<FacebookCallback />} />
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <HomePage
+                isLoggedIn={isLoggedIn}
+                onLoginSuccess={handleLoginSuccess}
+                onLogout={handleLogout}
+                user={user}
+              />
+            )
+          }
+        />
+        <Route
+          path="/home"
+          element={
             <HomePage
               isLoggedIn={isLoggedIn}
               onLoginSuccess={handleLoginSuccess}
               onLogout={handleLogout}
               user={user}
             />
-          )
-        }
+          }
+        />
+        <Route
+          path="/dashboard"
+          element={
+            <Dashboard
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+              heroTitle="Where every word begins with a little melody?"
+              tagline={DEFAULT_TAGLINE}
+              background="light"
+              headerOverrides={{
+                showBrandName: false,
+                logoSrc: MELO_LOGO,
+              }}
+            />
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <CalendarPage
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+            />
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <BrandProfile
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+            />
+          }
+        />
+        <Route
+          path="/socialdashboard"
+          element={
+            <LinkedInDashboard
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+              jwt={localStorage.getItem("token") || ""}
+              userId={user?.id}
+            />
+          }
+        />
+        <Route
+          path="/personal"
+          element={
+            <Personal
+              open={true}
+              onClose={() => { }}
+              user={user}
+              onLoginSuccess={handleLoginSuccess}
+            />
+          }
+        />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/contact-us" element={<ContactUs />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      {/* Live2D Widget - shown on all pages when logged in */}
+      {/* Using dynamic import to prevent import-time errors */}
+      {isLoggedIn && (
+        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} />
+      )}
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
       />
-      <Route
-        path="/home"
-        element={
-          <HomePage
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-          />
-        }
-      />
-      <Route
-        path="/dashboard"
-        element={
-          <Dashboard
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-            heroTitle="Where every word begins with a little melody?"
-            tagline={DEFAULT_TAGLINE}
-            background="light"
-            headerOverrides={{
-              showBrandName: false,
-              logoSrc: MELO_LOGO,
-            }}
-          />
-        }
-      />
-      <Route
-        path="/calendar"
-        element={
-          <CalendarPage
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-          />
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <BrandProfile
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-          />
-        }
-      />
-      <Route
-        path="/socialdashboard"
-        element={
-          <LinkedInDashboard
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={handleLoginSuccess}
-            onLogout={handleLogout}
-            user={user}
-            jwt={localStorage.getItem("token") || ""}
-            userId={user?.id}
-          />
-        }
-      />
-      <Route
-        path="/personal"
-        element={
-          <Personal
-            open={true}
-            onClose={() => {}}
-            user={user}
-            onLoginSuccess={handleLoginSuccess}
-          />
-        }
-      />
-      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-      <Route path="/terms-of-service" element={<TermsOfService />} />
-      <Route path="/contact-us" element={<ContactUs />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    </>
+  );
+}
+
+// Wrapper component to access useAppSettings context
+function Live2DWidgetWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const { settings } = useAppSettings();
+
+  return (
+    <ErrorBoundary fallback={null}>
+      <Suspense fallback={null}>
+        <Live2DWidgetLazy
+          modelPath={settings.live2dModel || "/umiushi/うみうしモデル.model3.json"}
+          onChatClick={() => {
+            // Navigate to dashboard with chat focus
+            if (window.location.pathname !== '/dashboard') {
+              window.location.href = '/dashboard';
+            }
+          }}
+        />
+      </Suspense>
+    </ErrorBoundary>
   );
 }
 
@@ -228,26 +310,26 @@ function AppWithTheme() {
   const themeConfig =
     theme === "warm"
       ? {
-          token: {
-            fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
-            colorBgBase: "#FAF9F4",
-            colorPrimary: "#AE906E",
-            colorText: "#908066",
-            colorTextSecondary: "#B1A285",
-            borderRadius: 12,
-            boxShadow: "0 2px 8px rgba(225, 219, 195, 0.3)",
-          },
-        }
+        token: {
+          fontFamily: "'ZCOOL KuaiLe', Inter, system-ui, sans-serif",
+          colorBgBase: "#FAF9F4",
+          colorPrimary: "#AE906E",
+          colorText: "#908066",
+          colorTextSecondary: "#B1A285",
+          borderRadius: 12,
+          boxShadow: "0 2px 8px rgba(225, 219, 195, 0.3)",
+        },
+      }
       : {
-          token: {
-            fontFamily: "Inter, system-ui, sans-serif",
-            colorBgBase: "#f5f5f5",
-            colorPrimary: "#646cff",
-            colorText: "#1e1e1e",
-            colorTextSecondary: "#666666",
-            borderRadius: 8,
-          },
-        };
+        token: {
+          fontFamily: "Inter, system-ui, sans-serif",
+          colorBgBase: "#f5f5f5",
+          colorPrimary: "#646cff",
+          colorText: "#1e1e1e",
+          colorTextSecondary: "#666666",
+          borderRadius: 8,
+        },
+      };
 
   return (
     <ConfigProvider theme={themeConfig}>

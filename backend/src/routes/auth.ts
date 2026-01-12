@@ -96,6 +96,10 @@ router.post("/register", async (req: Request, res: Response) => {
           knowledgeProducts: user.knowledgeProducts,
           targetAudience: user.targetAudience,
           authProvider: user.authProvider,
+          onboardingCompleted: user.onboardingCompleted,
+          productTypes: user.productTypes,
+          productImages: user.productImages,
+          meloGoals: user.meloGoals,
           createdAt: user.createdAt,
         },
         token: generateToken(user._id.toString()),
@@ -162,6 +166,10 @@ router.post("/login", async (req: Request, res: Response) => {
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
         authProvider: user.authProvider,
+        onboardingCompleted: user.onboardingCompleted,
+        productTypes: user.productTypes,
+        productImages: user.productImages,
+        meloGoals: user.meloGoals,
         createdAt: user.createdAt,
       },
       token: generateToken(user._id.toString()),
@@ -249,6 +257,11 @@ router.post("/google", async (req: Request, res: Response) => {
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
+        authProvider: user.authProvider,
+        onboardingCompleted: user.onboardingCompleted,
+        productTypes: user.productTypes,
+        productImages: user.productImages,
+        meloGoals: user.meloGoals,
         createdAt: user.createdAt,
       },
       token: generateToken(user._id.toString()),
@@ -324,6 +337,10 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
         targetAudience: user.targetAudience,
         companies: companies,
         authProvider: user.authProvider,
+        onboardingCompleted: user.onboardingCompleted,
+        productTypes: user.productTypes,
+        productImages: user.productImages,
+        meloGoals: user.meloGoals,
         createdAt: user.createdAt,
       },
     });
@@ -722,6 +739,92 @@ router.get("/microsoft/callback", async (req: Request, res: Response) => {
     res.redirect(
       `${frontendUrl}/auth/callback?error=${encodeURIComponent(err.message)}`
     );
+  }
+});
+
+// @desc    Complete onboarding process
+// @route   POST /api/auth/onboarding
+// @access  Private
+router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const {
+      brandName,
+      targetAudience,
+      productTypes,
+      productImages,
+      meloGoals,
+    } = req.body;
+
+    // Get or create first company
+    let companies = user.companies || [];
+    let firstCompany;
+    
+    if (companies.length === 0) {
+      // Create new company if user has no companies
+      firstCompany = {
+        id: `company_${Date.now()}`,
+        name: brandName || 'My Company',
+        brandName: brandName || '',
+        industry: '',
+        toneOfVoice: 'calm',
+        customTone: '',
+        knowledgeProducts: [],
+        targetAudience: targetAudience || [],
+        companyDescription: '',
+        brandLogoUrl: '',
+        productTypes: productTypes || [],
+        productImages: productImages || [],
+        meloGoals: meloGoals || [],
+      };
+      companies = [firstCompany];
+    } else {
+      // Update first company
+      firstCompany = companies[0];
+      if (brandName !== undefined) {
+        firstCompany.brandName = brandName;
+        firstCompany.name = brandName || firstCompany.name;
+      }
+      if (targetAudience !== undefined) firstCompany.targetAudience = targetAudience;
+      if (productTypes !== undefined) firstCompany.productTypes = productTypes;
+      if (productImages !== undefined) firstCompany.productImages = productImages;
+      if (meloGoals !== undefined) firstCompany.meloGoals = meloGoals;
+      companies[0] = firstCompany;
+    }
+
+    // Update user companies array
+    user.companies = companies;
+    
+    // Also update user-level brandName for backward compatibility
+    if (brandName !== undefined) user.brandName = brandName;
+    
+    // Mark onboarding as completed
+    user.onboardingCompleted = true;
+
+    await user.save();
+
+    // Return updated user with companies
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        brandName: user.brandName,
+        companies: user.companies,
+        onboardingCompleted: user.onboardingCompleted,
+      },
+    });
+  } catch (error: any) {
+    console.error("Onboarding error:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

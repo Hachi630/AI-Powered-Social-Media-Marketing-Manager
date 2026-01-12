@@ -14,6 +14,9 @@ export interface CompanyData {
   targetAudience: string[]
   companyDescription: string
   brandLogoUrl?: string
+  productTypes?: string[]
+  productImages?: string[]
+  meloGoals?: string[]
 }
 
 export interface User {
@@ -34,6 +37,10 @@ export interface User {
   targetAudience?: string[]
   companies?: CompanyData[]
   authProvider?: 'local' | 'google'
+  onboardingCompleted?: boolean
+  productTypes?: string[]
+  productImages?: string[]
+  meloGoals?: string[]
   createdAt: string
 }
 
@@ -202,6 +209,38 @@ export const authService = {
         return { success: true, message: data.message || 'Password changed successfully' }
       }
       return { success: false, message: data.message || 'Failed to change password' }
+    } catch (error) {
+      return { success: false, message: 'Network error' }
+    }
+  },
+
+  // Complete onboarding process
+  completeOnboarding: async (onboardingData: {
+    brandName?: string
+    targetAudience?: string[]
+    productTypes?: string[]
+    productImages?: string[]
+    meloGoals?: string[]
+  }): Promise<AuthResponse> => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      return { success: false, message: 'Not authenticated' }
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/onboarding`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(onboardingData),
+      })
+      const data = await response.json()
+      if (data.success && data.user) {
+        return { success: true, user: data.user }
+      }
+      return { success: false, message: data.message || 'Failed to complete onboarding' }
     } catch (error) {
       return { success: false, message: 'Network error' }
     }

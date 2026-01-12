@@ -1,0 +1,23 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "クラゲモデル.moc3",
+		"Textures": [
+			"クラゲモデル.8192/texture_00.png"
+		],
+		"Physics": "クラゲモデル.physics3.json",
+		"DisplayInfo": "クラゲモデル.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		}
+	]
+}
