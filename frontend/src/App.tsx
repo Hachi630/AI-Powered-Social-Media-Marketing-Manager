@@ -25,6 +25,7 @@ import DarkModeProvider from "./components/DarkModeProvider";
 import LinkedInDashboard from "./components/LinkedInDashboard";
 import InstagramCallback from "./pages/InstagramCallback";
 import FacebookCallback from "./pages/FacebookCallback";
+import OnboardingModal from "./components/OnboardingModal";
 
 // Lazy load Live2D Widget to prevent import-time errors
 const Live2DWidgetLazy = lazy(() =>
@@ -94,6 +95,7 @@ function AppContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const { message } = AntApp.useApp();
 
   useEffect(() => {
@@ -103,6 +105,10 @@ function AppContent() {
         if (currentUser) {
           setIsLoggedIn(true);
           setUser(currentUser);
+          // Check if user needs onboarding
+          if (!currentUser.onboardingCompleted) {
+            setShowOnboarding(true);
+          }
         } else {
           // Token invalid
           authService.logout();
@@ -138,6 +144,15 @@ function AppContent() {
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true);
     setUser(user);
+    // Check if user needs onboarding
+    if (!user.onboardingCompleted) {
+      setShowOnboarding(true);
+    }
+  };
+
+  const handleOnboardingComplete = (updatedUser: User) => {
+    setUser(updatedUser);
+    setShowOnboarding(false);
   };
 
   const handleLogout = () => {
@@ -259,6 +274,11 @@ function AppContent() {
       {isLoggedIn && (
         <Live2DWidgetWrapper isLoggedIn={isLoggedIn} />
       )}
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
     </>
   );
 }

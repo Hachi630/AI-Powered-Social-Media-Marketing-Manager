@@ -12,6 +12,9 @@ export interface ICompanyData {
   targetAudience: string[]
   companyDescription: string
   brandLogoUrl?: string
+  productTypes?: string[]
+  productImages?: string[]
+  meloGoals?: string[]
 }
 
 export interface IUser extends Document {
@@ -33,6 +36,10 @@ export interface IUser extends Document {
   targetAudience?: string[]
   companies?: ICompanyData[]
   authProvider: 'local' | 'google'
+  onboardingCompleted?: boolean
+  productTypes?: string[]
+  productImages?: string[]
+  meloGoals?: string[]
   socialConnections?: {
     instagram?: {
       accessToken: string
@@ -132,6 +139,22 @@ const UserSchema: Schema = new Schema(
       type: [String],
       default: [],
     },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    productTypes: {
+      type: [String],
+      default: [],
+    },
+    productImages: {
+      type: [String],
+      default: [],
+    },
+    meloGoals: {
+      type: [String],
+      default: [],
+    },
     companies: {
       type: [{
         id: {
@@ -181,6 +204,18 @@ const UserSchema: Schema = new Schema(
           type: String,
           trim: true,
           default: '',
+        },
+        productTypes: {
+          type: [String],
+          default: [],
+        },
+        productImages: {
+          type: [String],
+          default: [],
+        },
+        meloGoals: {
+          type: [String],
+          default: [],
         },
       }],
       default: [],
