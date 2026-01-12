@@ -11,6 +11,7 @@ export interface AppSettings {
   fontFamily: string;
   accentColor: string;
   darkMode: boolean;
+  live2dModel: string;
 }
 
 interface AppSettingsContextType {
@@ -31,6 +32,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: "Inter, system-ui, sans-serif",
   accentColor: "#bacf65",
   darkMode: false,
+  live2dModel: "/umiushi/うみうしモデル.model3.json",
 };
 
 const STORAGE_KEY = "melo_app_settings";

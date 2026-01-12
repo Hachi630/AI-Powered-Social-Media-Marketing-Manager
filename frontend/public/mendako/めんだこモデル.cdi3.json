@@ -1,0 +1,266 @@
+{
+	"Version": 3,
+	"Parameters": [
+		{
+			"Id": "ParamAngleX",
+			"GroupId": "",
+			"Name": "〇角度 X"
+		},
+		{
+			"Id": "ParamAngleX2",
+			"GroupId": "",
+			"Name": "★角度 X"
+		},
+		{
+			"Id": "ParamAngleY",
+			"GroupId": "",
+			"Name": "〇角度 Y"
+		},
+		{
+			"Id": "ParamAngleY2",
+			"GroupId": "",
+			"Name": "★角度 Y"
+		},
+		{
+			"Id": "ParamWarter1_2",
+			"GroupId": "ParamGroup",
+			"Name": "★液体X1_2"
+		},
+		{
+			"Id": "ParamWarter1_1",
+			"GroupId": "ParamGroup",
+			"Name": "★液体X1_1"
+		},
+		{
+			"Id": "ParamWarter1_4",
+			"GroupId": "ParamGroup",
+			"Name": "★液体Y1_2"
+		},
+		{
+			"Id": "ParamWarter1_3",
+			"GroupId": "ParamGroup",
+			"Name": "★液体Y1_1"
+		},
+		{
+			"Id": "ParamWarter1_5",
+			"GroupId": "ParamGroup",
+			"Name": "★泡1_1"
+		},
+		{
+			"Id": "ParamWarter1_6",
+			"GroupId": "ParamGroup",
+			"Name": "★泡1_2"
+		},
+		{
+			"Id": "ParamWarter1_7",
+			"GroupId": "ParamGroup",
+			"Name": "★泡1_3"
+		},
+		{
+			"Id": "ParamWarter1_8",
+			"GroupId": "ParamGroup",
+			"Name": "★泡1_4"
+		},
+		{
+			"Id": "ParamWarter1_9",
+			"GroupId": "ParamGroup",
+			"Name": "★泡1_5"
+		},
+		{
+			"Id": "ParamWarter1_10",
+			"GroupId": "ParamGroup",
+			"Name": "★泡1_6"
+		},
+		{
+			"Id": "Param",
+			"GroupId": "ParamGroup2",
+			"Name": "◇耳揺れX"
+		},
+		{
+			"Id": "Param2",
+			"GroupId": "ParamGroup2",
+			"Name": "◇耳揺れY"
+		},
+		{
+			"Id": "Param3",
+			"GroupId": "ParamGroup3",
+			"Name": "◇お花揺れX"
+		},
+		{
+			"Id": "Param4",
+			"GroupId": "ParamGroup3",
+			"Name": "◇お花揺れY"
+		},
+		{
+			"Id": "Param7",
+			"GroupId": "ParamGroup3",
+			"Name": "◇耳星揺れ"
+		},
+		{
+			"Id": "ParamAngleZ",
+			"GroupId": "",
+			"Name": "角度 Z"
+		},
+		{
+			"Id": "ParamEyeLOpen",
+			"GroupId": "",
+			"Name": "→目　開閉"
+		},
+		{
+			"Id": "ParamEyeLSmile",
+			"GroupId": "",
+			"Name": "→目　笑顔"
+		},
+		{
+			"Id": "ParamEyeROpen",
+			"GroupId": "",
+			"Name": "←目　開閉"
+		},
+		{
+			"Id": "ParamEyeRSmile",
+			"GroupId": "",
+			"Name": "←目　笑顔"
+		},
+		{
+			"Id": "ParamEyeBallX",
+			"GroupId": "",
+			"Name": "目玉 X"
+		},
+		{
+			"Id": "ParamEyeBallY",
+			"GroupId": "",
+			"Name": "目玉 Y"
+		},
+		{
+			"Id": "ParamBrowLY",
+			"GroupId": "",
+			"Name": "左眉　上下"
+		},
+		{
+			"Id": "ParamBrowRY",
+			"GroupId": "",
+			"Name": "右眉　上下"
+		},
+		{
+			"Id": "ParamBrowLX",
+			"GroupId": "",
+			"Name": "左眉　左右"
+		},
+		{
+			"Id": "ParamBrowRX",
+			"GroupId": "",
+			"Name": "右眉　左右"
+		},
+		{
+			"Id": "ParamBrowLAngle",
+			"GroupId": "",
+			"Name": "左眉　角度"
+		},
+		{
+			"Id": "ParamBrowRAngle",
+			"GroupId": "",
+			"Name": "右眉　角度"
+		},
+		{
+			"Id": "ParamBrowLForm",
+			"GroupId": "",
+			"Name": "左眉　変形"
+		},
+		{
+			"Id": "ParamBrowRForm",
+			"GroupId": "",
+			"Name": "右眉　変形"
+		},
+		{
+			"Id": "ParamMouthForm",
+			"GroupId": "",
+			"Name": "口　変形"
+		},
+		{
+			"Id": "ParamMouthOpenY",
+			"GroupId": "",
+			"Name": "口　開閉"
+		},
+		{
+			"Id": "ParamCheek",
+			"GroupId": "",
+			"Name": "照れ"
+		},
+		{
+			"Id": "ParamBodyAngleX",
+			"GroupId": "",
+			"Name": "体の回転　X"
+		},
+		{
+			"Id": "ParamBodyAngleY",
+			"GroupId": "",
+			"Name": "体の回転　Y"
+		},
+		{
+			"Id": "ParamBodyAngleZ",
+			"GroupId": "",
+			"Name": "体の回転　Z"
+		},
+		{
+			"Id": "ParamBreath",
+			"GroupId": "",
+			"Name": "呼吸"
+		},
+		{
+			"Id": "ParamHairFront",
+			"GroupId": "",
+			"Name": "髪揺れ　前"
+		},
+		{
+			"Id": "Param5",
+			"GroupId": "",
+			"Name": "★全体揺れ"
+		},
+		{
+			"Id": "Param6",
+			"GroupId": "",
+			"Name": "★全体揺れ2"
+		},
+		{
+			"Id": "ParamHairSide",
+			"GroupId": "",
+			"Name": "髪揺れ　横"
+		},
+		{
+			"Id": "ParamHairBack",
+			"GroupId": "",
+			"Name": "髪揺れ　後"
+		}
+	],
+	"ParameterGroups": [
+		{
+			"Id": "ParamGroup",
+			"GroupId": "",
+			"Name": "◇液体揺れ"
+		},
+		{
+			"Id": "ParamGroup2",
+			"GroupId": "",
+			"Name": "◇耳揺れ"
+		},
+		{
+			"Id": "ParamGroup3",
+			"GroupId": "",
+			"Name": "◇お花揺れ"
+		}
+	],
+	"Parts": [
+		{
+			"Id": "Part",
+			"Name": "→耳"
+		},
+		{
+			"Id": "Part2",
+			"Name": "←耳"
+		},
+		{
+			"Id": "Part3",
+			"Name": "中水"
+		}
+	]
+}

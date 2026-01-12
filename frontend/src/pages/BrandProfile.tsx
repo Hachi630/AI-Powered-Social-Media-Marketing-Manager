@@ -1021,6 +1021,8 @@ export default function BrandProfile({
           </Col>
         </Row>
 
+
+
         {/* Save Button */}
         <Row gutter={[24, 24]} className={styles.saveRow}>
           <Col span={24}>
@@ -1038,6 +1040,6 @@ export default function BrandProfile({
           </Col>
         </Row>
       </Content>
-    </Layout>
+    </Layout >
   );
 }

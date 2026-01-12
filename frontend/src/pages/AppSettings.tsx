@@ -15,7 +15,9 @@ import {
   ReloadOutlined,
   CheckOutlined,
   CloseOutlined,
+  SmileOutlined,
 } from "@ant-design/icons";
+import { Space } from "antd";
 import styles from "./AppSettings.module.css";
 import { useAppSettings } from "../contexts/AppSettingsContext";
 import ThemeToggle from "../components/ThemeToggle";
@@ -232,11 +234,10 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
                   {accentColorOptions.map((option) => (
                     <button
                       key={option.value}
-                      className={`${styles.colorSwatch} ${
-                        pendingSettings.accentColor === option.value
-                          ? styles.colorSwatchActive
-                          : ""
-                      }`}
+                      className={`${styles.colorSwatch} ${pendingSettings.accentColor === option.value
+                        ? styles.colorSwatchActive
+                        : ""
+                        }`}
                       style={{ backgroundColor: option.color }}
                       onClick={() => handleAccentColorChange(option.value)}
                       title={option.label}
@@ -264,8 +265,45 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
               </div>
             </Card>
           </Col>
+
+          {/* Live2D Character */}
+          <Col xs={24} sm={24} md={24} lg={24}>
+            <Card className={styles.settingCard} title="Character">
+              <div className={styles.settingItem}>
+                <Text className={styles.settingLabel}>Select Assistant</Text>
+                <div style={{ marginTop: 16 }}>
+                  <Space size="middle" wrap>
+                    {[
+                      { name: "Umiushi", path: "/umiushi/うみうしモデル.model3.json", color: "#8ecae6" },
+                      { name: "Kurage", path: "/kurage/クラゲモデル.model3.json", color: "#219ebc" },
+                      { name: "Kurione", path: "/kurione/クリオネモデル.model3.json", color: "#023047" },
+                      { name: "Mendako", path: "/mendako/めんだこモデル.model3.json", color: "#ffb703" },
+                    ].map((model) => (
+                      <Button
+                        key={model.name}
+                        size="middle"
+                        shape="round"
+                        type={pendingSettings.live2dModel === model.path ? "primary" : "default"}
+                        onClick={() => updatePendingSettings({ live2dModel: model.path })}
+                        style={{
+                          minWidth: '100px',
+                          borderColor: pendingSettings.live2dModel === model.path ? undefined : model.color,
+                          color: pendingSettings.live2dModel === model.path ? undefined : model.color,
+                        }}
+                      >
+                        {model.name}
+                      </Button>
+                    ))}
+                  </Space>
+                </div>
+                <Text className={styles.settingDescription}>
+                  Choose the character companion for your dashboard
+                </Text>
+              </div>
+            </Card>
+          </Col>
         </Row>
       </div>
-    </Modal>
+    </Modal >
   );
 }

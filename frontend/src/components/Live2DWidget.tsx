@@ -26,9 +26,10 @@ if (typeof window !== 'undefined') {
 
 interface Live2DWidgetProps {
   onChatClick?: () => void;
+  modelPath: string;
 }
 
-export default function Live2DWidget({ onChatClick }: Live2DWidgetProps) {
+export default function Live2DWidget({ onChatClick, modelPath }: Live2DWidgetProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel | null>(null);
@@ -150,8 +151,8 @@ export default function Live2DWidget({ onChatClick }: Live2DWidgetProps) {
         }
 
         // Load model
-        console.log('Live2D: Loading model from /umiushi/うみうしモデル.model3.json');
-        const model = await Live2DModel.from('/umiushi/うみうしモデル.model3.json', {
+        console.log(`Live2D: Loading model from ${modelPath}`);
+        const model = await Live2DModel.from(modelPath, {
           autoInteract: true,
         });
         console.log('Live2D: Model loaded successfully', model);
@@ -280,7 +281,7 @@ export default function Live2DWidget({ onChatClick }: Live2DWidgetProps) {
         appRef.current = null;
       }
     };
-  }, [onChatClick]);
+  }, [onChatClick, modelPath]);
 
   // Track if this is a click or drag
   const dragStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
