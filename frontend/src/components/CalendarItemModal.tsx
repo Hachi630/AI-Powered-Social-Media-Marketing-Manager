@@ -64,6 +64,7 @@ interface CalendarItemModalProps {
   defaultTime?: string
   onClose: () => void
   onSave: () => void
+  onItemUpdate?: (item: CalendarItem) => void
 }
 
 export default function CalendarItemModal({
@@ -73,6 +74,7 @@ export default function CalendarItemModal({
   defaultTime,
   onClose,
   onSave,
+  onItemUpdate,
 }: CalendarItemModalProps) {
   const { modal } = App.useApp()
   const [form] = Form.useForm()
@@ -238,7 +240,26 @@ export default function CalendarItemModal({
         const response = await calendarService.shareCalendarItem(item.id, platform)
         if (response.success) {
           message.success(`Successfully posted to ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}!`)
-          onSave() // Refresh the calendar
+          // Refresh the item data to get updated status
+          try {
+            const updatedItemResponse = await calendarService.getCalendarItem(item.id)
+            if (updatedItemResponse.success && updatedItemResponse.item) {
+              // Update the item in parent component if callback is provided
+              if (onItemUpdate) {
+                onItemUpdate(updatedItemResponse.item)
+              } else {
+                // Fallback: refresh the calendar (this will close the modal)
+                onSave()
+              }
+            } else {
+              // Fallback: refresh the calendar (this will close the modal)
+              onSave()
+            }
+          } catch (error) {
+            console.error('Failed to refresh item data:', error)
+            // Fallback: refresh the calendar (this will close the modal)
+            onSave()
+          }
         } else {
           if (response.requiresAuth) {
             // Show modal to connect account
@@ -261,14 +282,7 @@ export default function CalendarItemModal({
       
       // Use social API for Instagram only
       if (platform === 'instagram') {
-        message.info('Sharing to Instagram...')
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // Show fake success message
-        message.success('🎉 Successfully shared to Instagram!')
-        onSave() // Refresh the calendar
+        message.warning('Instagram does not support sharing plain text content.')
         return
       }
       
