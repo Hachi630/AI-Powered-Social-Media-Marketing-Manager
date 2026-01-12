@@ -7,8 +7,8 @@ export const twitterService = {
    * Initialize Twitter client with user tokens
    */
   getUserClient(accessToken: string, accessSecret: string) {
-    const appKey = process.env.TWITTER_API_KEY;
-    const appSecret = process.env.TWITTER_API_SECRET;
+    const appKey = process.env.TWITTER_API_KEY?.trim();
+    const appSecret = process.env.TWITTER_API_SECRET?.trim();
 
     if (!appKey || !appSecret) {
       throw new Error('Twitter API credentials are missing');
@@ -36,10 +36,10 @@ export const twitterService = {
    */
   getClient() {
     // These env vars should be set in your .env file
-    const appKey = process.env.TWITTER_API_KEY;
-    const appSecret = process.env.TWITTER_API_SECRET;
-    const accessToken = process.env.TWITTER_ACCESS_TOKEN;
-    const accessSecret = process.env.TWITTER_ACCESS_SECRET;
+    const appKey = process.env.TWITTER_API_KEY?.trim();
+    const appSecret = process.env.TWITTER_API_SECRET?.trim();
+    const accessToken = process.env.TWITTER_ACCESS_TOKEN?.trim();
+    const accessSecret = process.env.TWITTER_ACCESS_SECRET?.trim();
 
     if (!appKey || !appSecret || !accessToken || !accessSecret) {
       throw new Error('Twitter API credentials are missing');
@@ -178,8 +178,8 @@ export const twitterService = {
    * Get base client for v1 API operations (like media upload) with user tokens
    */
   getUserBaseClient(accessToken: string, accessSecret: string) {
-    const appKey = process.env.TWITTER_API_KEY;
-    const appSecret = process.env.TWITTER_API_SECRET;
+    const appKey = process.env.TWITTER_API_KEY?.trim();
+    const appSecret = process.env.TWITTER_API_SECRET?.trim();
 
     if (!appKey || !appSecret) {
       throw new Error('Twitter API credentials are missing');
@@ -202,10 +202,10 @@ export const twitterService = {
    * This is kept for backward compatibility
    */
   getBaseClient() {
-    const appKey = process.env.TWITTER_API_KEY;
-    const appSecret = process.env.TWITTER_API_SECRET;
-    const accessToken = process.env.TWITTER_ACCESS_TOKEN;
-    const accessSecret = process.env.TWITTER_ACCESS_SECRET;
+    const appKey = process.env.TWITTER_API_KEY?.trim();
+    const appSecret = process.env.TWITTER_API_SECRET?.trim();
+    const accessToken = process.env.TWITTER_ACCESS_TOKEN?.trim();
+    const accessSecret = process.env.TWITTER_ACCESS_SECRET?.trim();
 
     if (!appKey || !appSecret || !accessToken || !accessSecret) {
       throw new Error('Twitter API credentials are missing');

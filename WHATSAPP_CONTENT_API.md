@@ -52,18 +52,17 @@ Content-Type: application/json
 Add to `backend/.env`:
 
 ```env
-TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=YOUR_TWILIO_AUTH_TOKEN_2
-TWILIO_PHONE_NUMBER=+18509898481
-TWILIO_WHATSAPP_NUMBER=+14155238886
+TWILIO_ACCOUNT_SID=your_account_sid_here
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_PHONE_NUMBER=your_phone_number_here
+TWILIO_WHATSAPP_NUMBER=your_whatsapp_number_here
 ```
 
-### Default Values
+**⚠️ Security Note**: Never commit your `.env` file with real credentials to version control. Always use environment variables for sensitive credentials.
 
-If not set in `.env`, the code uses these defaults:
-- Account SID: `YOUR_TWILIO_ACCOUNT_SID`
-- Auth Token: `YOUR_TWILIO_AUTH_TOKEN_2`
-- WhatsApp Number: `+14155238886`
+### Required Configuration
+
+All Twilio credentials must be set in your `.env` file. There are no default values for security reasons.
 
 ## Content API Template Setup
 

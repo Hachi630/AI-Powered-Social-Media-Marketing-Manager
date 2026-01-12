@@ -3,12 +3,13 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-//const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/melo'
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://YOUR_MONGODB_USER:YOUR_MONGODB_PASSWORD@your-cluster.mongodb.net/?appName=Melo'
+// MongoDB URI must be provided via environment variable for security
+const MONGODB_URI = process.env.MONGODB_URI
+
 export const connectDB = async () => {
   try {
     if (!MONGODB_URI) {
-      throw new Error('MONGODB_URI is not defined in environment variables')
+      throw new Error('MONGODB_URI is not defined in environment variables. Please set it in your .env file.')
     }
 
     // MongoDB Atlas connection options

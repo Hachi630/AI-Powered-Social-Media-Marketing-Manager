@@ -64,8 +64,8 @@ router.get("/auth", async (req, res) => {
     return res.status(400).json({ error: "userId is required" });
   }
 
-  const appKey = process.env.TWITTER_API_KEY;
-  const appSecret = process.env.TWITTER_API_SECRET;
+  const appKey = process.env.TWITTER_API_KEY?.trim();
+  const appSecret = process.env.TWITTER_API_SECRET?.trim();
   const port = process.env.PORT || 5000;
   const backendUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
   const callbackUrl =
@@ -277,8 +277,8 @@ router.get("/callback", async (req, res) => {
     );
   }
 
-  const appKey = process.env.TWITTER_API_KEY;
-  const appSecret = process.env.TWITTER_API_SECRET;
+  const appKey = process.env.TWITTER_API_KEY?.trim();
+  const appSecret = process.env.TWITTER_API_SECRET?.trim();
 
   if (!appKey || !appSecret) {
     const clientUrl =
@@ -835,8 +835,8 @@ router.get("/status", protect, async (req: any, res) => {
     console.log("Twitter status: Verifying with Twitter API (verify=" + shouldVerify + ")");
 
     // Verify token is still valid by getting user info
-    const appKey = process.env.TWITTER_API_KEY;
-    const appSecret = process.env.TWITTER_API_SECRET;
+    const appKey = process.env.TWITTER_API_KEY?.trim();
+    const appSecret = process.env.TWITTER_API_SECRET?.trim();
 
     if (!appKey || !appSecret) {
       return res.json({

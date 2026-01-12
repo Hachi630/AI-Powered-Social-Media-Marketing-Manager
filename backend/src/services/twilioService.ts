@@ -1,22 +1,26 @@
 import twilio from 'twilio'
 
-// Twilio credentials - use environment variables if available, otherwise use defaults
+// Twilio credentials - must be provided via environment variables for security
 // Get your credentials from: https://console.twilio.com/
-const accountSid = process.env.TWILIO_ACCOUNT_SID || 'YOUR_TWILIO_ACCOUNT_SID'
-const authToken = process.env.TWILIO_AUTH_TOKEN || 'YOUR_TWILIO_AUTH_TOKEN_2'
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || '+18509898481'
+const accountSid = process.env.TWILIO_ACCOUNT_SID
+const authToken = process.env.TWILIO_AUTH_TOKEN
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER
 // WhatsApp sender number (Sandbox or approved WhatsApp number)
-const whatsappSenderNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+14155238886'
+const whatsappSenderNumber = process.env.TWILIO_WHATSAPP_NUMBER
+
+// Validate required credentials
+if (!accountSid || !authToken) {
+  console.error('❌ Error: TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in environment variables')
+  console.error('   Please add them to your backend/.env file')
+  throw new Error('Twilio credentials are required. Set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your .env file.')
+}
 
 // Log credentials status (without exposing the actual token)
 console.log('Twilio Configuration:')
 console.log('  Account SID:', accountSid ? `${accountSid.substring(0, 4)}...` : 'NOT SET')
 console.log('  Auth Token:', authToken ? `${authToken.substring(0, 4)}...` : 'NOT SET')
-console.log('  Phone Number:', twilioPhoneNumber)
-console.log('  WhatsApp Number:', whatsappSenderNumber)
-if (!process.env.TWILIO_ACCOUNT_SID) {
-  console.log('  Note: Using default credentials. For production, set TWILIO_* in backend/.env')
-}
+console.log('  Phone Number:', twilioPhoneNumber || 'NOT SET')
+console.log('  WhatsApp Number:', whatsappSenderNumber || 'NOT SET')
 
 // Initialize Twilio client
 let client: twilio.Twilio
