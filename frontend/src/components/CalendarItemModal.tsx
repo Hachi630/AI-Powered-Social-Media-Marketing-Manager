@@ -282,14 +282,7 @@ export default function CalendarItemModal({
       
       // Use social API for Instagram only
       if (platform === 'instagram') {
-        message.info('Sharing to Instagram...')
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        
-        // Show fake success message
-        message.success('🎉 Successfully shared to Instagram!')
-        onSave() // Refresh the calendar
+        message.warning('Instagram does not support sharing plain text content.')
         return
       }
       
