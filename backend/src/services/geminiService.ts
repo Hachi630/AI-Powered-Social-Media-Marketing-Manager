@@ -38,7 +38,7 @@ export const geminiService = {
     try {
       const model = process.env.GEMINI_MODEL || 'gemini-3-pro-preview'
 
-      // Build system prompt from user context
+      // Build system prompt from user context (questionType is handled in buildSystemPrompt if needed)
       const systemPrompt = this.buildSystemPrompt(request.userContext)
 
       // Prepare messages for Gemini API
@@ -144,9 +144,9 @@ export const geminiService = {
   },
 
   /**
-   * Build system prompt based on user's Brand Profile
+   * Build system prompt based on user's Brand Profile and question type
    */
-  buildSystemPrompt(context?: UserContext): string {
+  buildSystemPrompt(context?: UserContext, questionType?: 'step' | 'general'): string {
     if (!context) {
       return 'You are a helpful AI assistant.'
     }
@@ -184,6 +184,13 @@ export const geminiService = {
     }
 
     prompt += '\n\nPlease respond in a helpful and professional manner that aligns with the brand identity.'
+
+    // Add question type specific instructions
+    if (questionType === 'step') {
+      prompt += '\n\nWhen answering step-by-step questions, use numbered format (1. 2. 3. 4.) and keep each step concise and actionable. Limit the answer to 150 words.'
+    } else if (questionType === 'general') {
+      prompt += '\n\nWhen answering general questions, use natural language and be concise. Limit the answer to 200 words.'
+    }
 
     return prompt
   },

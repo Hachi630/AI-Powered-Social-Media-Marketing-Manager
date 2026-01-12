@@ -9,8 +9,7 @@
   -webkit-user-select: none;
   -webkit-touch-callout: none;
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.1);
-  /* Temporary border for debugging */
+  border: none;
 }
 
 .live2dWidget canvas {
