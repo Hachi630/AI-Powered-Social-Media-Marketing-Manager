@@ -194,10 +194,17 @@ export default function ELOChatDialog({
       setSelectedCategory(previousCategory);
       setSelectedPresetAnswer(null);
       setPreviousCategory(null);
+    } else if (messages.length > 0 && !previousCategory) {
+      // If viewing AI answer at main level, return to main quick actions
+      setMessages([]);
+      setShowQuickActions(true);
+      setSelectedCategory(null);
+      setSelectedPresetAnswer(null);
     } else if (selectedCategory) {
       // If viewing sub-options, return to main quick actions
       setSelectedCategory(null);
       setShowQuickActions(true);
+      setPreviousCategory(null);
     } else {
       // If at main level, close dialog
       onClose();
@@ -318,7 +325,7 @@ export default function ELOChatDialog({
           <span>ELO</span>
         </h3>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {(messages.length > 0 || selectedCategory || (showQuickActions && !isNewUserState)) && (
+          {(messages.length > 0 || selectedCategory) && (
             <button
               className={styles.closeButton}
               onClick={handleBack}

@@ -292,12 +292,6 @@ function Live2DWidgetWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
       <Suspense fallback={null}>
         <Live2DWidgetLazy
           modelPath={settings.live2dModel || "/umiushi/うみうしモデル.model3.json"}
-          onChatClick={() => {
-            // Navigate to dashboard with chat focus
-            if (window.location.pathname !== '/dashboard') {
-              window.location.href = '/dashboard';
-            }
-          }}
         />
       </Suspense>
     </ErrorBoundary>

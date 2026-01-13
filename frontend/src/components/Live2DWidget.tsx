@@ -27,12 +27,11 @@ if (typeof window !== 'undefined') {
 }
 
 interface Live2DWidgetProps {
-  onChatClick?: () => void;
   modelPath: string;
   onSendToDashboard?: (message: string) => void;
 }
 
-export default function Live2DWidget({ onChatClick, modelPath, onSendToDashboard }: Live2DWidgetProps) {
+export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWidgetProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel | null>(null);
@@ -257,10 +256,6 @@ export default function Live2DWidget({ onChatClick, modelPath, onSendToDashboard
         model.on('pointertap', async () => {
           // Open ELO dialog
           setDialogOpen(true);
-          // Also call onChatClick if provided (for backward compatibility)
-          if (onChatClick) {
-            onChatClick();
-          }
           // Play tap motion if available
           try {
             if (typeof model.motion === 'function') {
@@ -328,7 +323,7 @@ export default function Live2DWidget({ onChatClick, modelPath, onSendToDashboard
         appRef.current = null;
       }
     };
-  }, [onChatClick, modelPath]);
+  }, [modelPath]);
 
   // Track if this is a click or drag
   const dragStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -508,14 +503,10 @@ export default function Live2DWidget({ onChatClick, modelPath, onSendToDashboard
       key: 'elo-pending-message',
       newValue: message,
     }));
-    // Navigate to dashboard if not already there
-    if (!location.pathname.includes('/dashboard')) {
-      window.location.href = '/dashboard';
-    } else {
-      // If already on dashboard, trigger the event directly
-      window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message } }));
-    }
-  }, [onSendToDashboard, location.pathname]);
+    // Send message to dashboard without navigating
+    // The message will be handled by the current page's ChatBox if available
+    window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message } }));
+  }, [onSendToDashboard]);
 
   // Always render container, even if model is not loaded yet
   return (
