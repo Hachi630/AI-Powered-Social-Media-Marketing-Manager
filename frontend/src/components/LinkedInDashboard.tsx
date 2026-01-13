@@ -1468,6 +1468,7 @@ export default function LinkedInDashboard({
         {selectedPlatform === "linkedin" && isConnected && (
           <Card
             style={{
+              marginTop: 24,
               marginBottom: 24,
               borderRadius: 12,
               border: "2px dashed #0077B5",
@@ -1887,254 +1888,6 @@ export default function LinkedInDashboard({
                 {posting ? "Publishing..." : "Post to LinkedIn"}
               </Button>
             </div>
-          </Card>
-        )}
-
-        {/* Metrics Cards - Only for LinkedIn */}
-        {selectedPlatform === "linkedin" && (
-          <Row gutter={[24, 24]}>
-            {/* Followers Card */}
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                styles={{ body: { padding: 24 } }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background:
-                        "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <UserOutlined style={{ fontSize: 24, color: "#fff" }} />
-                  </div>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Followers
-                  </Typography.Text>
-                </div>
-                {metrics?.followers?.available ? (
-                  <Statistic
-                    value={metrics.followers.value}
-                    valueStyle={{
-                      fontSize: 36,
-                      fontWeight: 700,
-                      color: "#0077B5",
-                    }}
-                  />
-                ) : isConnected ? (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      {metrics?.followers?.reason ||
-                        "Requires LinkedIn Marketing API permissions"}
-                    </Typography.Text>
-                    <Tag color="warning">API Limited</Tag>
-                  </div>
-                ) : (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      Connect LinkedIn to see your follower count
-                    </Typography.Text>
-                    {authUrl ? (
-                      <Button
-                        type="link"
-                        onClick={() => {
-                          if (!authUrl) {
-                            console.error(
-                              "Cannot connect: userId not available. userId:",
-                              userId,
-                              "user:",
-                              user
-                            );
-                            alert(
-                              "Please wait for user data to load, or try refreshing the page."
-                            );
-                            return;
-                          }
-                          // Redirect to LinkedIn OAuth
-                          window.location.href = authUrl;
-                        }}
-                        style={{ padding: 0, color: "#0077B5" }}
-                      >
-                        Connect now →
-                      </Button>
-                    ) : (
-                      <Tag color="default">Not Available</Tag>
-                    )}
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            {/* Connections Card */}
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                styles={{ body: { padding: 24 } }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background:
-                        "linear-gradient(135deg, #00A0DC 0%, #0077B5 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <TeamOutlined style={{ fontSize: 24, color: "#fff" }} />
-                  </div>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Connections
-                  </Typography.Text>
-                </div>
-                {metrics?.connections?.available ? (
-                  <Statistic
-                    value={metrics.connections.value}
-                    valueStyle={{
-                      fontSize: 36,
-                      fontWeight: 700,
-                      color: "#00A0DC",
-                    }}
-                  />
-                ) : isConnected ? (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      {metrics?.connections?.reason ||
-                        "Requires special LinkedIn API permissions"}
-                    </Typography.Text>
-                    <Tag color="warning">API Limited</Tag>
-                  </div>
-                ) : (
-                  <div>
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginBottom: 12 }}
-                    >
-                      Your total network connections
-                    </Typography.Text>
-                    <Tag color="default">Not Connected</Tag>
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            {/* Profile Views Card */}
-            <Col xs={24} sm={12} lg={8}>
-              <Card
-                hoverable
-                style={{ height: "100%", borderRadius: 12 }}
-                styles={{ body: { padding: 24 } }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 12,
-                    marginBottom: 16,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 12,
-                      background:
-                        "linear-gradient(135deg, #86868B 0%, #636366 100%)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <EyeOutlined style={{ fontSize: 24, color: "#fff" }} />
-                  </div>
-                  <Typography.Text strong style={{ fontSize: 16 }}>
-                    Profile Views
-                  </Typography.Text>
-                </div>
-                <div>
-                  <Typography.Text
-                    type="secondary"
-                    style={{ display: "block", marginBottom: 12 }}
-                  >
-                    90-day profile view analytics
-                  </Typography.Text>
-                  <Tag color="warning">Not supported by LinkedIn API</Tag>
-                </div>
-              </Card>
-            </Col>
-          </Row>
-        )}
-
-        {/* Connection Status - Only for LinkedIn */}
-        {selectedPlatform === "linkedin" && (
-          <Card
-            style={{ marginTop: 24, borderRadius: 12 }}
-            styles={{ body: { padding: 24 } }}
-          >
-            <Row align="middle" justify="space-between">
-              <Col>
-                <Typography.Text strong style={{ fontSize: 16 }}>
-                  LinkedIn Connection Status
-                </Typography.Text>
-                <br />
-                <Typography.Text type="secondary">
-                  {isConnected
-                    ? "Your LinkedIn account is connected and syncing data"
-                    : "Connect your LinkedIn account to start tracking your social metrics"}
-                </Typography.Text>
-              </Col>
-              <Col>
-                {isConnected ? (
-                  <Tag
-                    color="success"
-                    style={{ padding: "4px 12px", fontSize: 14 }}
-                  >
-                    ● Connected
-                  </Tag>
-                ) : (
-                  <Tag
-                    color="default"
-                    style={{ padding: "4px 12px", fontSize: 14 }}
-                  >
-                    ○ Not Connected
-                  </Tag>
-                )}
-              </Col>
-            </Row>
           </Card>
         )}
 
@@ -3835,12 +3588,7 @@ export default function LinkedInDashboard({
                 justify="space-between"
                 style={{ width: "100%" }}
               >
-                <Col
-                  xs={24}
-                  sm={24}
-                  md={selectedPlatform === "linkedin" ? 16 : 24}
-                  lg={selectedPlatform === "linkedin" ? 18 : 24}
-                >
+                <Col xs={24} sm={24} md={24} lg={24}>
                   <Typography.Title
                     level={isMobile ? 3 : 2}
                     style={{
@@ -3870,92 +3618,158 @@ export default function LinkedInDashboard({
                     One-Click for Social Media
                   </Typography.Text>
                 </Col>
-                {selectedPlatform === "linkedin" && (
-                  <Col xs={24} sm={24} md={8} lg={6}>
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: isMobile ? "flex-start" : "flex-end",
-                        gap: 16,
-                        alignItems: isMobile ? "flex-start" : "flex-end",
-                      }}
-                    >
-                      {/* LinkedIn specific actions */}
-                      {isConnected && (
-                        <>
-                          <Button
-                            icon={<SyncOutlined />}
-                            onClick={handleRefreshMetrics}
-                            loading={loading}
-                            size={isMobile ? "middle" : "large"}
-                            style={{
-                              width: 150,
-                              height: 44,
-                              display: "inline-flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            Refresh
-                          </Button>
-                          <Button
-                            icon={<DisconnectOutlined />}
-                            onClick={handleDisconnect}
-                            loading={disconnecting}
-                            danger
-                            size={isMobile ? "middle" : "large"}
-                            style={{
-                              width: 150,
-                              height: 44,
-                              display: "inline-flex",
-                              justifyContent: "center",
-                              alignItems: "center",
-                            }}
-                          >
-                            Disconnect
-                          </Button>
-                        </>
-                      )}
-                      {!isConnected && (
-                        <Button
-                          type="primary"
-                          icon={<LinkedinOutlined />}
-                          disabled={!authUrl}
-                          onClick={() => {
-                            if (!authUrl) {
-                              console.error(
-                                "Cannot connect: userId not available. userId:",
-                                userId,
-                                "user:",
-                                user
-                              );
-                              alert(
-                                "Please wait for user data to load, or try refreshing the page."
-                              );
-                              return;
-                            }
-                            // Redirect to LinkedIn OAuth
-                            window.location.href = authUrl;
-                          }}
-                          size={isMobile ? "middle" : "large"}
-                          block={isMobile}
-                          style={{
-                            backgroundColor: "#0077B5",
-                            borderColor: "#0077B5",
-                          }}
-                        >
-                          {authUrl ? "Connect LinkedIn" : "Loading..."}
-                        </Button>
-                      )}
-                    </div>
-                  </Col>
-                )}
               </Row>
             </div>
 
             {/* Platform Profile Card - Show when connected */}
             {renderPlatformProfileCard()}
+
+            {/* LinkedIn Connection Section - Only show when LinkedIn is selected */}
+            {selectedPlatform === "linkedin" && (
+              <Card
+                style={{ marginTop: 24, borderRadius: 12 }}
+                styles={{ body: { padding: 24 } }}
+              >
+                <div
+                  style={{
+                    marginBottom: 24,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 16,
+                  }}
+                >
+                  <div>
+                    <Typography.Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <LinkedinOutlined
+                        style={{ color: "#0077B5", fontSize: 22 }}
+                      />
+                      LinkedIn Connection
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                      Connect your LinkedIn account to post content from your
+                      calendar
+                    </Typography.Text>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 16,
+                      alignItems: "flex-end",
+                    }}
+                  >
+                    {isConnected && (
+                      <>
+                        <Button
+                          icon={<SyncOutlined />}
+                          onClick={handleRefreshMetrics}
+                          loading={loading}
+                          style={{
+                            width: 150,
+                            height: 44,
+                            display: "inline-flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          Refresh
+                        </Button>
+                        <Button
+                          icon={<DisconnectOutlined />}
+                          onClick={handleDisconnect}
+                          loading={disconnecting}
+                          danger
+                          style={{
+                            width: 150,
+                            height: 44,
+                            display: "inline-flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
+                        >
+                          Disconnect
+                        </Button>
+                      </>
+                    )}
+                    {!isConnected && (
+                      <Button
+                        type="default"
+                        icon={<LinkedinOutlined style={{ color: "#ffffff" }} />}
+                        disabled={!authUrl}
+                        onClick={() => {
+                          if (!authUrl) {
+                            console.error(
+                              "Cannot connect: userId not available. userId:",
+                              userId,
+                              "user:",
+                              user
+                            );
+                            alert(
+                              "Please wait for user data to load, or try refreshing the page."
+                            );
+                            return;
+                          }
+                          // Redirect to LinkedIn OAuth
+                          window.location.href = authUrl;
+                        }}
+                        style={{
+                          backgroundColor: "#0077B5",
+                          borderColor: "#0077B5",
+                          color: "#ffffff",
+                          fontWeight: 500,
+                        }}
+                      >
+                        <span style={{ color: "#ffffff" }}>
+                          {authUrl ? "Connect LinkedIn" : "Loading..."}
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* LinkedIn Connection Status */}
+                <Row align="middle" justify="space-between">
+                  <Col>
+                    <Typography.Text strong style={{ fontSize: 16 }}>
+                      LinkedIn Connection Status
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      {isConnected
+                        ? "Your LinkedIn account is connected and ready to post content"
+                        : "Connect your LinkedIn account to enable posting content from your calendar"}
+                    </Typography.Text>
+                  </Col>
+                  <Col>
+                    {isConnected ? (
+                      <Tag
+                        color="success"
+                        style={{ padding: "4px 12px", fontSize: 14 }}
+                      >
+                        ● Connected
+                      </Tag>
+                    ) : (
+                      <Tag
+                        color="default"
+                        style={{ padding: "4px 12px", fontSize: 14 }}
+                      >
+                        ○ Not Connected
+                      </Tag>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
+            )}
 
             {/* Render content based on selected platform */}
             {/* For LinkedIn, show all existing content */}
