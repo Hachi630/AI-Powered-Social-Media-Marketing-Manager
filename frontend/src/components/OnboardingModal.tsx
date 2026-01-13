@@ -443,7 +443,6 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
                     <Suspense fallback={<div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
                       <Live2DWidgetLazy
                         modelPath={selectedCharacter}
-                        onChatClick={() => {}}
                         isPreview={true}
                       />
                     </Suspense>
