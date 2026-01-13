@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Checkbox, Upload, Progress, Space, Typography, message, App } from 'antd';
 import { UploadOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
@@ -91,6 +91,26 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
 
   // Step 6: Character Selection
   const [selectedCharacter, setSelectedCharacter] = useState<string>(CHARACTER_OPTIONS[0].path);
+
+  // Reset all form data when modal opens
+  useEffect(() => {
+    if (open) {
+      // Reset to step 1
+      setCurrentStep(1);
+      // Reset all form fields
+      setBrandName('');
+      setSelectedTargetAudience([]);
+      setOtherTargetAudience('');
+      setSelectedProductTypes([]);
+      setOtherProductType('');
+      setProductImages([]);
+      setSelectedMeloGoals([]);
+      setOtherMeloGoal('');
+      setSelectedCharacter(CHARACTER_OPTIONS[0].path);
+      setLoading(false);
+      setUploading(false);
+    }
+  }, [open]);
 
   const handleNext = () => {
     // Validate current step
