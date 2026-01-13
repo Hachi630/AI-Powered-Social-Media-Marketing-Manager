@@ -97,6 +97,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { message } = AntApp.useApp();
+  const { resetSettings } = useAppSettings();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -108,6 +109,8 @@ function AppContent() {
           // Check if user needs onboarding
           if (!currentUser.onboardingCompleted) {
             setShowOnboarding(true);
+            // Reset settings to default for new users
+            resetSettings();
           }
         } else {
           // Token invalid
@@ -147,6 +150,8 @@ function AppContent() {
     // Check if user needs onboarding
     if (!user.onboardingCompleted) {
       setShowOnboarding(true);
+      // Reset settings to default for new users
+      resetSettings();
     }
   };
 
@@ -269,10 +274,10 @@ function AppContent() {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {/* Live2D Widget - shown on all pages when logged in */}
+      {/* Live2D Widget - shown on all pages when logged in and enabled */}
       {/* Using dynamic import to prevent import-time errors */}
       {isLoggedIn && (
-        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} />
+        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} user={user} />
       )}
       {/* Onboarding Modal */}
       <OnboardingModal
@@ -284,8 +289,20 @@ function AppContent() {
 }
 
 // Wrapper component to access useAppSettings context
-function Live2DWidgetWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
+function Live2DWidgetWrapper({ isLoggedIn, user }: { isLoggedIn: boolean; user: User | null }) {
   const { settings } = useAppSettings();
+
+  // Only show ELO widget if:
+  // 1. User is logged in
+  // 2. ELO is enabled in settings
+  // 3. User has completed onboarding
+  const shouldShowElo = isLoggedIn && 
+    settings.enableElo === true && 
+    user?.onboardingCompleted;
+
+  if (!shouldShowElo) {
+    return null;
+  }
 
   return (
     <ErrorBoundary fallback={null}>
