@@ -17,6 +17,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
+- [Account Setup Requirements](#-account-setup-requirements)
 
 ## ✨ Features
 
@@ -2041,6 +2042,25 @@ The frontend automatically handles:
    - Open calendar item details
    - Click "Delete" button
    - Confirm deletion
+
+---
+
+## 📋 Account Setup Requirements
+
+In order to use the Facebook and Instagram sharing service, you need to configure your accounts according to the following requirements.
+
+### Facebook Account Requirements
+
+A Facebook Page is required.
+
+(Personal Facebook accounts must create and use a Facebook Page.)
+
+### Instagram Account Requirements
+
+According to Meta's official requirements, to use the Instagram Graph API (for publishing content):
+
+- The Instagram account must be a Business or Creator account.
+- The Instagram account must be connected to a Facebook Page.
 
 ---
 
