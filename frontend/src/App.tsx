@@ -18,6 +18,7 @@ import HomePage from "./pages/HomePage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
+import { checkHoliday, getHolidayReminderMessage } from "./utils/holidayChecker";
 import { authService, User } from "./services/authService";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { AppSettingsProvider, useAppSettings } from "./contexts/AppSettingsContext";
@@ -97,6 +98,7 @@ function AppContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { message } = AntApp.useApp();
+  const { resetSettings } = useAppSettings();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -108,6 +110,8 @@ function AppContent() {
           // Check if user needs onboarding
           if (!currentUser.onboardingCompleted) {
             setShowOnboarding(true);
+            // Reset settings to default for new users
+            resetSettings();
           }
         } else {
           // Token invalid
@@ -120,6 +124,34 @@ function AppContent() {
     };
     checkAuth();
   }, []);
+
+  // Check for holidays and show reminder
+  useEffect(() => {
+    if (isLoggedIn) {
+      const holiday = checkHoliday();
+      if (holiday) {
+        const today = new Date().toDateString();
+        const lastHolidayTipDate = localStorage.getItem('elo-holiday-tip-date');
+        
+        // Show holiday reminder if not shown today
+        if (lastHolidayTipDate !== today) {
+          const timer = setTimeout(() => {
+            const reminderMessage = getHolidayReminderMessage(holiday);
+            window.dispatchEvent(new CustomEvent('elo-show-tip', {
+              detail: {
+                message: reminderMessage,
+                type: 'reminder',
+                duration: 10000,
+              }
+            }));
+            localStorage.setItem('elo-holiday-tip-date', today);
+          }, 3000); // Show after 3 seconds
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -147,6 +179,8 @@ function AppContent() {
     // Check if user needs onboarding
     if (!user.onboardingCompleted) {
       setShowOnboarding(true);
+      // Reset settings to default for new users
+      resetSettings();
     }
   };
 
@@ -269,10 +303,10 @@ function AppContent() {
         <Route path="/contact-us" element={<ContactUs />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      {/* Live2D Widget - shown on all pages when logged in */}
+      {/* Live2D Widget - shown on all pages when logged in and enabled */}
       {/* Using dynamic import to prevent import-time errors */}
       {isLoggedIn && (
-        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} />
+        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} user={user} />
       )}
       {/* Onboarding Modal */}
       <OnboardingModal
@@ -284,20 +318,42 @@ function AppContent() {
 }
 
 // Wrapper component to access useAppSettings context
-function Live2DWidgetWrapper({ isLoggedIn }: { isLoggedIn: boolean }) {
+function Live2DWidgetWrapper({ isLoggedIn, user }: { isLoggedIn: boolean; user: User | null }) {
   const { settings } = useAppSettings();
+
+  // Only show ELO widget if:
+  // 1. User is logged in
+  // 2. ELO is enabled in settings
+  // 3. User has completed onboarding
+  const shouldShowElo = isLoggedIn && 
+    settings.enableElo === true && 
+    user?.onboardingCompleted;
+
+  // Debug logging
+  if (isLoggedIn) {
+    console.log('[ELO Debug]', {
+      isLoggedIn,
+      enableElo: settings.enableElo,
+      onboardingCompleted: user?.onboardingCompleted,
+      shouldShowElo,
+    });
+  }
+
+  if (!shouldShowElo) {
+    return null;
+  }
+
+  const handleSendToDashboard = (message: string) => {
+    // Dispatch a custom event that the Dashboard's ChatBox can listen to
+    window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message } }));
+  };
 
   return (
     <ErrorBoundary fallback={null}>
       <Suspense fallback={null}>
         <Live2DWidgetLazy
           modelPath={settings.live2dModel || "/umiushi/うみうしモデル.model3.json"}
-          onChatClick={() => {
-            // Navigate to dashboard with chat focus
-            if (window.location.pathname !== '/dashboard') {
-              window.location.href = '/dashboard';
-            }
-          }}
+          onSendToDashboard={handleSendToDashboard}
         />
       </Suspense>
     </ErrorBoundary>

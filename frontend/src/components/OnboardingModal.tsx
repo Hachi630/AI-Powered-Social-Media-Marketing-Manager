@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { Modal, Input, Button, Checkbox, Upload, Progress, Space, Typography, message, App } from 'antd';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { Modal, Input, Button, Checkbox, Upload, Progress, Space, Typography, message, App, Row, Col } from 'antd';
 import { UploadOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { authService } from '../services/authService';
 import { uploadService } from '../services/uploadService';
 import { useAppSettings } from '../contexts/AppSettingsContext';
 import styles from './OnboardingModal.module.css';
+
+// Lazy load Live2DWidget for preview
+const Live2DWidgetLazy = lazy(() => import('./Live2DWidget'));
 
 const { Title, Text } = Typography;
 
@@ -91,6 +94,26 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
 
   // Step 6: Character Selection
   const [selectedCharacter, setSelectedCharacter] = useState<string>(CHARACTER_OPTIONS[0].path);
+
+  // Reset all form data when modal opens
+  useEffect(() => {
+    if (open) {
+      // Reset to step 1
+      setCurrentStep(1);
+      // Reset all form fields
+      setBrandName('');
+      setSelectedTargetAudience([]);
+      setOtherTargetAudience('');
+      setSelectedProductTypes([]);
+      setOtherProductType('');
+      setProductImages([]);
+      setSelectedMeloGoals([]);
+      setOtherMeloGoal('');
+      setSelectedCharacter(CHARACTER_OPTIONS[0].path);
+      setLoading(false);
+      setUploading(false);
+    }
+  }, [open]);
 
   const handleNext = () => {
     // Validate current step
@@ -386,28 +409,47 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       case 6:
         return (
           <div className={styles.stepContent}>
-            <Title level={4}>Choose your exclusive Melo</Title>
+            <Title level={4}>Choose your elo</Title>
             <Text type="secondary" style={{ display: 'block', marginTop: 8, marginBottom: 16 }}>
               Select your character companion for your dashboard
             </Text>
-            <Space size="middle" wrap style={{ width: '100%', marginTop: 16 }}>
-              {CHARACTER_OPTIONS.map((character) => (
-                <Button
-                  key={character.name}
-                  size="large"
-                  shape="round"
-                  type={selectedCharacter === character.path ? "primary" : "default"}
-                  onClick={() => setSelectedCharacter(character.path)}
-                  style={{
-                    minWidth: '120px',
-                    borderColor: selectedCharacter === character.path ? undefined : character.color,
-                    color: selectedCharacter === character.path ? undefined : character.color,
-                  }}
-                >
-                  {character.name}
-                </Button>
-              ))}
-            </Space>
+            <Row gutter={24} style={{ marginTop: 16 }}>
+              <Col xs={24} sm={24} md={12} lg={12}>
+                <Space size="middle" wrap style={{ width: '100%' }}>
+                  {CHARACTER_OPTIONS.map((character) => (
+                    <Button
+                      key={character.name}
+                      size="large"
+                      shape="round"
+                      type={selectedCharacter === character.path ? "primary" : "default"}
+                      onClick={() => setSelectedCharacter(character.path)}
+                      style={{
+                        minWidth: '120px',
+                        borderColor: selectedCharacter === character.path ? undefined : character.color,
+                        color: selectedCharacter === character.path ? undefined : character.color,
+                      }}
+                    >
+                      {character.name}
+                    </Button>
+                  ))}
+                </Space>
+              </Col>
+              <Col xs={24} sm={24} md={12} lg={12}>
+                <div className={styles.characterPreview}>
+                  <Text type="secondary" style={{ display: 'block', marginBottom: 8, textAlign: 'center' }}>
+                    Preview
+                  </Text>
+                  <div className={styles.previewContainer}>
+                    <Suspense fallback={<div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
+                      <Live2DWidgetLazy
+                        modelPath={selectedCharacter}
+                        isPreview={true}
+                      />
+                    </Suspense>
+                  </div>
+                </div>
+              </Col>
+            </Row>
           </div>
         );
 

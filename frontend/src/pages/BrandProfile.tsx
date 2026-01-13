@@ -144,6 +144,30 @@ export default function BrandProfile({
     setMeloGoals(company.meloGoals || []);
   };
 
+  // Show brand profile tip on page load (once per day)
+  useEffect(() => {
+    if (isLoggedIn) {
+      const today = new Date().toDateString();
+      const lastTipDate = localStorage.getItem('elo-brand-tip-date');
+      
+      // Show tip if not shown today
+      if (lastTipDate !== today) {
+        const timer = setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('elo-show-tip', {
+            detail: {
+              message: "The more complete your profile, the better I can provide personalized recommendations",
+              type: 'tip',
+              duration: 6000,
+            }
+          }));
+          localStorage.setItem('elo-brand-tip-date', today);
+        }, 1500); // Show after 1.5 seconds
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isLoggedIn]);
+
   // Unified data loading - single useEffect to prevent race conditions
   useEffect(() => {
     // Skip if already loaded to prevent duplicate loads

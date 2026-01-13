@@ -17,6 +17,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
+- [Account Setup Requirements](#-account-setup-requirements)
 
 ## ✨ Features
 
@@ -39,6 +40,8 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **Auto-Publish Scheduler**: Automatic publishing of scheduled LinkedIn posts (runs every 5 minutes)
 - **Calendar Views**: Multiple calendar views (Day, Week, Year) for flexible content scheduling
 - **Facebook & Instagram Integration**: Connect Facebook and Instagram accounts via OAuth and publish content directly
+- **ELO AI Assistant**: Interactive Live2D AI assistant with intelligent guidance, quick actions, and proactive tips
+- **ELO Crawl Animation**: When user is inactive for 15 seconds, ELO slowly crawls across the screen with smooth animation
 - **Dark Mode**: Built-in dark mode support with theme toggle
 - **Responsive Design**: Modern UI built with Ant Design, fully responsive across devices
 
@@ -761,6 +764,30 @@ Multiple calendar views for flexible content scheduling:
 - **Year View**: Annual calendar overview
 - **Platform Filtering**: Filter by social media platform
 - **Status Filtering**: Filter by draft, scheduled, or published
+
+### ELO AI Assistant
+
+Interactive Live2D AI assistant that provides intelligent guidance and proactive tips:
+
+- **Smart Chat Interface**: Cloud-style chat dialog with quick action buttons
+- **Preset Answers**: Fixed answers for common questions (faster than AI)
+- **AI-Powered Responses**: Natural language responses for complex questions
+- **Question Classification**: Automatically detects step-by-step questions and provides structured guidance
+- **Conversation History**: Saves and manages chat history
+- **Quick Actions**: Pre-defined action categories (New User Guide, Content Creation, etc.)
+- **Drag & Drop**: ELO widget can be dragged to any position on screen
+- **Click to Toggle**: Click ELO to open/close chat dialog
+- **Proactive Tips**: 6 types of proactive tips:
+  1. **Inactivity Prompt**: After 15 seconds of inactivity, ELO asks "Do you need any help?"
+  2. **Insert Content Tip**: When content is inserted, reminds to use "Send to Calendar"
+  3. **Calendar Reminder**: On calendar page, reminds to add events and select 'Schedule'
+  4. **Data Analysis Tips**: Every minute, provides small data analysis tips
+  5. **Brand Profile Tip**: On brand profile page, suggests completing profile for better recommendations
+  6. **Holiday Reminder**: On holidays/shopping festivals, reminds about the event
+- **Tip Display**: All tips appear as small cloud-style dialogue bubbles to the left of ELO
+- **Crawl Animation**: When user is inactive for 15 seconds, ELO slowly crawls across the screen (50 pixels/second, 5-15 seconds duration) with smooth, natural movement
+- **Page Persistence**: Chat dialog opens on current page without navigation
+- **Context-Aware**: Welcome messages adapt based on current page (Dashboard, Calendar, etc.)
 
 ## 🔧 Troubleshooting
 
@@ -2041,6 +2068,25 @@ The frontend automatically handles:
    - Open calendar item details
    - Click "Delete" button
    - Confirm deletion
+
+---
+
+## 📋 Account Setup Requirements
+
+In order to use the Facebook and Instagram sharing service, you need to configure your accounts according to the following requirements.
+
+### Facebook Account Requirements
+
+A Facebook Page is required.
+
+(Personal Facebook accounts must create and use a Facebook Page.)
+
+### Instagram Account Requirements
+
+According to Meta's official requirements, to use the Instagram Graph API (for publishing content):
+
+- The Instagram account must be a Business or Creator account.
+- The Instagram account must be connected to a Facebook Page.
 
 ---
 

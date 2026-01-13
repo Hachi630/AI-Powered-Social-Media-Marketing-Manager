@@ -2964,64 +2964,33 @@ export default function LinkedInDashboard({
                   {!instagramStatus?.connected && (
                     <Button
                       type="default"
+                      icon={<InstagramOutlined style={{ color: "#ffffff" }} />}
+                      disabled={!instagramAuthUrl}
+                      onClick={() => {
+                        if (!instagramAuthUrl) {
+                          console.error(
+                            "Cannot connect: userId not available. userId:",
+                            userId,
+                            "user:",
+                            user
+                          );
+                          alert(
+                            "Please wait for user data to load, or try refreshing the page."
+                          );
+                          return;
+                        }
+                        // Redirect to Instagram OAuth
+                        window.location.href = instagramAuthUrl;
+                      }}
                       style={{
                         backgroundColor: "#E4405F",
                         borderColor: "#E4405F",
                         color: "#ffffff",
                         fontWeight: 500,
                       }}
-                      loading={!instagramAuthUrl && loadingInstagram}
-                      onClick={async () => {
-                        // If auth URL is not loaded, try to load it first
-                        if (!instagramAuthUrl) {
-                          if (!jwt) {
-                            message.error("Please login first");
-                            return;
-                          }
-                          message.loading("Loading auth URL...", 1);
-                          try {
-                            const authData = await getInstagramAuthUrl(jwt);
-                            console.log(
-                              "Instagram auth URL response:",
-                              authData
-                            );
-                            if (authData.success && authData.authUrl) {
-                              setInstagramAuthUrl(authData.authUrl);
-                              // Redirect immediately after getting URL
-                              window.location.href = authData.authUrl;
-                            } else {
-                              console.error(
-                                "Failed to get Instagram auth URL:",
-                                authData.error
-                              );
-                              message.error(
-                                authData.error ||
-                                  "Failed to get Instagram auth URL"
-                              );
-                            }
-                          } catch (error) {
-                            console.error(
-                              "Failed to get Instagram auth URL:",
-                              error
-                            );
-                            message.error(
-                              "Failed to get Instagram auth URL. Please check your connection."
-                            );
-                          }
-                          return;
-                        }
-                        // Redirect to Instagram OAuth
-                        console.log(
-                          "Redirecting to Instagram OAuth:",
-                          instagramAuthUrl
-                        );
-                        window.location.href = instagramAuthUrl;
-                      }}
                     >
                       <span style={{ color: "#ffffff" }}>
-                        {instagramAuthUrl
-                          ? "Connect Instagram"
-                          : "Connect Instagram"}
+                        {instagramAuthUrl ? "Connect Instagram" : "Loading..."}
                       </span>
                     </Button>
                   )}
@@ -3823,12 +3792,7 @@ export default function LinkedInDashboard({
                 justify="space-between"
                 style={{ width: "100%" }}
               >
-                <Col
-                  xs={24}
-                  sm={24}
-                  md={selectedPlatform === "linkedin" ? 16 : 24}
-                  lg={selectedPlatform === "linkedin" ? 18 : 24}
-                >
+                <Col xs={24} sm={24} md={24} lg={24}>
                   <Typography.Title
                     level={isMobile ? 3 : 2}
                     style={{
@@ -3851,8 +3815,39 @@ export default function LinkedInDashboard({
               </Row>
             </div>
 
-            {/* Platform Profile Card - Show when connected */}
-            {renderPlatformProfileCard()}
+                {/* LinkedIn Connection Status */}
+                <Row align="middle" justify="space-between">
+                  <Col>
+                    <Typography.Text strong style={{ fontSize: 16 }}>
+                      LinkedIn Connection Status
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      {isConnected
+                        ? "Your LinkedIn account is connected and ready to post content"
+                        : "Connect your LinkedIn account to enable posting content from your calendar"}
+                    </Typography.Text>
+                  </Col>
+                  <Col>
+                    {isConnected ? (
+                      <Tag
+                        color="success"
+                        style={{ padding: "4px 12px", fontSize: 14 }}
+                      >
+                        ● Connected
+                      </Tag>
+                    ) : (
+                      <Tag
+                        color="default"
+                        style={{ padding: "4px 12px", fontSize: 14 }}
+                      >
+                        ○ Not Connected
+                      </Tag>
+                    )}
+                  </Col>
+                </Row>
+              </Card>
+            )}
 
             {/* Render content based on selected platform */}
             {/* For LinkedIn, show all existing content */}

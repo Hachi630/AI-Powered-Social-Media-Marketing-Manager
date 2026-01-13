@@ -124,6 +124,24 @@ export default function CalendarPage({
   const [selectedBrandId, setSelectedBrandId] = useState<string>('all');
   const [brands, setBrands] = useState<Array<{ id: string; name: string; brandName: string }>>([]);
 
+  // Show calendar reminder tip on page load
+  useEffect(() => {
+    if (isLoggedIn) {
+      // Show reminder tip after a short delay
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('elo-show-tip', {
+          detail: {
+            message: "Don't forget to add events to your schedule! Remember to select 'Schedule' when creating content",
+            type: 'reminder',
+            duration: 8000,
+          }
+        }));
+      }, 2000); // Show after 2 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLoggedIn]);
+
   // Load calendar items
   const loadCalendarItems = useCallback(async () => {
     if (!isLoggedIn) return;

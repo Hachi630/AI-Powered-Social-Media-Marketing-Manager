@@ -1,0 +1,120 @@
+/* Tip bubble styles - displayed on the left side of ELO */
+.tipBubble {
+  position: fixed;
+  width: 300px;
+  max-width: 90vw;
+  min-height: 80px;
+  max-height: 200px;
+  background: linear-gradient(135deg, #E8F4F8 0%, #FFF0F5 100%);
+  border-radius: 20px 5px 20px 20px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: bubbleAppear 0.3s ease-out;
+  padding: 12px 16px;
+}
+
+@keyframes bubbleAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+/* Cloud tail pointing to ELO (right side, pointing right) */
+.tipBubble::after {
+  content: '';
+  position: absolute;
+  top: 30px;
+  right: -12px;
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 15px solid #E8F4F8;
+  filter: drop-shadow(2px 0 3px rgba(0, 0, 0, 0.1));
+}
+
+.tipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.tipMessage {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #2c3e50;
+  margin: 0;
+  flex: 1;
+  word-wrap: break-word;
+}
+
+.tipCloseButton {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  color: #666;
+  font-size: 14px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.tipCloseButton:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Different types of tips */
+.tipBubble.info {
+  background: linear-gradient(135deg, #E8F4F8 0%, #E0F2FE 100%);
+}
+
+.tipBubble.reminder {
+  background: linear-gradient(135deg, #FFF0F5 0%, #FFE4E6 100%);
+}
+
+.tipBubble.tip {
+  background: linear-gradient(135deg, #F0FDF4 0%, #E8F4F8 100%);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .tipBubble {
+    width: calc(100vw - 40px);
+    max-width: 280px;
+    font-size: 12px;
+  }
+
+  .tipMessage {
+    font-size: 12px;
+  }
+}
+
+/* Fade out animation */
+.tipBubble.fadeOut {
+  animation: bubbleFadeOut 0.3s ease-out forwards;
+}
+
+@keyframes bubbleFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9) translateX(-10px);
+  }
+}
