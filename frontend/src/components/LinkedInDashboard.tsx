@@ -3847,16 +3847,6 @@ export default function LinkedInDashboard({
                   >
                     Social Dashboard
                   </Typography.Title>
-                  <Typography.Text
-                    type="secondary"
-                    style={{
-                      fontSize: isMobile ? 13 : 14,
-                      display: "block",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    One-Click for Social Media
-                  </Typography.Text>
                 </Col>
               </Row>
             </div>
