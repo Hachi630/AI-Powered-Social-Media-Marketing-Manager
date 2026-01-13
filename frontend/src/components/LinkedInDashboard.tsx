@@ -2868,64 +2868,33 @@ export default function LinkedInDashboard({
                   {!instagramStatus?.connected && (
                     <Button
                       type="default"
+                      icon={<InstagramOutlined style={{ color: "#ffffff" }} />}
+                      disabled={!instagramAuthUrl}
+                      onClick={() => {
+                        if (!instagramAuthUrl) {
+                          console.error(
+                            "Cannot connect: userId not available. userId:",
+                            userId,
+                            "user:",
+                            user
+                          );
+                          alert(
+                            "Please wait for user data to load, or try refreshing the page."
+                          );
+                          return;
+                        }
+                        // Redirect to Instagram OAuth
+                        window.location.href = instagramAuthUrl;
+                      }}
                       style={{
                         backgroundColor: "#E4405F",
                         borderColor: "#E4405F",
                         color: "#ffffff",
                         fontWeight: 500,
                       }}
-                      loading={!instagramAuthUrl && loadingInstagram}
-                      onClick={async () => {
-                        // If auth URL is not loaded, try to load it first
-                        if (!instagramAuthUrl) {
-                          if (!jwt) {
-                            message.error("Please login first");
-                            return;
-                          }
-                          message.loading("Loading auth URL...", 1);
-                          try {
-                            const authData = await getInstagramAuthUrl(jwt);
-                            console.log(
-                              "Instagram auth URL response:",
-                              authData
-                            );
-                            if (authData.success && authData.authUrl) {
-                              setInstagramAuthUrl(authData.authUrl);
-                              // Redirect immediately after getting URL
-                              window.location.href = authData.authUrl;
-                            } else {
-                              console.error(
-                                "Failed to get Instagram auth URL:",
-                                authData.error
-                              );
-                              message.error(
-                                authData.error ||
-                                  "Failed to get Instagram auth URL"
-                              );
-                            }
-                          } catch (error) {
-                            console.error(
-                              "Failed to get Instagram auth URL:",
-                              error
-                            );
-                            message.error(
-                              "Failed to get Instagram auth URL. Please check your connection."
-                            );
-                          }
-                          return;
-                        }
-                        // Redirect to Instagram OAuth
-                        console.log(
-                          "Redirecting to Instagram OAuth:",
-                          instagramAuthUrl
-                        );
-                        window.location.href = instagramAuthUrl;
-                      }}
                     >
                       <span style={{ color: "#ffffff" }}>
-                        {instagramAuthUrl
-                          ? "Connect Instagram"
-                          : "Connect Instagram"}
+                        {instagramAuthUrl ? "Connect Instagram" : "Loading..."}
                       </span>
                     </Button>
                   )}
