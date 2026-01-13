@@ -3,6 +3,7 @@ import * as PIXI from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display';
 import { useLocation } from 'react-router-dom';
 import ELOChatDialog from './ELOChatDialog';
+import ELOTipBubble from './ELOTipBubble';
 import styles from './Live2DWidget.module.css';
 
 // Configure Live2D runtime on module load
@@ -43,6 +44,31 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
   const [loadError, setLoadError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const location = useLocation();
+  
+  // Tip bubble state
+  const [tipMessage, setTipMessage] = useState<string>('');
+  const [tipType, setTipType] = useState<'info' | 'reminder' | 'tip'>('info');
+  const [tipDuration, setTipDuration] = useState<number>(0);
+  const [tipVisible, setTipVisible] = useState(false);
+
+  // Listen for tip events from other components
+  useEffect(() => {
+    const handleTipEvent = (event: CustomEvent) => {
+      const { message, type, duration } = event.detail || {};
+      if (message) {
+        console.log('[ELO] Received tip event:', { message, type, duration });
+        setTipMessage(message);
+        setTipType(type || 'info');
+        setTipDuration(duration || 0);
+        setTipVisible(true);
+      }
+    };
+
+    window.addEventListener('elo-show-tip', handleTipEvent as EventListener);
+    return () => {
+      window.removeEventListener('elo-show-tip', handleTipEvent as EventListener);
+    };
+  }, []);
 
   // Initialize default position (bottom right corner) - skip in preview mode
   useEffect(() => {
@@ -259,10 +285,15 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         // Play idle motion after a delay
         setTimeout(playIdleMotion, 1000);
 
-        // Set up click handler
+        // Set up click handler - toggle dialog open/close
         model.on('pointertap', async () => {
-          // Open ELO dialog
-          setDialogOpen(true);
+          console.log('[ELO] Model clicked, toggling dialog');
+          // Toggle ELO dialog
+          setDialogOpen(prev => {
+            const newState = !prev;
+            console.log('[ELO] Dialog state changed:', newState);
+            return newState;
+          });
           // Play tap motion if available
           try {
             if (typeof model.motion === 'function') {
@@ -561,10 +592,29 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       </div>
       <ELOChatDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          console.log('[ELO] Dialog closing');
+          setDialogOpen(false);
+          // Don't close tip when dialog closes - tips can show independently
+        }}
         position={position}
         onSendToDashboard={handleSendToDashboard}
         currentPage={getCurrentPage()}
+        onShowTip={(message, type, duration) => {
+          console.log('[ELO] Showing tip from dialog:', { message, type, duration });
+          setTipMessage(message);
+          setTipType(type || 'info');
+          setTipDuration(duration || 0);
+          setTipVisible(true);
+        }}
+      />
+      <ELOTipBubble
+        message={tipMessage}
+        type={tipType}
+        duration={tipDuration}
+        position={position}
+        visible={tipVisible}
+        onClose={() => setTipVisible(false)}
       />
     </>
   );

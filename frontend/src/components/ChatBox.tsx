@@ -40,6 +40,7 @@ interface ChatBoxProps {
   onConversationChange?: (conversationId: string | null) => void;
   onTypingStatusChange?: (typing: boolean) => void;
   onContentChange?: (hasMessages: boolean) => void;
+  onInsertContent?: () => void; // Callback when content is inserted
 }
 
 export default function ChatBox({
@@ -47,6 +48,7 @@ export default function ChatBox({
   onConversationChange,
   onTypingStatusChange,
   onContentChange,
+  onInsertContent,
 }: ChatBoxProps) {
   const [inputMessage, setInputMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -458,6 +460,10 @@ export default function ChatBox({
         if (response.success && response.imageUrl) {
           setUploadedImages((prev) => [...prev, response.imageUrl!]);
           message.success("Image uploaded successfully");
+          // Trigger insert content tip
+          if (onInsertContent) {
+            onInsertContent();
+          }
         } else {
           message.error(response.message || "Failed to upload image");
         }
@@ -480,6 +486,10 @@ export default function ChatBox({
             },
           ]);
           message.success("File uploaded successfully");
+          // Trigger insert content tip
+          if (onInsertContent) {
+            onInsertContent();
+          }
         } else {
           message.error(response.message || "Failed to upload file");
         }
@@ -592,6 +602,10 @@ export default function ChatBox({
     imageUrl: string,
     newConversationId?: string
   ) => {
+    // Trigger insert content tip when image is generated/inserted
+    if (onInsertContent) {
+      onInsertContent();
+    }
     // Create assistant message with image
     const assistantMessage: ChatMessage = {
       role: "assistant",
