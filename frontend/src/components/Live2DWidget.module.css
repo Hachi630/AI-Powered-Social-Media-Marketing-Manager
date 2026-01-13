@@ -36,3 +36,18 @@
 .live2dWidget {
   z-index: 9999;
 }
+
+/* Preview mode - relative positioning for use in containers */
+.live2dWidget.preview {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1 !important;
+  border: none !important;
+}
+
+.live2dWidget.preview canvas {
+  cursor: default !important;
+}

@@ -7,6 +7,7 @@ import {
   Row,
   Select,
   Slider,
+  Switch,
   Typography,
   message,
 } from "antd";
@@ -82,6 +83,12 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
 
   const handleAccentColorChange = (color: string) => {
     updatePendingSettings({ accentColor: color });
+  };
+
+  const handleEloToggle = (checked: boolean) => {
+    // Immediately apply ELO setting without waiting for Apply button
+    // Pass the new value directly to applySettings to ensure immediate update
+    applySettings({ enableElo: checked });
   };
 
   const handleApply = () => {
@@ -266,38 +273,19 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
             </Card>
           </Col>
 
-          {/* Live2D Character */}
+          {/* ELO Character Toggle */}
           <Col xs={24} sm={24} md={24} lg={24}>
-            <Card className={styles.settingCard} title="Character">
+            <Card className={styles.settingCard} title="ELO Character">
               <div className={styles.settingItem}>
-                <Text className={styles.settingLabel}>Select Assistant</Text>
-                <div style={{ marginTop: 16 }}>
-                  <Space size="middle" wrap>
-                    {[
-                      { name: "Umiushi", path: "/umiushi/うみうしモデル.model3.json", color: "#8ecae6" },
-                      { name: "Kurage", path: "/kurage/クラゲモデル.model3.json", color: "#219ebc" },
-                      { name: "Kurione", path: "/kurione/クリオネモデル.model3.json", color: "#023047" },
-                      { name: "Mendako", path: "/mendako/めんだこモデル.model3.json", color: "#ffb703" },
-                    ].map((model) => (
-                      <Button
-                        key={model.name}
-                        size="middle"
-                        shape="round"
-                        type={pendingSettings.live2dModel === model.path ? "primary" : "default"}
-                        onClick={() => updatePendingSettings({ live2dModel: model.path })}
-                        style={{
-                          minWidth: '100px',
-                          borderColor: pendingSettings.live2dModel === model.path ? undefined : model.color,
-                          color: pendingSettings.live2dModel === model.path ? undefined : model.color,
-                        }}
-                      >
-                        {model.name}
-                      </Button>
-                    ))}
-                  </Space>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text className={styles.settingLabel}>Enable ELO Character</Text>
+                  <Switch
+                    checked={pendingSettings.enableElo}
+                    onChange={handleEloToggle}
+                  />
                 </div>
                 <Text className={styles.settingDescription}>
-                  Choose the character companion for your dashboard
+                  Show/hide the character companion on your dashboard
                 </Text>
               </div>
             </Card>

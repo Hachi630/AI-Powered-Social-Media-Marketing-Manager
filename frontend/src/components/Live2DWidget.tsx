@@ -29,9 +29,10 @@ if (typeof window !== 'undefined') {
 interface Live2DWidgetProps {
   modelPath: string;
   onSendToDashboard?: (message: string) => void;
+  isPreview?: boolean; // If true, render in preview mode (relative positioning, no drag)
 }
 
-export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWidgetProps) {
+export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview = false }: Live2DWidgetProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const appRef = useRef<PIXI.Application | null>(null);
   const modelRef = useRef<Live2DModel | null>(null);
@@ -43,8 +44,14 @@ export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWid
   const [dialogOpen, setDialogOpen] = useState(false);
   const location = useLocation();
 
-  // Initialize default position (bottom right corner)
+  // Initialize default position (bottom right corner) - skip in preview mode
   useEffect(() => {
+    if (isPreview) {
+      // In preview mode, use relative positioning
+      setPosition({ x: 0, y: 0 });
+      return;
+    }
+
     const widgetWidth = 200;
     const widgetHeight = 200;
     const margin = 20; // Margin from edges
@@ -99,7 +106,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWid
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [isPreview]);
 
   // Initialize PIXI Application
   useEffect(() => {
@@ -328,9 +335,9 @@ export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWid
   // Track if this is a click or drag
   const dragStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
-  // Handle drag start - works on both container and canvas
+  // Handle drag start - works on both container and canvas (disabled in preview mode)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || isPreview) return;
 
     // Store initial position to distinguish click from drag
     dragStartPosRef.current = {
@@ -437,6 +444,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWid
 
   // Handle touch events for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isPreview) return;
     if (!canvasRef.current) return;
 
     const touch = e.touches[0];
@@ -513,14 +521,16 @@ export default function Live2DWidget({ modelPath, onSendToDashboard }: Live2DWid
     <>
       <div
         ref={canvasRef}
-        className={`${styles.live2dWidget} ${isDragging ? styles.dragging : ''}`}
+        className={`${styles.live2dWidget} ${isDragging ? styles.dragging : ''} ${isPreview ? styles.preview : ''}`}
         style={{
-          left: `${position.x}px`,
-          top: `${position.y}px`,
+          ...(isPreview ? {} : {
+            left: `${position.x}px`,
+            top: `${position.y}px`,
+          }),
           opacity: isLoaded ? 1 : 0.5,
         }}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
+        onMouseDown={isPreview ? undefined : handleMouseDown}
+        onTouchStart={isPreview ? undefined : handleTouchStart}
       >
       {!isLoaded && !loadError && (
         <div style={{

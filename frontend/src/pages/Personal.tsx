@@ -410,7 +410,6 @@ export default function Personal({
         setIsEditing(false)
         setAvatarBase64('')
         setAvatarFile([])
-        onLoginSuccess?.(response.user)
         message.success('Profile updated successfully')
       } else {
         message.error(response.message || 'Failed to update profile')
