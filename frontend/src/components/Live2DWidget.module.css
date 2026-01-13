@@ -51,3 +51,13 @@
 .live2dWidget.preview canvas {
   cursor: default !important;
 }
+
+/* Crawling state - disable CSS transitions to let JavaScript animation control movement */
+.live2dWidget.crawling {
+  transition: none; /* No CSS transition - JavaScript handles animation */
+  pointer-events: none; /* Disable interaction during crawl */
+}
+
+.live2dWidget.crawling canvas {
+  cursor: default !important;
+}
