@@ -1,0 +1,23 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "クリオネモデル.moc3",
+		"Textures": [
+			"クリオネモデル.8192/texture_00.png"
+		],
+		"Physics": "クリオネモデル.physics3.json",
+		"DisplayInfo": "クリオネモデル.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		}
+	]
+}

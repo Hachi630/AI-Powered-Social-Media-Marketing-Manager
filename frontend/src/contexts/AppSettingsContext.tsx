@@ -11,6 +11,8 @@ export interface AppSettings {
   fontFamily: string;
   accentColor: string;
   darkMode: boolean;
+  live2dModel: string;
+  enableElo: boolean;
 }
 
 interface AppSettingsContextType {
@@ -31,6 +33,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: "Inter, system-ui, sans-serif",
   accentColor: "#bacf65",
   darkMode: false,
+  live2dModel: "/umiushi/うみうしモデル.model3.json",
+  enableElo: true,
 };
 
 const STORAGE_KEY = "melo_app_settings";
@@ -522,8 +526,16 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setPendingSettings((prev) => ({ ...prev, ...newSettings }));
   };
 
-  const applySettingsFunc = () => {
-    setSettings(pendingSettings);
+  const applySettingsFunc = (overrideSettings?: Partial<AppSettings>) => {
+    if (overrideSettings) {
+      // If override settings provided, merge with current pending settings
+      const mergedSettings = { ...pendingSettings, ...overrideSettings };
+      setPendingSettings(mergedSettings);
+      setSettings(mergedSettings);
+    } else {
+      // Normal apply: use current pendingSettings
+      setSettings(pendingSettings);
+    }
   };
 
   const resetSettings = () => {

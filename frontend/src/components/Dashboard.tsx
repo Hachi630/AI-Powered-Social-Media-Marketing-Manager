@@ -7,7 +7,6 @@ import Sidebar from "./Sidebar";
 import styles from "./Dashboard.module.css";
 import { DEFAULT_TAGLINE } from "../constants/assets";
 import { User } from "../services/authService";
-import { chatService } from "../services/chatService";
 
 interface DashboardProps {
   isLoggedIn?: boolean;
@@ -47,6 +46,40 @@ export default function Dashboard({
     useState(0);
   const [, setIsTyping] = useState(false);
   const [hasMessages, setHasMessages] = useState(false);
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  // Listen for messages from ELO widget
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'elo-pending-message' && e.newValue) {
+        setPendingMessage(e.newValue);
+        // Clear the storage after reading
+        localStorage.removeItem('elo-pending-message');
+      }
+    };
+
+    // Check for pending message on mount
+    const storedMessage = localStorage.getItem('elo-pending-message');
+    if (storedMessage) {
+      setPendingMessage(storedMessage);
+      localStorage.removeItem('elo-pending-message');
+    }
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+
+  // Handle pending message by creating new conversation
+  useEffect(() => {
+    if (pendingMessage) {
+      setSelectedConversationId(null);
+      // Trigger a custom event that ChatBox can listen to
+      window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message: pendingMessage } }));
+      setPendingMessage(null);
+    }
+  }, [pendingMessage]);
 
   // Update collapsed state when screen size changes
   useEffect(() => {
@@ -65,18 +98,10 @@ export default function Dashboard({
   }`;
 
   const handleConversationSelect = useCallback(
-    async (conversationId: string | null) => {
+    (conversationId: string | null) => {
       setSelectedConversationId(conversationId);
-      // Save selected conversation to backend
-      if (user) {
-        try {
-          await chatService.selectConversation(conversationId);
-        } catch (error) {
-          console.error("Failed to save selected conversation:", error);
-        }
-      }
     },
-    [user]
+    []
   );
 
   const handleNewConversation = useCallback(() => {

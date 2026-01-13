@@ -106,6 +106,14 @@ export default function BrandProfile({
   const [loading, setLoading] = useState(false);
   const [companyDescription, setCompanyDescription] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string>("");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [generatingLogo, setGeneratingLogo] = useState(false);
+  const [productTypes, setProductTypes] = useState<string[]>([]);
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [meloGoals, setMeloGoals] = useState<string[]>([]);
+  const [newProductType, setNewProductType] = useState("");
+  const [newMeloGoal, setNewMeloGoal] = useState("");
 
   // Multi-company state management
   const [companies, setCompanies] = useState<CompanyData[]>([]);
@@ -194,9 +202,13 @@ export default function BrandProfile({
       setCustomTone(company.customTone || "");
       setShowCustomToneInput(toneOfVoice === "custom");
     }
-    setKnowledgeProducts(company.knowledgeProducts);
-    setAudienceTags(company.targetAudience);
-    setCompanyDescription(company.companyDescription);
+    setKnowledgeProducts(company.knowledgeProducts || []);
+    setAudienceTags(company.targetAudience || []);
+    setCompanyDescription(company.companyDescription || "");
+    setBrandLogoUrl(company.brandLogoUrl || "");
+    setProductTypes(company.productTypes || []);
+    setProductImages(company.productImages || []);
+    setMeloGoals(company.meloGoals || []);
   };
 
   // Save current form data to selected company
@@ -221,6 +233,10 @@ export default function BrandProfile({
           knowledgeProducts,
           targetAudience: audienceTags,
           companyDescription,
+          brandLogoUrl,
+          productTypes,
+          productImages,
+          meloGoals,
         };
       }
       return company;
@@ -406,6 +422,29 @@ export default function BrandProfile({
 
       // Save to local company data first
       saveCurrentToCompany();
+      
+      // Build updated companies array directly from current form values
+      // This ensures we use the latest form data, not stale state
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === selectedCompanyId) {
+          return {
+            ...company,
+            name: brandName.trim() || company.name,
+            brandName: brandName.trim(),
+            industry: industry.trim(),
+            toneOfVoice: toneOfVoice,
+            customTone: customTone.trim(),
+            knowledgeProducts: [...knowledgeProducts],
+            targetAudience: [...audienceTags],
+            companyDescription: companyDescription.trim(),
+            brandLogoUrl: brandLogoUrl.trim(),
+            productTypes: [...productTypes],
+            productImages: [...productImages],
+            meloGoals: [...meloGoals],
+          };
+        }
+        return company;
+      });
 
       const response = await authService.updateProfile({
         brandName,
@@ -824,6 +863,174 @@ export default function BrandProfile({
           </Col>
         </Row>
 
+        {/* Row 3: Product Types, Product Images, Melo Goals */}
+        <Row gutter={[24, 24]} align="stretch" className={styles.cardRow}>
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <Card
+              title="Product Types"
+              className={`${styles.card} ${styles.productTypes}`}
+            >
+              <Space
+                direction="vertical"
+                size="large"
+                className={styles.fullWidth}
+              >
+                <Input
+                  size="large"
+                  placeholder="Add product type"
+                  value={newProductType}
+                  onChange={(event) => setNewProductType(event.target.value)}
+                  onPressEnter={() => {
+                    if (newProductType.trim() && !productTypes.includes(newProductType.trim())) {
+                      setProductTypes([...productTypes, newProductType.trim()]);
+                      setNewProductType("");
+                    }
+                  }}
+                />
+                <div className={styles.tagsContainer}>
+                  {productTypes.map((type) => (
+                    <Tag
+                      key={type}
+                      color="green"
+                      closable
+                      onClose={() => setProductTypes(productTypes.filter((t) => t !== type))}
+                    >
+                      {type}
+                    </Tag>
+                  ))}
+                </div>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (newProductType.trim() && !productTypes.includes(newProductType.trim())) {
+                      setProductTypes([...productTypes, newProductType.trim()]);
+                      setNewProductType("");
+                    }
+                  }}
+                >
+                  Add Product Type
+                </Button>
+              </Space>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <Card
+              title="Product Images"
+              className={`${styles.card} ${styles.productImages}`}
+            >
+              <Space
+                direction="vertical"
+                size="middle"
+                className={styles.fullWidth}
+              >
+                <Upload
+                  onChange={(info) => {
+                    const file = info.file.originFileObj || (info.file as any).originFileObj || info.file;
+                    if (file && file instanceof File) {
+                      const isImage = file.type.startsWith('image/');
+                      if (!isImage) {
+                        message.error('Only image files are allowed');
+                        return;
+                      }
+                      const isLt10M = file.size / 1024 / 1024 < 10;
+                      if (!isLt10M) {
+                        message.error('Image size must be less than 10MB');
+                        return;
+                      }
+                      uploadService.uploadImage(file).then((response) => {
+                        if (response.success && response.imageUrl) {
+                          setProductImages([...productImages, response.imageUrl!]);
+                          message.success('Image uploaded successfully');
+                        } else {
+                          message.error(response.message || 'Failed to upload image');
+                        }
+                      });
+                    }
+                  }}
+                  showUploadList={false}
+                  accept="image/*"
+                  beforeUpload={() => false}
+                >
+                  <Button icon={<UploadOutlined />} block>
+                    Upload Product Image
+                  </Button>
+                </Upload>
+                {productImages.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {productImages.map((url, index) => (
+                      <div key={index} style={{ position: 'relative', width: '80px', height: '80px' }}>
+                        <img
+                          src={getImageUrl(url)}
+                          alt={`Product ${index + 1}`}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                        />
+                        <Button
+                          type="text"
+                          danger
+                          size="small"
+                          icon={<CloseOutlined />}
+                          onClick={() => setProductImages(productImages.filter((_, i) => i !== index))}
+                          style={{ position: 'absolute', top: 0, right: 0 }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </Space>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={24} md={8} lg={8}>
+            <Card
+              title="Melo Goals"
+              className={`${styles.card} ${styles.meloGoals}`}
+            >
+              <Space
+                direction="vertical"
+                size="large"
+                className={styles.fullWidth}
+              >
+                <Input
+                  size="large"
+                  placeholder="Add goal"
+                  value={newMeloGoal}
+                  onChange={(event) => setNewMeloGoal(event.target.value)}
+                  onPressEnter={() => {
+                    if (newMeloGoal.trim() && !meloGoals.includes(newMeloGoal.trim())) {
+                      setMeloGoals([...meloGoals, newMeloGoal.trim()]);
+                      setNewMeloGoal("");
+                    }
+                  }}
+                />
+                <div className={styles.tagsContainer}>
+                  {meloGoals.map((goal) => (
+                    <Tag
+                      key={goal}
+                      color="purple"
+                      closable
+                      onClose={() => setMeloGoals(meloGoals.filter((g) => g !== goal))}
+                    >
+                      {goal}
+                    </Tag>
+                  ))}
+                </div>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    if (newMeloGoal.trim() && !meloGoals.includes(newMeloGoal.trim())) {
+                      setMeloGoals([...meloGoals, newMeloGoal.trim()]);
+                      setNewMeloGoal("");
+                    }
+                  }}
+                >
+                  Add Goal
+                </Button>
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+
         {/* Save Button */}
         <Row gutter={[24, 24]} className={styles.saveRow}>
           <Col span={24}>
@@ -841,6 +1048,6 @@ export default function BrandProfile({
           </Col>
         </Row>
       </Content>
-    </Layout>
+    </Layout >
   );
 }

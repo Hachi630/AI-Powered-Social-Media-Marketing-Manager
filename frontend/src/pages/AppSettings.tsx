@@ -7,6 +7,7 @@ import {
   Row,
   Select,
   Slider,
+  Switch,
   Typography,
   message,
 } from "antd";
@@ -15,7 +16,9 @@ import {
   ReloadOutlined,
   CheckOutlined,
   CloseOutlined,
+  SmileOutlined,
 } from "@ant-design/icons";
+import { Space } from "antd";
 import styles from "./AppSettings.module.css";
 import { useAppSettings } from "../contexts/AppSettingsContext";
 import ThemeToggle from "../components/ThemeToggle";
@@ -80,6 +83,12 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
 
   const handleAccentColorChange = (color: string) => {
     updatePendingSettings({ accentColor: color });
+  };
+
+  const handleEloToggle = (checked: boolean) => {
+    // Immediately apply ELO setting without waiting for Apply button
+    // Pass the new value directly to applySettings to ensure immediate update
+    applySettings({ enableElo: checked });
   };
 
   const handleApply = () => {
@@ -232,11 +241,10 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
                   {accentColorOptions.map((option) => (
                     <button
                       key={option.value}
-                      className={`${styles.colorSwatch} ${
-                        pendingSettings.accentColor === option.value
-                          ? styles.colorSwatchActive
-                          : ""
-                      }`}
+                      className={`${styles.colorSwatch} ${pendingSettings.accentColor === option.value
+                        ? styles.colorSwatchActive
+                        : ""
+                        }`}
                       style={{ backgroundColor: option.color }}
                       onClick={() => handleAccentColorChange(option.value)}
                       title={option.label}
@@ -264,8 +272,26 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
               </div>
             </Card>
           </Col>
+
+          {/* ELO Character Toggle */}
+          <Col xs={24} sm={24} md={24} lg={24}>
+            <Card className={styles.settingCard} title="ELO Character">
+              <div className={styles.settingItem}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text className={styles.settingLabel}>Enable ELO Character</Text>
+                  <Switch
+                    checked={pendingSettings.enableElo}
+                    onChange={handleEloToggle}
+                  />
+                </div>
+                <Text className={styles.settingDescription}>
+                  Show/hide the character companion on your dashboard
+                </Text>
+              </div>
+            </Card>
+          </Col>
         </Row>
       </div>
-    </Modal>
+    </Modal >
   );
 }

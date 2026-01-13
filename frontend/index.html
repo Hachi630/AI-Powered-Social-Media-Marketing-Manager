@@ -12,6 +12,22 @@
     <title>Melo</title>
     <!-- Google Sign-In SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Live2D Cubism Core SDK - Must load synchronously before React app -->
+    <!-- Cubism 3.0/4.0 Runtime -->
+    <script src="/lib/live2dcubismcore.min.js"></script>
+    <!-- Cubism 2.1 Runtime (required by pixi-live2d-display for initialization check) -->
+    <script src="/lib/live2d.min.js"></script>
+    <script>
+      // Ensure Cubism runtime is available globally
+      if (typeof window !== 'undefined') {
+        if (window.Live2DCubismCore) {
+          console.log('Live2D Cubism Core (3.0/4.0) loaded successfully');
+        }
+        if (window.Live2D) {
+          console.log('Live2D Cubism 2.1 runtime loaded successfully');
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

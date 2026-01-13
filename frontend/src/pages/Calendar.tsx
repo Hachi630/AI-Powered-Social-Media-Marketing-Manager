@@ -573,6 +573,13 @@ export default function CalendarPage({
             loadCalendarItems();
             setModalOpen(false);
           }}
+          onItemUpdate={(updatedItem) => {
+            // Update selectedItem with the refreshed data
+            setSelectedItem(updatedItem);
+            // Refresh the calendar list
+            loadCalendarItems();
+            // Keep modal open to show the updated status
+          }}
         />
       )}
     </Layout>

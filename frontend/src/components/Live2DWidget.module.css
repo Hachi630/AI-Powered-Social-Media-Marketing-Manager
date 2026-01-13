@@ -1,0 +1,53 @@
+.live2dWidget {
+  position: fixed;
+  width: 200px;
+  height: 200px;
+  z-index: 9999;
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  background: transparent;
+  border: none;
+}
+
+.live2dWidget canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.live2dWidget.dragging canvas {
+  cursor: grabbing;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .live2dWidget {
+    width: 150px;
+    height: 225px;
+  }
+}
+
+/* Ensure it's above modals but below some critical UI elements */
+.live2dWidget {
+  z-index: 9999;
+}
+
+/* Preview mode - relative positioning for use in containers */
+.live2dWidget.preview {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: 1 !important;
+  border: none !important;
+}
+
+.live2dWidget.preview canvas {
+  cursor: default !important;
+}

@@ -40,7 +40,7 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
         .json({ success: false, message: "User not found" });
     }
 
-    const { message, conversationId, images, files, editMessageIndex } = req.body;
+    const { message, conversationId, images, files, editMessageIndex, questionType } = req.body;
 
     // Validate message, images or files
     if (
