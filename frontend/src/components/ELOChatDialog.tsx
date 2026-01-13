@@ -4,6 +4,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { chatService, ChatMessage } from '../services/chatService';
 import ELOQuickActions from './ELOQuickActions';
+import ELOSubOptions from './ELOSubOptions';
+import { presetAnswers, getPresetAnswer, getCategoryOptions, PresetAnswer } from '../data/presetAnswers';
+import { classifyQuestion, buildPromptForQuestion } from '../utils/questionClassifier';
 import styles from './ELOChatDialog.module.css';
 
 export interface ELOChatDialogProps {
@@ -65,6 +68,9 @@ export default function ELOChatDialog({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [isNewUserState, setIsNewUserState] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedPresetAnswer, setSelectedPresetAnswer] = useState<PresetAnswer | null>(null);
+  const [previousCategory, setPreviousCategory] = useState<string | null>(null); // Track previous category for back navigation
 
   // Check if user is new on mount
   useEffect(() => {
@@ -127,102 +133,87 @@ export default function ELOChatDialog({
     }
   }, [open]);
 
-  // Handle quick action selection
-  const handleQuickAction = useCallback(async (actionId: string) => {
-    setShowQuickActions(false);
-    let prompt = '';
-
-    // Context-aware prompts based on current page
-    const getContextualPrompt = (actionId: string): string => {
-      const pageContext = currentPage === 'calendar' 
-        ? 'calendar and event management'
-        : currentPage === 'campaign'
-        ? 'social media campaigns and content planning'
-        : 'the platform';
-
-      switch (actionId) {
-        case 'guide':
-          return `I am ${isNewUserState ? 'a new user' : 'looking for guidance'}. Can you guide me through how to use ${pageContext}?`;
-        case 'quick-create':
-          if (currentPage === 'calendar') {
-            return 'Help me create a new calendar event. What should I do?';
-          } else if (currentPage === 'campaign') {
-            return 'Help me create a new social media campaign. What should I do?';
-          }
-          return 'Help me create a new project or campaign. What should I do?';
-        case 'faq':
-          return `What are the most frequently asked questions about using ${pageContext}?`;
-        case 'tips':
-          return `What are some useful tips and best practices for using ${pageContext}?`;
-        case 'project-guide':
-          return 'I need guidance on creating and managing projects. Can you help me step by step?';
-        default:
-          return '';
+  // Handle quick action selection - show sub-options instead of calling AI
+  const handleQuickAction = useCallback((actionId: string) => {
+    // Handle send to dashboard separately
+    if (actionId === 'send-dashboard') {
+      if (onSendToDashboard) {
+        onSendToDashboard(inputMessage || 'Hello, I need help');
+        onClose();
       }
-    };
-
-    switch (actionId) {
-      case 'guide':
-        prompt = getContextualPrompt('guide');
-        break;
-      case 'quick-create':
-        prompt = getContextualPrompt('quick-create');
-        break;
-      case 'faq':
-        prompt = getContextualPrompt('faq');
-        break;
-      case 'tips':
-        prompt = getContextualPrompt('tips');
-        break;
-      case 'project-guide':
-        prompt = getContextualPrompt('project-guide');
-        break;
-      case 'send-dashboard':
-        if (onSendToDashboard) {
-          onSendToDashboard(inputMessage || 'Hello, I need help');
-          onClose();
-        }
-        return;
-      default:
-        return;
+      return;
     }
 
-    // Add user message
+    // Show sub-options for the selected category
+    setShowQuickActions(false);
+    setPreviousCategory(null); // Reset previous category when entering sub-options
+    setSelectedCategory(actionId);
+    setSelectedPresetAnswer(null);
+  }, [onSendToDashboard, onClose, inputMessage]);
+
+  // Handle sub-option selection - show preset answer immediately
+  const handleSubOptionSelect = useCallback((optionId: string) => {
+    if (!selectedCategory) return;
+
+    const presetAnswer = getPresetAnswer(selectedCategory, optionId);
+    if (!presetAnswer) return;
+
+    // Save current category as previous for back navigation
+    setPreviousCategory(selectedCategory);
+    setSelectedPresetAnswer(presetAnswer);
+    setSelectedCategory(null);
+
+    // Build answer text
+    let answerText = presetAnswer.answer;
+    if (presetAnswer.steps && presetAnswer.steps.length > 0) {
+      answerText += '\n\n' + presetAnswer.steps.join('\n');
+    }
+
+    // Add user message (the question title)
     const userMessage: ChatMessage = {
       role: 'user',
-      content: prompt,
+      content: presetAnswer.title,
       timestamp: new Date(),
     };
-    setMessages([userMessage]);
-    setLoading(true);
 
-    try {
-      const response = await chatService.sendMessage(prompt, conversationId || undefined);
-      if (response.success && response.response) {
-        const assistantMessage: ChatMessage = {
-          role: 'assistant',
-          content: response.response,
-          timestamp: new Date(),
-        };
-        setMessages([userMessage, assistantMessage]);
-        if (response.conversationId) {
-          setConversationId(response.conversationId);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    } finally {
-      setLoading(false);
-      }
-    }, [conversationId, onSendToDashboard, onClose, inputMessage, currentPage, isNewUserState]);
+    // Add assistant message (preset answer)
+    const assistantMessage: ChatMessage = {
+      role: 'assistant',
+      content: answerText,
+      timestamp: new Date(),
+    };
 
-  // Handle send message
+    setMessages([userMessage, assistantMessage]);
+  }, [selectedCategory]);
+
+  // Handle back navigation - return to previous level
+  const handleBack = useCallback(() => {
+    if (messages.length > 0 && previousCategory) {
+      // If viewing preset answer, return to sub-options
+      setMessages([]);
+      setSelectedCategory(previousCategory);
+      setSelectedPresetAnswer(null);
+      setPreviousCategory(null);
+    } else if (selectedCategory) {
+      // If viewing sub-options, return to main quick actions
+      setSelectedCategory(null);
+      setShowQuickActions(true);
+    } else {
+      // If at main level, close dialog
+      onClose();
+    }
+  }, [messages.length, previousCategory, selectedCategory, onClose]);
+
+  // Handle send message - with question classification
   const handleSend = useCallback(async () => {
     if (!inputMessage.trim() || loading) return;
 
+    const currentInput = inputMessage.trim();
+    
+    // Save user's original message
     const userMessage: ChatMessage = {
       role: 'user',
-      content: inputMessage.trim(),
+      content: currentInput,
       timestamp: new Date(),
     };
 
@@ -230,12 +221,24 @@ export default function ELOChatDialog({
     setMessages(newMessages);
     setInputMessage('');
     setShowQuickActions(false);
+    setSelectedCategory(null);
+    setSelectedPresetAnswer(null);
     setLoading(true);
+
+    // Classify question type
+    const questionType = classifyQuestion(currentInput);
+    
+    // Build prompt based on question type (for AI, but save original user message)
+    const enhancedPrompt = buildPromptForQuestion(currentInput, questionType);
 
     try {
       const response = await chatService.sendMessage(
-        inputMessage.trim(),
-        conversationId || undefined
+        enhancedPrompt,
+        conversationId || undefined,
+        undefined,
+        undefined,
+        undefined,
+        questionType
       );
 
       if (response.success && response.response) {
@@ -315,16 +318,12 @@ export default function ELOChatDialog({
           <span>ELO</span>
         </h3>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          {messages.length > 0 && !showQuickActions && (
+          {(messages.length > 0 || selectedCategory || (showQuickActions && !isNewUserState)) && (
             <button
               className={styles.closeButton}
-              onClick={() => {
-                setShowQuickActions(true);
-                setMessages([]);
-                setInputMessage('');
-              }}
+              onClick={handleBack}
               aria-label="Back"
-              title="Back to menu"
+              title="Back"
             >
               ←
             </button>
@@ -336,7 +335,7 @@ export default function ELOChatDialog({
       </div>
 
       <div className={styles.dialogContent}>
-        {showQuickActions && messages.length === 0 && (
+        {showQuickActions && messages.length === 0 && !selectedCategory && (
           <>
             <div className={styles.welcomeMessage}>
               {isNewUserState 
@@ -371,6 +370,14 @@ export default function ELOChatDialog({
               </div>
             )}
           </>
+        )}
+
+        {selectedCategory && messages.length === 0 && (
+          <ELOSubOptions
+            options={getCategoryOptions(selectedCategory)}
+            categoryName={presetAnswers.find(cat => cat.categoryId === selectedCategory)?.categoryName || ''}
+            onOptionSelect={handleSubOptionSelect}
+          />
         )}
 
         {messages.length > 0 && (
@@ -413,7 +420,7 @@ export default function ELOChatDialog({
           </div>
         )}
 
-        {messages.length === 0 && !showQuickActions && (
+        {messages.length === 0 && !showQuickActions && !selectedCategory && (
           <div className={styles.emptyState}>Start a conversation with ELO</div>
         )}
       </div>
