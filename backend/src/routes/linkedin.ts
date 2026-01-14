@@ -3,7 +3,7 @@ import qs from "qs";
 import axios from "axios";
 
 import LinkedInToken from "../models/LinkedInToken.js";
-import { signToken } from "../utils/jwt.js";
+import { generateToken } from "../utils/jwt.js";
 import { requireAuth } from "../middleware/auth.js";
 import { saveSocialMediaPost, saveMediaFile, saveAPIResponse, linkMediaToPost } from "../services/databaseService.js";
 import {
@@ -80,7 +80,7 @@ async function saveLinkedInPostToDB(
     let organizationName = postData.organizationName;
     if (isOrganization && postData.organizationId && !organizationName) {
       try {
-        const organization = await getAdministeredOrganizations(token.accessToken).then((r: any) =>
+        const organization = await getAdministeredOrganizations(token.accessToken as string).then((r: any) =>
           r.organizations?.find((org: any) => org.id === postData.organizationId)
         ).catch(() => null);
         organizationName = organization?.name || undefined;

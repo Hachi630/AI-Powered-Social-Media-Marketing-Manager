@@ -41,6 +41,7 @@ export interface User {
   productTypes?: string[]
   productImages?: string[]
   meloGoals?: string[]
+  companyDescription?: string
   createdAt: string
 }
 
@@ -126,7 +127,7 @@ export const authService = {
     try {
       const url = `${API_URL}/google`
       console.log('[Auth Service] Google login request to:', url)
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -134,30 +135,30 @@ export const authService = {
         },
         body: JSON.stringify({ idToken }),
       })
-      
+
       console.log('[Auth Service] Google login response status:', response.status)
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
         console.error('[Auth Service] Google login error:', errorData)
-        return { 
-          success: false, 
-          message: errorData.message || `Server error: ${response.status}` 
+        return {
+          success: false,
+          message: errorData.message || `Server error: ${response.status}`
         }
       }
-      
+
       const data = await response.json()
       console.log('[Auth Service] Google login success:', data.success)
-      
+
       if (data.token) {
         localStorage.setItem('token', data.token)
       }
       return data
     } catch (error: any) {
       console.error('[Auth Service] Google login network error:', error)
-      return { 
-        success: false, 
-        message: error.message || 'Network error: Unable to connect to server' 
+      return {
+        success: false,
+        message: error.message || 'Network error: Unable to connect to server'
       }
     }
   },

@@ -16,19 +16,19 @@ export async function uploadMediaToAyrshare(
     // Dynamically import form-data
     const FormData = (await import('form-data')).default
     const form = new FormData()
-    
+
     // Ayrshare expects the file field to be named 'file'
     form.append('file', fileBuffer, {
       filename: fileName,
       contentType: mimeType,
     })
-    
+
     console.log('[Ayrshare Media Upload] Uploading:', {
       fileName,
       mimeType,
       size: fileBuffer.length,
     })
-    
+
     const response = await axios.post(
       `${AYRSHARE_BASE_URL}/media/upload`,
       form,
@@ -41,22 +41,22 @@ export async function uploadMediaToAyrshare(
         maxBodyLength: Infinity,
       }
     )
-    
+
     console.log('[Ayrshare Media Upload] Response:', response.data)
-    
+
     // Ayrshare returns the URL in different possible fields
-    const mediaUrl = response.data?.url || 
-                    response.data?.mediaUrl || 
-                    response.data?.data?.url ||
-                    response.data?.data?.mediaUrl
-    
+    const mediaUrl = response.data?.url ||
+      response.data?.mediaUrl ||
+      response.data?.data?.url ||
+      response.data?.data?.mediaUrl
+
     if (mediaUrl) {
       return {
         success: true,
         url: mediaUrl,
       }
     }
-    
+
     return {
       success: false,
       error: 'No URL returned from Ayrshare media upload. Response: ' + JSON.stringify(response.data),
@@ -69,10 +69,10 @@ export async function uploadMediaToAyrshare(
     })
     return {
       success: false,
-      error: error?.response?.data?.message || 
-             error?.response?.data?.error || 
-             error.message || 
-             'Failed to upload media to Ayrshare',
+      error: error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error.message ||
+        'Failed to upload media to Ayrshare',
     }
   }
 }
@@ -100,23 +100,23 @@ export async function postToAyrshare(request: AyrsharePostRequest): Promise<Ayrs
   try {
     // Normalize platforms to lowercase and validate
     const normalizedPlatforms = request.platforms.map(p => p.toLowerCase())
-    
+
     // Ayrshare expects platforms as an ARRAY, not a comma-separated string
     const payload: any = {
       post: request.post,
       platforms: normalizedPlatforms, // Send as array
     }
-    
+
     // Add media URLs if provided
     if (request.mediaUrls && request.mediaUrls.length > 0) {
       // Ayrshare expects mediaUrls as an array
       payload.mediaUrls = request.mediaUrls
     }
-    
+
     if (request.scheduleDate) {
       payload.scheduleDate = request.scheduleDate
     }
-    
+
     // Validate platforms array is not empty
     if (!payload.platforms || payload.platforms.length === 0) {
       return {
@@ -124,7 +124,7 @@ export async function postToAyrshare(request: AyrsharePostRequest): Promise<Ayrs
         error: 'Platforms array cannot be empty',
       }
     }
-    
+
     // Validate each platform is a valid string
     const validPlatformNames = ['facebook', 'twitter', 'instagram', 'linkedin', 'pinterest', 'youtube', 'tiktok', 'reddit', 'telegram', 'snapchat', 'googlebusiness', 'bluesky']
     const invalidPlatforms = payload.platforms.filter((p: string) => !validPlatformNames.includes(p))
@@ -134,14 +134,14 @@ export async function postToAyrshare(request: AyrsharePostRequest): Promise<Ayrs
         error: `Invalid platform names: ${invalidPlatforms.join(', ')}`,
       }
     }
-    
+
     console.log('[Ayrshare] Posting with payload:', {
       post: payload.post?.substring(0, 50) + '...',
       platforms: payload.platforms,
       platformsType: Array.isArray(payload.platforms) ? 'array' : typeof payload.platforms,
       mediaUrlsCount: payload.mediaUrls?.length || 0,
     })
-    
+
     const response = await axios.post(
       `${AYRSHARE_BASE_URL}/post`,
       payload,
@@ -152,9 +152,9 @@ export async function postToAyrshare(request: AyrsharePostRequest): Promise<Ayrs
         },
       }
     )
-    
+
     console.log('[Ayrshare] Post response:', response.data)
-    
+
     return {
       success: true,
       id: response.data.id,
@@ -164,10 +164,10 @@ export async function postToAyrshare(request: AyrsharePostRequest): Promise<Ayrs
     }
   } catch (error: any) {
     console.error('Ayrshare post error:', error?.response?.data || error.message)
-    const errorMessage = error?.response?.data?.message || 
-                        error?.response?.data?.error || 
-                        error?.message || 
-                        'Failed to post via Ayrshare'
+    const errorMessage = error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      'Failed to post via Ayrshare'
     return {
       success: false,
       error: errorMessage,
@@ -265,7 +265,7 @@ export async function getAllPosts(limit: number = 100): Promise<AyrsharePost[]> 
           platform = 'linkedin'
         }
       }
-      
+
       return {
         id: post.id || post.postId,
         postId: post.postId || post.id,
@@ -298,7 +298,7 @@ export function calculatePostingFrequencyByDay(posts: AyrsharePost[]): Array<{ d
     'Saturday': 0,
     'Sunday': 0,
   }
-  
+
   posts.forEach((post) => {
     if (!post.postedDate) return
     const date = new Date(post.postedDate)
@@ -307,7 +307,7 @@ export function calculatePostingFrequencyByDay(posts: AyrsharePost[]): Array<{ d
       dayCounts[dayName]++
     }
   })
-  
+
   const total = posts.length
   return Object.entries(dayCounts)
     .map(([day, count]) => ({
@@ -323,19 +323,19 @@ export function calculatePostingFrequencyByDay(posts: AyrsharePost[]): Array<{ d
  */
 export function calculatePostingFrequencyByHour(posts: AyrsharePost[]): Array<{ hour: number; count: number; percentage: number }> {
   const hourCounts: Record<number, number> = {}
-  
+
   // Initialize all hours
   for (let i = 0; i < 24; i++) {
     hourCounts[i] = 0
   }
-  
+
   posts.forEach((post) => {
     if (!post.postedDate) return
     const date = new Date(post.postedDate)
     const hour = date.getHours()
     hourCounts[hour] = (hourCounts[hour] || 0) + 1
   })
-  
+
   const total = posts.length
   return Object.entries(hourCounts)
     .map(([hour, count]) => ({
@@ -362,15 +362,15 @@ export function calculatePlatformUsagePatterns(posts: AyrsharePost[]): Record<st
     postsByHour: Record<number, number>
     statusBreakdown: Record<string, number>
   }> = {}
-  
+
   posts.forEach((post) => {
     let platform = post.platform?.toLowerCase() || ''
     if (platform === 'x' || platform === 'twitter/x') {
       platform = 'twitter'
     }
-    
+
     if (!platform) return
-    
+
     if (!platformData[platform]) {
       platformData[platform] = {
         posts: [],
@@ -379,28 +379,28 @@ export function calculatePlatformUsagePatterns(posts: AyrsharePost[]): Record<st
         statusBreakdown: {},
       }
     }
-    
+
     platformData[platform].posts.push(post)
-    
+
     // Count by day
     if (post.postedDate) {
       const date = new Date(post.postedDate)
       const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
       platformData[platform].postsByDay[dayName] = (platformData[platform].postsByDay[dayName] || 0) + 1
-      
+
       // Count by hour
       const hour = date.getHours()
       platformData[platform].postsByHour[hour] = (platformData[platform].postsByHour[hour] || 0) + 1
     }
-    
+
     // Count by status
     const status = post.status || 'published'
     platformData[platform].statusBreakdown[status] = (platformData[platform].statusBreakdown[status] || 0) + 1
   })
-  
+
   const total = posts.length
   const result: Record<string, any> = {}
-  
+
   Object.entries(platformData).forEach(([platform, data]) => {
     result[platform] = {
       totalPosts: data.posts.length,
@@ -410,7 +410,7 @@ export function calculatePlatformUsagePatterns(posts: AyrsharePost[]): Record<st
       statusBreakdown: data.statusBreakdown,
     }
   })
-  
+
   return result
 }
 
@@ -423,18 +423,18 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
   skipped: number
   errors: number
 }> {
-  const { default: SocialMediaPost } = await import('../models/SocialMediaPost')
+  const { default: SocialMediaPost } = await import('../models/SocialMediaPost.js')
   const { Types } = await import('mongoose')
-  
+
   let synced = 0
   let skipped = 0
   let errors = 0
-  
+
   try {
     // Fetch all posts from Ayrshare
     const ayrsharePosts = await getAllPosts(500)
     console.log(`[Ayrshare Sync] Found ${ayrsharePosts.length} posts from Ayrshare API`)
-    
+
     for (const ayrsharePost of ayrsharePosts) {
       try {
         // Skip if no postId (can't identify the post)
@@ -442,25 +442,25 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
           skipped++
           continue
         }
-        
+
         // Normalize platform name
         let platform = ayrsharePost.platform?.toLowerCase() || ''
         if (platform === 'x' || platform === 'twitter/x') {
           platform = 'twitter'
         }
-        
+
         // Map to database platform enum
         const dbPlatform = platform === 'facebook' ? 'facebook' :
-                          platform === 'instagram' ? 'instagram' :
-                          platform === 'twitter' ? 'twitter' :
-                          platform === 'linkedin' ? 'linkedin' : null
-        
+          platform === 'instagram' ? 'instagram' :
+            platform === 'twitter' ? 'twitter' :
+              platform === 'linkedin' ? 'linkedin' : null
+
         if (!dbPlatform) {
           console.log(`[Ayrshare Sync] Skipping unsupported platform: ${platform}`)
           skipped++
           continue
         }
-        
+
         // Check if post already exists in database
         const existingPost = await SocialMediaPost.findOne({
           $or: [
@@ -469,18 +469,18 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
           ],
           userId: new Types.ObjectId(userId),
         })
-        
+
         if (existingPost) {
           // Update existing post with latest data
           existingPost.content = ayrsharePost.text || existingPost.content
-          existingPost.status = ayrsharePost.status === 'published' ? 'published' : 
-                               ayrsharePost.status === 'scheduled' ? 'scheduled' : 
-                               existingPost.status
-          
+          existingPost.status = ayrsharePost.status === 'published' ? 'published' :
+            ayrsharePost.status === 'scheduled' ? 'scheduled' :
+              existingPost.status
+
           if (ayrsharePost.postedDate) {
             existingPost.publishedAt = new Date(ayrsharePost.postedDate)
           }
-          
+
           // Update engagement metrics if available
           if (ayrsharePost.analytics) {
             existingPost.likes = ayrsharePost.analytics.likes || existingPost.likes || 0
@@ -489,13 +489,13 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
             existingPost.views = ayrsharePost.analytics.views || existingPost.views || 0
             existingPost.impressions = ayrsharePost.analytics.impressions || existingPost.impressions || 0
           }
-          
+
           await existingPost.save()
           synced++
         } else {
           // Create new post in database
           const postDate = ayrsharePost.postedDate ? new Date(ayrsharePost.postedDate) : new Date()
-          
+
           const newPost = new SocialMediaPost({
             userId: new Types.ObjectId(userId),
             platform: dbPlatform,
@@ -506,8 +506,8 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
               url: url,
             })) || [],
             platformPostId: ayrsharePost.postId,
-            status: ayrsharePost.status === 'published' ? 'published' : 
-                   ayrsharePost.status === 'scheduled' ? 'scheduled' : 'published',
+            status: ayrsharePost.status === 'published' ? 'published' :
+              ayrsharePost.status === 'scheduled' ? 'scheduled' : 'published',
             publishedAt: postDate,
             likes: ayrsharePost.analytics?.likes || 0,
             comments: ayrsharePost.analytics?.comments || 0,
@@ -515,7 +515,7 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
             views: ayrsharePost.analytics?.views || 0,
             impressions: ayrsharePost.analytics?.impressions || 0,
           })
-          
+
           await newPost.save()
           synced++
           console.log(`[Ayrshare Sync] Created new post: ${dbPlatform} - ${ayrsharePost.postId}`)
@@ -525,7 +525,7 @@ export async function syncAyrsharePostsToDatabase(userId: string): Promise<{
         errors++
       }
     }
-    
+
     console.log(`[Ayrshare Sync] Complete: ${synced} synced, ${skipped} skipped, ${errors} errors`)
     return { synced, skipped, errors }
   } catch (error: any) {
@@ -545,25 +545,25 @@ export function calculateBestPostingTimesByFrequency(posts: AyrsharePost[]): {
   const dayHourMap = new Map<string, number>()
   const dayCounts: Record<string, number> = {}
   const hourCounts: Record<number, number> = {}
-  
+
   posts.forEach((post) => {
     if (!post.postedDate) return
-    
+
     const date = new Date(post.postedDate)
     const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
     const hour = date.getHours()
     const key = `${dayName}-${hour}`
-    
+
     // Count day-hour combinations
     dayHourMap.set(key, (dayHourMap.get(key) || 0) + 1)
-    
+
     // Count days
     dayCounts[dayName] = (dayCounts[dayName] || 0) + 1
-    
+
     // Count hours
     hourCounts[hour] = (hourCounts[hour] || 0) + 1
   })
-  
+
   const bestDays = Object.entries(dayCounts)
     .map(([day, count]) => ({
       day,
@@ -572,7 +572,7 @@ export function calculateBestPostingTimesByFrequency(posts: AyrsharePost[]): {
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 7)
-  
+
   const bestHours = Object.entries(hourCounts)
     .map(([hour, count]) => ({
       hour: parseInt(hour),
@@ -581,7 +581,7 @@ export function calculateBestPostingTimesByFrequency(posts: AyrsharePost[]): {
     }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 24)
-  
+
   const bestDayHourCombinations = Array.from(dayHourMap.entries())
     .map(([key, count]) => {
       const [day, hour] = key.split('-')
@@ -593,7 +593,7 @@ export function calculateBestPostingTimesByFrequency(posts: AyrsharePost[]): {
     })
     .sort((a, b) => b.count - a.count)
     .slice(0, 20)
-  
+
   return {
     bestDays,
     bestHours,
@@ -606,12 +606,12 @@ export function calculateBestPostingTimesByFrequency(posts: AyrsharePost[]): {
  */
 export async function getMultiplePostAnalytics(postIds: string[]): Promise<Record<string, AyrshareAnalytics>> {
   const results: Record<string, AyrshareAnalytics> = {}
-  
+
   // Ayrshare API might have rate limits, so we'll fetch in batches
   const batchSize = 10
   for (let i = 0; i < postIds.length; i += batchSize) {
     const batch = postIds.slice(i, i + batchSize)
-    
+
     await Promise.all(
       batch.map(async (postId) => {
         try {
@@ -624,13 +624,13 @@ export async function getMultiplePostAnalytics(postIds: string[]): Promise<Recor
         }
       })
     )
-    
+
     // Small delay to avoid rate limiting
     if (i + batchSize < postIds.length) {
       await new Promise(resolve => setTimeout(resolve, 200))
     }
   }
-  
+
   return results
 }
 
@@ -647,24 +647,24 @@ export async function updatePostEngagementMetrics(
   impressions: number
 }>> {
   const metrics: Record<string, any> = {}
-  
+
   // Get post IDs to fetch analytics for
   const postIds = posts
     .map(p => p.platformPostId || p.postId)
     .filter(id => id && id !== 'undefined')
-  
+
   if (postIds.length === 0) {
     return metrics
   }
-  
+
   console.log(`[Ayrshare] Fetching analytics for ${postIds.length} posts`)
-  
+
   // Fetch analytics from Ayrshare
   const analyticsData = await getMultiplePostAnalytics(postIds)
-  
+
   // Also get all posts from history which includes analytics
   const allPosts = await getAllPosts(200)
-  
+
   // Create a map of postId to analytics
   const postAnalyticsMap = new Map<string, AyrsharePost>()
   allPosts.forEach(post => {
@@ -672,12 +672,12 @@ export async function updatePostEngagementMetrics(
       postAnalyticsMap.set(post.postId, post)
     }
   })
-  
+
   // Combine analytics from both sources
   posts.forEach((post) => {
     const postId = post.platformPostId || post.postId
     if (!postId) return
-    
+
     // Try to get from analytics endpoint first
     const analytics = analyticsData[postId]
     if (analytics) {
@@ -690,7 +690,7 @@ export async function updatePostEngagementMetrics(
       }
       return
     }
-    
+
     // Fallback to history data
     const historyPost = postAnalyticsMap.get(postId)
     if (historyPost?.analytics) {
@@ -703,7 +703,7 @@ export async function updatePostEngagementMetrics(
       }
     }
   })
-  
+
   console.log(`[Ayrshare] Retrieved metrics for ${Object.keys(metrics).length} posts`)
   return metrics
 }
@@ -734,27 +734,27 @@ export async function getSocialAnalytics(): Promise<any> {
  */
 export function calculateTopPostingTimes(posts: AyrsharePost[]): Array<{ hour: number; day: string; count: number; engagement: number }> {
   const timeMap = new Map<string, { count: number; engagement: number }>()
-  
+
   posts.forEach((post) => {
     if (!post.postedDate) return
-    
+
     const date = new Date(post.postedDate)
     const hour = date.getHours()
     const day = date.toLocaleDateString('en-US', { weekday: 'long' })
     const key = `${day}-${hour}`
-    
-    const engagement = (post.analytics?.likes || 0) + 
-                      (post.analytics?.comments || 0) * 2 + 
-                      (post.analytics?.shares || 0) * 3 +
-                      (post.analytics?.views || 0) * 0.1
-    
+
+    const engagement = (post.analytics?.likes || 0) +
+      (post.analytics?.comments || 0) * 2 +
+      (post.analytics?.shares || 0) * 3 +
+      (post.analytics?.views || 0) * 0.1
+
     const existing = timeMap.get(key) || { count: 0, engagement: 0 }
     timeMap.set(key, {
       count: existing.count + 1,
       engagement: existing.engagement + engagement,
     })
   })
-  
+
   return Array.from(timeMap.entries())
     .map(([key, data]) => {
       const [day, hour] = key.split('-')
@@ -774,54 +774,54 @@ export function calculateTopPostingTimes(posts: AyrsharePost[]): Array<{ hour: n
  */
 export function generatePlatformHeatmaps(posts: AyrsharePost[]): Record<string, Array<{ hour: number; day: string; value: number }>> {
   const platformMap: Record<string, Map<string, number>> = {}
-  
+
   const platforms = ['facebook', 'instagram', 'twitter', 'linkedin']
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const hours = Array.from({ length: 24 }, (_, i) => i)
-  
+
   // Initialize all platforms with empty maps
   platforms.forEach((platform) => {
     platformMap[platform] = new Map()
   })
-  
+
   // Process posts and aggregate engagement by platform, day, and hour
   posts.forEach((post) => {
     if (!post.postedDate) return
-    
+
     let platform = post.platform?.toLowerCase()
-    
+
     // Normalize platform names
     if (platform === 'x' || platform === 'twitter/x') {
       platform = 'twitter'
     }
-    
+
     if (!platform || !platformMap[platform]) return
-    
+
     const date = new Date(post.postedDate)
     const hour = date.getHours()
     // Normalize day names to match frontend format (Mon, Tue, Wed, Thu, Fri, Sat, Sun)
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const day = dayNames[date.getDay()]
     const key = `${day}-${hour}`
-    
-    const engagement = (post.analytics?.likes || 0) + 
-                      (post.analytics?.comments || 0) * 2 + 
-                      (post.analytics?.shares || 0) * 3 +
-                      (post.analytics?.views || 0) * 0.1
-    
+
+    const engagement = (post.analytics?.likes || 0) +
+      (post.analytics?.comments || 0) * 2 +
+      (post.analytics?.shares || 0) * 3 +
+      (post.analytics?.views || 0) * 0.1
+
     // If no engagement data but post exists, give it a minimum value of 1 for visibility
     const engagementValue = engagement > 0 ? engagement : 1
-    
+
     const existing = platformMap[platform].get(key) || 0
     platformMap[platform].set(key, existing + engagementValue)
   })
-  
+
   const result: Record<string, Array<{ hour: number; day: string; value: number }>> = {}
-  
+
   // Generate complete heatmap data for all platforms (all days and hours)
   platforms.forEach((platform) => {
     result[platform] = []
-    
+
     // Generate all combinations of days and hours
     days.forEach((day) => {
       hours.forEach((hour) => {
@@ -835,7 +835,7 @@ export function generatePlatformHeatmaps(posts: AyrsharePost[]): Record<string, 
       })
     })
   })
-  
+
   return result
 }
 
@@ -858,30 +858,30 @@ export function calculatePostingConsistency(posts: AyrsharePost[]): {
       recommendations: ['Post more frequently to establish a consistent presence'],
     }
   }
-  
+
   const sortedPosts = [...posts]
     .filter((p) => p.postedDate)
     .sort((a, b) => new Date(a.postedDate!).getTime() - new Date(b.postedDate!).getTime())
-  
+
   const gaps: number[] = []
   for (let i = 1; i < sortedPosts.length; i++) {
-    const gap = (new Date(sortedPosts[i].postedDate!).getTime() - 
-                 new Date(sortedPosts[i - 1].postedDate!).getTime()) / (1000 * 60 * 60 * 24)
+    const gap = (new Date(sortedPosts[i].postedDate!).getTime() -
+      new Date(sortedPosts[i - 1].postedDate!).getTime()) / (1000 * 60 * 60 * 24)
     gaps.push(gap)
   }
-  
+
   const averageDaysBetween = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length
   const longestGap = Math.max(...gaps)
   const shortestGap = Math.min(...gaps)
-  
+
   // Calculate consistency score (0-100)
   // Lower variance = higher consistency
   const variance = gaps.reduce((sum, gap) => sum + Math.pow(gap - averageDaysBetween, 2), 0) / gaps.length
   const standardDeviation = Math.sqrt(variance)
   const consistencyScore = Math.max(0, 100 - (standardDeviation / averageDaysBetween) * 100)
-  
+
   const recommendations: string[] = []
-  
+
   if (consistencyScore < 50) {
     recommendations.push('Your posting schedule is inconsistent. Try to post at regular intervals.')
   }
@@ -894,7 +894,7 @@ export function calculatePostingConsistency(posts: AyrsharePost[]): {
   if (consistencyScore > 80) {
     recommendations.push('Great job maintaining a consistent posting schedule!')
   }
-  
+
   return {
     consistencyScore: Math.round(consistencyScore),
     averageDaysBetween: Math.round(averageDaysBetween * 10) / 10,
@@ -946,11 +946,11 @@ export function calculateEngagementMetrics(posts: AyrsharePost[]): {
   })
 
   const totalPosts = posts.length
-  const averageEngagement = totalPosts > 0 
-    ? (totalLikes + totalComments * 2 + totalShares * 3 + totalViews * 0.1) / totalPosts 
+  const averageEngagement = totalPosts > 0
+    ? (totalLikes + totalComments * 2 + totalShares * 3 + totalViews * 0.1) / totalPosts
     : 0
-  const engagementRate = totalImpressions > 0 
-    ? ((totalLikes + totalComments + totalShares) / totalImpressions) * 100 
+  const engagementRate = totalImpressions > 0
+    ? ((totalLikes + totalComments + totalShares) / totalImpressions) * 100
     : 0
 
   return {
@@ -1017,15 +1017,15 @@ export function calculatePlatformPerformance(posts: AyrsharePost[]): Record<stri
   const result: Record<string, any> = {}
 
   Object.entries(platformStats).forEach(([platform, stats]) => {
-    const totalEngagement = stats.totalLikes + 
-                           stats.totalComments * 2 + 
-                           stats.totalShares * 3 + 
-                           stats.totalViews * 0.1
-    const averageEngagement = stats.posts.length > 0 
-      ? totalEngagement / stats.posts.length 
+    const totalEngagement = stats.totalLikes +
+      stats.totalComments * 2 +
+      stats.totalShares * 3 +
+      stats.totalViews * 0.1
+    const averageEngagement = stats.posts.length > 0
+      ? totalEngagement / stats.posts.length
       : 0
-    const engagementRate = stats.totalImpressions > 0 
-      ? ((stats.totalLikes + stats.totalComments + stats.totalShares) / stats.totalImpressions) * 100 
+    const engagementRate = stats.totalImpressions > 0
+      ? ((stats.totalLikes + stats.totalComments + stats.totalShares) / stats.totalImpressions) * 100
       : 0
 
     result[platform] = {
@@ -1057,11 +1057,11 @@ export function calculateContentTypePerformance(posts: AyrsharePost[]): Record<s
   }> = {}
 
   posts.forEach((post) => {
-    const hasImage = post.mediaUrls && post.mediaUrls.length > 0 && 
-                     post.mediaUrls.some(url => /\.(jpg|jpeg|png|gif|webp)/i.test(url))
-    const hasVideo = post.mediaUrls && post.mediaUrls.length > 0 && 
-                     post.mediaUrls.some(url => /\.(mp4|mov|avi|webm)/i.test(url))
-    
+    const hasImage = post.mediaUrls && post.mediaUrls.length > 0 &&
+      post.mediaUrls.some(url => /\.(jpg|jpeg|png|gif|webp)/i.test(url))
+    const hasVideo = post.mediaUrls && post.mediaUrls.length > 0 &&
+      post.mediaUrls.some(url => /\.(mp4|mov|avi|webm)/i.test(url))
+
     let contentType = 'text'
     if (hasVideo) {
       contentType = 'video'
@@ -1077,10 +1077,10 @@ export function calculateContentTypePerformance(posts: AyrsharePost[]): Record<s
     }
 
     typeStats[contentType].posts.push(post)
-    const engagement = (post.analytics?.likes || 0) + 
-                      (post.analytics?.comments || 0) * 2 + 
-                      (post.analytics?.shares || 0) * 3 +
-                      (post.analytics?.views || 0) * 0.1
+    const engagement = (post.analytics?.likes || 0) +
+      (post.analytics?.comments || 0) * 2 +
+      (post.analytics?.shares || 0) * 3 +
+      (post.analytics?.views || 0) * 0.1
     typeStats[contentType].totalEngagement += engagement
   })
 
@@ -1089,8 +1089,8 @@ export function calculateContentTypePerformance(posts: AyrsharePost[]): Record<s
   Object.entries(typeStats).forEach(([type, stats]) => {
     result[type] = {
       count: stats.posts.length,
-      averageEngagement: stats.posts.length > 0 
-        ? Math.round((stats.totalEngagement / stats.posts.length) * 10) / 10 
+      averageEngagement: stats.posts.length > 0
+        ? Math.round((stats.totalEngagement / stats.posts.length) * 10) / 10
         : 0,
       totalEngagement: Math.round(stats.totalEngagement * 10) / 10,
     }
@@ -1120,10 +1120,10 @@ export function calculateEngagementTrends(posts: AyrsharePost[]): Array<{
     const dateStr = date.toISOString().split('T')[0]
 
     const existing = dateMap.get(dateStr) || { posts: 0, engagement: 0 }
-    const engagement = (post.analytics?.likes || 0) + 
-                      (post.analytics?.comments || 0) * 2 + 
-                      (post.analytics?.shares || 0) * 3 +
-                      (post.analytics?.views || 0) * 0.1
+    const engagement = (post.analytics?.likes || 0) +
+      (post.analytics?.comments || 0) * 2 +
+      (post.analytics?.shares || 0) * 3 +
+      (post.analytics?.views || 0) * 0.1
 
     dateMap.set(dateStr, {
       posts: existing.posts + 1,
@@ -1136,8 +1136,8 @@ export function calculateEngagementTrends(posts: AyrsharePost[]): Array<{
       date,
       posts: data.posts,
       engagement: Math.round(data.engagement * 10) / 10,
-      averageEngagement: data.posts > 0 
-        ? Math.round((data.engagement / data.posts) * 10) / 10 
+      averageEngagement: data.posts > 0
+        ? Math.round((data.engagement / data.posts) * 10) / 10
         : 0,
     }))
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -1152,29 +1152,29 @@ export function getIndustryRecommendations(
   platformHeatmaps: Record<string, any>
 ): string[] {
   const recommendations: string[] = []
-  
+
   // Analyze posting times
-  const weekdayPosts = postingTimes.filter((pt) => 
+  const weekdayPosts = postingTimes.filter((pt) =>
     ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].includes(pt.day)
   )
-  const weekendPosts = postingTimes.filter((pt) => 
+  const weekendPosts = postingTimes.filter((pt) =>
     ['Saturday', 'Sunday'].includes(pt.day)
   )
-  
+
   if (weekendPosts.length === 0 && weekdayPosts.length > 0) {
     recommendations.push('Consider posting on weekends - many audiences are more active during leisure time.')
   }
-  
+
   // Analyze peak hours
   const peakHours = postingTimes
     .sort((a, b) => b.count - a.count)
     .slice(0, 5)
     .map((pt) => pt.hour)
-  
+
   const morningHours = peakHours.filter((h) => h >= 6 && h < 12)
   const afternoonHours = peakHours.filter((h) => h >= 12 && h < 17)
   const eveningHours = peakHours.filter((h) => h >= 17 && h < 22)
-  
+
   if (morningHours.length > afternoonHours.length && morningHours.length > eveningHours.length) {
     recommendations.push('Your audience is most active in the morning. Continue posting during 6 AM - 12 PM.')
   } else if (afternoonHours.length > eveningHours.length) {
@@ -1182,22 +1182,22 @@ export function getIndustryRecommendations(
   } else if (eveningHours.length > 0) {
     recommendations.push('Evening posting (5 PM - 10 PM) shows good engagement. Maintain this schedule.')
   }
-  
+
   // Platform-specific recommendations
   const platforms = Object.keys(platformHeatmaps)
   if (platforms.length > 0) {
     recommendations.push(`You're active on ${platforms.length} platform(s). Consider diversifying content across platforms.`)
   }
-  
+
   // Consistency recommendations
   if (consistency.consistencyScore < 70) {
     recommendations.push('Aim for 3-5 posts per week for optimal engagement and algorithm favorability.')
   }
-  
+
   // Industry best practices
   recommendations.push('Best practice: Post when your audience is most active. Use analytics to identify peak engagement times.')
   recommendations.push('Tip: Maintain a consistent posting schedule to build audience expectations and improve reach.')
-  
+
   return recommendations
 }
 
