@@ -31,6 +31,8 @@ import Header from "../components/Header";
 import { MELO_LOGO } from "../constants/assets";
 import styles from "./BrandProfile.module.css";
 import { User, authService } from "../services/authService";
+import { uploadService } from "../services/uploadService";
+import { getImageUrl } from "../utils/imageUtils";
 
 const { Content } = Layout;
 
@@ -64,6 +66,10 @@ interface CompanyData {
   knowledgeProducts: string[];
   targetAudience: string[];
   companyDescription: string;
+  brandLogoUrl?: string; // Optional URL for brand logo
+  productTypes?: string[]; // Optional listing of product types
+  productImages?: string[]; // Optional array of product image URLs
+  meloGoals?: string[]; // Optional array of goals
 }
 
 // Default company template
@@ -77,6 +83,10 @@ const createDefaultCompany = (name: string): CompanyData => ({
   knowledgeProducts: [],
   targetAudience: [],
   companyDescription: "",
+  brandLogoUrl: "",
+  productTypes: [],
+  productImages: [],
+  meloGoals: [],
 });
 
 interface BrandProfileProps {
@@ -114,6 +124,7 @@ export default function BrandProfile({
   const [meloGoals, setMeloGoals] = useState<string[]>([]);
   const [newProductType, setNewProductType] = useState("");
   const [newMeloGoal, setNewMeloGoal] = useState("");
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   // Multi-company state management
   const [companies, setCompanies] = useState<CompanyData[]>([]);
@@ -810,9 +821,9 @@ export default function BrandProfile({
                       style={
                         selectedTone === tone.key
                           ? {
-                              backgroundColor: tone.color,
-                              borderColor: tone.color,
-                            }
+                            backgroundColor: tone.color,
+                            borderColor: tone.color,
+                          }
                           : undefined
                       }
                       onClick={() => handleToneSelect(tone.key)}

@@ -1,17 +1,17 @@
 import express, { Request, Response } from 'express'
-import { protect } from '../middleware/auth'
-import { AuthRequest } from '../types'
-import { geminiService, ChatMessage } from '../services/geminiService'
-import Conversation from '../models/Conversation'
-import ProjectFolder from '../models/ProjectFolder'
-import { generateImage } from '../services/imageGenerationService'
-import { saveImage } from '../utils/imageStorage'
-import { generateContentPlan } from '../services/contentPlanService'
-import CalendarItem from '../models/CalendarItem'
-import { readImageAsBase64 } from '../utils/imageReader'
-import { extractTextFromFile } from '../utils/fileContentExtractor'
-import { saveAIGeneratedContent, saveMediaFile } from '../services/databaseService'
-import AIGeneratedContent from '../models/AIGeneratedContent'
+import { protect } from '../middleware/auth.js'
+import { AuthRequest } from '../types/index.js'
+import { geminiService, ChatMessage } from '../services/geminiService.js'
+import Conversation from '../models/Conversation.js'
+import ProjectFolder from '../models/ProjectFolder.js'
+import { generateImage } from '../services/imageGenerationService.js'
+import { saveImage } from '../utils/imageStorage.js'
+import { generateContentPlan } from '../services/contentPlanService.js'
+import CalendarItem from '../models/CalendarItem.js'
+import { readImageAsBase64 } from '../utils/imageReader.js'
+import { extractTextFromFile } from '../utils/fileContentExtractor.js'
+import { saveAIGeneratedContent, saveMediaFile } from '../services/databaseService.js'
+import AIGeneratedContent from '../models/AIGeneratedContent.js'
 
 const router = express.Router()
 
@@ -57,6 +57,7 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
     }
 
     let conversation = null;
+    let userMessageContent = "";
 
     // If conversationId exists, load the conversation
     if (conversationId) {
@@ -109,8 +110,11 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       // Remove all messages after editMessageIndex
       conversation.messages = conversation.messages.slice(0, editMessageIndex + 1);
 
+      // Move declaration up
+      let userMessageContent = "";
+
       // Update the message at editMessageIndex
-      const userMessageContent = message
+      userMessageContent = message
         ? message.trim()
         : images && images.length > 0
           ? `Uploaded ${images.length} image(s)`
@@ -125,11 +129,11 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
         files:
           files && Array.isArray(files)
             ? files.map((f: any) => ({
-                url: f.url,
-                name: f.name,
-                type: f.type,
-                size: f.size,
-              }))
+              url: f.url,
+              name: f.name,
+              type: f.type,
+              size: f.size,
+            }))
             : undefined,
         timestamp: new Date(),
       };
@@ -160,25 +164,25 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
 
     // Add current user message (if not in edit mode)
     if (editMessageIndex === undefined || editMessageIndex === null) {
-    const userMessageContent = message
-      ? message.trim()
-      : images && images.length > 0
-        ? `Uploaded ${images.length} image(s)`
-        : files && files.length > 0
-          ? `Uploaded ${files.length} file(s)`
+      const userMessageContent = message
+        ? message.trim()
+        : images && images.length > 0
+          ? `Uploaded ${images.length} image(s)`
+          : files && files.length > 0
+            ? `Uploaded ${files.length} file(s)`
             : "";
-    messages.push({
+      messages.push({
         role: "user",
-      content: userMessageContent,
-      images: images && Array.isArray(images) ? images : undefined,
-      files:
-        files && Array.isArray(files)
-          ? files.map((f: any) => ({
+        content: userMessageContent,
+        images: images && Array.isArray(images) ? images : undefined,
+        files:
+          files && Array.isArray(files)
+            ? files.map((f: any) => ({
               url: f.url,
               name: f.name,
               type: f.type,
             }))
-          : undefined,
+            : undefined,
       });
     }
 
@@ -286,11 +290,11 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
             files:
               files && Array.isArray(files)
                 ? files.map((f: any) => ({
-                    url: f.url,
-                    name: f.name,
-                    type: f.type,
-                    size: f.size,
-                  }))
+                  url: f.url,
+                  name: f.name,
+                  type: f.type,
+                  size: f.size,
+                }))
                 : undefined,
             timestamp: new Date(),
           },
@@ -305,29 +309,30 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       // Update existing conversation
       if (editMessageIndex === undefined || editMessageIndex === null) {
         // Normal mode: append new messages
-        const userMessageContent = message
+        userMessageContent = message
           ? message.trim()
           : images && images.length > 0
             ? `Uploaded ${images.length} image(s)`
             : files && files.length > 0
               ? `Uploaded ${files.length} file(s)`
               : "";
-      conversation.messages.push({
+        conversation.messages.push({
           role: "user",
-        content: userMessageContent,
-        images: images && Array.isArray(images) ? images : undefined,
-        files:
-          files && Array.isArray(files)
-            ? files.map((f: any) => ({
+          content: userMessageContent,
+          images: images && Array.isArray(images) ? images : undefined,
+          files:
+            files && Array.isArray(files)
+              ? files.map((f: any) => ({
                 url: f.url,
                 name: f.name,
                 type: f.type,
                 size: f.size,
               }))
-            : undefined,
-        timestamp: new Date(),
+              : undefined,
+          timestamp: new Date(),
         });
       }
+
       // Add assistant response
       conversation.messages.push({
         role: "assistant",
@@ -358,81 +363,106 @@ router.post(
   "/generate-image",
   protect,
   async (req: AuthRequest, res: Response) => {
-  try {
-    const user = req.user
-
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' })
-    }
-
-    const { prompt, conversationId } = req.body
-
-    // Validate prompt
-    if (!prompt || !prompt.trim()) {
-      return res.status(400).json({ success: false, message: 'Prompt is required' })
-    }
-
-    // Generate image
-    const startTime = Date.now()
-    const imageDataUrl = await generateImage(prompt.trim())
-    const processingTime = Date.now() - startTime
-
-    // Extract mime type and base64 data from data URL
-    const [header, base64Data] = imageDataUrl.split(',')
-    const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/png'
-
-    // Save image to file system
-    const imageUrl = await saveImage(base64Data, mimeType)
-
-    let conversation: any = null
-
-    // Save AI-generated image to database (before loading conversation)
     try {
-      // Save as AI-generated content
-      const aiContent = await saveAIGeneratedContent({
-        userId: user._id,
-        contentType: 'image',
-        input: prompt.trim(),
-        output: imageUrl,
-        model: process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
-        imageUrl: imageUrl,
-        imagePrompt: prompt.trim(),
-        processingTime,
-      })
+      const user = req.user
 
-      // Save as media file
-      await saveMediaFile({
-        userId: user._id,
-        fileName: imageUrl.split('/').pop() || 'generated-image.png',
-        originalName: 'generated-image.png',
-        filePath: imageUrl,
-        fileUrl: imageUrl,
-        fileType: 'image',
-        mimeType: mimeType,
-        fileSize: Buffer.from(base64Data, 'base64').length,
-        description: `AI-generated image: ${prompt.trim()}`,
-      })
-    } catch (dbError) {
-      console.error("Failed to save AI image to database:", dbError)
-      // Don't fail the request if DB save fails
-    }
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' })
+      }
 
-    // If conversationId exists, add image message to conversation
-    if (conversationId) {
-      conversation = await Conversation.findOne({
-        _id: conversationId,
-        userId: user._id,
-      })
+      const { prompt, conversationId } = req.body
 
-      if (conversation) {
-        conversation.messages.push({
-          role: 'assistant',
-          content: `Generated image: ${prompt.trim()}`,
-          images: [imageUrl],
-          timestamp: new Date(),
+      // Validate prompt
+      if (!prompt || !prompt.trim()) {
+        return res.status(400).json({ success: false, message: 'Prompt is required' })
+      }
+
+      // Generate image
+      const startTime = Date.now()
+      const imageDataUrl = await generateImage(prompt.trim())
+      const processingTime = Date.now() - startTime
+
+      // Extract mime type and base64 data from data URL
+      const [header, base64Data] = imageDataUrl.split(',')
+      const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/png'
+
+      // Save image to file system
+      const imageUrl = await saveImage(base64Data, mimeType)
+
+      let conversation: any = null
+
+      // Save AI-generated image to database (before loading conversation)
+      try {
+        // Save as AI-generated content
+        const aiContent = await saveAIGeneratedContent({
+          userId: user._id,
+          contentType: 'image',
+          input: prompt.trim(),
+          output: imageUrl,
+          model: process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+          imageUrl: imageUrl,
+          imagePrompt: prompt.trim(),
+          processingTime,
         })
-        await conversation.save()
-        
+
+        // Save as media file
+        await saveMediaFile({
+          userId: user._id,
+          fileName: imageUrl.split('/').pop() || 'generated-image.png',
+          originalName: 'generated-image.png',
+          filePath: imageUrl,
+          fileUrl: imageUrl,
+          fileType: 'image',
+          mimeType: mimeType,
+          fileSize: Buffer.from(base64Data, 'base64').length,
+          description: `AI-generated image: ${prompt.trim()}`,
+        })
+      } catch (dbError) {
+        console.error("Failed to save AI image to database:", dbError)
+        // Don't fail the request if DB save fails
+      }
+
+      // If conversationId exists, add image message to conversation
+      if (conversationId) {
+        conversation = await Conversation.findOne({
+          _id: conversationId,
+          userId: user._id,
+        })
+
+        if (conversation) {
+          conversation.messages.push({
+            role: 'assistant',
+            content: `Generated image: ${prompt.trim()}`,
+            images: [imageUrl],
+            timestamp: new Date(),
+          })
+          await conversation.save()
+
+          // Update AI content with conversation ID
+          try {
+            await AIGeneratedContent.findOneAndUpdate(
+              { userId: user._id, imageUrl: imageUrl },
+              { conversationId: conversation._id }
+            )
+          } catch (dbError) {
+            console.error("Failed to update AI content with conversation ID:", dbError)
+          }
+        }
+      } else {
+        // Create new conversation for image
+        conversation = await Conversation.create({
+          userId: user._id,
+          title: generateTitle(`Image: ${prompt.trim()}`),
+          messages: [
+            {
+              role: 'assistant',
+              content: `Generated image: ${prompt.trim()}`,
+              images: [imageUrl],
+              timestamp: new Date(),
+            },
+          ],
+        })
+
         // Update AI content with conversation ID
         try {
           await AIGeneratedContent.findOneAndUpdate(
@@ -443,44 +473,19 @@ router.post(
           console.error("Failed to update AI content with conversation ID:", dbError)
         }
       }
-    } else {
-      // Create new conversation for image
-      conversation = await Conversation.create({
-        userId: user._id,
-        title: generateTitle(`Image: ${prompt.trim()}`),
-        messages: [
-          {
-            role: 'assistant',
-            content: `Generated image: ${prompt.trim()}`,
-            images: [imageUrl],
-            timestamp: new Date(),
-          },
-        ],
-      })
-      
-      // Update AI content with conversation ID
-      try {
-        await AIGeneratedContent.findOneAndUpdate(
-          { userId: user._id, imageUrl: imageUrl },
-          { conversationId: conversation._id }
-        )
-      } catch (dbError) {
-        console.error("Failed to update AI content with conversation ID:", dbError)
-      }
-    }
 
-    res.json({
-      success: true,
-      imageUrl,
-      images: [imageUrl],
-      conversationId: conversation?._id.toString(),
-    })
-  } catch (error: any) {
+      res.json({
+        success: true,
+        imageUrl,
+        images: [imageUrl],
+        conversationId: conversation?._id.toString(),
+      })
+    } catch (error: any) {
       console.error("Image generation error:", error)
-    res.status(500).json({
-      success: false,
+      res.status(500).json({
+        success: false,
         message: error.message || "Failed to generate image",
-    })
+      })
     }
   }
 )
@@ -540,48 +545,48 @@ router.get(
   "/:conversationId",
   protect,
   async (req: AuthRequest, res: Response) => {
-  try {
+    try {
       const user = req.user;
 
-    if (!user) {
+      if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-    }
+      }
 
       const { conversationId } = req.params;
 
-    const conversation = await Conversation.findOne({
-      _id: conversationId,
-      userId: user._id,
+      const conversation = await Conversation.findOne({
+        _id: conversationId,
+        userId: user._id,
       });
 
-    if (!conversation) {
+      if (!conversation) {
         return res
           .status(404)
           .json({ success: false, message: "Conversation not found" });
-    }
+      }
 
-    res.json({
-      success: true,
-      conversation: {
-        id: conversation._id.toString(),
-        title: conversation.title,
-        messages: conversation.messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-          images: msg.images,
-          files: msg.files,
-          timestamp: msg.timestamp,
-        })),
-        createdAt: conversation.createdAt,
-        updatedAt: conversation.updatedAt,
-      },
+      res.json({
+        success: true,
+        conversation: {
+          id: conversation._id.toString(),
+          title: conversation.title,
+          messages: conversation.messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+            images: msg.images,
+            files: msg.files,
+            timestamp: msg.timestamp,
+          })),
+          createdAt: conversation.createdAt,
+          updatedAt: conversation.updatedAt,
+        },
       });
-  } catch (error: any) {
+    } catch (error: any) {
       console.error("Get conversation error:", error);
-    res.status(500).json({
-      success: false,
+      res.status(500).json({
+        success: false,
         message: error.message || "Failed to get conversation",
       });
     }
@@ -595,36 +600,36 @@ router.delete(
   "/:conversationId",
   protect,
   async (req: AuthRequest, res: Response) => {
-  try {
+    try {
       const user = req.user;
 
-    if (!user) {
+      if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-    }
+      }
 
       const { conversationId } = req.params;
 
-    const conversation = await Conversation.findOneAndDelete({
-      _id: conversationId,
-      userId: user._id,
+      const conversation = await Conversation.findOneAndDelete({
+        _id: conversationId,
+        userId: user._id,
       });
 
-    if (!conversation) {
+      if (!conversation) {
         return res
           .status(404)
           .json({ success: false, message: "Conversation not found" });
-    }
+      }
 
-    res.json({
-      success: true,
+      res.json({
+        success: true,
         message: "Conversation deleted successfully",
       });
-  } catch (error: any) {
+    } catch (error: any) {
       console.error("Delete conversation error:", error);
-    res.status(500).json({
-      success: false,
+      res.status(500).json({
+        success: false,
         message: error.message || "Failed to delete conversation",
       });
     }
@@ -638,18 +643,18 @@ router.post(
   "/generate-plan",
   protect,
   async (req: AuthRequest, res: Response) => {
-  try {
+    try {
       const user = req.user;
 
-    if (!user) {
+      if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-    }
+      }
 
       const { goal, startDate, endDate, platforms } = req.body;
 
-    // Validate required fields
+      // Validate required fields
       if (
         !goal ||
         !startDate ||
@@ -657,31 +662,31 @@ router.post(
         !platforms ||
         !Array.isArray(platforms)
       ) {
-      return res.status(400).json({
-        success: false,
+        return res.status(400).json({
+          success: false,
           message: "goal, startDate, endDate, and platforms array are required",
         });
-    }
+      }
 
       // Get user context from Brand Profile (saved by unique user ID)
-    const userContext = {
-      brandName: user.brandName,
-      industry: user.industry,
+      const userContext = {
+        brandName: user.brandName,
+        industry: user.industry,
         aboutMe: user.aboutMe, // Company description
-      toneOfVoice: user.toneOfVoice,
-      knowledgeProducts: user.knowledgeProducts,
-      targetAudience: user.targetAudience,
-    }
+        toneOfVoice: user.toneOfVoice,
+        knowledgeProducts: user.knowledgeProducts,
+        targetAudience: user.targetAudience,
+      }
 
-    // Generate content plan
+      // Generate content plan
       const startTime = Date.now()
-    const plan = await generateContentPlan({
-      userContext,
-      goal,
-      startDate,
-      endDate,
-      platforms,
-    })
+      const plan = await generateContentPlan({
+        userContext,
+        goal,
+        startDate,
+        endDate,
+        platforms,
+      })
       const processingTime = Date.now() - startTime
 
       // Save AI-generated content plan to database
@@ -704,23 +709,23 @@ router.post(
         // Don't fail the request if DB save fails
       }
 
-    res.json({
-      success: true,
-      plan,
-    })
-  } catch (error: any) {
-    console.error('Generate content plan error:', error)
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Failed to generate content plan',
-    })
-  }
+      res.json({
+        success: true,
+        plan,
+      })
+    } catch (error: any) {
+      console.error('Generate content plan error:', error)
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to generate content plan',
+      })
+    }
   }
 )
 
 // Helper function to get next global event number
 const getNextEventNumber = async (): Promise<number> => {
-  const Event = (await import('../models/Event')).default
+  const Event = (await import('../models/Event.js')).default
   const maxEvent = await Event.findOne().sort({ eventNumber: -1 }).lean()
   return (maxEvent?.eventNumber || 0) + 1
 }
@@ -732,77 +737,77 @@ router.post(
   "/send-to-calendar",
   protect,
   async (req: AuthRequest, res: Response) => {
-  try {
+    try {
       const user = req.user;
 
-    if (!user) {
+      if (!user) {
         return res
           .status(404)
           .json({ success: false, message: "User not found" });
-    }
+      }
 
       const { items, campaignId } = req.body;
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        success: false,
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
           message: "items array is required and must not be empty",
         });
-    }
+      }
 
-    // Validate and create calendar items
-    const itemsToCreate = items.map((item: any) => ({
-      userId: user._id,
-      campaignId: campaignId || null,
-      platform: item.platform,
-      date: new Date(item.date),
-      time: item.time || null,
-      title: item.title,
-      content: item.content,
-      variants: item.variants || {},
-      status: item.status || 'draft',
-    }))
-
-    const createdItems = await CalendarItem.insertMany(itemsToCreate)
-
-    // Create ONE event for all calendar items in this batch (from "Send to Calendar")
-    const Event = (await import('../models/Event')).default
-    const calendarItemIds = createdItems.map(item => item._id)
-    const nextEventNumber = await getNextEventNumber()
-    
-    // Get the earliest date from all created calendar items
-    const dates = createdItems.map(item => new Date(item.date))
-    const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())))
-    
-    await Event.create({
-      userId: user._id,
-      calendarItemIds,
-      eventNumber: nextEventNumber,
-      date: earliestDate, // Copy the earliest date from calendar items
-    })
-    
-    console.log(`[Send to Calendar] Created event #${nextEventNumber} with ${calendarItemIds.length} calendar items`)
-    console.log(`[Send to Calendar] Event date: ${earliestDate.toISOString().split('T')[0]}`)
-
-    res.status(201).json({
-      success: true,
-      items: createdItems.map((item) => ({
-        id: item._id.toString(),
-        userId: item.userId.toString(),
-        campaignId: item.campaignId ? item.campaignId.toString() : null,
+      // Validate and create calendar items
+      const itemsToCreate = items.map((item: any) => ({
+        userId: user._id,
+        campaignId: campaignId || null,
         platform: item.platform,
-        date: item.date.toISOString().split('T')[0],
+        date: new Date(item.date),
         time: item.time || null,
         title: item.title,
         content: item.content,
         variants: item.variants || {},
-        status: item.status,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      })),
-      count: createdItems.length,
-    })
-  } catch (error: any) {
+        status: item.status || 'draft',
+      }))
+
+      const createdItems = await CalendarItem.insertMany(itemsToCreate)
+
+      // Create ONE event for all calendar items in this batch (from "Send to Calendar")
+      const Event = (await import('../models/Event.js')).default
+      const calendarItemIds = createdItems.map(item => item._id)
+      const nextEventNumber = await getNextEventNumber()
+
+      // Get the earliest date from all created calendar items
+      const dates = createdItems.map(item => new Date(item.date))
+      const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())))
+
+      await Event.create({
+        userId: user._id,
+        calendarItemIds,
+        eventNumber: nextEventNumber,
+        date: earliestDate, // Copy the earliest date from calendar items
+      })
+
+      console.log(`[Send to Calendar] Created event #${nextEventNumber} with ${calendarItemIds.length} calendar items`)
+      console.log(`[Send to Calendar] Event date: ${earliestDate.toISOString().split('T')[0]}`)
+
+      res.status(201).json({
+        success: true,
+        items: createdItems.map((item) => ({
+          id: item._id.toString(),
+          userId: item.userId.toString(),
+          campaignId: item.campaignId ? item.campaignId.toString() : null,
+          platform: item.platform,
+          date: item.date.toISOString().split('T')[0],
+          time: item.time || null,
+          title: item.title,
+          content: item.content,
+          variants: item.variants || {},
+          status: item.status,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        })),
+        count: createdItems.length,
+      })
+    } catch (error: any) {
       console.error("Send to calendar error:", error);
       res.status(500).json({
         success: false,

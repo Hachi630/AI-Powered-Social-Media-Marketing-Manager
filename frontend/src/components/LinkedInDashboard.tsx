@@ -830,7 +830,7 @@ export default function LinkedInDashboard({
       selectedPostTarget !== "personal" ? selectedPostTarget : undefined;
     const targetName = organizationId
       ? organizations.find((org) => org.id === organizationId)?.name ||
-        "Company Page"
+      "Company Page"
       : "Personal Profile";
 
     try {
@@ -1071,7 +1071,7 @@ export default function LinkedInDashboard({
 
       if (result.success) {
         message.success("🎉 Tweet posted successfully!");
-        
+
         // Reset form
         setTwitterPostText("");
         setTwitterSelectedImage(null);
@@ -1208,7 +1208,7 @@ export default function LinkedInDashboard({
 
       if (result.success) {
         message.success("🎉 Facebook post published successfully!");
-        
+
         // Reset form
         setFacebookPostText("");
         setFacebookPostType("text");
@@ -1625,366 +1625,366 @@ export default function LinkedInDashboard({
                 }}
                 styles={{ body: { padding: 24 } }}
               >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  background:
-                    "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
-              </div>
-              <div>
-                <Typography.Text strong style={{ fontSize: 18 }}>
-                  Share on LinkedIn
-                </Typography.Text>
-                <br />
-                <Typography.Text type="secondary">
-                  Create a post to share with your network
-                </Typography.Text>
-              </div>
-            </div>
-
-            {/* Post Target Selector (Personal vs Organization) */}
-            <div style={{ marginBottom: 16 }}>
-              <Typography.Text
-                type="secondary"
-                style={{ display: "block", marginBottom: 8 }}
-              >
-                Post to:
-              </Typography.Text>
-              <Select
-                value={selectedPostTarget}
-                onChange={setSelectedPostTarget}
-                style={{ width: "100%", maxWidth: isMobile ? "100%" : 300 }}
-                loading={loadingOrgs}
-              >
-                <Select.Option value="personal">
-                  <Space>
-                    <Avatar
-                      size="small"
-                      icon={<UserOutlined />}
-                      style={{ backgroundColor: "#0077B5" }}
-                    />
-                    <span>Personal Profile</span>
-                    {profile && (
-                      <Typography.Text type="secondary">
-                        ({profile.name})
-                      </Typography.Text>
-                    )}
-                  </Space>
-                </Select.Option>
-                {organizations.map((org) => (
-                  <Select.Option key={org.id} value={org.id}>
-                    <Space>
-                      {org.logoUrl ? (
-                        <Avatar size="small" src={getImageUrl(org.logoUrl)} />
-                      ) : (
-                        <Avatar
-                          size="small"
-                          icon={<BankOutlined />}
-                          style={{ backgroundColor: "#00A0DC" }}
-                        />
-                      )}
-                      <span>{org.name}</span>
-                      <Tag color="blue" style={{ marginLeft: 4 }}>
-                        Company
-                      </Tag>
-                    </Space>
-                  </Select.Option>
-                ))}
-              </Select>
-            </div>
-
-            {/* Post Type Selector */}
-            <div style={{ marginBottom: 16 }}>
-              <Segmented
-                value={postType}
-                onChange={(value) => {
-                  setPostType(value as "text" | "image" | "video" | "link");
-                  // Clear media when switching types
-                  if (value !== "image") {
-                    handleRemoveImage();
-                  }
-                  if (value !== "video") {
-                    handleVideoClear();
-                  }
-                  if (value !== "link") {
-                    setLinkUrl("");
-                    setLinkTitle("");
-                    setLinkDescription("");
-                  }
-                }}
-                options={[
-                  {
-                    label: (
-                      <Tooltip title="Text Post">
-                        <span>
-                          <SendOutlined /> Text
-                        </span>
-                      </Tooltip>
-                    ),
-                    value: "text",
-                  },
-                  {
-                    label: (
-                      <Tooltip title="Image Post">
-                        <span>
-                          <PictureOutlined /> Image
-                        </span>
-                      </Tooltip>
-                    ),
-                    value: "image",
-                  },
-                  {
-                    label: (
-                      <Tooltip title="Video Post">
-                        <span>
-                          <VideoCameraOutlined /> Video
-                        </span>
-                      </Tooltip>
-                    ),
-                    value: "video",
-                  },
-                  {
-                    label: (
-                      <Tooltip title="Link Post">
-                        <span>
-                          <LinkOutlined /> Link
-                        </span>
-                      </Tooltip>
-                    ),
-                    value: "link",
-                  },
-                ]}
-                style={{ marginBottom: 8 }}
-              />
-            </div>
-
-            <Input.TextArea
-              placeholder="What do you want to talk about?"
-              value={postText}
-              onChange={(e) => setPostText(e.target.value)}
-              maxLength={3000}
-              showCount
-              autoSize={{ minRows: 3, maxRows: 6 }}
-              style={{ marginBottom: 16, borderRadius: 8 }}
-            />
-
-            {/* Link Fields */}
-            {postType === "link" && (
-              <div style={{ marginBottom: 16 }}>
-                <Input
-                  placeholder="Enter URL (e.g., https://example.com)"
-                  value={linkUrl}
-                  onChange={(e) => setLinkUrl(e.target.value)}
-                  prefix={<LinkOutlined />}
-                  style={{ marginBottom: 8, borderRadius: 8 }}
-                />
-                <Input
-                  placeholder="Link title (optional)"
-                  value={linkTitle}
-                  onChange={(e) => setLinkTitle(e.target.value)}
-                  style={{ marginBottom: 8, borderRadius: 8 }}
-                />
-                <Input
-                  placeholder="Link description (optional)"
-                  value={linkDescription}
-                  onChange={(e) => setLinkDescription(e.target.value)}
-                  style={{ borderRadius: 8 }}
-                />
-              </div>
-            )}
-
-            {/* Image Upload Section */}
-            {postType === "image" && (
-              <div style={{ marginBottom: 16 }}>
-                {imagePreview ? (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    marginBottom: 16,
+                  }}
+                >
                   <div
-                    style={{ position: "relative", display: "inline-block" }}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      background:
+                        "linear-gradient(135deg, #0077B5 0%, #00A0DC 100%)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
                   >
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: 200,
-                        borderRadius: 8,
-                        border: "1px solid #d9d9d9",
-                      }}
-                    />
-                    <Button
-                      icon={<DeleteOutlined />}
-                      size="small"
-                      danger
-                      shape="circle"
-                      onClick={handleRemoveImage}
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        backgroundColor: "rgba(255,255,255,0.9)",
-                      }}
-                    />
+                    <SendOutlined style={{ fontSize: 24, color: "#fff" }} />
                   </div>
-                ) : (
-                  <Upload
-                    accept="image/*"
-                    showUploadList={false}
-                    beforeUpload={handleImageSelect}
-                    disabled={posting}
-                  >
-                    <div
-                      style={{
-                        border: "2px dashed #d9d9d9",
-                        borderRadius: 8,
-                        padding: 24,
-                        textAlign: "center",
-                        cursor: "pointer",
-                        transition: "border-color 0.3s",
-                      }}
-                    >
-                      <PictureOutlined
-                        style={{ fontSize: 32, color: "#0077B5" }}
-                      />
-                      <div style={{ marginTop: 8 }}>
-                        Click or drag image to upload
-                      </div>
-                      <Typography.Text
-                        type="secondary"
-                        style={{ fontSize: 12 }}
-                      >
-                        Supports: JPG, PNG, GIF (Max 8MB)
-                      </Typography.Text>
-                    </div>
-                  </Upload>
-                )}
-              </div>
-            )}
-
-            {/* Video Upload Section */}
-            {postType === "video" && (
-              <div style={{ marginBottom: 16 }}>
-                {videoPreview ? (
-                  <div
-                    style={{ position: "relative", display: "inline-block" }}
-                  >
-                    <video
-                      src={videoPreview}
-                      controls
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: 200,
-                        borderRadius: 8,
-                        border: "1px solid #d9d9d9",
-                      }}
-                    />
-                    <Button
-                      icon={<DeleteOutlined />}
-                      size="small"
-                      danger
-                      shape="circle"
-                      onClick={handleVideoClear}
-                      style={{
-                        position: "absolute",
-                        top: 8,
-                        right: 8,
-                        backgroundColor: "rgba(255,255,255,0.9)",
-                      }}
-                    />
-                    <Typography.Text
-                      type="secondary"
-                      style={{ display: "block", marginTop: 8 }}
-                    >
-                      {selectedVideo?.name} (
-                      {(selectedVideo?.size || 0 / 1024 / 1024).toFixed(2)} MB)
+                  <div>
+                    <Typography.Text strong style={{ fontSize: 18 }}>
+                      Share on LinkedIn
+                    </Typography.Text>
+                    <br />
+                    <Typography.Text type="secondary">
+                      Create a post to share with your network
                     </Typography.Text>
                   </div>
-                ) : (
-                  <Upload
-                    accept="video/*"
-                    showUploadList={false}
-                    beforeUpload={handleVideoSelect}
-                    disabled={posting}
+                </div>
+
+                {/* Post Target Selector (Personal vs Organization) */}
+                <div style={{ marginBottom: 16 }}>
+                  <Typography.Text
+                    type="secondary"
+                    style={{ display: "block", marginBottom: 8 }}
                   >
-                    <div
-                      style={{
-                        border: "2px dashed #d9d9d9",
-                        borderRadius: 8,
-                        padding: 24,
-                        textAlign: "center",
-                        cursor: "pointer",
-                        transition: "border-color 0.3s",
-                      }}
-                    >
-                      <VideoCameraOutlined
-                        style={{ fontSize: 32, color: "#0077B5" }}
-                      />
-                      <div style={{ marginTop: 8 }}>
-                        Click or drag video to upload
-                      </div>
-                      <Typography.Text
-                        type="secondary"
-                        style={{ fontSize: 12 }}
-                      >
-                        Supports: MP4, MOV (Max 200MB)
-                      </Typography.Text>
-                    </div>
-                  </Upload>
+                    Post to:
+                  </Typography.Text>
+                  <Select
+                    value={selectedPostTarget}
+                    onChange={setSelectedPostTarget}
+                    style={{ width: "100%", maxWidth: isMobile ? "100%" : 300 }}
+                    loading={loadingOrgs}
+                  >
+                    <Select.Option value="personal">
+                      <Space>
+                        <Avatar
+                          size="small"
+                          icon={<UserOutlined />}
+                          style={{ backgroundColor: "#0077B5" }}
+                        />
+                        <span>Personal Profile</span>
+                        {profile && (
+                          <Typography.Text type="secondary">
+                            ({profile.name})
+                          </Typography.Text>
+                        )}
+                      </Space>
+                    </Select.Option>
+                    {organizations.map((org) => (
+                      <Select.Option key={org.id} value={org.id}>
+                        <Space>
+                          {org.logoUrl ? (
+                            <Avatar size="small" src={getImageUrl(org.logoUrl)} />
+                          ) : (
+                            <Avatar
+                              size="small"
+                              icon={<BankOutlined />}
+                              style={{ backgroundColor: "#00A0DC" }}
+                            />
+                          )}
+                          <span>{org.name}</span>
+                          <Tag color="blue" style={{ marginLeft: 4 }}>
+                            Company
+                          </Tag>
+                        </Space>
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </div>
+
+                {/* Post Type Selector */}
+                <div style={{ marginBottom: 16 }}>
+                  <Segmented
+                    value={postType}
+                    onChange={(value) => {
+                      setPostType(value as "text" | "image" | "video" | "link");
+                      // Clear media when switching types
+                      if (value !== "image") {
+                        handleRemoveImage();
+                      }
+                      if (value !== "video") {
+                        handleVideoClear();
+                      }
+                      if (value !== "link") {
+                        setLinkUrl("");
+                        setLinkTitle("");
+                        setLinkDescription("");
+                      }
+                    }}
+                    options={[
+                      {
+                        label: (
+                          <Tooltip title="Text Post">
+                            <span>
+                              <SendOutlined /> Text
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "text",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Image Post">
+                            <span>
+                              <PictureOutlined /> Image
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "image",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Video Post">
+                            <span>
+                              <VideoCameraOutlined /> Video
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "video",
+                      },
+                      {
+                        label: (
+                          <Tooltip title="Link Post">
+                            <span>
+                              <LinkOutlined /> Link
+                            </span>
+                          </Tooltip>
+                        ),
+                        value: "link",
+                      },
+                    ]}
+                    style={{ marginBottom: 8 }}
+                  />
+                </div>
+
+                <Input.TextArea
+                  placeholder="What do you want to talk about?"
+                  value={postText}
+                  onChange={(e) => setPostText(e.target.value)}
+                  maxLength={3000}
+                  showCount
+                  autoSize={{ minRows: 3, maxRows: 6 }}
+                  style={{ marginBottom: 16, borderRadius: 8 }}
+                />
+
+                {/* Link Fields */}
+                {postType === "link" && (
+                  <div style={{ marginBottom: 16 }}>
+                    <Input
+                      placeholder="Enter URL (e.g., https://example.com)"
+                      value={linkUrl}
+                      onChange={(e) => setLinkUrl(e.target.value)}
+                      prefix={<LinkOutlined />}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link title (optional)"
+                      value={linkTitle}
+                      onChange={(e) => setLinkTitle(e.target.value)}
+                      style={{ marginBottom: 8, borderRadius: 8 }}
+                    />
+                    <Input
+                      placeholder="Link description (optional)"
+                      value={linkDescription}
+                      onChange={(e) => setLinkDescription(e.target.value)}
+                      style={{ borderRadius: 8 }}
+                    />
+                  </div>
                 )}
-              </div>
-            )}
 
-            {/* Upload Progress */}
-            {posting && uploadProgress > 0 && (
-              <Progress
-                percent={uploadProgress}
-                status="active"
-                strokeColor={{ from: "#0077B5", to: "#00A0DC" }}
-                style={{ marginBottom: 16 }}
-              />
-            )}
+                {/* Image Upload Section */}
+                {postType === "image" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {imagePreview ? (
+                      <div
+                        style={{ position: "relative", display: "inline-block" }}
+                      >
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleRemoveImage}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="image/*"
+                        showUploadList={false}
+                        beforeUpload={handleImageSelect}
+                        disabled={posting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <PictureOutlined
+                            style={{ fontSize: 32, color: "#0077B5" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag image to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: JPG, PNG, GIF (Max 8MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                alignItems: "center",
-              }}
-            >
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={handleCreatePost}
-                loading={posting}
-                disabled={
-                  !postText.trim() ||
-                  (postType === "link" && !linkUrl.trim()) ||
-                  (postType === "video" && !selectedVideo) ||
-                  (postType === "image" && !selectedImage)
-                }
-                style={{
-                  borderRadius: 8,
-                  backgroundColor: "#0077B5",
-                  borderColor: "#0077B5",
-                }}
-              >
-                {posting ? "Publishing..." : "Post to LinkedIn"}
-              </Button>
-            </div>
+                {/* Video Upload Section */}
+                {postType === "video" && (
+                  <div style={{ marginBottom: 16 }}>
+                    {videoPreview ? (
+                      <div
+                        style={{ position: "relative", display: "inline-block" }}
+                      >
+                        <video
+                          src={videoPreview}
+                          controls
+                          style={{
+                            maxWidth: "100%",
+                            maxHeight: 200,
+                            borderRadius: 8,
+                            border: "1px solid #d9d9d9",
+                          }}
+                        />
+                        <Button
+                          icon={<DeleteOutlined />}
+                          size="small"
+                          danger
+                          shape="circle"
+                          onClick={handleVideoClear}
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            right: 8,
+                            backgroundColor: "rgba(255,255,255,0.9)",
+                          }}
+                        />
+                        <Typography.Text
+                          type="secondary"
+                          style={{ display: "block", marginTop: 8 }}
+                        >
+                          {selectedVideo?.name} (
+                          {(selectedVideo?.size || 0 / 1024 / 1024).toFixed(2)} MB)
+                        </Typography.Text>
+                      </div>
+                    ) : (
+                      <Upload
+                        accept="video/*"
+                        showUploadList={false}
+                        beforeUpload={handleVideoSelect}
+                        disabled={posting}
+                      >
+                        <div
+                          style={{
+                            border: "2px dashed #d9d9d9",
+                            borderRadius: 8,
+                            padding: 24,
+                            textAlign: "center",
+                            cursor: "pointer",
+                            transition: "border-color 0.3s",
+                          }}
+                        >
+                          <VideoCameraOutlined
+                            style={{ fontSize: 32, color: "#0077B5" }}
+                          />
+                          <div style={{ marginTop: 8 }}>
+                            Click or drag video to upload
+                          </div>
+                          <Typography.Text
+                            type="secondary"
+                            style={{ fontSize: 12 }}
+                          >
+                            Supports: MP4, MOV (Max 200MB)
+                          </Typography.Text>
+                        </div>
+                      </Upload>
+                    )}
+                  </div>
+                )}
+
+                {/* Upload Progress */}
+                {posting && uploadProgress > 0 && (
+                  <Progress
+                    percent={uploadProgress}
+                    status="active"
+                    strokeColor={{ from: "#0077B5", to: "#00A0DC" }}
+                    style={{ marginBottom: 16 }}
+                  />
+                )}
+
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                  }}
+                >
+                  <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={handleCreatePost}
+                    loading={posting}
+                    disabled={
+                      !postText.trim() ||
+                      (postType === "link" && !linkUrl.trim()) ||
+                      (postType === "video" && !selectedVideo) ||
+                      (postType === "image" && !selectedImage)
+                    }
+                    style={{
+                      borderRadius: 8,
+                      backgroundColor: "#0077B5",
+                      borderColor: "#0077B5",
+                    }}
+                  >
+                    {posting ? "Publishing..." : "Post to LinkedIn"}
+                  </Button>
+                </div>
               </Card>
             )}
           </>
@@ -2468,7 +2468,7 @@ export default function LinkedInDashboard({
                               );
                               message.error(
                                 authData.error ||
-                                  "Failed to get Facebook auth URL"
+                                "Failed to get Facebook auth URL"
                               );
                             }
                           } catch (error) {
@@ -3376,7 +3376,7 @@ export default function LinkedInDashboard({
 
                         if (result.success) {
                           message.success(result.message || "🎉 Instagram post published successfully!");
-                          
+
                           // Reset form
                           setInstagramPostText("");
                           setInstagramPostType("text");
@@ -3818,38 +3818,42 @@ export default function LinkedInDashboard({
               </Row>
             </div>
 
-                {/* LinkedIn Connection Status */}
-                <Row align="middle" justify="space-between">
-                  <Col>
-                    <Typography.Text strong style={{ fontSize: 16 }}>
-                      LinkedIn Connection Status
-                    </Typography.Text>
-                    <br />
-                    <Typography.Text type="secondary">
-                      {isConnected
-                        ? "Your LinkedIn account is connected and ready to post content"
-                        : "Connect your LinkedIn account to enable posting content from your calendar"}
-                    </Typography.Text>
-                  </Col>
-                  <Col>
-                    {isConnected ? (
-                      <Tag
-                        color="success"
-                        style={{ padding: "4px 12px", fontSize: 14 }}
-                      >
-                        ● Connected
-                      </Tag>
-                    ) : (
-                      <Tag
-                        color="default"
-                        style={{ padding: "4px 12px", fontSize: 14 }}
-                      >
-                        ○ Not Connected
-                      </Tag>
-                    )}
-                  </Col>
-                </Row>
-              </Card>
+            {selectedPlatform === "linkedin" && (
+              <div>
+                <Card style={{ marginBottom: 24 }}>
+                  {/* LinkedIn Connection Status */}
+                  <Row align="middle" justify="space-between">
+                    <Col>
+                      <Typography.Text strong style={{ fontSize: 16 }}>
+                        LinkedIn Connection Status
+                      </Typography.Text>
+                      <br />
+                      <Typography.Text type="secondary">
+                        {isConnected
+                          ? "Your LinkedIn account is connected and ready to post content"
+                          : "Connect your LinkedIn account to enable posting content from your calendar"}
+                      </Typography.Text>
+                    </Col>
+                    <Col>
+                      {isConnected ? (
+                        <Tag
+                          color="success"
+                          style={{ padding: "4px 12px", fontSize: 14 }}
+                        >
+                          ● Connected
+                        </Tag>
+                      ) : (
+                        <Tag
+                          color="default"
+                          style={{ padding: "4px 12px", fontSize: 14 }}
+                        >
+                          ○ Not Connected
+                        </Tag>
+                      )}
+                    </Col>
+                  </Row>
+                </Card>
+              </div>
             )}
 
             {/* Render content based on selected platform */}

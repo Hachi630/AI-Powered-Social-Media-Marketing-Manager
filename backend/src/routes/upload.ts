@@ -4,10 +4,10 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import fs from 'fs'
-import { protect } from '../middleware/auth'
-import { AuthRequest } from '../types'
-import { saveImage } from '../utils/imageStorage'
-import { saveMediaFile } from '../services/databaseService'
+import { protect } from '../middleware/auth.js'
+import { AuthRequest } from '../types/index.js'
+import { saveImage } from '../utils/imageStorage.js'
+import { saveMediaFile } from '../services/databaseService.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -71,11 +71,11 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
     }
 
     const imageUrl = `/uploads/images/${req.file.filename}`
-    
+
     // Generate absolute URL for external access (needed for Ayrshare)
-    const backendUrl = process.env.BACKEND_URL || 
-                      process.env.SERVER_URL || 
-                      `http://localhost:${process.env.PORT || 5000}`
+    const backendUrl = process.env.BACKEND_URL ||
+      process.env.SERVER_URL ||
+      `http://localhost:${process.env.PORT || 5000}`
     const absoluteImageUrl = `${backendUrl}${imageUrl}`
 
     // Save to database
@@ -145,7 +145,7 @@ router.post('/image-base64', protect, async (req: AuthRequest, res: Response) =>
     try {
       const fileName = imageUrl.split('/').pop() || 'uploaded-image.png'
       const filePath = path.join(UPLOADS_DIR, fileName)
-      
+
       await saveMediaFile({
         userId: user._id,
         fileName: fileName,

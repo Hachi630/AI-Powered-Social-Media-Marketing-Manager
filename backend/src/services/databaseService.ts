@@ -1,8 +1,8 @@
 import { Types } from 'mongoose'
-import SocialMediaPost, { ISocialMediaPost, IMediaAttachment } from '../models/SocialMediaPost'
-import AIGeneratedContent, { IAIGeneratedContent } from '../models/AIGeneratedContent'
-import MediaFile, { IMediaFile } from '../models/MediaFile'
-import APIResponse, { IAPIResponse } from '../models/APIResponse'
+import SocialMediaPost, { ISocialMediaPost, IMediaAttachment } from '../models/SocialMediaPost.js'
+import AIGeneratedContent, { IAIGeneratedContent } from '../models/AIGeneratedContent.js'
+import MediaFile, { IMediaFile } from '../models/MediaFile.js'
+import APIResponse, { IAPIResponse } from '../models/APIResponse.js'
 
 /**
  * Save a social media post to the database
@@ -47,7 +47,7 @@ export async function saveSocialMediaPost(data: {
     aiModel: data.aiModel,
     errorMessage: data.errorMessage,
   })
-  
+
   return await post.save()
 }
 
@@ -94,7 +94,7 @@ export async function saveAIGeneratedContent(data: {
     processingTime: data.processingTime,
     usedInPost: data.usedInPost,
   })
-  
+
   return await content.save()
 }
 
@@ -137,7 +137,7 @@ export async function saveMediaFile(data: {
     description: data.description,
     altText: data.altText,
   })
-  
+
   return await mediaFile.save()
 }
 
@@ -175,7 +175,7 @@ export async function saveAPIResponse(data: {
     relatedPostId: data.relatedPostId,
     relatedMediaId: data.relatedMediaId,
   })
-  
+
   return await apiResponse.save()
 }
 
@@ -209,12 +209,12 @@ export async function linkMediaToPost(
   await MediaFile.findByIdAndUpdate(mediaFileId, {
     $addToSet: { usedInPosts: postId }
   })
-  
+
   // Also update the post to reference the media
   const mediaFile = await MediaFile.findById(mediaFileId)
   if (mediaFile) {
     await SocialMediaPost.findByIdAndUpdate(postId, {
-      $addToSet: { 
+      $addToSet: {
         mediaAttachments: {
           type: mediaFile.fileType === 'image' ? 'image' : mediaFile.fileType === 'video' ? 'video' : 'document',
           url: mediaFile.fileUrl,

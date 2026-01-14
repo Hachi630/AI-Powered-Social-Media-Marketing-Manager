@@ -1,8 +1,8 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
-import Contact from '../models/Contact'
-import { sendSMS, sendMMS, sendWhatsApp, validatePhoneNumber } from '../services/twilioService'
-import { saveSocialMediaPost } from '../services/databaseService'
+import { requireAuth } from '../middleware/auth.js'
+import Contact from '../models/Contact.js'
+import { sendSMS, sendMMS, sendWhatsApp, validatePhoneNumber } from '../services/twilioService.js'
+import { saveSocialMediaPost } from '../services/databaseService.js'
 import path from 'path'
 
 const router = Router()
@@ -21,7 +21,7 @@ router.get('/contacts', requireAuth, async (req: any, res) => {
 
     const contacts = await Contact.find({ userId: req.user._id })
       .sort({ name: 1 })
-    
+
     res.json({
       success: true,
       contacts,
@@ -394,7 +394,7 @@ router.post('/send-whatsapp', requireAuth, async (req: any, res) => {
     }
 
     console.log('Calling Twilio sendWhatsApp with:', { to, bodyLength: body?.length || 0, mediaUrlCount: mediaUrl?.length || 0 })
-    
+
     // Convert relative URLs to absolute URLs if media is provided
     let absoluteMediaUrls: string[] | undefined
     if (mediaUrl && Array.isArray(mediaUrl) && mediaUrl.length > 0) {
@@ -428,10 +428,10 @@ router.post('/send-whatsapp', requireAuth, async (req: any, res) => {
 
     // Save to database
     // For template messages, use contentSid as content identifier
-    const messageContent = contentSid 
+    const messageContent = contentSid
       ? `[Template: ${contentSid}]${contentVariables ? ` Variables: ${contentVariables}` : ''}`
       : body || ''
-    
+
     await saveSocialMediaPost({
       userId: req.user._id,
       platform: 'whatsapp',
@@ -470,7 +470,7 @@ router.post('/upload-media', requireAuth, async (req: any, res) => {
     // This endpoint can be used to upload media files
     // For now, we'll use the existing upload route
     // Media files should be uploaded to /api/upload first, then use the returned URL
-    
+
     res.json({
       success: true,
       message: 'Please use /api/upload to upload media files first',
@@ -496,7 +496,7 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
       })
     }
 
-    const { default: SocialMediaPost } = await import('../models/SocialMediaPost')
+    const { default: SocialMediaPost } = await import('../models/SocialMediaPost.js')
     const { Types } = await import('mongoose')
 
     // Fetch all WhatsApp messages for this user (both incoming and outgoing)
@@ -523,7 +523,7 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
         .sort({ createdAt: -1 })
         .limit(100)
         .lean()
-      
+
       console.log(`[WhatsApp Conversations] Found ${allWhatsAppMessages.length} total WhatsApp messages (without phone number filter)`)
       if (allWhatsAppMessages.length > 0) {
         console.log('[WhatsApp Conversations] Sample message structure:', {
@@ -539,7 +539,7 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
     }
 
     console.log(`[WhatsApp Conversations] Found ${messages.length} messages with phone numbers for user ${req.user._id}`)
-    
+
     // Debug: Log sample messages to understand structure
     if (messages.length > 0) {
       console.log('[WhatsApp Conversations] Sample message:', {
@@ -554,11 +554,11 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
 
     // Group messages by phone number (use recipientPhoneNumber for outgoing, senderPhoneNumber for incoming)
     const conversations: Record<string, any[]> = {}
-    
+
     messages.forEach((message: any) => {
       // Determine the other party's phone number
       let phoneNumber: string | null = null
-      
+
       if (message.direction === 'incoming' && message.senderPhoneNumber) {
         phoneNumber = message.senderPhoneNumber
       } else if (message.direction === 'outgoing' && message.recipientPhoneNumber) {
@@ -573,7 +573,7 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
         // Fallback: use senderPhoneNumber if available
         phoneNumber = message.senderPhoneNumber
       }
-      
+
       if (!phoneNumber || phoneNumber.trim() === '') {
         console.warn('[WhatsApp Conversations] Skipping message without phone number:', {
           messageId: message._id,
@@ -583,10 +583,10 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
         })
         return
       }
-      
+
       // Normalize phone number (remove whatsapp: prefix if present)
       phoneNumber = phoneNumber.replace(/^whatsapp:/, '').trim()
-      
+
       if (!conversations[phoneNumber]) {
         conversations[phoneNumber] = []
       }
@@ -613,7 +613,7 @@ router.get('/whatsapp/conversations', requireAuth, async (req: any, res) => {
           const dateB = new Date(b.publishedAt || b.createdAt).getTime()
           return dateB - dateA
         })
-        
+
         return {
           phoneNumber,
           messages: sortedMessages,
@@ -668,26 +668,26 @@ router.post('/whatsapp/webhook', async (req: any, res) => {
     // For now, we'll need to find the user associated with the Twilio WhatsApp number
     // This assumes you have a way to map Twilio numbers to users
     // For simplicity, we'll try to find a user or use a default approach
-    
-    const { default: SocialMediaPost } = await import('../models/SocialMediaPost')
-    const { default: User } = await import('../models/User')
+
+    const { default: SocialMediaPost } = await import('../models/SocialMediaPost.js')
+    const { default: User } = await import('../models/User.js')
     const { Types } = await import('mongoose')
-    const { saveSocialMediaPost } = await import('../services/databaseService')
+    const { saveSocialMediaPost } = await import('../services/databaseService.js')
 
     // Find user by checking who has sent messages to this phone number before
     // This associates incoming messages with the user who initiated the conversation
     let userId: any = null
-    
+
     // Format phone number (remove whatsapp: prefix if present)
     const senderPhoneNumber = From.replace(/^whatsapp:/, '')
-    
+
     // Try to find a user who has sent messages to this phone number
     const existingMessage = await SocialMediaPost.findOne({
       platform: 'whatsapp',
       recipientPhoneNumber: senderPhoneNumber,
       direction: 'outgoing',
     }).sort({ createdAt: -1 })
-    
+
     if (existingMessage) {
       userId = existingMessage.userId
     } else {

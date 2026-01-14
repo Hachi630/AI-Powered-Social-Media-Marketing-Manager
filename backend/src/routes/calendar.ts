@@ -1,11 +1,11 @@
 import express, { Request, Response } from 'express'
 import { Types } from 'mongoose'
-import { protect } from '../middleware/auth'
-import { AuthRequest } from '../types'
-import CalendarItem from '../models/CalendarItem'
-import Event from '../models/Event'
-import { twitterService } from '../services/twitterService'
-import TwitterToken from '../models/TwitterToken'
+import { protect } from '../middleware/auth.js'
+import { AuthRequest } from '../types/index.js'
+import CalendarItem from '../models/CalendarItem.js'
+import Event from '../models/Event.js'
+import { twitterService } from '../services/twitterService.js'
+import TwitterToken from '../models/TwitterToken.js'
 
 const router = express.Router()
 
@@ -19,25 +19,25 @@ const createEventForCalendarItemsBatch = async (userId: Types.ObjectId, calendar
     }
 
     console.log(`[Event] Attempting to create event for userId: ${userId}, calendarItemIds: ${calendarItemIds.length} items`)
-    
+
     // Fetch calendar items to get their dates
     const calendarItems = await CalendarItem.find({ _id: { $in: calendarItemIds } }).select('date').lean()
-    
+
     if (calendarItems.length === 0) {
       console.error('[Event] No calendar items found for the provided IDs')
       return
     }
-    
+
     // Get the earliest date from all calendar items
     const dates = calendarItems.map(item => new Date(item.date))
     const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())))
-    
+
     console.log(`[Event] Found ${calendarItems.length} calendar items, earliest date: ${earliestDate.toISOString().split('T')[0]}`)
-    
+
     // Get the current max global event number (across all users)
     const maxEvent = await Event.findOne().sort({ eventNumber: -1 }).lean()
     const nextEventNumber = (maxEvent?.eventNumber || 0) + 1
-    
+
     console.log(`[Event] Current max global event number: ${maxEvent?.eventNumber || 0}, Next event number: ${nextEventNumber}`)
 
     // Create a single event for all calendar items in this batch
@@ -52,7 +52,7 @@ const createEventForCalendarItemsBatch = async (userId: Types.ObjectId, calendar
     console.log(`[Event] Event contains ${calendarItemIds.length} calendar items`)
     console.log(`[Event] Event date: ${earliestDate.toISOString().split('T')[0]}`)
     console.log(`[Event] Event document ID: ${newEvent._id}`)
-    
+
     // Verify the event was saved
     const verifyEvent = await Event.findById(newEvent._id)
     if (verifyEvent) {
@@ -354,28 +354,28 @@ router.delete('/:id', protect, async (req: AuthRequest, res: Response) => {
 
     // Remove calendar item from event if it exists and check if event should be deleted
     const eventsContainingItem = await Event.find({ calendarItemIds: item._id })
-    
+
     for (const event of eventsContainingItem) {
       // Remove the calendar item from the event
       event.calendarItemIds = event.calendarItemIds.filter(
         (id: Types.ObjectId) => id.toString() !== item._id.toString()
       )
-      
+
       // If event has no more calendar items, delete it and renumber
       if (event.calendarItemIds.length === 0) {
         const deletedEventNumber = event.eventNumber
-        
+
         console.log(`[Event] Deleting empty event #${deletedEventNumber} after all calendar items removed`)
-        
+
         // Delete the event
         await Event.findByIdAndDelete(event._id)
-        
+
         // Renumber all events with higher event numbers (reduce by 1)
         await Event.updateMany(
           { eventNumber: { $gt: deletedEventNumber } },
           { $inc: { eventNumber: -1 } }
         )
-        
+
         console.log(`[Event] Renumbered events: All events with number > ${deletedEventNumber} reduced by 1`)
       } else {
         // Save the updated event
@@ -434,18 +434,18 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
 
     // Create ONE event for all calendar items in this batch
     const userId = typeof user._id === 'string' ? new Types.ObjectId(user._id) : user._id
-    const calendarItemIds = createdItems.map(item => 
+    const calendarItemIds = createdItems.map(item =>
       typeof item._id === 'string' ? new Types.ObjectId(item._id) : item._id
     )
-    
+
     // Get next global event number
     const maxEvent = await Event.findOne().sort({ eventNumber: -1 }).lean()
     const nextEventNumber = (maxEvent?.eventNumber || 0) + 1
-    
+
     // Get the earliest date from all created calendar items
     const dates = createdItems.map(item => new Date(item.date))
     const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())))
-    
+
     // Create one event for the entire batch
     await Event.create({
       userId,
@@ -453,7 +453,7 @@ router.post('/batch', protect, async (req: AuthRequest, res: Response) => {
       eventNumber: nextEventNumber,
       date: earliestDate, // Copy the earliest date from calendar items
     })
-    
+
     console.log(`[Calendar Batch] Created event #${nextEventNumber} with ${calendarItemIds.length} calendar items`)
     console.log(`[Calendar Batch] Event date: ${earliestDate.toISOString().split('T')[0]}`)
 
@@ -498,10 +498,10 @@ router.get('/event-count', protect, async (req: AuthRequest, res: Response) => {
 
     // Get the count of events for this user
     const eventCount = await Event.countDocuments({ userId: user._id })
-    
+
     // Get the max global event number
     const maxEvent = await Event.findOne().sort({ eventNumber: -1 }).lean()
-    
+
     // Get all events for this user
     const allEvents = await Event.find({ userId: user._id }).sort({ eventNumber: 1 }).lean()
 
@@ -563,11 +563,11 @@ router.post('/test-event', protect, async (req: AuthRequest, res: Response) => {
     const calendarItemIds = testItems.map(item => item._id)
     const maxEvent = await Event.findOne().sort({ eventNumber: -1 }).lean()
     const nextEventNumber = (maxEvent?.eventNumber || 0) + 1
-    
+
     // Get the earliest date from all test calendar items
     const dates = testItems.map(item => new Date(item.date))
     const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())))
-    
+
     const createdEvent = await Event.create({
       userId: user._id,
       calendarItemIds,
@@ -636,7 +636,7 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
     if (platform === 'twitter') {
       // Check if user has connected their Twitter account
       const twitterToken = await TwitterToken.findOne({ userId: user._id });
-      
+
       if (!twitterToken || !twitterToken.accessToken || !twitterToken.accessSecret) {
         return res.status(401).json({
           success: false,
@@ -647,20 +647,20 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
 
       // Check if item has content variant for Twitter
       let content = item.variants?.twitter || item.content;
-      
+
       // Post to Twitter using user's tokens
       const result = await twitterService.postTweet(
-        content, 
+        content,
         item.imageUrl,
         twitterToken.accessToken,
         twitterToken.accessSecret
       );
-      
+
       if (result.success) {
         // Update item status to published if successful
         item.status = 'published';
         await item.save();
-        
+
         return res.json({
           success: true,
           message: 'Successfully posted to Twitter',
@@ -668,18 +668,18 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
         });
       } else {
         // Return detailed error information
-        const errorMessage = result.error?.data?.detail || 
-                            result.error?.errors?.[0]?.message || 
-                            result.error?.message || 
-                            'Failed to post to Twitter';
+        const errorMessage = result.error?.data?.detail ||
+          result.error?.errors?.[0]?.message ||
+          result.error?.message ||
+          'Failed to post to Twitter';
         const errorCode = result.error?.code;
-        
+
         console.error('Twitter posting failed:', {
           message: errorMessage,
           code: errorCode,
           fullError: result.error
         });
-        
+
         return res.status(500).json({
           success: false,
           message: errorMessage,
