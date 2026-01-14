@@ -15,6 +15,9 @@ import instagramRoutes from './routes/instagram.js'
 import { errorHandler } from './middleware/errorHandler.js'
 import linkedinRoutes from "./routes/linkedin.js";
 import twitterRoutes from "./routes/twitter.js";
+import analyticsRoutes from "./routes/analytics.js";
+import messagingRoutes from "./routes/messaging.js";
+import ayrshareRoutes from "./routes/ayrshare.js";
 import cron from 'node-cron';
 import { checkAndPublishScheduledItems } from './services/schedulerService.js';
 
@@ -108,6 +111,9 @@ app.use('/api/facebook', facebookRoutes)
 app.use('/api/instagram', instagramRoutes)
 app.use("/linkedin", linkedinRoutes);
 app.use("/api/twitter", twitterRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/messaging", messagingRoutes);
+app.use("/api/ayrshare", ayrshareRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })

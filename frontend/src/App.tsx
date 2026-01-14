@@ -27,6 +27,8 @@ import LinkedInDashboard from "./components/LinkedInDashboard";
 import InstagramCallback from "./pages/InstagramCallback";
 import FacebookCallback from "./pages/FacebookCallback";
 import OnboardingModal from "./components/OnboardingModal";
+import Analytics from "./pages/Analytics";
+import Messaging from "./pages/Messaging";
 
 // Lazy load Live2D Widget to prevent import-time errors
 const Live2DWidgetLazy = lazy(() =>
@@ -284,6 +286,28 @@ function AppContent() {
               user={user}
               jwt={localStorage.getItem("token") || ""}
               userId={user?.id}
+            />
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <Analytics
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+            />
+          }
+        />
+        <Route
+          path="/messaging"
+          element={
+            <Messaging
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
             />
           }
         />

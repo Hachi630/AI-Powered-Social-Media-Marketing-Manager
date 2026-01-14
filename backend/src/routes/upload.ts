@@ -4,9 +4,10 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 import fs from 'fs'
-import { protect } from '../middleware/auth.js'
-import { AuthRequest } from '../types/index.js'
-import { saveImage } from '../utils/imageStorage.js'
+import { protect } from '../middleware/auth'
+import { AuthRequest } from '../types'
+import { saveImage } from '../utils/imageStorage'
+import { saveMediaFile } from '../services/databaseService'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -17,8 +18,6 @@ const UPLOADS_DIR = path.join(__dirname, '../../uploads/images')
 const FILES_DIR = path.join(__dirname, '../../uploads/files')
 
 // Ensure uploads directories exist
-// NOTE: On Render, the file system is ephemeral. Files will be lost when the service restarts.
-// This is acceptable for testing, but production should use cloud storage (AWS S3, Cloudinary, etc.)
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true })
 }
@@ -72,10 +71,34 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
     }
 
     const imageUrl = `/uploads/images/${req.file.filename}`
+    
+    // Generate absolute URL for external access (needed for Ayrshare)
+    const backendUrl = process.env.BACKEND_URL || 
+                      process.env.SERVER_URL || 
+                      `http://localhost:${process.env.PORT || 5000}`
+    const absoluteImageUrl = `${backendUrl}${imageUrl}`
+
+    // Save to database
+    try {
+      await saveMediaFile({
+        userId: user._id,
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        filePath: req.file.path,
+        fileUrl: imageUrl,
+        fileType: 'image',
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+      })
+    } catch (dbError) {
+      console.error("Failed to save uploaded image to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
 
     res.json({
       success: true,
-      imageUrl,
+      imageUrl, // Relative URL for frontend
+      absoluteUrl: absoluteImageUrl, // Absolute URL for external services like Ayrshare
     })
   } catch (error: any) {
     console.error('Upload image error:', error)
@@ -118,6 +141,26 @@ router.post('/image-base64', protect, async (req: AuthRequest, res: Response) =>
 
     const imageUrl = await saveImage(base64Data, finalMimeType)
 
+    // Save to database
+    try {
+      const fileName = imageUrl.split('/').pop() || 'uploaded-image.png'
+      const filePath = path.join(UPLOADS_DIR, fileName)
+      
+      await saveMediaFile({
+        userId: user._id,
+        fileName: fileName,
+        originalName: 'uploaded-image.png',
+        filePath: filePath,
+        fileUrl: imageUrl,
+        fileType: 'image',
+        mimeType: finalMimeType,
+        fileSize: Buffer.from(base64Data, 'base64').length,
+      })
+    } catch (dbError) {
+      console.error("Failed to save uploaded image to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
+
     res.json({
       success: true,
       imageUrl,
@@ -147,34 +190,32 @@ const fileStorage = multer.diskStorage({
   },
 })
 
-// File filter for documents
+// File filter for documents and media
 const documentFileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = [
-    // Images
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    // PDF
-    'application/pdf',
-    // Word
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    // PowerPoint
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    // Excel
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    // Text
-    'text/plain',
-    // Other common types
-    'application/rtf',
-    'text/csv',
-  ]
-
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  // Allow images, videos, and documents
+  if (
+    file.mimetype.startsWith('image/') ||
+    file.mimetype.startsWith('video/') ||
+    file.mimetype.startsWith('audio/') ||
+    [
+      // PDF
+      'application/pdf',
+      // Word
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      // PowerPoint
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      // Excel
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      // Text
+      'text/plain',
+      // Other common types
+      'application/rtf',
+      'text/csv',
+    ].includes(file.mimetype)
+  ) {
     cb(null, true)
   } else {
     cb(new Error(`File type ${file.mimetype} is not allowed`))
@@ -185,7 +226,7 @@ const fileUpload = multer({
   storage: fileStorage,
   fileFilter: documentFileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit (Twilio MMS supports up to 5MB, but we allow larger for storage)
   },
 })
 
@@ -205,6 +246,33 @@ router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest
     }
 
     const fileUrl = `/uploads/files/${req.file.filename}`
+
+    // Determine file type
+    let fileType: 'image' | 'video' | 'document' | 'audio' = 'document'
+    if (req.file.mimetype.startsWith('image/')) {
+      fileType = 'image'
+    } else if (req.file.mimetype.startsWith('video/')) {
+      fileType = 'video'
+    } else if (req.file.mimetype.startsWith('audio/')) {
+      fileType = 'audio'
+    }
+
+    // Save to database
+    try {
+      await saveMediaFile({
+        userId: user._id,
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        filePath: req.file.path,
+        fileUrl: fileUrl,
+        fileType: fileType,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+      })
+    } catch (dbError) {
+      console.error("Failed to save uploaded file to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
 
     res.json({
       success: true,

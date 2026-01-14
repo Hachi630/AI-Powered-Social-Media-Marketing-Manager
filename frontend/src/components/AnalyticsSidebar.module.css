@@ -1,0 +1,297 @@
+.analyticsSider {
+  background: #fafafa !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
+  position: sticky !important;
+  top: 99px !important;
+  height: calc(100vh - 99px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) {
+  width: 80px !important;
+}
+
+[data-theme="warm"] .analyticsSider {
+  background: #faf9f4 !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sidebarContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  gap: 24px;
+  min-height: calc(100vh - 99px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 0;
+}
+
+.menuButton {
+  color: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  transition: all 0.2s;
+}
+
+.menuButton:hover {
+  color: #1677ff;
+  border-color: #1677ff;
+  background-color: rgba(22, 119, 255, 0.06);
+}
+
+[data-theme="warm"] .menuButton {
+  color: #908066;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="warm"] .menuButton:hover {
+  color: #ae906e;
+  border-color: #ae906e;
+  background-color: rgba(174, 144, 110, 0.1);
+}
+
+.title {
+  margin: 0 !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: rgba(0, 0, 0, 0.88) !important;
+}
+
+[data-theme="warm"] .title {
+  color: #908066 !important;
+}
+
+.navList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.subsection {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+}
+
+.subsectionTitle {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: rgba(0, 0, 0, 0.45) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+[data-theme="warm"] .subsectionTitle {
+  color: rgba(144, 128, 102, 0.6) !important;
+}
+
+.sectionItem {
+  position: relative;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: transparent;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+}
+
+.sectionItem:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.sectionItemActive {
+  background-color: rgba(22, 119, 255, 0.06) !important;
+  border-color: rgba(22, 119, 255, 0.2) !important;
+}
+
+[data-theme="warm"] .sectionItemActive {
+  background-color: rgba(174, 144, 110, 0.1) !important;
+  border-color: rgba(174, 144, 110, 0.2) !important;
+}
+
+.sectionContent {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+.sectionInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.sectionLabel {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.88);
+  line-height: 1.5;
+}
+
+[data-theme="warm"] .sectionLabel {
+  color: #908066;
+}
+
+.selectedIndicator {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: 2px 0 0 2px;
+}
+
+/* Collapsed state */
+.analyticsSider:global(.ant-layout-sider-collapsed) .sidebarContainer {
+  padding: 8px 12px;
+  gap: 0;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) .navList {
+  gap: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) .sectionItem {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  margin: 0;
+  border-radius: 8px;
+  min-height: 48px;
+  width: 100%;
+  max-width: 56px;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) .sectionContent {
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  gap: 0;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) .sectionItemActive {
+  background-color: rgba(22, 119, 255, 0.12) !important;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+}
+
+[data-theme="warm"]
+  .analyticsSider:global(.ant-layout-sider-collapsed)
+  .sectionItemActive {
+  background-color: rgba(174, 144, 110, 0.15) !important;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) .sectionItem:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  border-color: transparent;
+}
+
+.analyticsSider:global(.ant-layout-sider-collapsed) .sectionItemActive:hover {
+  background-color: rgba(22, 119, 255, 0.15) !important;
+}
+
+/* Hide subsection titles when collapsed */
+.analyticsSider:global(.ant-layout-sider-collapsed) .subsection {
+  display: none;
+}
+
+/* Ensure Avatar is circular and properly sized when collapsed */
+.analyticsSider:global(.ant-layout-sider-collapsed) .sectionItem :global(.ant-avatar) {
+  width: 40px !important;
+  height: 40px !important;
+  min-width: 40px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0;
+}
+
+/* Toggle button styling when collapsed */
+.analyticsSider:global(.ant-layout-sider-collapsed) .menuButton {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Scrollbar styling */
+.navList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navList::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navList::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.navList::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Sidebar scrollbar styling */
+.analyticsSider::-webkit-scrollbar {
+  width: 6px;
+}
+
+.analyticsSider::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.analyticsSider::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.analyticsSider::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .analyticsSider {
+    position: relative !important;
+    height: auto !important;
+    top: 0 !important;
+  }
+
+  .sidebarContainer {
+    padding: 12px;
+    gap: 16px;
+  }
+
+  .header {
+    padding-bottom: 12px;
+  }
+
+  .sectionItem {
+    padding: 10px;
+  }
+}
+
