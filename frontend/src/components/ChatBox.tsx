@@ -865,23 +865,25 @@ export default function ChatBox({
                       </div>
                     )}
                     {msg.content && (
-                      <div className={styles.markdownContent}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {msg.content}
-                        </ReactMarkdown>
-                      </div>
-                    )}
-                    {msg.role === "user" && (
-                      <div className={styles.messageActions}>
-                        <Button
-                          type="text"
-                          size="small"
-                          icon={<EditOutlined />}
-                          onClick={() => handleEditMessage(index)}
-                          disabled={loading || editingMessageIndex !== null}
-                        >
-                          Edit
-                        </Button>
+                      <div className={styles.messageTextContainer}>
+                        <div className={styles.markdownContent}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {msg.content}
+                          </ReactMarkdown>
+                        </div>
+                        {msg.role === "user" && (
+                          <div className={styles.messageActions}>
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => handleEditMessage(index)}
+                              disabled={loading || editingMessageIndex !== null}
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                     {msg.role === "assistant" &&

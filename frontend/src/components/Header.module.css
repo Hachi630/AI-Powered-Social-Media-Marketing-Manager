@@ -111,8 +111,9 @@ html[data-darkreader-mode] .logoText {
 }
 
 .menu {
-  flex: 1;
-  min-width: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   border-bottom: none;
   background: transparent;
 }

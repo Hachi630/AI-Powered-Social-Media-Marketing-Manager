@@ -1,6 +1,7 @@
 .chatContainer {
   width: 100%;
-  max-width: 2000px;
+  max-width: 800px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -153,11 +154,15 @@
   padding: 16px;
   background-color: transparent;
   border-radius: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .messageItem {
   display: flex;
   width: 100%;
+  justify-content: center;
 }
 
 .userMessage {
@@ -170,6 +175,7 @@
 
 .messageContent {
   max-width: 70%;
+  width: fit-content;
   padding: 12px 16px;
   border-radius: 16px;
   word-wrap: break-word;
@@ -235,12 +241,38 @@
   gap: 8px;
 }
 
-.messageActions {
-  margin-top: 8px;
+.messageTextContainer {
   display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.messageTextContainer .markdownContent {
+  flex: 1;
+  min-width: 0;
+  display: inline;
+}
+
+.messageTextContainer .markdownContent p:last-child {
+  display: inline;
+  margin: 0;
+}
+
+.messageTextContainer .markdownContent p:not(:last-child) {
+  margin-bottom: 0.35em;
+}
+
+.messageActions {
+  display: inline-flex;
   gap: 4px;
   opacity: 0;
   transition: opacity 0.2s ease;
+  flex-shrink: 0;
+  margin-top: 0;
+  vertical-align: baseline;
+  white-space: nowrap;
 }
 
 .messageItem:hover .messageActions {
@@ -388,43 +420,35 @@
   .chatCardFixed {
     position: fixed !important;
     bottom: 32px !important;
-    /* Center within content area (after sidebar) */
-    /* Sidebar is 360px when expanded, content area starts after it */
-    left: 360px !important;
-    right: 0 !important;
-    max-width: 978px !important;
-    width: 978px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+    /* Center within content area */
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    max-width: 800px !important;
+    width: 800px !important;
     z-index: 100 !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
-    transform: none !important;
   }
 
-  /* When sidebar is collapsed (88px) */
+  /* When sidebar is collapsed */
   :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout-content) .chatCardFixed,
   :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout) :global(.ant-layout-content) .chatCardFixed {
-    left: 88px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
   }
 
   /* When sidebar is hidden (tablet breakpoint) */
   @media (max-width: 991px) {
     .chatCardFixed {
-      left: 0 !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
     }
   }
 
   /* Responsive: adjust width on smaller screens */
   @media (max-width: 1400px) {
     .chatCardFixed {
-      max-width: calc(100vw - 360px - 48px) !important;
-      width: calc(100vw - 360px - 48px) !important;
-    }
-
-    :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout-content) .chatCardFixed,
-    :global(.ant-layout-sider-collapsed) ~ :global(.ant-layout) :global(.ant-layout-content) .chatCardFixed {
-      max-width: calc(100vw - 88px - 48px) !important;
-      width: calc(100vw - 88px - 48px) !important;
+      max-width: min(800px, calc(100vw - 48px)) !important;
+      width: min(800px, calc(100vw - 48px)) !important;
     }
   }
 
