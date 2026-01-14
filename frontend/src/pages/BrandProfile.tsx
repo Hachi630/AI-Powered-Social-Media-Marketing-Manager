@@ -211,6 +211,131 @@ export default function BrandProfile({
     setMeloGoals(company.meloGoals || []);
   };
 
+  // Show brand profile tip on page load (once per day)
+  useEffect(() => {
+    if (isLoggedIn) {
+      const today = new Date().toDateString();
+      const lastTipDate = localStorage.getItem('elo-brand-tip-date');
+      
+      // Show tip if not shown today
+      if (lastTipDate !== today) {
+        const timer = setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('elo-show-tip', {
+            detail: {
+              message: "The more complete your profile, the better I can provide personalized recommendations",
+              type: 'tip',
+              duration: 6000,
+            }
+          }));
+          localStorage.setItem('elo-brand-tip-date', today);
+        }, 1500); // Show after 1.5 seconds
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isLoggedIn]);
+
+  // Unified data loading - single useEffect to prevent race conditions
+  useEffect(() => {
+    // Skip if already loaded to prevent duplicate loads
+    if (isDataLoaded) {
+      console.log('[BrandProfile] Data already loaded, skipping');
+      return;
+    }
+
+    const loadAllData = async () => {
+      console.log('[BrandProfile] Starting data load, isLoggedIn:', isLoggedIn);
+
+      if (isLoggedIn) {
+        try {
+          const currentUser = await authService.getCurrentUser();
+          console.log('[BrandProfile] Got user from API:', currentUser?.email);
+
+          if (currentUser) {
+            setUser(currentUser);
+
+            // Check if user has companies in database
+            if (currentUser.companies && currentUser.companies.length > 0) {
+              console.log('[BrandProfile] Loading companies from database:', currentUser.companies.length);
+
+              // Load from database
+              setCompanies(currentUser.companies);
+              // Sync to localStorage
+              localStorage.setItem("melo_companies", JSON.stringify(currentUser.companies));
+
+              const savedSelectedId = localStorage.getItem("melo_selected_company");
+              let companyToLoad: CompanyData;
+
+              if (savedSelectedId && currentUser.companies.find((c) => c.id === savedSelectedId)) {
+                setSelectedCompanyId(savedSelectedId);
+                companyToLoad = currentUser.companies.find((c) => c.id === savedSelectedId)!;
+              } else {
+                setSelectedCompanyId(currentUser.companies[0].id);
+                localStorage.setItem("melo_selected_company", currentUser.companies[0].id);
+                companyToLoad = currentUser.companies[0];
+              }
+
+              // Load company data into form
+              loadCompanyData(companyToLoad);
+              setIsDataLoaded(true);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error("[BrandProfile] Error loading data from database:", error);
+        }
+      }
+
+      // Fallback to localStorage
+      console.log('[BrandProfile] Falling back to localStorage');
+      const savedCompanies = localStorage.getItem("melo_companies");
+      const savedSelectedId = localStorage.getItem("melo_selected_company");
+
+      if (savedCompanies) {
+        try {
+          const parsed = JSON.parse(savedCompanies) as CompanyData[];
+          if (parsed.length > 0) {
+            console.log('[BrandProfile] Loaded companies from localStorage:', parsed.length);
+            setCompanies(parsed);
+
+            let companyToLoad: CompanyData;
+            if (savedSelectedId && parsed.find((c) => c.id === savedSelectedId)) {
+              setSelectedCompanyId(savedSelectedId);
+              companyToLoad = parsed.find((c) => c.id === savedSelectedId)!;
+            } else {
+              setSelectedCompanyId(parsed[0].id);
+              companyToLoad = parsed[0];
+            }
+
+            loadCompanyData(companyToLoad);
+            setIsDataLoaded(true);
+            return;
+          }
+        } catch (e) {
+          console.error('[BrandProfile] Error parsing localStorage companies:', e);
+        }
+      }
+
+      // Create default company if none exists
+      console.log('[BrandProfile] Creating default company');
+      const defaultCompany = createDefaultCompany("My Company");
+      setCompanies([defaultCompany]);
+      setSelectedCompanyId(defaultCompany.id);
+      localStorage.setItem("melo_companies", JSON.stringify([defaultCompany]));
+      localStorage.setItem("melo_selected_company", defaultCompany.id);
+      loadCompanyData(defaultCompany);
+      setIsDataLoaded(true);
+    };
+
+    loadAllData();
+  }, [isLoggedIn, isDataLoaded]);
+
+  // Update user when propUser changes (for header updates)
+  useEffect(() => {
+    if (propUser) {
+      setUser(propUser);
+    }
+  }, [propUser]);
   // Save current form data to selected company
   const saveCurrentToCompany = () => {
     if (!selectedCompanyId) return;

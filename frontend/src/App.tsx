@@ -18,6 +18,7 @@ import HomePage from "./pages/HomePage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import ContactUs from "./pages/ContactUs";
+import { checkHoliday, getHolidayReminderMessage } from "./utils/holidayChecker";
 import { authService, User } from "./services/authService";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { AppSettingsProvider, useAppSettings } from "./contexts/AppSettingsContext";
@@ -125,6 +126,34 @@ function AppContent() {
     };
     checkAuth();
   }, []);
+
+  // Check for holidays and show reminder
+  useEffect(() => {
+    if (isLoggedIn) {
+      const holiday = checkHoliday();
+      if (holiday) {
+        const today = new Date().toDateString();
+        const lastHolidayTipDate = localStorage.getItem('elo-holiday-tip-date');
+        
+        // Show holiday reminder if not shown today
+        if (lastHolidayTipDate !== today) {
+          const timer = setTimeout(() => {
+            const reminderMessage = getHolidayReminderMessage(holiday);
+            window.dispatchEvent(new CustomEvent('elo-show-tip', {
+              detail: {
+                message: reminderMessage,
+                type: 'reminder',
+                duration: 10000,
+              }
+            }));
+            localStorage.setItem('elo-holiday-tip-date', today);
+          }, 3000); // Show after 3 seconds
+
+          return () => clearTimeout(timer);
+        }
+      }
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -324,15 +353,31 @@ function Live2DWidgetWrapper({ isLoggedIn, user }: { isLoggedIn: boolean; user: 
     settings.enableElo === true && 
     user?.onboardingCompleted;
 
+  // Debug logging
+  if (isLoggedIn) {
+    console.log('[ELO Debug]', {
+      isLoggedIn,
+      enableElo: settings.enableElo,
+      onboardingCompleted: user?.onboardingCompleted,
+      shouldShowElo,
+    });
+  }
+
   if (!shouldShowElo) {
     return null;
   }
+
+  const handleSendToDashboard = (message: string) => {
+    // Dispatch a custom event that the Dashboard's ChatBox can listen to
+    window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message } }));
+  };
 
   return (
     <ErrorBoundary fallback={null}>
       <Suspense fallback={null}>
         <Live2DWidgetLazy
           modelPath={settings.live2dModel || "/umiushi/うみうしモデル.model3.json"}
+          onSendToDashboard={handleSendToDashboard}
         />
       </Suspense>
     </ErrorBoundary>

@@ -7,6 +7,8 @@ import ELOQuickActions from './ELOQuickActions';
 import ELOSubOptions from './ELOSubOptions';
 import { presetAnswers, getPresetAnswer, getCategoryOptions, PresetAnswer } from '../data/presetAnswers';
 import { classifyQuestion, buildPromptForQuestion } from '../utils/questionClassifier';
+import { useInactivity } from '../hooks/useInactivity';
+import { getNextTip } from '../utils/dataAnalysisTips';
 import styles from './ELOChatDialog.module.css';
 
 export interface ELOChatDialogProps {
@@ -15,6 +17,7 @@ export interface ELOChatDialogProps {
   position: { x: number; y: number };
   onSendToDashboard?: (message: string) => void;
   currentPage?: 'calendar' | 'dashboard' | 'chat' | 'campaign';
+  onShowTip?: (message: string, type?: 'info' | 'reminder' | 'tip', duration?: number) => void;
 }
 
 interface ConversationHistory {
@@ -57,6 +60,7 @@ export default function ELOChatDialog({
   position,
   onSendToDashboard,
   currentPage = 'dashboard',
+  onShowTip,
 }: ELOChatDialogProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -71,6 +75,8 @@ export default function ELOChatDialog({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPresetAnswer, setSelectedPresetAnswer] = useState<PresetAnswer | null>(null);
   const [previousCategory, setPreviousCategory] = useState<string | null>(null); // Track previous category for back navigation
+  const inactivityTipShownRef = useRef(false); // Track if inactivity tip has been shown
+  const dataTipIntervalRef = useRef<NodeJS.Timeout | null>(null); // Timer for data tips
 
   // Check if user is new on mount
   useEffect(() => {
@@ -130,8 +136,60 @@ export default function ELOChatDialog({
     if (!open) {
       setShowQuickActions(true);
       setInputMessage('');
+      inactivityTipShownRef.current = false;
+      // Clear data tip interval
+      if (dataTipIntervalRef.current) {
+        clearInterval(dataTipIntervalRef.current);
+        dataTipIntervalRef.current = null;
+      }
     }
   }, [open]);
+
+  // 15-second inactivity detection - only when dialog is open and no messages
+  useInactivity({
+    timeout: 15000,
+    enabled: open && messages.length === 0 && !selectedCategory && !inactivityTipShownRef.current,
+    onInactive: () => {
+      if (onShowTip && !inactivityTipShownRef.current && messages.length === 0 && !selectedCategory) {
+        console.log('[ELO] Showing inactivity tip');
+        onShowTip("Do you need any help?", 'info', 5000);
+        inactivityTipShownRef.current = true;
+      }
+    },
+  });
+
+  // Data analysis tips - show every minute when dialog is open
+  useEffect(() => {
+    if (!open || !onShowTip) return;
+
+    console.log('[ELO] Setting up data analysis tips timer');
+
+    // Show first tip after 1 minute
+    const firstTipTimer = setTimeout(() => {
+      if (open && onShowTip) {
+        const tip = getNextTip();
+        console.log('[ELO] Showing first data tip:', tip.message);
+        onShowTip(tip.message, 'tip', 12000);
+      }
+    }, 60000); // 1 minute
+
+    // Then show tips every minute
+    dataTipIntervalRef.current = setInterval(() => {
+      if (open && onShowTip) {
+        const tip = getNextTip();
+        console.log('[ELO] Showing data tip:', tip.message);
+        onShowTip(tip.message, 'tip', 12000);
+      }
+    }, 60000); // Every 1 minute
+
+    return () => {
+      clearTimeout(firstTipTimer);
+      if (dataTipIntervalRef.current) {
+        clearInterval(dataTipIntervalRef.current);
+        dataTipIntervalRef.current = null;
+      }
+    };
+  }, [open, onShowTip]);
 
   // Handle quick action selection - show sub-options instead of calling AI
   const handleQuickAction = useCallback((actionId: string) => {
@@ -316,7 +374,21 @@ export default function ELOChatDialog({
     left: `${constrainedLeft}px`,
   };
 
-  if (!open) return null;
+  // Debug logging
+  useEffect(() => {
+    if (open) {
+      console.log('[ELO Dialog] Dialog opened, position:', dialogStyle);
+    } else {
+      console.log('[ELO Dialog] Dialog closed');
+    }
+  }, [open, dialogStyle]);
+
+  if (!open) {
+    console.log('[ELO Dialog] Dialog not open, returning null');
+    return null;
+  }
+
+  console.log('[ELO Dialog] Rendering dialog with style:', dialogStyle);
 
   return (
     <div className={styles.cloudBubble} style={dialogStyle}>

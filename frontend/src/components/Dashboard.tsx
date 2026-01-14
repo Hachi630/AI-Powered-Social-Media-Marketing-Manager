@@ -71,6 +71,18 @@ export default function Dashboard({
     };
   }, []);
 
+  // Handle insert content tip from ChatBox
+  const handleInsertContent = useCallback(() => {
+    // Dispatch event for ELO to show tip
+    window.dispatchEvent(new CustomEvent('elo-show-tip', {
+      detail: {
+        message: "Remember to use the 'Send to Calendar' button to schedule your content",
+        type: 'reminder',
+        duration: 5000,
+      }
+    }));
+  }, []);
+
   // Handle pending message by creating new conversation
   useEffect(() => {
     if (pendingMessage) {
@@ -215,6 +227,7 @@ export default function Dashboard({
                   onConversationChange={handleConversationChange}
                   onTypingStatusChange={handleTypingStatus}
                   onContentChange={handleContentChange}
+                  onInsertContent={handleInsertContent}
                 />
                 {/* Mobile: Tagline fixed below chat box */}
                 {tagline && (
@@ -250,6 +263,7 @@ export default function Dashboard({
                 onConversationChange={handleConversationChange}
                 onTypingStatusChange={handleTypingStatus}
                 onContentChange={handleContentChange}
+                onInsertContent={handleInsertContent}
               />
               {tagline && !hasMessages && (
                 <Typography.Paragraph className={styles.tagline}>

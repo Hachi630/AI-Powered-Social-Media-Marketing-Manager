@@ -3,6 +3,8 @@ import * as PIXI from 'pixi.js';
 import { Live2DModel } from 'pixi-live2d-display';
 import { useLocation } from 'react-router-dom';
 import ELOChatDialog from './ELOChatDialog';
+import ELOTipBubble from './ELOTipBubble';
+import { useInactivity } from '../hooks/useInactivity';
 import styles from './Live2DWidget.module.css';
 
 // Configure Live2D runtime on module load
@@ -43,6 +45,38 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
   const [loadError, setLoadError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const location = useLocation();
+  
+  // Tip bubble state
+  const [tipMessage, setTipMessage] = useState<string>('');
+  const [tipType, setTipType] = useState<'info' | 'reminder' | 'tip'>('info');
+  const [tipDuration, setTipDuration] = useState<number>(0);
+  const [tipVisible, setTipVisible] = useState(false);
+
+  // Crawl animation state
+  const [isCrawling, setIsCrawling] = useState(false);
+  const crawlAnimationRef = useRef<number | null>(null);
+  const originalPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const isCrawlingRef = useRef(false); // Ref to track crawling state for event handlers
+  const performCrawlAnimationRef = useRef<(() => Promise<void>) | null>(null); // Ref to store latest performCrawlAnimation
+
+  // Listen for tip events from other components
+  useEffect(() => {
+    const handleTipEvent = (event: CustomEvent) => {
+      const { message, type, duration } = event.detail || {};
+      if (message) {
+        console.log('[ELO] Received tip event:', { message, type, duration });
+        setTipMessage(message);
+        setTipType(type || 'info');
+        setTipDuration(duration || 0);
+        setTipVisible(true);
+      }
+    };
+
+    window.addEventListener('elo-show-tip', handleTipEvent as EventListener);
+    return () => {
+      window.removeEventListener('elo-show-tip', handleTipEvent as EventListener);
+    };
+  }, []);
 
   // Initialize default position (bottom right corner) - skip in preview mode
   useEffect(() => {
@@ -259,10 +293,21 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         // Play idle motion after a delay
         setTimeout(playIdleMotion, 1000);
 
-        // Set up click handler
+        // Set up click handler - toggle dialog open/close
         model.on('pointertap', async () => {
-          // Open ELO dialog
-          setDialogOpen(true);
+          // Stop crawl animation if user clicks (use ref for latest state)
+          if (isCrawlingRef.current) {
+            stopCrawlAnimation();
+            return;
+          }
+
+          console.log('[ELO] Model clicked, toggling dialog');
+          // Toggle ELO dialog
+          setDialogOpen(prev => {
+            const newState = !prev;
+            console.log('[ELO] Dialog state changed:', newState);
+            return newState;
+          });
           // Play tap motion if available
           try {
             if (typeof model.motion === 'function') {
@@ -335,9 +380,25 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
   // Track if this is a click or drag
   const dragStartPosRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
+  // Stop crawl animation if user becomes active - MUST be defined BEFORE any useCallback that references it
+  const stopCrawlAnimation = useCallback(() => {
+    if (crawlAnimationRef.current) {
+      cancelAnimationFrame(crawlAnimationRef.current);
+      crawlAnimationRef.current = null;
+    }
+    if (isCrawlingRef.current) {
+      setIsCrawling(false);
+      isCrawlingRef.current = false;
+      originalPositionRef.current = null;
+    }
+  }, []);
+
   // Handle drag start - works on both container and canvas (disabled in preview mode)
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!canvasRef.current || isPreview) return;
+    if (!canvasRef.current || isPreview || isCrawling) return;
+
+    // Stop crawl animation if user interacts
+    stopCrawlAnimation();
 
     // Store initial position to distinguish click from drag
     dragStartPosRef.current = {
@@ -355,7 +416,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     };
 
     // Don't set dragging immediately - wait to see if user moves mouse
-  }, [position]);
+  }, [position, isCrawling, stopCrawlAnimation]);
 
   // Handle mousedown on canvas directly to enable dragging
   useEffect(() => {
@@ -365,7 +426,10 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     if (!canvas) return;
 
     const handleCanvasMouseDown = (e: MouseEvent) => {
-      if (!canvasRef.current) return;
+      if (!canvasRef.current || isCrawling) return;
+
+      // Stop crawl animation if user interacts
+      stopCrawlAnimation();
 
       // Store initial position
       dragStartPosRef.current = {
@@ -386,7 +450,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     return () => {
       canvas.removeEventListener('mousedown', handleCanvasMouseDown, true);
     };
-  }, [isLoaded, position]);
+  }, [isLoaded, position, isCrawling, stopCrawlAnimation]);
 
   // Handle drag move and mouse up - always listen
   useEffect(() => {
@@ -516,12 +580,211 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     window.dispatchEvent(new CustomEvent('elo-send-message', { detail: { message } }));
   }, [onSendToDashboard]);
 
+  // Play crawl motion
+  const playCrawlMotion = useCallback(async () => {
+    if (modelRef.current && typeof modelRef.current.motion === 'function') {
+      try {
+        // Try to play crawl motion (if motion file exists)
+        await (modelRef.current.motion as any)('crawl', 0);
+        console.log('[ELO] Playing crawl motion');
+      } catch (error) {
+        // If motion file doesn't exist, try other motions or skip
+        try {
+          // Try to play idle motion as fallback
+          await (modelRef.current.motion as any)('umiushiawa', 0);
+        } catch {
+          console.debug('Crawl motion not available, using fallback');
+        }
+      }
+    }
+  }, []);
+
+  // Perform crawl animation on screen
+  const performCrawlAnimation = useCallback(async () => {
+    // Use refs to get latest values to avoid stale closures
+    if (isCrawlingRef.current || isPreview || !isLoaded || isDragging || dialogOpen) {
+      return;
+    }
+
+    // Check if model is still loaded
+    if (!modelRef.current) {
+      return;
+    }
+
+    console.log('[ELO] Starting crawl animation');
+    setIsCrawling(true);
+    isCrawlingRef.current = true;
+    
+    // Get current position at animation start
+    const currentPos = position;
+    originalPositionRef.current = { ...currentPos };
+
+    // Play crawl motion
+    await playCrawlMotion();
+
+    const widgetWidth = 200;
+    const widgetHeight = 200;
+    const margin = 20;
+
+    // Calculate target position - move to a random position on screen
+    // Prefer moving horizontally (crawling across screen)
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
+    
+    // Choose a target position (prefer horizontal movement)
+    let targetX: number;
+    let targetY: number;
+    
+    // 70% chance to move horizontally, 30% chance to move diagonally
+    if (Math.random() > 0.3) {
+      // Horizontal crawl - move to opposite side
+      targetX = currentPos.x < screenWidth / 2 
+        ? screenWidth - widgetWidth - margin 
+        : margin;
+      targetY = currentPos.y + (Math.random() - 0.5) * 200; // Slight vertical variation
+    } else {
+      // Diagonal crawl - move to random position
+      targetX = margin + Math.random() * (screenWidth - widgetWidth - 2 * margin);
+      targetY = margin + Math.random() * (screenHeight - widgetHeight - 2 * margin);
+    }
+
+    // Ensure target is within bounds
+    targetX = Math.max(margin, Math.min(targetX, screenWidth - widgetWidth - margin));
+    targetY = Math.max(margin, Math.min(targetY, screenHeight - widgetHeight - margin));
+
+    // Calculate distance and duration
+    const distance = Math.sqrt(
+      Math.pow(targetX - currentPos.x, 2) + Math.pow(targetY - currentPos.y, 2)
+    );
+    // Calculate duration based on distance - very slow crawl movement (about 40-60 pixels per second)
+    const pixelsPerSecond = 50; // Very slow crawl speed for realistic crawling feel
+    const duration = Math.max(5000, Math.min(15000, (distance / pixelsPerSecond) * 1000)); // 5-15 seconds based on distance
+    const startTime = Date.now();
+    const startX = currentPos.x;
+    const startY = currentPos.y;
+
+    // Animate position using requestAnimationFrame
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(1, elapsed / duration);
+
+      // Use smoother easing function for more natural crawling feel (ease-in-out with slight variation)
+      // This creates a more organic, crawling-like movement
+      const easedProgress = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+      
+      // Add subtle variation to create more natural crawling motion
+      const variation = Math.sin(progress * Math.PI * 4) * 0.02; // Small vertical/horizontal variation
+      const finalProgress = Math.max(0, Math.min(1, easedProgress + variation));
+
+      // Apply eased progress with subtle variation for natural crawling
+      const currentX = startX + (targetX - startX) * finalProgress;
+      const currentY = startY + (targetY - startY) * finalProgress;
+
+      setPosition({ x: currentX, y: currentY });
+
+      if (progress < 1) {
+        crawlAnimationRef.current = requestAnimationFrame(animate);
+      } else {
+        // Animation complete
+        console.log('[ELO] Crawl animation complete');
+        
+        // Wait a moment, then return to original position or stay
+        setTimeout(() => {
+          if (originalPositionRef.current && !isDragging) {
+            // Return to original position smoothly
+            const returnStartTime = Date.now();
+            const returnStartX = targetX;
+            const returnStartY = targetY;
+            // Calculate return duration based on distance
+            const returnDistance = Math.sqrt(
+              Math.pow(originalPositionRef.current.x - targetX, 2) + 
+              Math.pow(originalPositionRef.current.y - targetY, 2)
+            );
+            const pixelsPerSecond = 50; // Same slow speed for return
+            const returnDuration = Math.max(4000, Math.min(12000, (returnDistance / pixelsPerSecond) * 1000)); // 4-12 seconds to return
+
+            const returnAnimate = () => {
+              const returnElapsed = Date.now() - returnStartTime;
+              const returnProgress = Math.min(1, returnElapsed / returnDuration);
+              const returnEasedProgress = returnProgress < 0.5
+                ? 2 * returnProgress * returnProgress
+                : 1 - Math.pow(-2 * returnProgress + 2, 2) / 2;
+              
+              // Add subtle variation for natural crawling motion
+              const returnVariation = Math.sin(returnProgress * Math.PI * 4) * 0.02;
+              const returnFinalProgress = Math.max(0, Math.min(1, returnEasedProgress + returnVariation));
+
+              const returnX = returnStartX + (originalPositionRef.current!.x - returnStartX) * returnFinalProgress;
+              const returnY = returnStartY + (originalPositionRef.current!.y - returnStartY) * returnFinalProgress;
+
+              setPosition({ x: returnX, y: returnY });
+
+              if (returnProgress < 1) {
+                crawlAnimationRef.current = requestAnimationFrame(returnAnimate);
+              } else {
+                crawlAnimationRef.current = null;
+                setIsCrawling(false);
+                isCrawlingRef.current = false;
+                originalPositionRef.current = null;
+              }
+            };
+
+            crawlAnimationRef.current = requestAnimationFrame(returnAnimate);
+          } else {
+            crawlAnimationRef.current = null;
+            setIsCrawling(false);
+            isCrawlingRef.current = false;
+            originalPositionRef.current = null;
+          }
+        }, 1000); // Wait 1 second before returning
+      }
+    };
+
+    crawlAnimationRef.current = requestAnimationFrame(animate);
+  }, [isPreview, isLoaded, isDragging, dialogOpen, position, playCrawlMotion]);
+
+  // Update ref whenever performCrawlAnimation changes
+  useEffect(() => {
+    performCrawlAnimationRef.current = performCrawlAnimation;
+  }, [performCrawlAnimation]);
+
+  // Cleanup animation on unmount or when dragging starts
+  useEffect(() => {
+    if (isDragging || dialogOpen) {
+      stopCrawlAnimation();
+    }
+  }, [isDragging, dialogOpen, stopCrawlAnimation]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (crawlAnimationRef.current) {
+        cancelAnimationFrame(crawlAnimationRef.current);
+      }
+    };
+  }, []);
+
+  // Inactivity detection - trigger crawl after 15 seconds
+  useInactivity({
+    timeout: 15000,
+    enabled: isLoaded && !isDragging && !isCrawlingRef.current && !dialogOpen && !isPreview,
+    onInactive: () => {
+      // Use ref to check latest state and call function
+      if (!isCrawlingRef.current && !isDragging && !dialogOpen && isLoaded && performCrawlAnimationRef.current) {
+        console.log('[ELO] User inactive for 15 seconds, starting crawl');
+        performCrawlAnimationRef.current();
+      }
+    },
+  });
+
   // Always render container, even if model is not loaded yet
   return (
     <>
       <div
         ref={canvasRef}
-        className={`${styles.live2dWidget} ${isDragging ? styles.dragging : ''} ${isPreview ? styles.preview : ''}`}
+        className={`${styles.live2dWidget} ${isDragging ? styles.dragging : ''} ${isPreview ? styles.preview : ''} ${isCrawling ? styles.crawling : ''}`}
         style={{
           ...(isPreview ? {} : {
             left: `${position.x}px`,
@@ -529,8 +792,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           }),
           opacity: isLoaded ? 1 : 0.5,
         }}
-        onMouseDown={isPreview ? undefined : handleMouseDown}
-        onTouchStart={isPreview ? undefined : handleTouchStart}
+        onMouseDown={isPreview || isCrawling ? undefined : handleMouseDown}
+        onTouchStart={isPreview || isCrawling ? undefined : handleTouchStart}
       >
       {!isLoaded && !loadError && (
         <div style={{
@@ -561,10 +824,29 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       </div>
       <ELOChatDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => {
+          console.log('[ELO] Dialog closing');
+          setDialogOpen(false);
+          // Don't close tip when dialog closes - tips can show independently
+        }}
         position={position}
         onSendToDashboard={handleSendToDashboard}
         currentPage={getCurrentPage()}
+        onShowTip={(message, type, duration) => {
+          console.log('[ELO] Showing tip from dialog:', { message, type, duration });
+          setTipMessage(message);
+          setTipType(type || 'info');
+          setTipDuration(duration || 0);
+          setTipVisible(true);
+        }}
+      />
+      <ELOTipBubble
+        message={tipMessage}
+        type={tipType}
+        duration={tipDuration}
+        position={position}
+        visible={tipVisible}
+        onClose={() => setTipVisible(false)}
       />
     </>
   );

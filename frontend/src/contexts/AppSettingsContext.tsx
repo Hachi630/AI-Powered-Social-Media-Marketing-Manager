@@ -19,7 +19,7 @@ interface AppSettingsContextType {
   settings: AppSettings;
   pendingSettings: AppSettings;
   updatePendingSettings: (newSettings: Partial<AppSettings>) => void;
-  applySettings: () => void;
+  applySettings: (overrideSettings?: Partial<AppSettings>) => void;
   resetSettings: () => void;
   resetPendingSettings: () => void;
 }
