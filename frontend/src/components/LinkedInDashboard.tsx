@@ -57,6 +57,8 @@ import {
   FacebookOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  RocketOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
 import dayjs from "dayjs";
@@ -203,6 +205,7 @@ export default function LinkedInDashboard({
   const [instagramPostType, setInstagramPostType] = useState<
     "text" | "image" | "video" | "link"
   >("text");
+
   const [instagramSelectedImage, setInstagramSelectedImage] =
     useState<File | null>(null);
   const [instagramImagePreview, setInstagramImagePreview] = useState<
@@ -3860,6 +3863,7 @@ export default function LinkedInDashboard({
           </div>
         </Content>
       </Layout>
+
     </Layout>
   );
 }
