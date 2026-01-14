@@ -215,19 +215,22 @@ export default function BrandProfile({
   useEffect(() => {
     if (isLoggedIn) {
       const today = new Date().toDateString();
-      const lastTipDate = localStorage.getItem('elo-brand-tip-date');
-      
+      const lastTipDate = localStorage.getItem("elo-brand-tip-date");
+
       // Show tip if not shown today
       if (lastTipDate !== today) {
         const timer = setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('elo-show-tip', {
-            detail: {
-              message: "The more complete your profile, the better I can provide personalized recommendations",
-              type: 'tip',
-              duration: 6000,
-            }
-          }));
-          localStorage.setItem('elo-brand-tip-date', today);
+          window.dispatchEvent(
+            new CustomEvent("elo-show-tip", {
+              detail: {
+                message:
+                  "The more complete your profile, the better I can provide personalized recommendations",
+                type: "tip",
+                duration: 6000,
+              },
+            })
+          );
+          localStorage.setItem("elo-brand-tip-date", today);
         }, 1500); // Show after 1.5 seconds
 
         return () => clearTimeout(timer);
@@ -239,39 +242,55 @@ export default function BrandProfile({
   useEffect(() => {
     // Skip if already loaded to prevent duplicate loads
     if (isDataLoaded) {
-      console.log('[BrandProfile] Data already loaded, skipping');
+      console.log("[BrandProfile] Data already loaded, skipping");
       return;
     }
 
     const loadAllData = async () => {
-      console.log('[BrandProfile] Starting data load, isLoggedIn:', isLoggedIn);
+      console.log("[BrandProfile] Starting data load, isLoggedIn:", isLoggedIn);
 
       if (isLoggedIn) {
         try {
           const currentUser = await authService.getCurrentUser();
-          console.log('[BrandProfile] Got user from API:', currentUser?.email);
+          console.log("[BrandProfile] Got user from API:", currentUser?.email);
 
           if (currentUser) {
             setUser(currentUser);
 
             // Check if user has companies in database
             if (currentUser.companies && currentUser.companies.length > 0) {
-              console.log('[BrandProfile] Loading companies from database:', currentUser.companies.length);
+              console.log(
+                "[BrandProfile] Loading companies from database:",
+                currentUser.companies.length
+              );
 
               // Load from database
               setCompanies(currentUser.companies);
               // Sync to localStorage
-              localStorage.setItem("melo_companies", JSON.stringify(currentUser.companies));
+              localStorage.setItem(
+                "melo_companies",
+                JSON.stringify(currentUser.companies)
+              );
 
-              const savedSelectedId = localStorage.getItem("melo_selected_company");
+              const savedSelectedId = localStorage.getItem(
+                "melo_selected_company"
+              );
               let companyToLoad: CompanyData;
 
-              if (savedSelectedId && currentUser.companies.find((c) => c.id === savedSelectedId)) {
+              if (
+                savedSelectedId &&
+                currentUser.companies.find((c) => c.id === savedSelectedId)
+              ) {
                 setSelectedCompanyId(savedSelectedId);
-                companyToLoad = currentUser.companies.find((c) => c.id === savedSelectedId)!;
+                companyToLoad = currentUser.companies.find(
+                  (c) => c.id === savedSelectedId
+                )!;
               } else {
                 setSelectedCompanyId(currentUser.companies[0].id);
-                localStorage.setItem("melo_selected_company", currentUser.companies[0].id);
+                localStorage.setItem(
+                  "melo_selected_company",
+                  currentUser.companies[0].id
+                );
                 companyToLoad = currentUser.companies[0];
               }
 
@@ -282,12 +301,15 @@ export default function BrandProfile({
             }
           }
         } catch (error) {
-          console.error("[BrandProfile] Error loading data from database:", error);
+          console.error(
+            "[BrandProfile] Error loading data from database:",
+            error
+          );
         }
       }
 
       // Fallback to localStorage
-      console.log('[BrandProfile] Falling back to localStorage');
+      console.log("[BrandProfile] Falling back to localStorage");
       const savedCompanies = localStorage.getItem("melo_companies");
       const savedSelectedId = localStorage.getItem("melo_selected_company");
 
@@ -295,11 +317,17 @@ export default function BrandProfile({
         try {
           const parsed = JSON.parse(savedCompanies) as CompanyData[];
           if (parsed.length > 0) {
-            console.log('[BrandProfile] Loaded companies from localStorage:', parsed.length);
+            console.log(
+              "[BrandProfile] Loaded companies from localStorage:",
+              parsed.length
+            );
             setCompanies(parsed);
 
             let companyToLoad: CompanyData;
-            if (savedSelectedId && parsed.find((c) => c.id === savedSelectedId)) {
+            if (
+              savedSelectedId &&
+              parsed.find((c) => c.id === savedSelectedId)
+            ) {
               setSelectedCompanyId(savedSelectedId);
               companyToLoad = parsed.find((c) => c.id === savedSelectedId)!;
             } else {
@@ -312,12 +340,15 @@ export default function BrandProfile({
             return;
           }
         } catch (e) {
-          console.error('[BrandProfile] Error parsing localStorage companies:', e);
+          console.error(
+            "[BrandProfile] Error parsing localStorage companies:",
+            e
+          );
         }
       }
 
       // Create default company if none exists
-      console.log('[BrandProfile] Creating default company');
+      console.log("[BrandProfile] Creating default company");
       const defaultCompany = createDefaultCompany("My Company");
       setCompanies([defaultCompany]);
       setSelectedCompanyId(defaultCompany.id);
@@ -547,7 +578,7 @@ export default function BrandProfile({
 
       // Save to local company data first
       saveCurrentToCompany();
-      
+
       // Build updated companies array directly from current form values
       // This ensures we use the latest form data, not stale state
       const updatedCompanies = companies.map((company) => {
@@ -1006,7 +1037,10 @@ export default function BrandProfile({
                   value={newProductType}
                   onChange={(event) => setNewProductType(event.target.value)}
                   onPressEnter={() => {
-                    if (newProductType.trim() && !productTypes.includes(newProductType.trim())) {
+                    if (
+                      newProductType.trim() &&
+                      !productTypes.includes(newProductType.trim())
+                    ) {
                       setProductTypes([...productTypes, newProductType.trim()]);
                       setNewProductType("");
                     }
@@ -1018,7 +1052,9 @@ export default function BrandProfile({
                       key={type}
                       color="green"
                       closable
-                      onClose={() => setProductTypes(productTypes.filter((t) => t !== type))}
+                      onClose={() =>
+                        setProductTypes(productTypes.filter((t) => t !== type))
+                      }
                     >
                       {type}
                     </Tag>
@@ -1027,7 +1063,10 @@ export default function BrandProfile({
                 <Button
                   type="primary"
                   onClick={() => {
-                    if (newProductType.trim() && !productTypes.includes(newProductType.trim())) {
+                    if (
+                      newProductType.trim() &&
+                      !productTypes.includes(newProductType.trim())
+                    ) {
                       setProductTypes([...productTypes, newProductType.trim()]);
                       setNewProductType("");
                     }
@@ -1051,24 +1090,32 @@ export default function BrandProfile({
               >
                 <Upload
                   onChange={(info) => {
-                    const file = info.file.originFileObj || (info.file as any).originFileObj || info.file;
+                    const file =
+                      info.file.originFileObj ||
+                      (info.file as any).originFileObj ||
+                      info.file;
                     if (file && file instanceof File) {
-                      const isImage = file.type.startsWith('image/');
+                      const isImage = file.type.startsWith("image/");
                       if (!isImage) {
-                        message.error('Only image files are allowed');
+                        message.error("Only image files are allowed");
                         return;
                       }
                       const isLt10M = file.size / 1024 / 1024 < 10;
                       if (!isLt10M) {
-                        message.error('Image size must be less than 10MB');
+                        message.error("Image size must be less than 10MB");
                         return;
                       }
                       uploadService.uploadImage(file).then((response) => {
                         if (response.success && response.imageUrl) {
-                          setProductImages([...productImages, response.imageUrl!]);
-                          message.success('Image uploaded successfully');
+                          setProductImages([
+                            ...productImages,
+                            response.imageUrl!,
+                          ]);
+                          message.success("Image uploaded successfully");
                         } else {
-                          message.error(response.message || 'Failed to upload image');
+                          message.error(
+                            response.message || "Failed to upload image"
+                          );
                         }
                       });
                     }
@@ -1082,21 +1129,39 @@ export default function BrandProfile({
                   </Button>
                 </Upload>
                 {productImages.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  <div
+                    style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}
+                  >
                     {productImages.map((url, index) => (
-                      <div key={index} style={{ position: 'relative', width: '80px', height: '80px' }}>
+                      <div
+                        key={index}
+                        style={{
+                          position: "relative",
+                          width: "80px",
+                          height: "80px",
+                        }}
+                      >
                         <img
                           src={getImageUrl(url)}
                           alt={`Product ${index + 1}`}
-                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: "4px",
+                          }}
                         />
                         <Button
                           type="text"
                           danger
                           size="small"
                           icon={<CloseOutlined />}
-                          onClick={() => setProductImages(productImages.filter((_, i) => i !== index))}
-                          style={{ position: 'absolute', top: 0, right: 0 }}
+                          onClick={() =>
+                            setProductImages(
+                              productImages.filter((_, i) => i !== index)
+                            )
+                          }
+                          style={{ position: "absolute", top: 0, right: 0 }}
                         />
                       </div>
                     ))}
@@ -1122,7 +1187,10 @@ export default function BrandProfile({
                   value={newMeloGoal}
                   onChange={(event) => setNewMeloGoal(event.target.value)}
                   onPressEnter={() => {
-                    if (newMeloGoal.trim() && !meloGoals.includes(newMeloGoal.trim())) {
+                    if (
+                      newMeloGoal.trim() &&
+                      !meloGoals.includes(newMeloGoal.trim())
+                    ) {
                       setMeloGoals([...meloGoals, newMeloGoal.trim()]);
                       setNewMeloGoal("");
                     }
@@ -1134,7 +1202,9 @@ export default function BrandProfile({
                       key={goal}
                       color="purple"
                       closable
-                      onClose={() => setMeloGoals(meloGoals.filter((g) => g !== goal))}
+                      onClose={() =>
+                        setMeloGoals(meloGoals.filter((g) => g !== goal))
+                      }
                     >
                       {goal}
                     </Tag>
@@ -1143,7 +1213,10 @@ export default function BrandProfile({
                 <Button
                   type="primary"
                   onClick={() => {
-                    if (newMeloGoal.trim() && !meloGoals.includes(newMeloGoal.trim())) {
+                    if (
+                      newMeloGoal.trim() &&
+                      !meloGoals.includes(newMeloGoal.trim())
+                    ) {
                       setMeloGoals([...meloGoals, newMeloGoal.trim()]);
                       setNewMeloGoal("");
                     }
@@ -1173,6 +1246,6 @@ export default function BrandProfile({
           </Col>
         </Row>
       </Content>
-    </Layout >
+    </Layout>
   );
 }
