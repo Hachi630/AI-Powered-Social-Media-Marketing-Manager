@@ -397,7 +397,11 @@ export default function Analytics({
         return
       }
 
-      const response = await fetch('/api/analytics', {
+      // Use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+      const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+      const API_URL = `${BASE_API_URL}/api/analytics`
+
+      const response = await fetch(API_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -440,7 +444,11 @@ export default function Analytics({
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch('/api/analytics/best-time/time-periods', {
+      // Use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+      const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+      const API_URL = `${BASE_API_URL}/api/analytics/best-time/time-periods`
+
+      const response = await fetch(API_URL, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -474,6 +482,9 @@ export default function Analytics({
         return
       }
 
+      // Use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+      const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+
       // Build query parameters
       const params = new URLSearchParams()
       if (platform && platform !== 'all') {
@@ -486,7 +497,7 @@ export default function Analytics({
         params.append('month', selectedMonth.toString())
       }
 
-      const url = `/api/analytics/best-time/all?${params.toString()}`
+      const url = `${BASE_API_URL}/api/analytics/best-time/all?${params.toString()}`
 
       console.log('[Best Time Analytics] Fetching from:', url)
 
@@ -503,7 +514,7 @@ export default function Analytics({
         heatmapParams.append('month', selectedMonth.toString())
       }
 
-      const heatmapUrl = `/api/analytics/best-time/heatmap?${heatmapParams.toString()}`
+      const heatmapUrl = `${BASE_API_URL}/api/analytics/best-time/heatmap?${heatmapParams.toString()}`
 
       const [mainResponse, heatmapResponse] = await Promise.all([
         fetch(url, {

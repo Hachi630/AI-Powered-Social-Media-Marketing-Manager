@@ -282,7 +282,18 @@ const documentFileFilter = (req: Request, file: Express.Multer.File, cb: multer.
       // Other common types
       'application/rtf',
       'text/csv',
-    ].includes(file.mimetype)
+      // Database files
+      'application/x-sql',
+      'application/sql',
+      'text/x-sql',
+      'application/x-sqlite3',
+      'application/x-sqlite',
+      'application/vnd.sqlite3',
+      'application/x-db',
+      'application/octet-stream', // For .db, .sqlite files that may not have specific MIME type
+    ].includes(file.mimetype) ||
+    // Also check file extension for database files (in case MIME type is not recognized)
+    /\.(sql|db|sqlite|sqlite3)$/i.test(file.originalname)
   ) {
     cb(null, true)
   } else {

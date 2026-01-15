@@ -399,6 +399,15 @@ export default function ChatBox({
       // Other
       "application/rtf",
       "text/csv",
+      // Database files
+      "application/x-sql",
+      "application/sql",
+      "text/x-sql",
+      "application/x-sqlite3",
+      "application/x-sqlite",
+      "application/vnd.sqlite3",
+      "application/x-db",
+      "application/octet-stream", // For .db, .sqlite files
     ];
 
     if (isImage) {
@@ -411,8 +420,10 @@ export default function ChatBox({
         return "Image size must be less than 10MB";
       }
     } else {
-      if (!allowedFileTypes.includes(file.type)) {
-        return "File type not supported. Allowed: PDF, Word, PPT, Excel, TXT, CSV, RTF";
+      // Check if file type is allowed or if it's a database file by extension
+      const isDatabaseFile = /\.(sql|db|sqlite|sqlite3)$/i.test(file.name);
+      if (!allowedFileTypes.includes(file.type) && !isDatabaseFile) {
+        return "File type not supported. Allowed: PDF, Word, PPT, Excel, TXT, CSV, RTF, SQL, Database files";
       }
       // Check file size (50MB limit for documents)
       const maxSize = 50 * 1024 * 1024; // 50MB

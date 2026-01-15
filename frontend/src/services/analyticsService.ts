@@ -1,4 +1,6 @@
-const API_URL = '/api/analytics'
+// API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+const BASE_API_URL = import.meta.env.VITE_API_URL || ''
+const API_URL = `${BASE_API_URL}/api/analytics`
 
 export interface AnalyticsData {
   overview: {

@@ -562,8 +562,72 @@ export default function BrandProfile({
   };
 
   // Handle file upload
-  const handleFileUpload: UploadProps["onChange"] = ({ fileList }) => {
+  const handleFileUpload: UploadProps["onChange"] = async ({ fileList }) => {
+    // Update file list immediately for UI feedback
     setUploadedFiles(fileList);
+
+    // Find newly added files (files that are not yet uploaded)
+    const newFiles = fileList.filter(
+      (file) => file.status === "uploading" || file.status === undefined
+    );
+
+    // Upload each new file
+    for (const file of newFiles) {
+      if (file.originFileObj) {
+        try {
+          // Set file status to uploading
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.uid === file.uid ? { ...f, status: "uploading" } : f
+            )
+          );
+
+          // Upload file to server
+          const response = await uploadService.uploadFile(file.originFileObj);
+
+          if (response.success && response.fileUrl) {
+            // Update file status to success
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.uid === file.uid
+                  ? {
+                      ...f,
+                      status: "done",
+                      url: response.fileUrl,
+                      response: response,
+                    }
+                  : f
+              )
+            );
+            message.success(`${file.name} uploaded successfully`);
+          } else {
+            // Update file status to error
+            setUploadedFiles((prev) =>
+              prev.map((f) =>
+                f.uid === file.uid
+                  ? { ...f, status: "error", response: response }
+                  : f
+              )
+            );
+            message.error(
+              `Failed to upload ${file.name}: ${
+                response.message || "Unknown error"
+              }`
+            );
+          }
+        } catch (error: any) {
+          // Update file status to error
+          setUploadedFiles((prev) =>
+            prev.map((f) =>
+              f.uid === file.uid
+                ? { ...f, status: "error", response: { error: error.message } }
+                : f
+            )
+          );
+          message.error(`Failed to upload ${file.name}: ${error.message}`);
+        }
+      }
+    }
   };
 
   // Handle file removal
@@ -888,7 +952,7 @@ export default function BrandProfile({
                   fileList={uploadedFiles}
                   onChange={handleFileUpload}
                   beforeUpload={() => false}
-                  accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt"
+                  accept=".pdf,.xlsx,.xls,.csv,.doc,.docx,.txt,.sql,.db,.sqlite,.sqlite3"
                   className={styles.uploadDragger}
                 >
                   <p className={styles.uploadIcon}>
@@ -898,7 +962,7 @@ export default function BrandProfile({
                     Click or drag files to upload
                   </p>
                   <p className={styles.uploadHint}>
-                    Supports PDF, Excel, CSV, Word, TXT
+                    Supports PDF, Excel, CSV, Word, TXT, SQL, Database files
                   </p>
                 </Upload.Dragger>
                 {uploadedFiles.length > 0 && (
