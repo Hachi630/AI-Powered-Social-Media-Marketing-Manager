@@ -68,6 +68,8 @@ export default function ChatBox({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isInitializingRef = useRef(false);
   const previousHasMessagesRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Edit message state (from main branch)
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
@@ -227,6 +229,11 @@ export default function ChatBox({
     setLoading(true);
     isInitializingRef.current = true;
 
+    // Scroll to bottom after adding user message (ensure DOM is updated)
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
     try {
       const response = await chatService.sendMessage(
         currentInput ||
@@ -245,6 +252,11 @@ export default function ChatBox({
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
+        
+        // Scroll to bottom after receiving assistant response
+        setTimeout(() => {
+          scrollToBottom();
+        }, 100);
 
         // Update conversation ID if it's a new conversation
         if (response.conversationId) {
@@ -360,6 +372,24 @@ export default function ChatBox({
       }, 150);
     }
   }, [inputMessage, loading, handleSend]);
+
+  // Auto-scroll to bottom function
+  const scrollToBottom = useCallback(() => {
+    // Method 1: Use messagesEndRef (scroll anchor at the end of messages)
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+    // Method 2: Use messagesContainerRef (direct scrollTop manipulation as fallback)
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, []);
+
+  // Auto-scroll when messages or loading state changes
+  useEffect(() => {
+    // Scroll to bottom when messages update or loading state changes
+    scrollToBottom();
+  }, [messages, loading, scrollToBottom]);
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -740,7 +770,7 @@ export default function ChatBox({
     <div className={styles.chatContainer}>
       {/* Messages display area */}
       {messages.length > 0 && (
-        <div className={styles.messagesContainer}>
+        <div className={styles.messagesContainer} ref={messagesContainerRef}>
           {messages.map((msg, index) => (
             <div
               key={index}
@@ -924,6 +954,8 @@ export default function ChatBox({
               </div>
             </div>
           )}
+          {/* Scroll anchor for auto-scrolling */}
+          <div ref={messagesEndRef} style={{ height: 1 }} />
         </div>
       )}
 
