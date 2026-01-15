@@ -1136,6 +1136,13 @@ router.get('/', requireAuth, async (req: any, res) => {
     })()
 
     // Format the comprehensive response
+    // Compute total posts across all platforms using aggregation result,
+    // this guarantees we include Twitter, Facebook, etc. if they appear in postsByPlatform.
+    const totalPostsAcrossPlatforms = (postsByPlatform || []).reduce((sum: number, p: any) => {
+      const count = typeof p?.count === 'number' ? p.count : 0
+      return sum + count
+    }, 0)
+
     const analytics = {
       overview: {
         // Core counts
@@ -1192,8 +1199,10 @@ router.get('/', requireAuth, async (req: any, res) => {
         campaignsWithPosts: campaignStats.campaignsWithPosts,
 
         // Core KPI Metrics (4 Main Metrics)
+        // totalPosts.total uses aggregated counts across all platforms to ensure
+        // posts from Twitter, Facebook, etc. are included even if counting logic changes.
         totalPosts: {
-          total: totalPostsGenerated,
+          total: totalPostsAcrossPlatforms,
           published: publishedPosts,
           publishedText: `${publishedPosts} published`
         },

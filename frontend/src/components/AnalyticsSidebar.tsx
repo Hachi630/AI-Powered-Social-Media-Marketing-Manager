@@ -19,12 +19,12 @@ import styles from "./AnalyticsSidebar.module.css";
 
 const { Sider } = Layout;
 
-export type AnalyticsSection = 
-  | "overview-stats" 
-  | "key-insights" 
-  | "time-series" 
-  | "breakdown" 
-  | "recent-activity" 
+export type AnalyticsSection =
+  | "overview-stats"
+  | "key-insights"
+  | "time-series"
+  | "breakdown"
+  | "recent-activity"
   | "best-time-hours"
   | "best-time-days"
   | "best-time-heatmap"
@@ -225,9 +225,8 @@ export default function AnalyticsSidebar({
                 placement="right"
               >
                 <div
-                  className={`${styles.sectionItem} ${
-                    isSelected ? styles.sectionItemActive : ""
-                  }`}
+                  className={`${styles.sectionItem} ${isSelected ? styles.sectionItemActive : ""
+                    }`}
                   onClick={() => {
                     onSectionSelect(section.key);
                     // Scroll to section with proper offset
@@ -237,7 +236,7 @@ export default function AnalyticsSidebar({
                       const offset = 100; // Additional offset for spacing
                       const elementPosition = element.getBoundingClientRect().top;
                       const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-                      
+
                       window.scrollTo({
                         top: offsetPosition,
                         behavior: "smooth"
@@ -299,9 +298,8 @@ export default function AnalyticsSidebar({
                 placement="right"
               >
                 <div
-                  className={`${styles.sectionItem} ${
-                    isSelected ? styles.sectionItemActive : ""
-                  }`}
+                  className={`${styles.sectionItem} ${isSelected ? styles.sectionItemActive : ""
+                    }`}
                   onClick={() => {
                     onSectionSelect(section.key);
                     // Scroll to section with proper offset
@@ -311,7 +309,7 @@ export default function AnalyticsSidebar({
                       const offset = 100; // Additional offset for spacing
                       const elementPosition = element.getBoundingClientRect().top;
                       const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-                      
+
                       window.scrollTo({
                         top: offsetPosition,
                         behavior: "smooth"
@@ -373,9 +371,8 @@ export default function AnalyticsSidebar({
                 placement="right"
               >
                 <div
-                  className={`${styles.sectionItem} ${
-                    isSelected ? styles.sectionItemActive : ""
-                  }`}
+                  className={`${styles.sectionItem} ${isSelected ? styles.sectionItemActive : ""
+                    }`}
                   onClick={() => {
                     onSectionSelect(section.key);
                     // Scroll to section with proper offset
@@ -385,7 +382,7 @@ export default function AnalyticsSidebar({
                       const offset = 100; // Additional offset for spacing
                       const elementPosition = element.getBoundingClientRect().top;
                       const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-                      
+
                       window.scrollTo({
                         top: offsetPosition,
                         behavior: "smooth"

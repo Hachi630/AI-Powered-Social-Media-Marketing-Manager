@@ -6,6 +6,11 @@ import CalendarItem from '../models/CalendarItem.js'
 import Event from '../models/Event.js'
 import { twitterService } from '../services/twitterService.js'
 import TwitterToken from '../models/TwitterToken.js'
+import LinkedInToken from '../models/LinkedInToken.js'
+import { saveSocialMediaPost } from '../services/databaseService.js'
+import { createLinkedInPost, createLinkedInPostWithImage, initializeImageUpload, uploadImageToLinkedIn } from '../services/linkedinService.js'
+import path from 'path'
+import fs from 'fs'
 
 const router = express.Router()
 
@@ -632,7 +637,7 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'Calendar item not found' })
     }
 
-    // Currently only Twitter is supported for direct posting
+    // Support Twitter and LinkedIn posting
     if (platform === 'twitter') {
       // Check if user has connected their Twitter account
       const twitterToken = await TwitterToken.findOne({ userId: user._id });
@@ -661,6 +666,27 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
         item.status = 'published';
         await item.save();
 
+        // Save post to SocialMediaPost database for analytics
+        try {
+          await saveSocialMediaPost({
+            userId: user._id,
+            platform: 'twitter',
+            postType: item.imageUrl ? 'image' : 'text',
+            content: content,
+            mediaAttachments: item.imageUrl ? [{
+              type: 'image',
+              url: item.imageUrl,
+            }] : [],
+            platformPostId: result.tweetId,
+            status: 'published',
+            publishedAt: new Date(),
+          });
+          console.log('✅ Twitter post saved to database for analytics');
+        } catch (dbError: any) {
+          console.error('Failed to save Twitter post to database:', dbError);
+          // Don't fail the request if DB save fails
+        }
+
         return res.json({
           success: true,
           message: 'Successfully posted to Twitter',
@@ -685,6 +711,173 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
           message: errorMessage,
           code: errorCode,
           details: result.error?.data || result.error?.errors
+        });
+      }
+    } else if (platform === 'linkedin') {
+      // Check if user has connected their LinkedIn account
+      const linkedInToken = await LinkedInToken.findOne({ userId: user._id });
+
+      if (!linkedInToken || !linkedInToken.accessToken || !linkedInToken.liMemberId) {
+        return res.status(401).json({
+          success: false,
+          message: 'LinkedIn account not connected. Please connect your LinkedIn account first.',
+          requiresAuth: true
+        });
+      }
+
+      // Check if item has content variant for LinkedIn
+      let content = item.variants?.linkedin || item.content;
+
+      // Check if this Calendar Item has already been published to avoid duplicate content
+      // Also check database for similar content
+      const SocialMediaPost = (await import('../models/SocialMediaPost.js')).default;
+      
+      // If item is already published, add timestamp to make content unique
+      if (item.status === 'published') {
+        const timestamp = new Date().toLocaleString('en-US', { 
+          month: 'short', 
+          day: 'numeric', 
+          hour: 'numeric', 
+          minute: '2-digit' 
+        });
+        content = `${content}\n\n(Reposted ${timestamp})`;
+        console.log('⚠️ Calendar item already published, adding timestamp to avoid duplicate');
+      } else {
+        // Check if similar content was already posted recently (within last hour)
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+        const existingPost = await SocialMediaPost.findOne({
+          userId: user._id,
+          platform: 'linkedin',
+          content: content,
+          status: 'published',
+          platformAuthorId: `urn:li:person:${linkedInToken.liMemberId}`,
+          publishedAt: { $gte: oneHourAgo },
+        });
+
+        if (existingPost) {
+          // If the same content was posted recently, add a timestamp to make it unique
+          const timestamp = new Date().toLocaleString('en-US', { 
+            month: 'short', 
+            day: 'numeric', 
+            hour: 'numeric', 
+            minute: '2-digit' 
+          });
+          content = `${content}\n\n(Posted ${timestamp})`;
+          console.log('⚠️ Duplicate content detected, adding timestamp to make it unique');
+        }
+      }
+
+      try {
+        let result;
+        let postId: string | undefined;
+
+        if (item.imageUrl) {
+          // Handle image post
+          // First, initialize image upload
+          const imagePath = item.imageUrl.startsWith('http') 
+            ? item.imageUrl 
+            : path.join(process.cwd(), item.imageUrl);
+          
+          // If it's a local file path, we need to upload it to LinkedIn
+          if (!item.imageUrl.startsWith('http') && fs.existsSync(imagePath)) {
+            const imageBuffer = fs.readFileSync(imagePath);
+            const initResult = await initializeImageUpload(
+              linkedInToken.accessToken,
+              linkedInToken.liMemberId,
+              false // personal profile, not organization
+            );
+
+            if (!initResult.success) {
+              throw new Error(initResult.error || 'Failed to initialize image upload');
+            }
+
+            // Upload image binary
+            const uploadResult = await uploadImageToLinkedIn(
+              initResult.uploadUrl!,
+              imageBuffer,
+              'image/jpeg'
+            );
+
+            if (!uploadResult.success) {
+              throw new Error(uploadResult.error || 'Failed to upload image');
+            }
+
+            // Create post with image
+            result = await createLinkedInPostWithImage(
+              linkedInToken.accessToken,
+              linkedInToken.liMemberId,
+              content,
+              initResult.imageUrn!,
+              false // personal profile
+            );
+          } else {
+            // If it's already a URL, we can't use it directly with LinkedIn API
+            // For now, create a text post
+            result = await createLinkedInPost(
+              linkedInToken.accessToken,
+              linkedInToken.liMemberId,
+              content,
+              false // personal profile
+            );
+          }
+        } else {
+          // Text post
+          result = await createLinkedInPost(
+            linkedInToken.accessToken,
+            linkedInToken.liMemberId,
+            content,
+            false // personal profile
+          );
+        }
+
+        if (result.success) {
+          postId = result.postId;
+
+          // Update item status to published if successful
+          item.status = 'published';
+          await item.save();
+
+          // Save post to SocialMediaPost database for analytics
+          try {
+            await saveSocialMediaPost({
+              userId: user._id,
+              platform: 'linkedin',
+              postType: item.imageUrl ? 'image' : 'text',
+              content: content,
+              mediaAttachments: item.imageUrl ? [{
+                type: 'image',
+                url: item.imageUrl,
+              }] : [],
+              platformPostId: postId,
+              platformAuthorId: `urn:li:person:${linkedInToken.liMemberId}`,
+              status: 'published',
+              publishedAt: new Date(),
+            });
+            console.log('✅ LinkedIn post saved to database for analytics');
+          } catch (dbError: any) {
+            console.error('Failed to save LinkedIn post to database:', dbError);
+            // Don't fail the request if DB save fails
+          }
+
+          return res.json({
+            success: true,
+            message: 'Successfully posted to LinkedIn',
+            postId: postId
+          });
+        } else {
+          const errorMessage = result.error || 'Failed to post to LinkedIn';
+          console.error('LinkedIn posting failed:', errorMessage);
+
+          return res.status(500).json({
+            success: false,
+            message: errorMessage
+          });
+        }
+      } catch (error: any) {
+        console.error('LinkedIn posting error:', error);
+        return res.status(500).json({
+          success: false,
+          message: error.message || 'Failed to post to LinkedIn'
         });
       }
     } else {
