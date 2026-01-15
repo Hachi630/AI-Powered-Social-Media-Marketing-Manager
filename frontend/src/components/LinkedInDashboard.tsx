@@ -1532,11 +1532,10 @@ export default function LinkedInDashboard({
                       <LinkedinOutlined
                         style={{ color: "#0077B5", fontSize: 22 }}
                       />
-                      LinkedIn Connection
+                      {isConnected && profile?.name ? profile.name : "LinkedIn Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your LinkedIn account to post updates from your
-                      calendar
+                      {isConnected && profile?.email ? profile.email : "Connect your LinkedIn account to post updates from your calendar"}
                     </Typography.Text>
                   </div>
                 </div>
@@ -2071,11 +2070,10 @@ export default function LinkedInDashboard({
                       <TwitterOutlined
                         style={{ color: "#1DA1F2", fontSize: 22 }}
                       />
-                      Twitter/X Connection
+                      {twitterStatus?.connected && twitterStatus?.profile?.name ? twitterStatus.profile.name : "Twitter/X Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your Twitter account to post tweets from your
-                      calendar
+                      {twitterStatus?.connected && twitterStatus?.profile?.email ? twitterStatus.profile.email : "Connect your Twitter account to post tweets from your calendar"}
                     </Typography.Text>
                   </div>
                 </div>
@@ -2441,11 +2439,10 @@ export default function LinkedInDashboard({
                       <FacebookOutlined
                         style={{ color: "#1877F2", fontSize: 22 }}
                       />
-                      Facebook Connection
+                      {facebookStatus?.connected && facebookStatus?.profile?.name ? facebookStatus.profile.name : "Facebook Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your Facebook Page to share posts from your
-                      calendar. Personal accounts can also use this.
+                      {facebookStatus?.connected && facebookStatus?.profile?.email ? facebookStatus.profile.email : "Connect your Facebook Page to share posts from your calendar. Personal accounts can also use this."}
                     </Typography.Text>
                   </div>
                 </div>
@@ -2983,11 +2980,10 @@ export default function LinkedInDashboard({
                       <InstagramOutlined
                         style={{ fontSize: 22, color: "#E4405F" }}
                       />
-                      Instagram Connection
+                      {instagramStatus?.connected && instagramStatus?.profile?.name ? instagramStatus.profile.name : "Instagram Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your Instagram Business/Creator account. Requires a
-                      Facebook Page (will be connected automatically).
+                      {instagramStatus?.connected && instagramStatus?.profile?.email ? instagramStatus.profile.email : "Connect your Instagram Business/Creator account. Requires a Facebook Page (will be connected automatically)."}
                     </Typography.Text>
                   </div>
                 </div>

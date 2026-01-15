@@ -833,6 +833,7 @@ router.get("/status", protect, async (req: AuthRequest, res: Response) => {
         id: facebook.userId,
         name: pageResponse.data.name || null,
         picture: pageResponse.data.picture?.data?.url || null,
+        email: freshUser.email || null, // Use user's email from database
       };
     } catch (profileError: any) {
       console.warn(
@@ -844,6 +845,7 @@ router.get("/status", protect, async (req: AuthRequest, res: Response) => {
         id: facebook.userId,
         name: null,
         picture: null,
+        email: freshUser.email || null, // Use user's email from database
       };
     }
 

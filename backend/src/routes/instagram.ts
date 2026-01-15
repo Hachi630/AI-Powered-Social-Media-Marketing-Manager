@@ -1210,7 +1210,7 @@ router.get(
           id: instagram.userId,
           username: profileResponse.data.username || instagram.username,
           name: profileResponse.data.username || instagram.username,
-          email: null, // Instagram API doesn't provide email
+          email: freshUser.email || null, // Use user's email from database (Instagram API doesn't provide email)
           picture: null,
           accountType: instagram.accountType || 'BUSINESS', // Use stored accountType or default
         };
@@ -1224,7 +1224,7 @@ router.get(
           id: instagram.userId,
           username: instagram.username,
           name: instagram.username || "Instagram Account",
-          email: null,
+          email: freshUser.email || null, // Use user's email from database
           picture: null,
           accountType: instagram.accountType || 'BUSINESS',
         };
