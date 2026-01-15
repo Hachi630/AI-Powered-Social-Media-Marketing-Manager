@@ -1,5 +1,6 @@
 import {
   AppleFilled,
+  CheckCircleOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
@@ -55,10 +56,45 @@ export default function AuthModal({
     };
   }, []);
 
-  const handleEmailContinue = () => {
-    if (email.trim()) {
-      setStep("signup");
+  // Validation functions
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
+
+  const validatePassword = (password: string): { isValid: boolean; message?: string } => {
+    if (password.length < 8) {
+      return { isValid: false, message: "Password must be at least 8 characters long" };
     }
+    if (!/[a-zA-Z]/.test(password)) {
+      return { isValid: false, message: "Password must contain at least one letter" };
+    }
+    if (!/[0-9]/.test(password)) {
+      return { isValid: false, message: "Password must contain at least one number" };
+    }
+    return { isValid: true };
+  };
+
+  // Real-time validation states
+  const isEmailValid = email.trim() ? validateEmail(email) : true;
+  const showEmailError = email.trim() && !validateEmail(email);
+
+  const passwordRequirements = {
+    hasMinLength: password.length >= 8,
+    hasLetterAndNumber: /[a-zA-Z]/.test(password) && /[0-9]/.test(password),
+  };
+
+  const handleEmailContinue = () => {
+    if (!email.trim()) {
+      return;
+    }
+    
+    if (!validateEmail(email)) {
+      message.error("Please enter a valid email address");
+      return;
+    }
+    
+    setStep("signup");
   };
 
   // Initialize Google Sign-In when component mounts and modal opens
@@ -303,6 +339,19 @@ export default function AuthModal({
   const handleSignupContinue = async () => {
     if (!email || !password) return;
 
+    // Validate email format
+    if (!validateEmail(email)) {
+      message.error("Please enter a valid email address");
+      return;
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      message.error(passwordValidation.message || "Password does not meet requirements");
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Try to register
@@ -537,12 +586,18 @@ export default function AuthModal({
               onChange={(e) => setEmail(e.target.value)}
               onPressEnter={handleEmailContinue}
             />
+            {showEmailError && (
+              <Typography.Text type="danger" className={styles.emailErrorText}>
+                Please enter a valid email address
+              </Typography.Text>
+            )}
             <Button
               type="primary"
               block
               size="large"
               className={styles.continueBtn}
               onClick={handleEmailContinue}
+              disabled={!email.trim() || !validateEmail(email)}
             >
               Continue
             </Button>
@@ -616,6 +671,40 @@ export default function AuthModal({
                     />
                   }
                 />
+                <div className={styles.passwordRequirements}>
+                  <div className={styles.passwordRequirementItem}>
+                    {passwordRequirements.hasMinLength ? (
+                      <CheckCircleOutlined className={styles.requirementMet} />
+                    ) : (
+                      <span className={styles.requirementUnmet}>○</span>
+                    )}
+                    <Typography.Text
+                      className={
+                        passwordRequirements.hasMinLength
+                          ? styles.requirementMet
+                          : styles.requirementUnmet
+                      }
+                    >
+                      At least 8 characters
+                    </Typography.Text>
+                  </div>
+                  <div className={styles.passwordRequirementItem}>
+                    {passwordRequirements.hasLetterAndNumber ? (
+                      <CheckCircleOutlined className={styles.requirementMet} />
+                    ) : (
+                      <span className={styles.requirementUnmet}>○</span>
+                    )}
+                    <Typography.Text
+                      className={
+                        passwordRequirements.hasLetterAndNumber
+                          ? styles.requirementMet
+                          : styles.requirementUnmet
+                      }
+                    >
+                      Contains at least one letter and one number
+                    </Typography.Text>
+                  </div>
+                </div>
               </div>
 
               <Button
@@ -624,7 +713,7 @@ export default function AuthModal({
                 size="large"
                 className={styles.continueBtn}
                 onClick={handleSignupContinue}
-                disabled={!password.trim()}
+                disabled={!password.trim() || !validateEmail(email) || !validatePassword(password).isValid}
                 loading={loading}
               >
                 Continue

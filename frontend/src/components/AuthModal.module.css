@@ -77,6 +77,13 @@
   gap: 12px;
 }
 
+.emailErrorText {
+  font-size: 13px;
+  color: #ff4d4f;
+  margin-top: -8px;
+  margin-bottom: 4px;
+}
+
 .emailInput {
   height: 52px;
   border-radius: 8px;
@@ -220,6 +227,34 @@
 
 .passwordInput :global(.ant-input) {
   background-color: #ffffff !important;
+}
+
+.passwordRequirements {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.passwordRequirementItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.requirementMet {
+  color: #52c41a !important;
+  font-size: 14px;
+}
+
+.requirementMet :global(.anticon) {
+  color: #52c41a;
+}
+
+.requirementUnmet {
+  color: #999 !important;
+  font-size: 13px;
 }
 
 .eyeButton {
