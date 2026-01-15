@@ -1484,25 +1484,50 @@ export default function LinkedInDashboard({
                   gap: 16,
                 }}
               >
-                <div>
-                  <Typography.Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <LinkedinOutlined
-                      style={{ color: "#0077B5", fontSize: 22 }}
+                {/* Left block: avatar + title/description */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 16,
+                    flex: 1,
+                    minWidth: 0,
+                  }}
+                >
+                  {/* Avatar on the far left */}
+                  {isConnected && profile?.picture ? (
+                    <Avatar
+                      src={profile.picture}
+                      size={64}
+                      style={{ flexShrink: 0 }}
                     />
-                    LinkedIn Connection
-                  </Typography.Title>
-                  <Typography.Text type="secondary">
-                    Connect your LinkedIn account to post updates from your
-                    calendar
-                  </Typography.Text>
+                  ) : isConnected ? (
+                    <Avatar
+                      size={64}
+                      icon={<LinkedinOutlined />}
+                      style={{ backgroundColor: "#0077B5", flexShrink: 0 }}
+                    />
+                  ) : null}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Typography.Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <LinkedinOutlined
+                        style={{ color: "#0077B5", fontSize: 22 }}
+                      />
+                      LinkedIn Connection
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                      Connect your LinkedIn account to post updates from your
+                      calendar
+                    </Typography.Text>
+                  </div>
                 </div>
                 <div
                   style={{
@@ -2007,25 +2032,41 @@ export default function LinkedInDashboard({
                   gap: 16,
                 }}
               >
-                <div>
-                  <Typography.Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <TwitterOutlined
-                      style={{ color: "#1DA1F2", fontSize: 22 }}
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                  {/* Avatar on the left */}
+                  {twitterStatus?.connected && twitterStatus?.profile?.picture ? (
+                    <Avatar
+                      src={twitterStatus.profile.picture}
+                      size={64}
+                      style={{ flexShrink: 0 }}
                     />
-                    Twitter/X Connection
-                  </Typography.Title>
-                  <Typography.Text type="secondary">
-                    Connect your Twitter account to post tweets from your
-                    calendar
-                  </Typography.Text>
+                  ) : twitterStatus?.connected ? (
+                    <Avatar
+                      size={64}
+                      icon={<TwitterOutlined />}
+                      style={{ backgroundColor: "#1DA1F2", flexShrink: 0 }}
+                    />
+                  ) : null}
+                  <div>
+                    <Typography.Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <TwitterOutlined
+                        style={{ color: "#1DA1F2", fontSize: 22 }}
+                      />
+                      Twitter/X Connection
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                      Connect your Twitter account to post tweets from your
+                      calendar
+                    </Typography.Text>
+                  </div>
                 </div>
                 <div
                   style={{
@@ -2361,25 +2402,41 @@ export default function LinkedInDashboard({
                   gap: 16,
                 }}
               >
-                <div>
-                  <Typography.Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <FacebookOutlined
-                      style={{ color: "#1877F2", fontSize: 22 }}
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                  {/* Avatar on the left */}
+                  {facebookStatus?.connected && facebookStatus?.profile?.picture ? (
+                    <Avatar
+                      src={facebookStatus.profile.picture}
+                      size={64}
+                      style={{ flexShrink: 0 }}
                     />
-                    Facebook Connection
-                  </Typography.Title>
-                  <Typography.Text type="secondary">
-                    Connect your Facebook Page to share posts from your
-                    calendar. Personal accounts can also use this.
-                  </Typography.Text>
+                  ) : facebookStatus?.connected ? (
+                    <Avatar
+                      size={64}
+                      icon={<FacebookOutlined />}
+                      style={{ backgroundColor: "#1877F2", flexShrink: 0 }}
+                    />
+                  ) : null}
+                  <div>
+                    <Typography.Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <FacebookOutlined
+                        style={{ color: "#1877F2", fontSize: 22 }}
+                      />
+                      Facebook Connection
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                      Connect your Facebook Page to share posts from your
+                      calendar. Personal accounts can also use this.
+                    </Typography.Text>
+                  </div>
                 </div>
                 <div
                   style={{
@@ -2887,25 +2944,41 @@ export default function LinkedInDashboard({
                   gap: 16,
                 }}
               >
-                <div>
-                  <Typography.Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                    }}
-                  >
-                    <InstagramOutlined
-                      style={{ fontSize: 22, color: "#E4405F" }}
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                  {/* Avatar on the left */}
+                  {instagramStatus?.connected && instagramStatus?.profile?.picture ? (
+                    <Avatar
+                      src={instagramStatus.profile.picture}
+                      size={64}
+                      style={{ flexShrink: 0 }}
                     />
-                    Instagram Connection
-                  </Typography.Title>
-                  <Typography.Text type="secondary">
-                    Connect your Instagram Business/Creator account. Requires a
-                    Facebook Page (will be connected automatically).
-                  </Typography.Text>
+                  ) : instagramStatus?.connected ? (
+                    <Avatar
+                      size={64}
+                      icon={<InstagramOutlined />}
+                      style={{ backgroundColor: "#E4405F", flexShrink: 0 }}
+                    />
+                  ) : null}
+                  <div>
+                    <Typography.Title
+                      level={4}
+                      style={{
+                        margin: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                      }}
+                    >
+                      <InstagramOutlined
+                        style={{ fontSize: 22, color: "#E4405F" }}
+                      />
+                      Instagram Connection
+                    </Typography.Title>
+                    <Typography.Text type="secondary">
+                      Connect your Instagram Business/Creator account. Requires a
+                      Facebook Page (will be connected automatically).
+                    </Typography.Text>
+                  </div>
                 </div>
                 <div
                   style={{
@@ -3818,43 +3891,6 @@ export default function LinkedInDashboard({
               </Row>
             </div>
 
-            {selectedPlatform === "linkedin" && (
-              <div>
-                <Card style={{ marginBottom: 24 }}>
-                  {/* LinkedIn Connection Status */}
-                  <Row align="middle" justify="space-between">
-                    <Col>
-                      <Typography.Text strong style={{ fontSize: 16 }}>
-                        LinkedIn Connection Status
-                      </Typography.Text>
-                      <br />
-                      <Typography.Text type="secondary">
-                        {isConnected
-                          ? "Your LinkedIn account is connected and ready to post content"
-                          : "Connect your LinkedIn account to enable posting content from your calendar"}
-                      </Typography.Text>
-                    </Col>
-                    <Col>
-                      {isConnected ? (
-                        <Tag
-                          color="success"
-                          style={{ padding: "4px 12px", fontSize: 14 }}
-                        >
-                          ● Connected
-                        </Tag>
-                      ) : (
-                        <Tag
-                          color="default"
-                          style={{ padding: "4px 12px", fontSize: 14 }}
-                        >
-                          ○ Not Connected
-                        </Tag>
-                      )}
-                    </Col>
-                  </Row>
-                </Card>
-              </div>
-            )}
 
             {/* Render content based on selected platform */}
             {/* For LinkedIn, show all existing content */}
