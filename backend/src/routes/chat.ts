@@ -1,18 +1,19 @@
-import express, { Request, Response } from "express";
-import { protect } from "../middleware/auth.js";
-import { AuthRequest } from "../types/index.js";
-import { geminiService, ChatMessage } from "../services/geminiService.js";
-import Conversation from "../models/Conversation.js";
-import ProjectFolder from "../models/ProjectFolder.js";
-import User from "../models/User.js";
-import { generateImage } from "../services/imageGenerationService.js";
-import { saveImage } from "../utils/imageStorage.js";
-import { generateContentPlan } from "../services/contentPlanService.js";
-import CalendarItem from "../models/CalendarItem.js";
-import { readImageAsBase64 } from "../utils/imageReader.js";
-import { extractTextFromFile } from "../utils/fileContentExtractor.js";
+import express, { Request, Response } from 'express'
+import { protect } from '../middleware/auth.js'
+import { AuthRequest } from '../types/index.js'
+import { geminiService, ChatMessage } from '../services/geminiService.js'
+import Conversation from '../models/Conversation.js'
+import ProjectFolder from '../models/ProjectFolder.js'
+import { generateImage } from '../services/imageGenerationService.js'
+import { saveImage } from '../utils/imageStorage.js'
+import { generateContentPlan } from '../services/contentPlanService.js'
+import CalendarItem from '../models/CalendarItem.js'
+import { readImageAsBase64 } from '../utils/imageReader.js'
+import { extractTextFromFile } from '../utils/fileContentExtractor.js'
+import { saveAIGeneratedContent, saveMediaFile } from '../services/databaseService.js'
+import AIGeneratedContent from '../models/AIGeneratedContent.js'
 
-const router = express.Router();
+const router = express.Router()
 
 // Helper function to generate conversation title from message
 const generateTitle = (message: string): string => {
@@ -56,6 +57,7 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
     }
 
     let conversation = null;
+    let userMessageContent = "";
 
     // If conversationId exists, load the conversation
     if (conversationId) {
@@ -108,8 +110,11 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       // Remove all messages after editMessageIndex
       conversation.messages = conversation.messages.slice(0, editMessageIndex + 1);
 
+      // Move declaration up
+      let userMessageContent = "";
+
       // Update the message at editMessageIndex
-      const userMessageContent = message
+      userMessageContent = message
         ? message.trim()
         : images && images.length > 0
           ? `Uploaded ${images.length} image(s)`
@@ -124,20 +129,21 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
         files:
           files && Array.isArray(files)
             ? files.map((f: any) => ({
-                url: f.url,
-                name: f.name,
-                type: f.type,
-                size: f.size,
-              }))
+              url: f.url,
+              name: f.name,
+              type: f.type,
+              size: f.size,
+            }))
             : undefined,
         timestamp: new Date(),
       };
     }
 
-    // Get user context from Brand Profile
+    // Get user context from Brand Profile (saved by unique user ID)
     const userContext = {
       brandName: user.brandName,
       industry: user.industry,
+      aboutMe: user.aboutMe, // Company description
       toneOfVoice: user.toneOfVoice,
       knowledgeProducts: user.knowledgeProducts,
       targetAudience: user.targetAudience,
@@ -172,10 +178,10 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
         files:
           files && Array.isArray(files)
             ? files.map((f: any) => ({
-                url: f.url,
-                name: f.name,
-                type: f.type,
-              }))
+              url: f.url,
+              name: f.name,
+              type: f.type,
+            }))
             : undefined,
       });
     }
@@ -236,6 +242,7 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
     }
 
     // Call Gemini service with images and file texts
+    const startTime = Date.now()
     const aiResponse = await geminiService.generateContent(
       {
         messages,
@@ -243,7 +250,24 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       },
       imageData.length > 0 ? imageData : undefined,
       fileTexts.length > 0 ? fileTexts : undefined
-    );
+    )
+    const processingTime = Date.now() - startTime
+
+    // Save AI-generated content to database
+    try {
+      await saveAIGeneratedContent({
+        userId: user._id,
+        conversationId: conversation?._id,
+        contentType: 'text',
+        input: userMessageContent,
+        output: aiResponse,
+        model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+        processingTime,
+      })
+    } catch (dbError) {
+      console.error("Failed to save AI content to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
 
     // Create or update conversation
     if (!conversation) {
@@ -266,11 +290,11 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
             files:
               files && Array.isArray(files)
                 ? files.map((f: any) => ({
-                    url: f.url,
-                    name: f.name,
-                    type: f.type,
-                    size: f.size,
-                  }))
+                  url: f.url,
+                  name: f.name,
+                  type: f.type,
+                  size: f.size,
+                }))
                 : undefined,
             timestamp: new Date(),
           },
@@ -285,7 +309,7 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
       // Update existing conversation
       if (editMessageIndex === undefined || editMessageIndex === null) {
         // Normal mode: append new messages
-        const userMessageContent = message
+        userMessageContent = message
           ? message.trim()
           : images && images.length > 0
             ? `Uploaded ${images.length} image(s)`
@@ -299,15 +323,16 @@ router.post("/", protect, async (req: AuthRequest, res: Response) => {
           files:
             files && Array.isArray(files)
               ? files.map((f: any) => ({
-                  url: f.url,
-                  name: f.name,
-                  type: f.type,
-                  size: f.size,
-                }))
+                url: f.url,
+                name: f.name,
+                type: f.type,
+                size: f.size,
+              }))
               : undefined,
           timestamp: new Date(),
         });
       }
+
       // Add assistant response
       conversation.messages.push({
         role: "assistant",
@@ -339,50 +364,89 @@ router.post(
   protect,
   async (req: AuthRequest, res: Response) => {
     try {
-      const user = req.user;
+      const user = req.user
 
       if (!user) {
-        return res
-          .status(404)
-          .json({ success: false, message: "User not found" });
+        return res.status(404).json({ success: false, message: 'User not found' })
       }
 
-      const { prompt, conversationId } = req.body;
+      const { prompt, conversationId } = req.body
 
       // Validate prompt
       if (!prompt || !prompt.trim()) {
-        return res
-          .status(400)
-          .json({ success: false, message: "Prompt is required" });
+        return res.status(400).json({ success: false, message: 'Prompt is required' })
       }
 
       // Generate image
-      const imageDataUrl = await generateImage(prompt.trim());
+      const startTime = Date.now()
+      const imageDataUrl = await generateImage(prompt.trim())
+      const processingTime = Date.now() - startTime
 
       // Extract mime type and base64 data from data URL
-      const [header, base64Data] = imageDataUrl.split(",");
-      const mimeType = header.match(/data:([^;]+)/)?.[1] || "image/png";
+      const [header, base64Data] = imageDataUrl.split(',')
+      const mimeType = header.match(/data:([^;]+)/)?.[1] || 'image/png'
 
       // Save image to file system
-      const imageUrl = await saveImage(base64Data, mimeType);
+      const imageUrl = await saveImage(base64Data, mimeType)
 
-      let conversation = null;
+      let conversation: any = null
+
+      // Save AI-generated image to database (before loading conversation)
+      try {
+        // Save as AI-generated content
+        const aiContent = await saveAIGeneratedContent({
+          userId: user._id,
+          contentType: 'image',
+          input: prompt.trim(),
+          output: imageUrl,
+          model: process.env.GEMINI_IMAGE_MODEL || 'gemini-2.5-flash-image',
+          imageUrl: imageUrl,
+          imagePrompt: prompt.trim(),
+          processingTime,
+        })
+
+        // Save as media file
+        await saveMediaFile({
+          userId: user._id,
+          fileName: imageUrl.split('/').pop() || 'generated-image.png',
+          originalName: 'generated-image.png',
+          filePath: imageUrl,
+          fileUrl: imageUrl,
+          fileType: 'image',
+          mimeType: mimeType,
+          fileSize: Buffer.from(base64Data, 'base64').length,
+          description: `AI-generated image: ${prompt.trim()}`,
+        })
+      } catch (dbError) {
+        console.error("Failed to save AI image to database:", dbError)
+        // Don't fail the request if DB save fails
+      }
 
       // If conversationId exists, add image message to conversation
       if (conversationId) {
         conversation = await Conversation.findOne({
           _id: conversationId,
           userId: user._id,
-        });
+        })
 
         if (conversation) {
           conversation.messages.push({
-            role: "assistant",
+            role: 'assistant',
             content: `Generated image: ${prompt.trim()}`,
             images: [imageUrl],
             timestamp: new Date(),
-          });
-          await conversation.save();
+          })
+          await conversation.save()
+
+          // Update AI content with conversation ID
+          try {
+            await AIGeneratedContent.findOneAndUpdate(
+              { userId: user._id, imageUrl: imageUrl },
+              { conversationId: conversation._id }
+            )
+          } catch (dbError) {
+            console.error("Failed to update AI content with conversation ID:", dbError)
+          }
         }
       } else {
         // Create new conversation for image
@@ -391,13 +455,23 @@ router.post(
           title: generateTitle(`Image: ${prompt.trim()}`),
           messages: [
             {
-              role: "assistant",
+              role: 'assistant',
               content: `Generated image: ${prompt.trim()}`,
               images: [imageUrl],
               timestamp: new Date(),
             },
           ],
-        });
+        })
+
+        // Update AI content with conversation ID
+        try {
+          await AIGeneratedContent.findOneAndUpdate(
+            { userId: user._id, imageUrl: imageUrl },
+            { conversationId: conversation._id }
+          )
+        } catch (dbError) {
+          console.error("Failed to update AI content with conversation ID:", dbError)
+        }
       }
 
       res.json({
@@ -405,16 +479,16 @@ router.post(
         imageUrl,
         images: [imageUrl],
         conversationId: conversation?._id.toString(),
-      });
+      })
     } catch (error: any) {
-      console.error("Image generation error:", error);
+      console.error("Image generation error:", error)
       res.status(500).json({
         success: false,
         message: error.message || "Failed to generate image",
-      });
+      })
     }
   }
-);
+)
 
 // @desc    Get all conversations for current user
 // @route   GET /api/chat
@@ -519,7 +593,7 @@ router.get(
   }
 );
 
-// @desc    Delete conversation 
+// @desc    Delete conversation
 // @route   DELETE /api/chat/:conversationId
 // @access  Private
 router.delete(
@@ -594,37 +668,67 @@ router.post(
         });
       }
 
-      // Get user context from Brand Profile
+      // Get user context from Brand Profile (saved by unique user ID)
       const userContext = {
         brandName: user.brandName,
         industry: user.industry,
+        aboutMe: user.aboutMe, // Company description
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
         targetAudience: user.targetAudience,
-      };
+      }
 
       // Generate content plan
+      const startTime = Date.now()
       const plan = await generateContentPlan({
         userContext,
         goal,
         startDate,
         endDate,
         platforms,
-      });
+      })
+      const processingTime = Date.now() - startTime
+
+      // Save AI-generated content plan to database
+      try {
+        await saveAIGeneratedContent({
+          userId: user._id,
+          contentType: 'content_plan',
+          input: JSON.stringify({ goal, startDate, endDate, platforms, userContext }),
+          output: JSON.stringify(plan),
+          model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+          contentPlanItems: plan.map(item => ({
+            date: new Date(item.date),
+            platform: item.platform,
+            content: item.content,
+          })),
+          processingTime,
+        })
+      } catch (dbError) {
+        console.error("Failed to save content plan to database:", dbError)
+        // Don't fail the request if DB save fails
+      }
 
       res.json({
         success: true,
         plan,
-      });
+      })
     } catch (error: any) {
-      console.error("Generate content plan error:", error);
+      console.error('Generate content plan error:', error)
       res.status(500).json({
         success: false,
-        message: error.message || "Failed to generate content plan",
-      });
+        message: error.message || 'Failed to generate content plan',
+      })
     }
   }
-);
+)
+
+// Helper function to get next global event number
+const getNextEventNumber = async (): Promise<number> => {
+  const Event = (await import('../models/Event.js')).default
+  const maxEvent = await Event.findOne().sort({ eventNumber: -1 }).lean()
+  return (maxEvent?.eventNumber || 0) + 1
+}
 
 // @desc    Send content plan to calendar
 // @route   POST /api/chat/send-to-calendar
@@ -661,10 +765,29 @@ router.post(
         title: item.title,
         content: item.content,
         variants: item.variants || {},
-        status: item.status || "draft",
-      }));
+        status: item.status || 'draft',
+      }))
 
-      const createdItems = await CalendarItem.insertMany(itemsToCreate);
+      const createdItems = await CalendarItem.insertMany(itemsToCreate)
+
+      // Create ONE event for all calendar items in this batch (from "Send to Calendar")
+      const Event = (await import('../models/Event.js')).default
+      const calendarItemIds = createdItems.map(item => item._id)
+      const nextEventNumber = await getNextEventNumber()
+
+      // Get the earliest date from all created calendar items
+      const dates = createdItems.map(item => new Date(item.date))
+      const earliestDate = new Date(Math.min(...dates.map(d => d.getTime())))
+
+      await Event.create({
+        userId: user._id,
+        calendarItemIds,
+        eventNumber: nextEventNumber,
+        date: earliestDate, // Copy the earliest date from calendar items
+      })
+
+      console.log(`[Send to Calendar] Created event #${nextEventNumber} with ${calendarItemIds.length} calendar items`)
+      console.log(`[Send to Calendar] Event date: ${earliestDate.toISOString().split('T')[0]}`)
 
       res.status(201).json({
         success: true,
@@ -673,7 +796,7 @@ router.post(
           userId: item.userId.toString(),
           campaignId: item.campaignId ? item.campaignId.toString() : null,
           platform: item.platform,
-          date: item.date.toISOString().split("T")[0],
+          date: item.date.toISOString().split('T')[0],
           time: item.time || null,
           title: item.title,
           content: item.content,
@@ -683,7 +806,7 @@ router.post(
           updatedAt: item.updatedAt,
         })),
         count: createdItems.length,
-      });
+      })
     } catch (error: any) {
       console.error("Send to calendar error:", error);
       res.status(500).json({

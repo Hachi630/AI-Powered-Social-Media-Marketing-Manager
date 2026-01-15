@@ -27,6 +27,8 @@ import LinkedInDashboard from "./components/LinkedInDashboard";
 import InstagramCallback from "./pages/InstagramCallback";
 import FacebookCallback from "./pages/FacebookCallback";
 import OnboardingModal from "./components/OnboardingModal";
+import Analytics from "./pages/Analytics";
+import Messaging from "./pages/Messaging";
 
 // Lazy load Live2D Widget to prevent import-time errors
 const Live2DWidgetLazy = lazy(() =>
@@ -107,9 +109,14 @@ function AppContent() {
         if (currentUser) {
           setIsLoggedIn(true);
           setUser(currentUser);
-          // Check if user needs onboarding
-          if (!currentUser.onboardingCompleted) {
+          // Show onboarding only the first time this user logs in on this device.
+          const onboardingSeenKey = `onboardingSeen_${currentUser.id}`;
+          const hasSeenOnboarding = localStorage.getItem(onboardingSeenKey) === "true";
+
+          if (!hasSeenOnboarding) {
             setShowOnboarding(true);
+            // Mark as seen so it won't pop up again on this device
+            localStorage.setItem(onboardingSeenKey, "true");
             // Reset settings to default for new users
             resetSettings();
           }
@@ -176,9 +183,13 @@ function AppContent() {
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true);
     setUser(user);
-    // Check if user needs onboarding
-    if (!user.onboardingCompleted) {
+    // Only show onboarding once per user per device
+    const onboardingSeenKey = `onboardingSeen_${user.id}`;
+    const hasSeenOnboarding = localStorage.getItem(onboardingSeenKey) === "true";
+
+    if (!hasSeenOnboarding) {
       setShowOnboarding(true);
+      localStorage.setItem(onboardingSeenKey, "true");
       // Reset settings to default for new users
       resetSettings();
     }
@@ -187,6 +198,9 @@ function AppContent() {
   const handleOnboardingComplete = (updatedUser: User) => {
     setUser(updatedUser);
     setShowOnboarding(false);
+    // Remember that this user has completed onboarding on this device
+    const onboardingSeenKey = `onboardingSeen_${updatedUser.id}`;
+    localStorage.setItem(onboardingSeenKey, "true");
   };
 
   const handleLogout = () => {
@@ -284,6 +298,28 @@ function AppContent() {
               user={user}
               jwt={localStorage.getItem("token") || ""}
               userId={user?.id}
+            />
+          }
+        />
+        <Route
+          path="/analytics"
+          element={
+            <Analytics
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
+            />
+          }
+        />
+        <Route
+          path="/messaging"
+          element={
+            <Messaging
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={handleLoginSuccess}
+              onLogout={handleLogout}
+              user={user}
             />
           }
         />

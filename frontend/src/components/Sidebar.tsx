@@ -4,7 +4,6 @@ import {
   PlusOutlined,
   SearchOutlined,
   DeleteOutlined,
-  MessageOutlined,
   FolderOutlined,
   FolderOpenOutlined,
   EditOutlined,
@@ -562,9 +561,9 @@ export default function Sidebar({
           />
           {!collapsed && (
             <>
-              <Typography.Title level={5} className={styles.title}>
-                Flippy chats
-              </Typography.Title>
+              <Typography.Text className={styles.headerTitle}>
+                CHATS
+              </Typography.Text>
               <div className={styles.headerActions}>
                 <Button
                   type="text"
@@ -577,6 +576,14 @@ export default function Sidebar({
                   icon={<PlusOutlined />}
                   onClick={handleNewChat}
                   className={styles.newChatButton}
+                />
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<FolderOutlined />}
+                  onClick={handleCreateFolder}
+                  className={styles.newFolderButton}
+                  title="New Folder"
                 />
               </div>
             </>
@@ -604,22 +611,6 @@ export default function Sidebar({
               />
             )}
             <div className={styles.chatsSection}>
-              <div className={styles.sectionHeader}>
-                <Typography.Text
-                  type="secondary"
-                  className={styles.sectionTitle}
-                >
-                  Chats
-                </Typography.Text>
-                <Button
-                  type="text"
-                  size="small"
-                  icon={<FolderOutlined />}
-                  onClick={handleCreateFolder}
-                  className={styles.newFolderButton}
-                  title="New Folder"
-                />
-              </div>
               {loading ? (
                 <div style={{ textAlign: "center", padding: "20px" }}>
                   <Spin size="small" />
@@ -711,9 +702,6 @@ export default function Sidebar({
                                 onClick={() => handleConversationClick(conv.id)}
                               >
                                 <div className={styles.chatItemContent}>
-                                  <MessageOutlined
-                                    className={styles.chatIcon}
-                                  />
                                   {editingItem?.type === "conversation" &&
                                   editingItem.id === conv.id ? (
                                     <Input
@@ -790,7 +778,6 @@ export default function Sidebar({
                         onClick={() => handleConversationClick(conv.id)}
                       >
                         <div className={styles.chatItemContent}>
-                          <MessageOutlined className={styles.chatIcon} />
                           {editingItem?.type === "conversation" &&
                           editingItem.id === conv.id ? (
                             <Input

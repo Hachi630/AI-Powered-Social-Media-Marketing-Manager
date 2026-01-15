@@ -5,6 +5,7 @@ import axios from "axios";
 import LinkedInToken from "../models/LinkedInToken.js";
 import { generateToken } from "../utils/jwt.js";
 import { requireAuth } from "../middleware/auth.js";
+import { saveSocialMediaPost, saveMediaFile, saveAPIResponse, linkMediaToPost } from "../services/databaseService.js";
 import {
   getLinkedInMemberId,
   getTotalConnections,
@@ -43,6 +44,111 @@ import {
 
 const router = Router();
 
+// Helper function to save LinkedIn post to database
+async function saveLinkedInPostToDB(
+  userId: string,
+  postData: {
+    postType: 'text' | 'image' | 'video' | 'link'
+    content: string
+    platformPostId?: string
+    organizationId?: string
+    organizationName?: string
+    mediaAttachments?: any[]
+    errorMessage?: string
+    status?: 'published' | 'failed'
+  }
+) {
+  try {
+    console.log('saveLinkedInPostToDB called with:', {
+      userId: userId?.toString(),
+      postType: postData.postType,
+      hasPostId: !!postData.platformPostId,
+      hasMedia: !!postData.mediaAttachments?.length,
+      status: postData.status || 'published'
+    });
+
+    const token = await LinkedInToken.findOne({ userId });
+    if (!token) {
+      console.error("LinkedIn token not found for userId:", userId);
+      throw new Error(`LinkedIn token not found for userId: ${userId}`);
+    }
+
+    const isOrganization = !!postData.organizationId;
+    const authorId = isOrganization ? postData.organizationId : token.liMemberId;
+
+    // Get organization name if needed (but don't block if it fails)
+    let organizationName = postData.organizationName;
+    if (isOrganization && postData.organizationId && !organizationName) {
+      try {
+        const organization = await getAdministeredOrganizations(token.accessToken as string).then((r: any) =>
+          r.organizations?.find((org: any) => org.id === postData.organizationId)
+        ).catch(() => null);
+        organizationName = organization?.name || undefined;
+      } catch (orgError) {
+        console.warn('Failed to fetch organization name:', orgError);
+        // Continue without organization name
+      }
+    }
+
+    // Ensure mediaAttachments have required 'url' field
+    const mediaAttachments = postData.mediaAttachments?.map(media => {
+      if (!media.url && media.externalId) {
+        return {
+          ...media,
+          url: media.externalId, // Use externalId as url if url is missing
+        };
+      }
+      return media;
+    }) || [];
+
+    console.log('Saving LinkedIn post to database:', {
+      userId: userId?.toString(),
+      platform: 'linkedin',
+      postType: postData.postType,
+      postId: postData.platformPostId,
+      status: postData.status || 'published',
+      mediaCount: mediaAttachments.length,
+    });
+
+    const savedPost = await saveSocialMediaPost({
+      userId,
+      platform: 'linkedin',
+      postType: postData.postType,
+      content: postData.content,
+      mediaAttachments: mediaAttachments,
+      organizationId: postData.organizationId,
+      organizationName: organizationName,
+      platformPostId: postData.platformPostId,
+      platformAuthorId: isOrganization ? `urn:li:organization:${authorId}` : `urn:li:person:${authorId}`,
+      status: postData.status || 'published',
+      publishedAt: new Date(),
+      errorMessage: postData.errorMessage,
+    });
+
+    console.log('✅ LinkedIn post saved successfully:', {
+      postId: savedPost._id,
+      platformPostId: savedPost.platformPostId,
+      platform: savedPost.platform,
+      postType: savedPost.postType,
+      status: savedPost.status,
+    });
+
+    return savedPost;
+  } catch (error: any) {
+    console.error("❌ Failed to save LinkedIn post to database:", error);
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      userId: userId?.toString(),
+      postType: postData.postType,
+      platformPostId: postData.platformPostId,
+      mediaAttachments: postData.mediaAttachments,
+    });
+    // Re-throw the error so calling code knows it failed
+    throw error;
+  }
+}
+
 // STEP 1 — Redirect to LinkedIn OAuth
 // Bug 1 Fix: Accept userId as query param and encode it in state
 router.get("/auth", (req, res) => {
@@ -54,7 +160,7 @@ router.get("/auth", (req, res) => {
 
   // Encode userId in state so we can retrieve it in callback
   const state = JSON.stringify({ userId, nonce: Math.random().toString(36) });
-  const encodedState = Buffer.from(state).toString("base64");
+  const encodedState = Buffer.from(state).toString('base64');
 
   // LinkedIn API scopes
   // - openid, profile, email: Sign In with LinkedIn using OpenID Connect
@@ -71,10 +177,7 @@ router.get("/auth", (req, res) => {
     state: encodedState,
   });
 
-  console.log(
-    "LinkedIn OAuth redirect URL:",
-    `https://www.linkedin.com/oauth/v2/authorization?${params}`
-  );
+  console.log("LinkedIn OAuth redirect URL:", `https://www.linkedin.com/oauth/v2/authorization?${params}`);
 
   res.redirect(`https://www.linkedin.com/oauth/v2/authorization?${params}`);
 });
@@ -90,35 +193,27 @@ router.get("/callback", async (req, res) => {
   // Handle LinkedIn authorization errors (user denied, etc.)
   if (error) {
     console.error("LinkedIn OAuth denied:", error, errorDescription);
-    return res.redirect(
-      `${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=${encodeURIComponent(error)}`
-    );
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=${encodeURIComponent(error)}`);
   }
 
   // Check if code is present
   if (!code) {
     console.error("LinkedIn OAuth: No authorization code received");
-    return res.redirect(
-      `${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=no_code`
-    );
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=no_code`);
   }
 
   // Bug 1 Fix: Decode userId from state parameter
   let userId: string | undefined;
   try {
-    const decodedState = Buffer.from(stateParam, "base64").toString("utf-8");
+    const decodedState = Buffer.from(stateParam, 'base64').toString('utf-8');
     const stateData = JSON.parse(decodedState);
     userId = stateData.userId;
   } catch {
-    return res.redirect(
-      `${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=invalid_state`
-    );
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=invalid_state`);
   }
 
   if (!userId) {
-    return res.redirect(
-      `${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=missing_user`
-    );
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=missing_user`);
   }
 
   try {
@@ -130,12 +225,11 @@ router.get("/callback", async (req, res) => {
       client_secret: process.env.LI_CLIENT_SECRET!,
     });
 
-    const { data } = await axios.post<{
-      access_token: string;
-      expires_in: number;
-    }>("https://www.linkedin.com/oauth/v2/accessToken", body, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    });
+    const { data } = await axios.post(
+      "https://www.linkedin.com/oauth/v2/accessToken",
+      body,
+      { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+    );
 
     const accessToken = data.access_token;
 
@@ -153,17 +247,10 @@ router.get("/callback", async (req, res) => {
       { upsert: true }
     );
 
-    res.redirect(
-      `${process.env.CLIENT_URL}/socialdashboard?linkedin=connected`
-    );
+    res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=connected`);
   } catch (error: any) {
-    console.error(
-      "LinkedIn OAuth error:",
-      error?.response?.data || error.message || error
-    );
-    res.redirect(
-      `${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=token_exchange_failed`
-    );
+    console.error("LinkedIn OAuth error:", error?.response?.data || error.message || error);
+    res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=token_exchange_failed`);
   }
 });
 
@@ -175,22 +262,14 @@ router.delete("/disconnect", requireAuth, async (req: any, res) => {
     const result = await LinkedInToken.findOneAndDelete({ userId });
 
     if (!result) {
-      return res.json({
-        success: true,
-        message: "No LinkedIn account was connected",
-      });
+      return res.json({ success: true, message: "No LinkedIn account was connected" });
     }
 
     console.log(`LinkedIn disconnected for user ${userId}`);
-    res.json({
-      success: true,
-      message: "LinkedIn account disconnected successfully",
-    });
+    res.json({ success: true, message: "LinkedIn account disconnected successfully" });
   } catch (error: any) {
     console.error("Error disconnecting LinkedIn:", error.message);
-    res
-      .status(500)
-      .json({ success: false, error: "Failed to disconnect LinkedIn account" });
+    res.status(500).json({ success: false, error: "Failed to disconnect LinkedIn account" });
   }
 });
 
@@ -220,14 +299,8 @@ router.get("/metrics", requireAuth, async (req: any, res) => {
   res.json({
     connected: true,
     profile: profile,
-    followers:
-      followers !== null
-        ? { available: true, value: followers }
-        : { available: false, reason: "Requires Marketing API permissions" },
-    connections:
-      connections !== null
-        ? { available: true, value: connections }
-        : { available: false, reason: "Requires r_1st_connections_size scope" },
+    followers: followers !== null ? { available: true, value: followers } : { available: false, reason: "Requires Marketing API permissions" },
+    connections: connections !== null ? { available: true, value: connections } : { available: false, reason: "Requires r_1st_connections_size scope" },
     profileViews: { available: false, reason: "Not exposed by LinkedIn API" },
   });
 });
@@ -242,11 +315,7 @@ router.get("/organizations", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res.json({
-      success: false,
-      organizations: [],
-      error: "LinkedIn account not connected",
-    });
+    return res.json({ success: false, organizations: [], error: "LinkedIn account not connected" });
   }
 
   const result = await getAdministeredOrganizations(token.accessToken);
@@ -259,50 +328,80 @@ router.get("/organizations", requireAuth, async (req: any, res) => {
 
 // STEP 6 — Create a text post on LinkedIn (supports personal and organization)
 router.post("/posts", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id || req.user.id;
   const { text, organizationId } = req.body;
 
   if (!text || text.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Post text is required" });
+    return res.status(400).json({ success: false, error: "Post text is required" });
   }
 
   if (text.length > 3000) {
-    return res
-      .status(400)
-      .json({
-        success: false,
-        error: "Post text cannot exceed 3000 characters",
-      });
+    return res.status(400).json({ success: false, error: "Post text cannot exceed 3000 characters" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   // Determine if posting to organization or personal
   const isOrganization = !!organizationId;
   const authorId = isOrganization ? organizationId : token.liMemberId;
 
-  const result = await createLinkedInPost(
-    token.accessToken,
-    authorId,
-    text,
-    isOrganization
-  );
+  const result = await createLinkedInPost(token.accessToken, authorId, text, isOrganization);
 
   if (result.success) {
-    res.json({
-      success: true,
-      postId: result.postId,
-      message: `Post created successfully on ${isOrganization ? "company page" : "personal profile"}!`,
-    });
+    // Save post to database
+    try {
+      const organization = isOrganization
+        ? await getAdministeredOrganizations(token.accessToken).then((r: any) =>
+          r.organizations?.find((org: any) => org.id === organizationId)
+        )
+        : null;
+
+      console.log('Saving LinkedIn post to database:', { userId, platform: 'linkedin', postId: result.postId });
+      const savedPost = await saveSocialMediaPost({
+        userId,
+        platform: 'linkedin',
+        postType: 'text',
+        content: text,
+        organizationId: isOrganization ? organizationId : undefined,
+        organizationName: organization?.name,
+        platformPostId: result.postId,
+        platformAuthorId: isOrganization ? `urn:li:organization:${authorId}` : `urn:li:person:${authorId}`,
+        status: 'published',
+        publishedAt: new Date(),
+      });
+      console.log('LinkedIn post saved successfully:', savedPost._id);
+    } catch (dbError: any) {
+      console.error("Failed to save post to database:", dbError);
+      console.error("Error details:", {
+        message: dbError.message,
+        stack: dbError.stack,
+        userId,
+        platformPostId: result.postId,
+      });
+      // Don't fail the request if DB save fails
+    }
+
+    res.json({ success: true, postId: result.postId, message: `Post created successfully on ${isOrganization ? 'company page' : 'personal profile'}!` });
   } else {
+    // Save failed post attempt to database
+    try {
+      await saveSocialMediaPost({
+        userId,
+        platform: 'linkedin',
+        postType: 'text',
+        content: text,
+        organizationId: isOrganization ? organizationId : undefined,
+        status: 'failed',
+        errorMessage: result.error,
+      });
+    } catch (dbError) {
+      console.error("Failed to save failed post to database:", dbError);
+    }
+
     res.status(400).json({ success: false, error: result.error });
   }
 });
@@ -314,27 +413,17 @@ router.post("/images/initialize", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   // Determine if uploading for organization or personal
   const isOrganization = !!organizationId;
   const ownerId = isOrganization ? organizationId : token.liMemberId;
 
-  const result = await initializeImageUpload(
-    token.accessToken,
-    ownerId,
-    isOrganization
-  );
+  const result = await initializeImageUpload(token.accessToken, ownerId, isOrganization);
 
   if (result.success) {
-    res.json({
-      success: true,
-      uploadUrl: result.uploadUrl,
-      imageUrn: result.imageUrn,
-    });
+    res.json({ success: true, uploadUrl: result.uploadUrl, imageUrn: result.imageUrn });
   } else {
     res.status(400).json({ success: false, error: result.error });
   }
@@ -345,9 +434,7 @@ router.post("/images/upload", requireAuth, async (req: any, res) => {
   const { uploadUrl } = req.body;
 
   if (!uploadUrl) {
-    return res
-      .status(400)
-      .json({ success: false, error: "uploadUrl is required" });
+    return res.status(400).json({ success: false, error: "uploadUrl is required" });
   }
 
   // Get the raw image data from the request body
@@ -358,18 +445,12 @@ router.post("/images/upload", requireAuth, async (req: any, res) => {
   const { imageData } = req.body;
 
   if (!imageData) {
-    return res
-      .status(400)
-      .json({ success: false, error: "imageData (base64) is required" });
+    return res.status(400).json({ success: false, error: "imageData (base64) is required" });
   }
 
   try {
     const imageBuffer = Buffer.from(imageData, "base64");
-    const result = await uploadImageToLinkedIn(
-      uploadUrl,
-      imageBuffer,
-      "image/jpeg"
-    );
+    const result = await uploadImageToLinkedIn(uploadUrl, imageBuffer, "image/jpeg");
 
     if (result.success) {
       res.json({ success: true, message: "Image uploaded successfully" });
@@ -383,48 +464,79 @@ router.post("/images/upload", requireAuth, async (req: any, res) => {
 
 // STEP 9 — Create post with image (supports personal and organization)
 router.post("/posts/with-image", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id || req.user.id;
   const { text, imageUrn, organizationId } = req.body;
 
   if (!text || text.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Post text is required" });
+    return res.status(400).json({ success: false, error: "Post text is required" });
   }
 
   if (!imageUrn) {
-    return res
-      .status(400)
-      .json({ success: false, error: "imageUrn is required" });
+    return res.status(400).json({ success: false, error: "imageUrn is required" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   // Determine if posting to organization or personal
   const isOrganization = !!organizationId;
   const authorId = isOrganization ? organizationId : token.liMemberId;
 
-  const result = await createLinkedInPostWithImage(
-    token.accessToken,
-    authorId,
-    text,
-    imageUrn,
-    isOrganization
-  );
+  const result = await createLinkedInPostWithImage(token.accessToken, authorId, text, imageUrn, isOrganization);
 
   if (result.success) {
-    res.json({
-      success: true,
-      postId: result.postId,
-      message: "Post with image created successfully!",
-    });
+    // Save media file to database
+    try {
+      await saveMediaFile({
+        userId,
+        fileName: `linkedin-image-${imageUrn.split(':').pop()}`,
+        originalName: 'linkedin-uploaded-image.jpg',
+        filePath: imageUrn, // LinkedIn URN
+        fileUrl: imageUrn, // LinkedIn URN
+        fileType: 'image',
+        mimeType: 'image/jpeg',
+        fileSize: 0, // Size unknown for LinkedIn assets
+        platformAssetId: imageUrn,
+        platform: 'linkedin',
+      })
+    } catch (dbError) {
+      console.error("Failed to save LinkedIn image to database:", dbError)
+    }
+
+    // Save post to database
+    try {
+      const savedPost = await saveLinkedInPostToDB(userId, {
+        postType: 'image',
+        content: text,
+        platformPostId: result.postId,
+        organizationId: isOrganization ? organizationId : undefined,
+        mediaAttachments: [{
+          type: 'image',
+          url: imageUrn,
+          externalId: imageUrn,
+        }],
+        status: 'published',
+      });
+      console.log('✅ LinkedIn image post saved to database:', savedPost._id);
+    } catch (saveError: any) {
+      console.error('❌ Failed to save LinkedIn image post to database:', saveError);
+      // Don't fail the request, but log the error
+    }
+
+    res.json({ success: true, postId: result.postId, message: "Post with image created successfully!" });
   } else {
+    // Save failed post attempt
+    await saveLinkedInPostToDB(userId, {
+      postType: 'image',
+      content: text,
+      organizationId: isOrganization ? organizationId : undefined,
+      errorMessage: result.error,
+      status: 'failed',
+    });
+
     res.status(400).json({ success: false, error: result.error });
   }
 });
@@ -437,9 +549,7 @@ router.delete("/posts/:postUrn", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const result = await deleteLinkedInPost(token.accessToken, postUrn);
@@ -461,11 +571,7 @@ router.get("/events", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res.json({
-      success: false,
-      events: [],
-      error: "LinkedIn account not connected",
-    });
+    return res.json({ success: false, events: [], error: "LinkedIn account not connected" });
   }
 
   const result = await getMyEvents(token.accessToken);
@@ -473,29 +579,18 @@ router.get("/events", requireAuth, async (req: any, res) => {
 });
 
 // STEP 11 — Get organization events
-router.get(
-  "/events/organization/:organizationId",
-  requireAuth,
-  async (req: any, res) => {
-    const userId = req.user.id;
-    const { organizationId } = req.params;
-    const token = await LinkedInToken.findOne({ userId });
+router.get("/events/organization/:organizationId", requireAuth, async (req: any, res) => {
+  const userId = req.user.id;
+  const { organizationId } = req.params;
+  const token = await LinkedInToken.findOne({ userId });
 
-    if (!token?.accessToken) {
-      return res.json({
-        success: false,
-        events: [],
-        error: "LinkedIn account not connected",
-      });
-    }
-
-    const result = await getOrganizationEvents(
-      token.accessToken,
-      organizationId
-    );
-    res.json(result);
+  if (!token?.accessToken) {
+    return res.json({ success: false, events: [], error: "LinkedIn account not connected" });
   }
-);
+
+  const result = await getOrganizationEvents(token.accessToken, organizationId);
+  res.json(result);
+});
 
 // STEP 12 — Get a single event by ID
 router.get("/events/:eventId", requireAuth, async (req: any, res) => {
@@ -504,9 +599,7 @@ router.get("/events/:eventId", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const result = await getEventById(token.accessToken, eventId);
@@ -516,41 +609,24 @@ router.get("/events/:eventId", requireAuth, async (req: any, res) => {
 // STEP 13 — Create a new event
 router.post("/events", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
-  const {
-    organizationId,
-    name,
-    description,
-    startAt,
-    endAt,
-    eventUrl,
-    eventType,
-    locale,
-  } = req.body;
+  const { organizationId, name, description, startAt, endAt, eventUrl, eventType, locale } = req.body;
 
   if (!organizationId) {
-    return res
-      .status(400)
-      .json({ success: false, error: "organizationId is required" });
+    return res.status(400).json({ success: false, error: "organizationId is required" });
   }
 
   if (!name || name.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Event name is required" });
+    return res.status(400).json({ success: false, error: "Event name is required" });
   }
 
   if (!startAt) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Event start time is required" });
+    return res.status(400).json({ success: false, error: "Event start time is required" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const result = await createLinkedInEvent(token.accessToken, organizationId, {
@@ -560,15 +636,11 @@ router.post("/events", requireAuth, async (req: any, res) => {
     endAt,
     eventUrl,
     eventType,
-    locale,
+    locale
   });
 
   if (result.success) {
-    res.json({
-      success: true,
-      eventId: result.eventId,
-      message: "Event created successfully!",
-    });
+    res.json({ success: true, eventId: result.eventId, message: "Event created successfully!" });
   } else {
     res.status(400).json({ success: false, error: result.error });
   }
@@ -578,15 +650,12 @@ router.post("/events", requireAuth, async (req: any, res) => {
 router.patch("/events/:eventId", requireAuth, async (req: any, res) => {
   const userId = req.user.id;
   const { eventId } = req.params;
-  const { name, description, startAt, endAt, eventUrl, eventType, locale } =
-    req.body;
+  const { name, description, startAt, endAt, eventUrl, eventType, locale } = req.body;
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const result = await updateLinkedInEvent(token.accessToken, eventId, {
@@ -596,7 +665,7 @@ router.patch("/events/:eventId", requireAuth, async (req: any, res) => {
     endAt,
     eventUrl,
     eventType,
-    locale,
+    locale
   });
 
   if (result.success) {
@@ -614,9 +683,7 @@ router.delete("/events/:eventId", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const result = await deleteLinkedInEvent(token.accessToken, eventId);
@@ -640,17 +707,10 @@ router.get("/posts/:postUrn/comments", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res.json({
-      success: false,
-      comments: [],
-      error: "LinkedIn account not connected",
-    });
+    return res.json({ success: false, comments: [], error: "LinkedIn account not connected" });
   }
 
-  const result = await getPostComments(
-    token.accessToken,
-    decodeURIComponent(postUrn)
-  );
+  const result = await getPostComments(token.accessToken, decodeURIComponent(postUrn));
   res.json(result);
 });
 
@@ -661,17 +721,13 @@ router.post("/posts/:postUrn/comments", requireAuth, async (req: any, res) => {
   const { text, organizationId } = req.body;
 
   if (!text || text.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Comment text is required" });
+    return res.status(400).json({ success: false, error: "Comment text is required" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   // Determine actor (organization or personal)
@@ -687,83 +743,65 @@ router.post("/posts/:postUrn/comments", requireAuth, async (req: any, res) => {
   );
 
   if (result.success) {
-    res.json({
-      success: true,
-      commentUrn: result.commentUrn,
-      message: "Comment created successfully!",
-    });
+    res.json({ success: true, commentUrn: result.commentUrn, message: "Comment created successfully!" });
   } else {
     res.status(400).json({ success: false, error: result.error });
   }
 });
 
 // STEP 18 — Edit a comment
-router.patch(
-  "/posts/:postUrn/comments/:commentUrn",
-  requireAuth,
-  async (req: any, res) => {
-    const userId = req.user.id;
-    const { postUrn, commentUrn } = req.params;
-    const { text } = req.body;
+router.patch("/posts/:postUrn/comments/:commentUrn", requireAuth, async (req: any, res) => {
+  const userId = req.user.id;
+  const { postUrn, commentUrn } = req.params;
+  const { text } = req.body;
 
-    if (!text || text.trim().length === 0) {
-      return res
-        .status(400)
-        .json({ success: false, error: "Comment text is required" });
-    }
-
-    const token = await LinkedInToken.findOne({ userId });
-
-    if (!token?.accessToken) {
-      return res
-        .status(401)
-        .json({ success: false, error: "LinkedIn account not connected" });
-    }
-
-    const result = await editComment(
-      token.accessToken,
-      decodeURIComponent(postUrn),
-      decodeURIComponent(commentUrn),
-      text
-    );
-
-    if (result.success) {
-      res.json({ success: true, message: "Comment updated successfully!" });
-    } else {
-      res.status(400).json({ success: false, error: result.error });
-    }
+  if (!text || text.trim().length === 0) {
+    return res.status(400).json({ success: false, error: "Comment text is required" });
   }
-);
+
+  const token = await LinkedInToken.findOne({ userId });
+
+  if (!token?.accessToken) {
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
+  }
+
+  const result = await editComment(
+    token.accessToken,
+    decodeURIComponent(postUrn),
+    decodeURIComponent(commentUrn),
+    text
+  );
+
+  if (result.success) {
+    res.json({ success: true, message: "Comment updated successfully!" });
+  } else {
+    res.status(400).json({ success: false, error: result.error });
+  }
+});
 
 // STEP 19 — Delete a comment
-router.delete(
-  "/posts/:postUrn/comments/:commentUrn",
-  requireAuth,
-  async (req: any, res) => {
-    const userId = req.user.id;
-    const { postUrn, commentUrn } = req.params;
+router.delete("/posts/:postUrn/comments/:commentUrn", requireAuth, async (req: any, res) => {
+  const userId = req.user.id;
+  const { postUrn, commentUrn } = req.params;
 
-    const token = await LinkedInToken.findOne({ userId });
+  const token = await LinkedInToken.findOne({ userId });
 
-    if (!token?.accessToken) {
-      return res
-        .status(401)
-        .json({ success: false, error: "LinkedIn account not connected" });
-    }
-
-    const result = await deleteComment(
-      token.accessToken,
-      decodeURIComponent(postUrn),
-      decodeURIComponent(commentUrn)
-    );
-
-    if (result.success) {
-      res.json({ success: true, message: "Comment deleted successfully" });
-    } else {
-      res.status(400).json({ success: false, error: result.error });
-    }
+  if (!token?.accessToken) {
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
-);
+
+  const result = await deleteComment(
+    token.accessToken,
+    decodeURIComponent(postUrn),
+    decodeURIComponent(commentUrn)
+  );
+
+  if (result.success) {
+    res.json({ success: true, message: "Comment deleted successfully" });
+  } else {
+    res.status(400).json({ success: false, error: result.error });
+  }
+});
 
 // ============================================
 // LinkedIn Reactions API Routes (w_member_social)
@@ -777,17 +815,10 @@ router.get("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken) {
-    return res.json({
-      success: false,
-      reactions: [],
-      error: "LinkedIn account not connected",
-    });
+    return res.json({ success: false, reactions: [], error: "LinkedIn account not connected" });
   }
 
-  const result = await getPostReactions(
-    token.accessToken,
-    decodeURIComponent(postUrn)
-  );
+  const result = await getPostReactions(token.accessToken, decodeURIComponent(postUrn));
   res.json(result);
 });
 
@@ -797,28 +828,19 @@ router.post("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
   const { postUrn } = req.params;
   const { reactionType, organizationId } = req.body;
 
-  const validReactions: ReactionType[] = [
-    "LIKE",
-    "CELEBRATE",
-    "SUPPORT",
-    "LOVE",
-    "INSIGHTFUL",
-    "CURIOUS",
-  ];
+  const validReactions: ReactionType[] = ["LIKE", "CELEBRATE", "SUPPORT", "LOVE", "INSIGHTFUL", "CURIOUS"];
 
   if (reactionType && !validReactions.includes(reactionType)) {
     return res.status(400).json({
       success: false,
-      error: `Invalid reaction type. Must be one of: ${validReactions.join(", ")}`,
+      error: `Invalid reaction type. Must be one of: ${validReactions.join(", ")}`
     });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   // Determine actor (organization or personal)
@@ -834,50 +856,41 @@ router.post("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
   );
 
   if (result.success) {
-    res.json({
-      success: true,
-      message: `${reactionType || "LIKE"} reaction added!`,
-    });
+    res.json({ success: true, message: `${reactionType || "LIKE"} reaction added!` });
   } else {
     res.status(400).json({ success: false, error: result.error });
   }
 });
 
 // STEP 22 — Remove a reaction from a post
-router.delete(
-  "/posts/:postUrn/reactions",
-  requireAuth,
-  async (req: any, res) => {
-    const userId = req.user.id;
-    const { postUrn } = req.params;
-    const { organizationId } = req.query;
+router.delete("/posts/:postUrn/reactions", requireAuth, async (req: any, res) => {
+  const userId = req.user.id;
+  const { postUrn } = req.params;
+  const { organizationId } = req.query;
 
-    const token = await LinkedInToken.findOne({ userId });
+  const token = await LinkedInToken.findOne({ userId });
 
-    if (!token?.accessToken || !token?.liMemberId) {
-      return res
-        .status(401)
-        .json({ success: false, error: "LinkedIn account not connected" });
-    }
-
-    // Determine actor (organization or personal)
-    const actorUrn = organizationId
-      ? `urn:li:organization:${organizationId}`
-      : `urn:li:person:${token.liMemberId}`;
-
-    const result = await removeReaction(
-      token.accessToken,
-      decodeURIComponent(postUrn),
-      actorUrn
-    );
-
-    if (result.success) {
-      res.json({ success: true, message: "Reaction removed" });
-    } else {
-      res.status(400).json({ success: false, error: result.error });
-    }
+  if (!token?.accessToken || !token?.liMemberId) {
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
-);
+
+  // Determine actor (organization or personal)
+  const actorUrn = organizationId
+    ? `urn:li:organization:${organizationId}`
+    : `urn:li:person:${token.liMemberId}`;
+
+  const result = await removeReaction(
+    token.accessToken,
+    decodeURIComponent(postUrn),
+    actorUrn
+  );
+
+  if (result.success) {
+    res.json({ success: true, message: "Reaction removed" });
+  } else {
+    res.status(400).json({ success: false, error: result.error });
+  }
+});
 
 // ============================================
 // LinkedIn Video & Link Post Routes (w_member_social)
@@ -885,39 +898,26 @@ router.delete(
 
 // STEP 23 — Initialize video upload
 router.post("/videos/initialize", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id || req.user.id;
   const { organizationId, fileSizeBytes } = req.body;
 
   if (!fileSizeBytes) {
-    return res
-      .status(400)
-      .json({ success: false, error: "fileSizeBytes is required" });
+    return res.status(400).json({ success: false, error: "fileSizeBytes is required" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const isOrganization = !!organizationId;
   const ownerId = isOrganization ? organizationId : token.liMemberId;
 
-  const result = await initializeVideoUpload(
-    token.accessToken,
-    ownerId,
-    isOrganization,
-    fileSizeBytes
-  );
+  const result = await initializeVideoUpload(token.accessToken, ownerId, isOrganization, fileSizeBytes);
 
   if (result.success) {
-    res.json({
-      success: true,
-      uploadUrl: result.uploadUrl,
-      videoUrn: result.videoUrn,
-    });
+    res.json({ success: true, uploadUrl: result.uploadUrl, videoUrn: result.videoUrn });
   } else {
     res.status(400).json({ success: false, error: result.error });
   }
@@ -928,24 +928,16 @@ router.post("/videos/upload", requireAuth, async (req: any, res) => {
   const { uploadUrl, videoData } = req.body;
 
   if (!uploadUrl) {
-    return res
-      .status(400)
-      .json({ success: false, error: "uploadUrl is required" });
+    return res.status(400).json({ success: false, error: "uploadUrl is required" });
   }
 
   if (!videoData) {
-    return res
-      .status(400)
-      .json({ success: false, error: "videoData (base64) is required" });
+    return res.status(400).json({ success: false, error: "videoData (base64) is required" });
   }
 
   try {
     const videoBuffer = Buffer.from(videoData, "base64");
-    const result = await uploadVideoToLinkedIn(
-      uploadUrl,
-      videoBuffer,
-      "video/mp4"
-    );
+    const result = await uploadVideoToLinkedIn(uploadUrl, videoBuffer, "video/mp4");
 
     if (result.success) {
       res.json({ success: true, message: "Video uploaded successfully" });
@@ -959,75 +951,99 @@ router.post("/videos/upload", requireAuth, async (req: any, res) => {
 
 // STEP 25 — Create post with video
 router.post("/posts/with-video", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
+  const userId = req.user._id || req.user.id;
   const { text, videoUrn, organizationId } = req.body;
 
   if (!text || text.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Post text is required" });
+    return res.status(400).json({ success: false, error: "Post text is required" });
   }
 
   if (!videoUrn) {
-    return res
-      .status(400)
-      .json({ success: false, error: "videoUrn is required" });
+    return res.status(400).json({ success: false, error: "videoUrn is required" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const isOrganization = !!organizationId;
   const authorId = isOrganization ? organizationId : token.liMemberId;
 
-  const result = await createLinkedInPostWithVideo(
-    token.accessToken,
-    authorId,
-    text,
-    videoUrn,
-    isOrganization
-  );
+  const result = await createLinkedInPostWithVideo(token.accessToken, authorId, text, videoUrn, isOrganization);
 
   if (result.success) {
-    res.json({
-      success: true,
-      postId: result.postId,
-      message: "Video post created successfully!",
-    });
+    // Save media file to database
+    try {
+      await saveMediaFile({
+        userId,
+        fileName: `linkedin-video-${videoUrn.split(':').pop()}`,
+        originalName: 'linkedin-uploaded-video.mp4',
+        filePath: videoUrn, // LinkedIn URN
+        fileUrl: videoUrn, // LinkedIn URN
+        fileType: 'video',
+        mimeType: 'video/mp4',
+        fileSize: 0, // Size unknown for LinkedIn assets
+        platformAssetId: videoUrn,
+        platform: 'linkedin',
+      })
+    } catch (dbError) {
+      console.error("Failed to save LinkedIn video to database:", dbError)
+    }
+
+    // Save post to database
+    try {
+      const savedPost = await saveLinkedInPostToDB(userId, {
+        postType: 'video',
+        content: text,
+        platformPostId: result.postId,
+        organizationId: isOrganization ? organizationId : undefined,
+        mediaAttachments: [{
+          type: 'video',
+          url: videoUrn,
+          externalId: videoUrn,
+        }],
+        status: 'published',
+      });
+      console.log('✅ LinkedIn video post saved to database:', savedPost._id);
+    } catch (saveError: any) {
+      console.error('❌ Failed to save LinkedIn video post to database:', saveError);
+      // Don't fail the request, but log the error
+    }
+
+    res.json({ success: true, postId: result.postId, message: "Video post created successfully!" });
   } else {
+    // Save failed post attempt
+    await saveLinkedInPostToDB(userId, {
+      postType: 'video',
+      content: text,
+      organizationId: isOrganization ? organizationId : undefined,
+      errorMessage: result.error,
+      status: 'failed',
+    });
+
     res.status(400).json({ success: false, error: result.error });
   }
 });
 
 // STEP 26 — Create post with link/article
 router.post("/posts/with-link", requireAuth, async (req: any, res) => {
-  const userId = req.user.id;
-  const { text, linkUrl, linkTitle, linkDescription, organizationId } =
-    req.body;
+  const userId = req.user._id || req.user.id;
+  const { text, linkUrl, linkTitle, linkDescription, organizationId } = req.body;
 
   if (!text || text.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ success: false, error: "Post text is required" });
+    return res.status(400).json({ success: false, error: "Post text is required" });
   }
 
   if (!linkUrl) {
-    return res
-      .status(400)
-      .json({ success: false, error: "linkUrl is required" });
+    return res.status(400).json({ success: false, error: "linkUrl is required" });
   }
 
   const token = await LinkedInToken.findOne({ userId });
 
   if (!token?.accessToken || !token?.liMemberId) {
-    return res
-      .status(401)
-      .json({ success: false, error: "LinkedIn account not connected" });
+    return res.status(401).json({ success: false, error: "LinkedIn account not connected" });
   }
 
   const isOrganization = !!organizationId;
@@ -1044,12 +1060,43 @@ router.post("/posts/with-link", requireAuth, async (req: any, res) => {
   );
 
   if (result.success) {
-    res.json({
-      success: true,
-      postId: result.postId,
-      message: "Link post created successfully!",
-    });
+    // Save post to database
+    try {
+      const savedPost = await saveLinkedInPostToDB(userId, {
+        postType: 'link',
+        content: text,
+        platformPostId: result.postId,
+        organizationId: isOrganization ? organizationId : undefined,
+        mediaAttachments: [{
+          type: 'link',
+          url: linkUrl,
+          linkUrl: linkUrl,
+          linkTitle: linkTitle,
+          linkDescription: linkDescription,
+        }],
+        status: 'published',
+      });
+      console.log('✅ LinkedIn link post saved to database:', savedPost._id);
+    } catch (saveError: any) {
+      console.error('❌ Failed to save LinkedIn link post to database:', saveError);
+      // Don't fail the request, but log the error
+    }
+
+    res.json({ success: true, postId: result.postId, message: "Link post created successfully!" });
   } else {
+    // Save failed post attempt
+    try {
+      await saveLinkedInPostToDB(userId, {
+        postType: 'link',
+        content: text,
+        organizationId: isOrganization ? organizationId : undefined,
+        errorMessage: result.error,
+        status: 'failed',
+      });
+    } catch (saveError: any) {
+      console.error('❌ Failed to save failed LinkedIn link post to database:', saveError);
+    }
+
     res.status(400).json({ success: false, error: result.error });
   }
 });

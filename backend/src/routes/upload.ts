@@ -7,6 +7,8 @@ import fs from 'fs'
 import { protect } from '../middleware/auth.js'
 import { AuthRequest } from '../types/index.js'
 import { saveImage } from '../utils/imageStorage.js'
+import { saveMediaFile } from '../services/databaseService.js'
+import { uploadToS3, isS3Configured, getS3PublicUrl } from '../services/s3Service.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -17,8 +19,6 @@ const UPLOADS_DIR = path.join(__dirname, '../../uploads/images')
 const FILES_DIR = path.join(__dirname, '../../uploads/files')
 
 // Ensure uploads directories exist
-// NOTE: On Render, the file system is ephemeral. Files will be lost when the service restarts.
-// This is acceptable for testing, but production should use cloud storage (AWS S3, Cloudinary, etc.)
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true })
 }
@@ -71,11 +71,81 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
       return res.status(400).json({ success: false, message: 'No image file provided' })
     }
 
-    const imageUrl = `/uploads/images/${req.file.filename}`
+    let imageUrl: string
+    let filePath: string
+    let storageProvider: 'local' | 's3' | 'cloudinary' = 'local'
+    let storageBucket: string | undefined
+    let storageKey: string | undefined
+
+    // If S3 is configured, try uploading to S3
+    if (isS3Configured() && req.file) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path)
+        const result = await uploadToS3(
+          fileBuffer,
+          req.file.filename,
+          req.file.mimetype,
+          'images',
+          user._id.toString(),
+          false // Default private, change to true if public access is needed
+        )
+        imageUrl = getS3PublicUrl(result.key)
+        filePath = `s3://${result.bucket}/${result.key}`
+        storageProvider = 's3'
+        storageBucket = result.bucket
+        storageKey = result.key
+        
+        // Delete local temporary file
+        fs.unlinkSync(req.file.path)
+      } catch (s3Error) {
+        console.error('S3 upload failed, using local storage:', s3Error)
+        // Fall back to local storage
+        imageUrl = `/uploads/images/${req.file.filename}`
+        filePath = req.file.path
+      }
+    } else {
+      // Use local storage
+      imageUrl = `/uploads/images/${req.file.filename}`
+      filePath = req.file.path
+    }
+
+    // Generate absolute URL for external access (needed for Ayrshare)
+    let absoluteImageUrl: string
+    if (imageUrl.startsWith('http')) {
+      // S3 URL is already an absolute URL
+      absoluteImageUrl = imageUrl
+    } else {
+      // Local URL, need to add backend address
+      const backendUrl = process.env.BACKEND_URL ||
+        process.env.SERVER_URL ||
+        `http://localhost:${process.env.PORT || 5000}`
+      absoluteImageUrl = `${backendUrl}${imageUrl}`
+    }
+
+    // Save to database
+    try {
+      await saveMediaFile({
+        userId: user._id,
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        filePath: filePath,
+        fileUrl: imageUrl,
+        fileType: 'image',
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        storageProvider,
+        storageBucket,
+        storageKey,
+      })
+    } catch (dbError) {
+      console.error("Failed to save uploaded image to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
 
     res.json({
       success: true,
-      imageUrl,
+      imageUrl, // Relative URL for frontend (or S3 URL)
+      absoluteUrl: absoluteImageUrl, // Absolute URL for external services like Ayrshare
     })
   } catch (error: any) {
     console.error('Upload image error:', error)
@@ -116,7 +186,48 @@ router.post('/image-base64', protect, async (req: AuthRequest, res: Response) =>
       }
     }
 
-    const imageUrl = await saveImage(base64Data, finalMimeType)
+    const imageUrl = await saveImage(base64Data, finalMimeType, user._id.toString(), 'images', false)
+
+    // Save to database
+    try {
+      const fileName = imageUrl.includes('/') ? imageUrl.split('/').pop() || 'uploaded-image.png' : 'uploaded-image.png'
+      let filePath: string
+      let storageProvider: 'local' | 's3' | 'cloudinary' = 'local'
+      let storageBucket: string | undefined
+      let storageKey: string | undefined
+
+      // Detect storage type
+      if (imageUrl.startsWith('https://') && imageUrl.includes('.s3.')) {
+        // S3 URL
+        filePath = imageUrl.replace('https://', 's3://').replace(/\.s3\.[^\/]+\.amazonaws\.com\//, '/')
+        storageProvider = 's3'
+        const urlMatch = imageUrl.match(/https:\/\/([^\.]+)\.s3\.([^\.]+)\.amazonaws\.com\/(.+)/)
+        if (urlMatch) {
+          storageBucket = urlMatch[1]
+          storageKey = urlMatch[3]
+        }
+      } else {
+        // Local file
+        filePath = path.join(UPLOADS_DIR, fileName)
+      }
+
+      await saveMediaFile({
+        userId: user._id,
+        fileName: fileName,
+        originalName: 'uploaded-image.png',
+        filePath: filePath,
+        fileUrl: imageUrl,
+        fileType: 'image',
+        mimeType: finalMimeType,
+        fileSize: Buffer.from(base64Data, 'base64').length,
+        storageProvider,
+        storageBucket,
+        storageKey,
+      })
+    } catch (dbError) {
+      console.error("Failed to save uploaded image to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
 
     res.json({
       success: true,
@@ -147,34 +258,43 @@ const fileStorage = multer.diskStorage({
   },
 })
 
-// File filter for documents
+// File filter for documents and media
 const documentFileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimeTypes = [
-    // Images
-    'image/jpeg',
-    'image/jpg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    // PDF
-    'application/pdf',
-    // Word
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    // PowerPoint
-    'application/vnd.ms-powerpoint',
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-    // Excel
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    // Text
-    'text/plain',
-    // Other common types
-    'application/rtf',
-    'text/csv',
-  ]
-
-  if (allowedMimeTypes.includes(file.mimetype)) {
+  // Allow images, videos, and documents
+  if (
+    file.mimetype.startsWith('image/') ||
+    file.mimetype.startsWith('video/') ||
+    file.mimetype.startsWith('audio/') ||
+    [
+      // PDF
+      'application/pdf',
+      // Word
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      // PowerPoint
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      // Excel
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      // Text
+      'text/plain',
+      // Other common types
+      'application/rtf',
+      'text/csv',
+      // Database files
+      'application/x-sql',
+      'application/sql',
+      'text/x-sql',
+      'application/x-sqlite3',
+      'application/x-sqlite',
+      'application/vnd.sqlite3',
+      'application/x-db',
+      'application/octet-stream', // For .db, .sqlite files that may not have specific MIME type
+    ].includes(file.mimetype) ||
+    // Also check file extension for database files (in case MIME type is not recognized)
+    /\.(sql|db|sqlite|sqlite3)$/i.test(file.originalname)
+  ) {
     cb(null, true)
   } else {
     cb(new Error(`File type ${file.mimetype} is not allowed`))
@@ -185,11 +305,11 @@ const fileUpload = multer({
   storage: fileStorage,
   fileFilter: documentFileFilter,
   limits: {
-    fileSize: 50 * 1024 * 1024, // 50MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit (Twilio MMS supports up to 5MB, but we allow larger for storage)
   },
 })
 
-// @desc    Upload file (multipart/form-data)
+// @desc    Upload file (multipart/form-data) - For Brand Profile file uploads
 // @route   POST /api/upload/file
 // @access  Private
 router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest, res: Response) => {
@@ -204,7 +324,73 @@ router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest
       return res.status(400).json({ success: false, message: 'No file provided' })
     }
 
-    const fileUrl = `/uploads/files/${req.file.filename}`
+    let fileUrl: string
+    let filePath: string
+    let storageProvider: 'local' | 's3' | 'cloudinary' = 'local'
+    let storageBucket: string | undefined
+    let storageKey: string | undefined
+
+    // If S3 is configured, try uploading to S3 (Brand Profile files)
+    if (isS3Configured() && req.file) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path)
+        const result = await uploadToS3(
+          fileBuffer,
+          req.file.filename,
+          req.file.mimetype,
+          'brand-profile', // Brand Profile files are stored in brand-profile folder
+          user._id.toString(),
+          false // Brand Profile files are private access
+        )
+        fileUrl = getS3PublicUrl(result.key) // Use public URL (if private is needed, can use presigned URL)
+        filePath = `s3://${result.bucket}/${result.key}`
+        storageProvider = 's3'
+        storageBucket = result.bucket
+        storageKey = result.key
+        
+        // Delete local temporary file
+        fs.unlinkSync(req.file.path)
+      } catch (s3Error) {
+        console.error('S3 upload failed, using local storage:', s3Error)
+        // Fall back to local storage
+        fileUrl = `/uploads/files/${req.file.filename}`
+        filePath = req.file.path
+      }
+    } else {
+      // Use local storage
+      fileUrl = `/uploads/files/${req.file.filename}`
+      filePath = req.file.path
+    }
+
+    // Determine file type
+    let fileType: 'image' | 'video' | 'document' | 'audio' = 'document'
+    if (req.file.mimetype.startsWith('image/')) {
+      fileType = 'image'
+    } else if (req.file.mimetype.startsWith('video/')) {
+      fileType = 'video'
+    } else if (req.file.mimetype.startsWith('audio/')) {
+      fileType = 'audio'
+    }
+
+    // Save to database
+    try {
+      await saveMediaFile({
+        userId: user._id,
+        fileName: req.file.filename,
+        originalName: req.file.originalname,
+        filePath: filePath,
+        fileUrl: fileUrl,
+        fileType: fileType,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        storageProvider,
+        storageBucket,
+        storageKey,
+      })
+    } catch (dbError) {
+      console.error("Failed to save uploaded file to database:", dbError)
+      // Don't fail the request if DB save fails
+    }
 
     res.json({
       success: true,

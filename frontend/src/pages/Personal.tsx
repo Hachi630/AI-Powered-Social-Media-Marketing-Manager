@@ -38,17 +38,21 @@ const genderOptions = [
 ]
 
 interface PersonalProps {
-  open: boolean
-  onClose: () => void
-  user?: User | null
+  open?: boolean
+  onClose?: () => void
+  isLoggedIn?: boolean
   onLoginSuccess?: (user: User) => void
+  onLogout?: () => void
+  user?: User | null
 }
 
 export default function Personal({
   open,
   onClose,
-  user: propUser,
+  isLoggedIn,
   onLoginSuccess,
+  onLogout,
+  user: propUser,
 }: PersonalProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -67,7 +71,7 @@ export default function Personal({
   const [originalData, setOriginalData] = useState(formData)
   const [avatarFile, setAvatarFile] = useState<UploadFile[]>([])
   const [avatarBase64, setAvatarBase64] = useState<string>('')
-  
+
   // Password change modal state
   const [showPasswordModal, setShowPasswordModal] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
@@ -80,13 +84,13 @@ export default function Personal({
   useEffect(() => {
     const styleId = 'personal-datepicker-styles'
     let styleElement = document.getElementById(styleId) as HTMLStyleElement
-    
+
     if (!styleElement) {
       styleElement = document.createElement('style')
       styleElement.id = styleId
       document.head.appendChild(styleElement)
     }
-    
+
     styleElement.textContent = `
       .personalDatePickerDropdown.ant-picker-dropdown .ant-picker-cell {
         width: auto !important;
@@ -315,7 +319,7 @@ export default function Personal({
         border-radius: 4px !important;
       }
     `
-    
+
     return () => {
       // Cleanup on unmount
       const style = document.getElementById(styleId)
@@ -380,7 +384,7 @@ export default function Personal({
     try {
       // Use base64 avatar if available, otherwise use existing avatar URL
       const avatarToSave = avatarBase64 || formData.avatar
-      
+
       const response = await authService.updateProfile({
         name: formData.name,
         brandName: formData.brandName,
@@ -397,13 +401,13 @@ export default function Personal({
         if (formData.avatar && formData.avatar.startsWith('blob:')) {
           URL.revokeObjectURL(formData.avatar)
         }
-        
+
         // Update formData with saved avatar (base64 or URL from server)
         const updatedFormData = {
           ...formData,
           avatar: response.user.avatar || avatarBase64 || formData.avatar,
         }
-        
+
         setUser(response.user)
         setFormData(updatedFormData)
         setOriginalData(updatedFormData)
@@ -423,11 +427,11 @@ export default function Personal({
 
   const handleAvatarChange: UploadProps['onChange'] = (info) => {
     // Get file from different possible locations
-    const file = 
-      info.file.originFileObj || 
-      (info.file as any).originFileObj || 
+    const file =
+      info.file.originFileObj ||
+      (info.file as any).originFileObj ||
       (info.file as any)
-    
+
     // Check if it's actually a File object
     if (file && file instanceof File) {
       // Validate file type
@@ -442,7 +446,7 @@ export default function Personal({
         message.error('Image must smaller than 2MB!')
         return
       }
-      
+
       // Convert to base64 for saving and preview
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -455,7 +459,7 @@ export default function Personal({
         message.error('Failed to read image file')
       }
       reader.readAsDataURL(file)
-      
+
       // Update file list for Upload component
       setAvatarFile([info.file])
     } else if (info.fileList && info.fileList.length > 0) {
@@ -581,7 +585,7 @@ export default function Personal({
     if (isEditing) {
       handleCancel()
     }
-    onClose()
+    onClose?.()
   }
 
   return (
@@ -689,8 +693,8 @@ export default function Personal({
                   Edit
                 </Button>
                 {isLocalAuthUser && (
-                  <Button 
-                    icon={<LockOutlined />} 
+                  <Button
+                    icon={<LockOutlined />}
                     onClick={() => setShowPasswordModal(true)}
                   >
                     Change Password

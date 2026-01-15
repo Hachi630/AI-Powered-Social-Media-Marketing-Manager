@@ -17,6 +17,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { uploadToS3, isS3Configured, getS3PublicUrl } from "../services/s3Service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -705,24 +706,76 @@ router.post(
       let finalImageUrl = imageUrl;
       let finalVideoUrl: string | undefined;
 
-      // If an image file was uploaded, convert it to a URL
+      // If an image file was uploaded, upload to S3 if configured
       if (imageFile) {
-        // For Instagram, we need a publicly accessible URL
-        // In production (with BACKEND_URL set), use the backend URL
-        // In development, localhost won't work, but we'll still try
-        const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-        // The file is saved in uploads/images directory
-        const relativePath = `/uploads/images/${imageFile.filename}`;
-        finalImageUrl = `${backendUrl}${relativePath}`;
-        console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+        if (isS3Configured()) {
+          try {
+            // Upload to S3 (Instagram requires publicly accessible URL)
+            const fileBuffer = fs.readFileSync(imageFile.path);
+            const result = await uploadToS3(
+              fileBuffer,
+              imageFile.filename,
+              imageFile.mimetype,
+              'instagram', // Instagram images are stored in instagram folder
+              freshUser._id.toString(),
+              true // Instagram images need public access
+            );
+            finalImageUrl = getS3PublicUrl(result.key);
+            console.log("[Instagram Share] Image uploaded to S3:", finalImageUrl);
+            
+            // Delete local temporary file
+            fs.unlinkSync(imageFile.path);
+          } catch (s3Error) {
+            console.error("[Instagram Share] S3 upload failed, using local storage:", s3Error);
+            // Fall back to local storage
+            const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+            const relativePath = `/uploads/images/${imageFile.filename}`;
+            finalImageUrl = `${backendUrl}${relativePath}`;
+            console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+          }
+        } else {
+          // Use local storage
+          const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+          const relativePath = `/uploads/images/${imageFile.filename}`;
+          finalImageUrl = `${backendUrl}${relativePath}`;
+          console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+        }
       }
       
-      // If a video file was uploaded, convert it to a URL
+      // If a video file was uploaded, upload to S3 if configured
       if (videoFile) {
-        const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-        const relativePath = `/uploads/images/${videoFile.filename}`; // Multer saves to images dir
-        finalVideoUrl = `${backendUrl}${relativePath}`;
-        console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+        if (isS3Configured()) {
+          try {
+            // Upload to S3 (Instagram requires publicly accessible URL)
+            const fileBuffer = fs.readFileSync(videoFile.path);
+            const result = await uploadToS3(
+              fileBuffer,
+              videoFile.filename,
+              videoFile.mimetype,
+              'instagram', // Instagram videos are stored in instagram folder
+              freshUser._id.toString(),
+              true // Instagram videos need public access
+            );
+            finalVideoUrl = getS3PublicUrl(result.key);
+            console.log("[Instagram Share] Video uploaded to S3:", finalVideoUrl);
+            
+            // Delete local temporary file
+            fs.unlinkSync(videoFile.path);
+          } catch (s3Error) {
+            console.error("[Instagram Share] S3 upload failed, using local storage:", s3Error);
+            // Fall back to local storage
+            const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+            const relativePath = `/uploads/images/${videoFile.filename}`;
+            finalVideoUrl = `${backendUrl}${relativePath}`;
+            console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+          }
+        } else {
+          // Use local storage
+          const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+          const relativePath = `/uploads/images/${videoFile.filename}`;
+          finalVideoUrl = `${backendUrl}${relativePath}`;
+          console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+        }
       }
 
       // Convert relative URLs to absolute URLs using BACKEND_URL
@@ -776,12 +829,22 @@ router.post(
           const base64Match = generatedImageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
           if (base64Match) {
             const [, mimeType, base64Data] = base64Match;
-            // Save the generated image
-            const savedImagePath = await saveImage(base64Data, mimeType);
-            // Convert to full URL for Instagram API
-            // Use backend URL since images are served from backend
-            const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-            finalImageUrl = `${backendUrl}${savedImagePath}`;
+            // Save the generated image (upload to S3, Instagram requires public access)
+            const savedImagePath = await saveImage(
+              base64Data,
+              mimeType,
+              freshUser._id.toString(),
+              'instagram',
+              true // Instagram images need public access
+            );
+            
+            // If returned URL is S3 URL, use it directly; otherwise convert to full URL
+            if (savedImagePath.startsWith('http')) {
+              finalImageUrl = savedImagePath;
+            } else {
+              const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+              finalImageUrl = `${backendUrl}${savedImagePath}`;
+            }
             console.log("[Instagram Share] Generated and saved text image:", finalImageUrl);
           } else {
             throw new Error("Failed to parse generated image data");

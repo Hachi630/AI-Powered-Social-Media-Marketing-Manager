@@ -172,7 +172,7 @@ export default function Dashboard({
         {/* Sidebar with "Flippy chats" only shows when user is logged in */}
         {isLoggedIn && !isMobile && (
           <Sider
-            width={360}
+            width={270}
             collapsedWidth={isTablet ? 0 : 88}
             collapsed={collapsed}
             theme="light"

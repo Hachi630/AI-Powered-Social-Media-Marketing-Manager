@@ -1,51 +1,37 @@
-import type { MenuProps } from "antd";
-import {
-  Button,
-  Layout,
-  Menu,
-  Space,
-  Typography,
-  Dropdown,
-  Drawer,
-  Grid,
-} from "antd";
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { MELO_LOGO, MELO_LOGO_NIGHT } from "../constants/assets";
-import { useAppSettings } from "../contexts/AppSettingsContext";
-import AuthModal from "./AuthModal";
-import AppSettings from "../pages/AppSettings";
-import Personal from "../pages/Personal";
-import styles from "./Header.module.css";
-import {
-  UserOutlined,
-  LogoutOutlined,
-  MenuOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
-import { User } from "../services/authService";
-import { Avatar } from "antd";
-import { getImageUrl } from "../utils/imageUtils";
+import type { MenuProps } from 'antd'
+import { Button, Layout, Menu, Space, Typography, Dropdown, Drawer, Grid } from 'antd'
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { MELO_LOGO } from '../constants/assets'
+import AuthModal from './AuthModal'
+import AppSettings from '../pages/AppSettings'
+import Personal from '../pages/Personal'
+import styles from './Header.module.css'
+import { UserOutlined, LogoutOutlined, MenuOutlined, SettingOutlined } from '@ant-design/icons'
+import { User } from '../services/authService'
+import { Avatar } from 'antd'
 
-const { useBreakpoint } = Grid;
+const { useBreakpoint } = Grid
 
 export interface HeaderProps {
-  isLoggedIn?: boolean;
-  showBrandName?: boolean;
-  logoSrc?: string;
-  onLoginSuccess?: (user: User) => void;
-  onLogout?: () => void;
-  user?: User | null;
+  isLoggedIn?: boolean
+  showBrandName?: boolean
+  logoSrc?: string
+  onLoginSuccess?: (user: User) => void
+  onLogout?: () => void
+  user?: User | null
 }
 
-const navItems: MenuProps["items"] = [
-  { key: "/dashboard", label: "Dashboard" },
-  { key: "/calendar", label: "Calendar" },
-  { key: "/settings", label: "Brands" },
-  { key: "/socialdashboard", label: "Social Dashboard" },
-];
+const navItems: MenuProps['items'] = [
+  { key: '/dashboard', label: 'Dashboard' },
+  { key: '/calendar', label: 'Calendar' },
+  { key: '/settings', label: 'Brands' },
+  { key: '/socialdashboard', label: 'Social Dashboard' },
+  { key: '/analytics', label: 'Analytics' },
+  { key: '/messaging', label: 'Messaging' },
+]
 
-const { Header: AntHeader } = Layout;
+const { Header: AntHeader } = Layout
 
 export default function Header({
   isLoggedIn = false,
@@ -55,89 +41,72 @@ export default function Header({
   onLogout,
   user,
 }: HeaderProps) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const screens = useBreakpoint();
-  const isMobile = !screens.lg;
-  const { settings } = useAppSettings();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false);
+  const location = useLocation()
+  const navigate = useNavigate()
+  const screens = useBreakpoint()
+  const isMobile = !screens.lg
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
+  const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false)
 
-  const isHomePage = location.pathname === "/" || location.pathname === "/home";
-
-  // Use night logo if dark mode is enabled
-  // Note: The night logo should have transparent background for proper blending
-  const currentLogoSrc = settings.darkMode
-    ? MELO_LOGO_NIGHT
-    : logoSrc || MELO_LOGO;
-
+  const isHomePage = location.pathname === '/' || location.pathname === '/home'
+  
   let selectedKey =
-    navItems?.find((item) => location.pathname.startsWith(String(item?.key)))
-      ?.key ?? "";
-  if (!selectedKey && location.pathname === "/" && isLoggedIn) {
-    selectedKey = "/dashboard";
+    navItems?.find((item) => location.pathname.startsWith(String(item?.key)))?.key ?? ''
+  if (!selectedKey && location.pathname === '/' && isLoggedIn) {
+    selectedKey = '/dashboard'
   }
 
   const handleAuthClick = () => {
-    setIsAuthModalOpen(true);
-  };
+    setIsAuthModalOpen(true)
+  }
 
   const handlePersonalClick = () => {
-    setIsPersonalModalOpen(true);
-  };
+    setIsPersonalModalOpen(true)
+  }
 
   const handleSettingsClick = () => {
-    setIsSettingsModalOpen(true);
-  };
+    setIsSettingsModalOpen(true)
+  }
 
   const handleLogoutClick = () => {
-    onLogout?.();
-    navigate("/home");
-  };
+    onLogout?.()
+    navigate('/home')
+  }
 
   const userMenu: MenuProps = {
     items: [
       {
-        key: "personal",
-        label: "Personal",
+        key: 'personal',
+        label: 'Personal',
         icon: <UserOutlined />,
         onClick: handlePersonalClick,
       },
       {
-        key: "settings",
-        label: "Settings",
+        key: 'settings',
+        label: 'Settings',
         icon: <SettingOutlined />,
         onClick: handleSettingsClick,
       },
       {
-        type: "divider",
+        type: 'divider',
       },
       {
-        key: "logout",
-        label: "Log out",
+        key: 'logout',
+        label: 'Log out',
         icon: <LogoutOutlined />,
         onClick: handleLogoutClick,
       },
     ],
-  };
+  }
 
   return (
     <>
       <AntHeader className={styles.header}>
-        <button
-          className={styles.logoButton}
-          onClick={() => navigate(isLoggedIn ? "/dashboard" : "/")}
-        >
-          <div
-            className={`${styles.logoGroup} ${!showBrandName ? styles.logoGroupCompact : ""}`}
-          >
-            <img
-              src={currentLogoSrc}
-              alt="MELO logo"
-              className={styles.logoImage}
-            />
+        <button className={styles.logoButton} onClick={() => navigate(isLoggedIn ? '/dashboard' : '/')}>
+          <div className={`${styles.logoGroup} ${!showBrandName ? styles.logoGroupCompact : ''}`}>
+            <img src={logoSrc} alt="MELO logo" className={styles.logoImage} />
             {showBrandName && (
               <Typography.Title level={4} className={styles.logoText}>
                 MELO.AI
@@ -174,14 +143,10 @@ export default function Header({
             <Dropdown menu={userMenu} placement="bottomRight" arrow>
               <Avatar
                 size="large"
-                src={getImageUrl(user?.avatar)}
-                style={{ backgroundColor: "#87d068", cursor: "pointer" }}
+                src={user?.avatar}
+                style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
               >
-                {user?.name
-                  ? user.name[0].toUpperCase()
-                  : user?.email
-                    ? user.email[0].toUpperCase()
-                    : "U"}
+                {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
               </Avatar>
             </Dropdown>
           )}
@@ -201,8 +166,8 @@ export default function Header({
             selectedKeys={selectedKey ? [String(selectedKey)] : []}
             items={navItems}
             onClick={({ key }) => {
-              navigate(String(key));
-              setMobileMenuOpen(false);
+              navigate(String(key))
+              setMobileMenuOpen(false)
             }}
           />
         </Drawer>
@@ -211,8 +176,8 @@ export default function Header({
         open={isAuthModalOpen}
         onCancel={() => setIsAuthModalOpen(false)}
         onLoginSuccess={(user) => {
-          onLoginSuccess?.(user);
-          setIsAuthModalOpen(false);
+          onLoginSuccess?.(user)
+          setIsAuthModalOpen(false)
         }}
       />
       <AppSettings
@@ -226,5 +191,5 @@ export default function Header({
         onLoginSuccess={onLoginSuccess}
       />
     </>
-  );
+  )
 }
