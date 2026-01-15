@@ -122,7 +122,13 @@ export default function WeekView({ currentDate, items, onTimeSlotClick, onItemCl
               {getItemsForDay(day).filter(i => i.time).map(item => (
                 <div
                   key={item.id}
-                  className={`${styles.eventCard} ${styles[`event_${item.platform}`]}`}
+                  className={`${styles.eventCard} ${styles[`event_${
+                    item.platform === 'instagram_post' || 
+                    item.platform === 'instagram_story' || 
+                    item.platform === 'instagram_reels'
+                      ? 'instagram'
+                      : item.platform
+                  }`]}`}
                   style={getItemStyle(item)}
                   onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
                 >

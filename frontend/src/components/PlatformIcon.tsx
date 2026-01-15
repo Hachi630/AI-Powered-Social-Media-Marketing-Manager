@@ -8,9 +8,10 @@ import {
 import React from 'react';
 
 export const PLATFORM_COLORS: Record<string, string> = {
-    instagram_post: '#E1306C',
-    instagram_story: '#F77737',
-    instagram_reels: '#833AB4',
+    instagram: '#E1306C',
+    instagram_post: '#E1306C', // Backward compatibility
+    instagram_story: '#E1306C', // Backward compatibility
+    instagram_reels: '#E1306C', // Backward compatibility
     facebook: '#1877F2',
     twitter: '#1DA1F2',
     linkedin: '#0077B5',
@@ -27,9 +28,10 @@ export default function PlatformIcon({ platform, style, className }: PlatformIco
     const iconStyle = { color, ...style };
 
     switch (platform) {
-        case 'instagram_post':
-        case 'instagram_story':
-        case 'instagram_reels':
+        case 'instagram':
+        case 'instagram_post': // Backward compatibility
+        case 'instagram_story': // Backward compatibility
+        case 'instagram_reels': // Backward compatibility
             return <InstagramOutlined style={iconStyle} className={className} />;
         case 'facebook':
             return <FacebookFilled style={iconStyle} className={className} />;

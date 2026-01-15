@@ -584,9 +584,10 @@
 
 /* Platform Colors */
 .instagram { color: #E1306C; background-color: #E1306C; }
-.instagram_post { color: #E1306C; background-color: #E1306C; }
-.instagram_story { color: #F77737; background-color: #F77737; }
-.instagram_reels { color: #833AB4; background-color: #833AB4; }
+.instagram { color: #E1306C; background-color: #E1306C; }
+.instagram_post { color: #E1306C; background-color: #E1306C; } /* Backward compatibility */
+.instagram_story { color: #E1306C; background-color: #E1306C; } /* Backward compatibility */
+.instagram_reels { color: #E1306C; background-color: #E1306C; } /* Backward compatibility */
 .facebook { color: #1877F2; background-color: #1877F2; }
 .twitter { color: #1DA1F2; background-color: #1DA1F2; }
 .linkedin { color: #0077B5; background-color: #0077B5; }

@@ -61,6 +61,7 @@ import {
   CheckCircleOutlined,
 } from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import dayjs from "dayjs";
 import Header from "./Header";
 import SocialSidebar, { type SocialPlatform } from "./SocialSidebar";
@@ -451,11 +452,19 @@ export default function LinkedInDashboard({
     loadSocialStatus();
   }, [jwt]);
 
+  // Get current location to watch for URL changes
+  const location = useLocation();
+
   // Handle Facebook/Instagram OAuth callback (like Twitter)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const facebookParam = params.get("facebook");
     const instagramParam = params.get("instagram");
+
+    // Only process if we have the callback parameters
+    if (!facebookParam && !instagramParam) {
+      return;
+    }
 
     if (facebookParam === "connected" || instagramParam === "connected") {
       message.success(
@@ -469,12 +478,22 @@ export default function LinkedInDashboard({
       // Reload Facebook/Instagram status
       if (jwt) {
         if (facebookParam === "connected") {
-          getFacebookStatus(jwt).then(setFacebookStatus);
+          getFacebookStatus(jwt)
+            .then((status) => {
+              console.log("[Facebook Callback] Facebook status after connection:", status);
+              setFacebookStatus(status);
+            })
+            .catch((err) => {
+              console.error("[Facebook Callback] Failed to refresh Facebook status:", err);
+            });
           // IMPORTANT: Also refresh Instagram status after Facebook connection
           // Facebook-only connection should have removed Instagram connection
           // This ensures the UI reflects the correct state
           getInstagramStatus(jwt)
-            .then(setInstagramStatus)
+            .then((status) => {
+              console.log("[Facebook Callback] Instagram status after Facebook connection:", status);
+              setInstagramStatus(status);
+            })
             .catch((err) => {
               console.error(
                 "Failed to refresh Instagram status after Facebook connection:",
@@ -485,11 +504,21 @@ export default function LinkedInDashboard({
             });
         }
         if (instagramParam === "connected") {
-          getInstagramStatus(jwt).then(setInstagramStatus);
+          getInstagramStatus(jwt)
+            .then((status) => {
+              console.log("[Instagram Callback] Instagram status after connection:", status);
+              setInstagramStatus(status);
+            })
+            .catch((err) => {
+              console.error("[Instagram Callback] Failed to refresh Instagram status:", err);
+            });
           // Also refresh Facebook status after Instagram connection
           // Instagram connection also connects Facebook Page
           getFacebookStatus(jwt)
-            .then(setFacebookStatus)
+            .then((status) => {
+              console.log("[Instagram Callback] Facebook status after Instagram connection:", status);
+              setFacebookStatus(status);
+            })
             .catch((err) => {
               console.error(
                 "Failed to refresh Facebook status after Instagram connection:",
@@ -499,7 +528,7 @@ export default function LinkedInDashboard({
         }
       }
 
-      // Clean up URL
+      // Clean up URL after processing
       const newParams = new URLSearchParams(params);
       newParams.delete("facebook");
       newParams.delete("instagram");
@@ -554,25 +583,7 @@ export default function LinkedInDashboard({
         : window.location.pathname;
       window.history.replaceState({}, "", newUrl);
     }
-
-    if (facebookParam === "connected" || instagramParam === "connected") {
-      message.success("Facebook/Instagram account connected successfully!");
-      // Reload status
-      if (jwt) {
-        getFacebookStatus(jwt).then(setFacebookStatus);
-        getInstagramStatus(jwt).then(setInstagramStatus);
-      }
-      // Clean up URL
-      window.history.replaceState({}, "", "/socialdashboard");
-    } else if (facebookParam === "error" || instagramParam === "error") {
-      const reason = params.get("reason");
-      message.error(
-        `Facebook/Instagram connection failed: ${reason || "Unknown error"}`
-      );
-      // Clean up URL
-      window.history.replaceState({}, "", "/socialdashboard");
-    }
-  }, [jwt]);
+  }, [jwt, location.search]); // Run when jwt is available or URL search params change
 
   // Load administered organizations when connected
   useEffect(() => {
