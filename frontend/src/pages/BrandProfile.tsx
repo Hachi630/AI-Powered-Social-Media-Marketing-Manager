@@ -677,6 +677,12 @@ export default function BrandProfile({
         return company;
       });
 
+      // Update companies array in state before saving
+      setCompanies(updatedCompanies);
+      
+      // Save to localStorage
+      localStorage.setItem("melo_companies", JSON.stringify(updatedCompanies));
+
       const response = await authService.updateProfile({
         brandName,
         industry,
@@ -684,6 +690,7 @@ export default function BrandProfile({
         knowledgeProducts,
         targetAudience: audienceTags,
         companyDescription,
+        companies: updatedCompanies, // CRITICAL: Send companies array with productImages
       });
 
       if (response.success && response.user) {
