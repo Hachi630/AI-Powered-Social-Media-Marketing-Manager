@@ -761,6 +761,8 @@ router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
       productTypes,
       productImages,
       meloGoals,
+      publishingPlatforms,
+      contentTypes,
     } = req.body;
 
     // Get or create first company
@@ -783,6 +785,8 @@ router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
         productTypes: productTypes || [],
         productImages: productImages || [],
         meloGoals: meloGoals || [],
+        publishingPlatforms: publishingPlatforms || [],
+        contentTypes: contentTypes || [],
       };
       companies = [firstCompany];
     } else {
@@ -796,6 +800,8 @@ router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
       if (productTypes !== undefined) firstCompany.productTypes = productTypes;
       if (productImages !== undefined) firstCompany.productImages = productImages;
       if (meloGoals !== undefined) firstCompany.meloGoals = meloGoals;
+      if (publishingPlatforms !== undefined) firstCompany.publishingPlatforms = publishingPlatforms;
+      if (contentTypes !== undefined) firstCompany.contentTypes = contentTypes;
       companies[0] = firstCompany;
     }
 
