@@ -1,13 +1,10 @@
 import {
-  AppleFilled,
   CheckCircleOutlined,
   EditOutlined,
   EyeInvisibleOutlined,
   EyeOutlined,
   GoogleOutlined,
   LeftOutlined,
-  MobileOutlined,
-  WindowsFilled,
 } from "@ant-design/icons";
 import {
   App,
@@ -544,33 +541,6 @@ export default function AuthModal({
               loading={loading}
             >
               Continue with Google
-            </Button>
-            <Button
-              block
-              size="large"
-              icon={<AppleFilled />}
-              className={styles.socialBtn}
-              onClick={() => handleSocialLogin("apple")}
-            >
-              Continue with Apple
-            </Button>
-            <Button
-              block
-              size="large"
-              icon={<WindowsFilled />}
-              className={styles.socialBtn}
-              onClick={() => handleSocialLogin("microsoft")}
-            >
-              Continue with Microsoft
-            </Button>
-            <Button
-              block
-              size="large"
-              icon={<MobileOutlined />}
-              className={styles.socialBtn}
-              onClick={() => handleSocialLogin("phone")}
-            >
-              Continue with phone
             </Button>
           </Space>
 
