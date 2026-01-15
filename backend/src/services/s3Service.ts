@@ -51,8 +51,22 @@ export async function uploadToS3(
       Key: key,
       Body: fileBuffer,
       ContentType: contentType,
-      // Set ACL if public access is needed
-      ...(isPublic && { ACL: 'public-read' }),
+      // Note: ACL is disabled for newer S3 buckets (Object Ownership: Bucket owner enforced)
+      // Public access must be managed via Bucket Policy instead of ACL
+      // Ensure your bucket has a Bucket Policy that allows public read access
+      // Example Bucket Policy:
+      // {
+      //   "Version": "2012-10-17",
+      //   "Statement": [
+      //     {
+      //       "Sid": "PublicReadGetObject",
+      //       "Effect": "Allow",
+      //       "Principal": "*",
+      //       "Action": "s3:GetObject",
+      //       "Resource": "arn:aws:s3:::BUCKET_NAME/instagram/*"
+      //     }
+      //   ]
+      // }
     })
 
     await s3Client.send(command)
