@@ -118,7 +118,34 @@ export async function saveMediaFile(data: {
   platform?: 'linkedin' | 'twitter' | 'local'
   description?: string
   altText?: string
+  storageProvider?: 'local' | 's3' | 'cloudinary'
+  storageBucket?: string
+  storageKey?: string
 }): Promise<IMediaFile> {
+  // Auto-detect storage provider
+  let storageProvider: 'local' | 's3' | 'cloudinary' = data.storageProvider || 'local'
+  let storageBucket: string | undefined = data.storageBucket
+  let storageKey: string | undefined = data.storageKey
+
+  // If fileUrl is S3 URL, auto-detect
+  if (data.fileUrl.startsWith('https://') && data.fileUrl.includes('.s3.')) {
+    storageProvider = 's3'
+    // Extract bucket and key from URL
+    const urlMatch = data.fileUrl.match(/https:\/\/([^\.]+)\.s3\.([^\.]+)\.amazonaws\.com\/(.+)/)
+    if (urlMatch) {
+      storageBucket = urlMatch[1]
+      storageKey = urlMatch[3]
+    }
+  } else if (data.filePath.startsWith('s3://')) {
+    storageProvider = 's3'
+    // Extract bucket and key from s3:// path
+    const s3Match = data.filePath.match(/s3:\/\/([^\/]+)\/(.+)/)
+    if (s3Match) {
+      storageBucket = s3Match[1]
+      storageKey = s3Match[2]
+    }
+  }
+
   const mediaFile = new MediaFile({
     userId: data.userId,
     fileName: data.fileName,
@@ -136,6 +163,9 @@ export async function saveMediaFile(data: {
     platform: data.platform || 'local',
     description: data.description,
     altText: data.altText,
+    storageProvider,
+    storageBucket,
+    storageKey,
   })
 
   return await mediaFile.save()

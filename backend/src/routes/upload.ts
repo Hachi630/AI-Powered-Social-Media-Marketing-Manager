@@ -8,6 +8,7 @@ import { protect } from '../middleware/auth.js'
 import { AuthRequest } from '../types/index.js'
 import { saveImage } from '../utils/imageStorage.js'
 import { saveMediaFile } from '../services/databaseService.js'
+import { uploadToS3, isS3Configured, getS3PublicUrl } from '../services/s3Service.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -70,13 +71,56 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
       return res.status(400).json({ success: false, message: 'No image file provided' })
     }
 
-    const imageUrl = `/uploads/images/${req.file.filename}`
+    let imageUrl: string
+    let filePath: string
+    let storageProvider: 'local' | 's3' | 'cloudinary' = 'local'
+    let storageBucket: string | undefined
+    let storageKey: string | undefined
+
+    // If S3 is configured, try uploading to S3
+    if (isS3Configured() && req.file) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path)
+        const result = await uploadToS3(
+          fileBuffer,
+          req.file.filename,
+          req.file.mimetype,
+          'images',
+          user._id.toString(),
+          false // Default private, change to true if public access is needed
+        )
+        imageUrl = getS3PublicUrl(result.key)
+        filePath = `s3://${result.bucket}/${result.key}`
+        storageProvider = 's3'
+        storageBucket = result.bucket
+        storageKey = result.key
+        
+        // Delete local temporary file
+        fs.unlinkSync(req.file.path)
+      } catch (s3Error) {
+        console.error('S3 upload failed, using local storage:', s3Error)
+        // Fall back to local storage
+        imageUrl = `/uploads/images/${req.file.filename}`
+        filePath = req.file.path
+      }
+    } else {
+      // Use local storage
+      imageUrl = `/uploads/images/${req.file.filename}`
+      filePath = req.file.path
+    }
 
     // Generate absolute URL for external access (needed for Ayrshare)
-    const backendUrl = process.env.BACKEND_URL ||
-      process.env.SERVER_URL ||
-      `http://localhost:${process.env.PORT || 5000}`
-    const absoluteImageUrl = `${backendUrl}${imageUrl}`
+    let absoluteImageUrl: string
+    if (imageUrl.startsWith('http')) {
+      // S3 URL is already an absolute URL
+      absoluteImageUrl = imageUrl
+    } else {
+      // Local URL, need to add backend address
+      const backendUrl = process.env.BACKEND_URL ||
+        process.env.SERVER_URL ||
+        `http://localhost:${process.env.PORT || 5000}`
+      absoluteImageUrl = `${backendUrl}${imageUrl}`
+    }
 
     // Save to database
     try {
@@ -84,11 +128,14 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
         userId: user._id,
         fileName: req.file.filename,
         originalName: req.file.originalname,
-        filePath: req.file.path,
+        filePath: filePath,
         fileUrl: imageUrl,
         fileType: 'image',
         mimeType: req.file.mimetype,
         fileSize: req.file.size,
+        storageProvider,
+        storageBucket,
+        storageKey,
       })
     } catch (dbError) {
       console.error("Failed to save uploaded image to database:", dbError)
@@ -97,7 +144,7 @@ router.post('/image', protect, upload.single('image'), async (req: AuthRequest, 
 
     res.json({
       success: true,
-      imageUrl, // Relative URL for frontend
+      imageUrl, // Relative URL for frontend (or S3 URL)
       absoluteUrl: absoluteImageUrl, // Absolute URL for external services like Ayrshare
     })
   } catch (error: any) {
@@ -139,12 +186,30 @@ router.post('/image-base64', protect, async (req: AuthRequest, res: Response) =>
       }
     }
 
-    const imageUrl = await saveImage(base64Data, finalMimeType)
+    const imageUrl = await saveImage(base64Data, finalMimeType, user._id.toString(), 'images', false)
 
     // Save to database
     try {
-      const fileName = imageUrl.split('/').pop() || 'uploaded-image.png'
-      const filePath = path.join(UPLOADS_DIR, fileName)
+      const fileName = imageUrl.includes('/') ? imageUrl.split('/').pop() || 'uploaded-image.png' : 'uploaded-image.png'
+      let filePath: string
+      let storageProvider: 'local' | 's3' | 'cloudinary' = 'local'
+      let storageBucket: string | undefined
+      let storageKey: string | undefined
+
+      // Detect storage type
+      if (imageUrl.startsWith('https://') && imageUrl.includes('.s3.')) {
+        // S3 URL
+        filePath = imageUrl.replace('https://', 's3://').replace(/\.s3\.[^\/]+\.amazonaws\.com\//, '/')
+        storageProvider = 's3'
+        const urlMatch = imageUrl.match(/https:\/\/([^\.]+)\.s3\.([^\.]+)\.amazonaws\.com\/(.+)/)
+        if (urlMatch) {
+          storageBucket = urlMatch[1]
+          storageKey = urlMatch[3]
+        }
+      } else {
+        // Local file
+        filePath = path.join(UPLOADS_DIR, fileName)
+      }
 
       await saveMediaFile({
         userId: user._id,
@@ -155,6 +220,9 @@ router.post('/image-base64', protect, async (req: AuthRequest, res: Response) =>
         fileType: 'image',
         mimeType: finalMimeType,
         fileSize: Buffer.from(base64Data, 'base64').length,
+        storageProvider,
+        storageBucket,
+        storageKey,
       })
     } catch (dbError) {
       console.error("Failed to save uploaded image to database:", dbError)
@@ -230,7 +298,7 @@ const fileUpload = multer({
   },
 })
 
-// @desc    Upload file (multipart/form-data)
+// @desc    Upload file (multipart/form-data) - For Brand Profile file uploads
 // @route   POST /api/upload/file
 // @access  Private
 router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest, res: Response) => {
@@ -245,7 +313,43 @@ router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest
       return res.status(400).json({ success: false, message: 'No file provided' })
     }
 
-    const fileUrl = `/uploads/files/${req.file.filename}`
+    let fileUrl: string
+    let filePath: string
+    let storageProvider: 'local' | 's3' | 'cloudinary' = 'local'
+    let storageBucket: string | undefined
+    let storageKey: string | undefined
+
+    // If S3 is configured, try uploading to S3 (Brand Profile files)
+    if (isS3Configured() && req.file) {
+      try {
+        const fileBuffer = fs.readFileSync(req.file.path)
+        const result = await uploadToS3(
+          fileBuffer,
+          req.file.filename,
+          req.file.mimetype,
+          'brand-profile', // Brand Profile files are stored in brand-profile folder
+          user._id.toString(),
+          false // Brand Profile files are private access
+        )
+        fileUrl = getS3PublicUrl(result.key) // Use public URL (if private is needed, can use presigned URL)
+        filePath = `s3://${result.bucket}/${result.key}`
+        storageProvider = 's3'
+        storageBucket = result.bucket
+        storageKey = result.key
+        
+        // Delete local temporary file
+        fs.unlinkSync(req.file.path)
+      } catch (s3Error) {
+        console.error('S3 upload failed, using local storage:', s3Error)
+        // Fall back to local storage
+        fileUrl = `/uploads/files/${req.file.filename}`
+        filePath = req.file.path
+      }
+    } else {
+      // Use local storage
+      fileUrl = `/uploads/files/${req.file.filename}`
+      filePath = req.file.path
+    }
 
     // Determine file type
     let fileType: 'image' | 'video' | 'document' | 'audio' = 'document'
@@ -263,11 +367,14 @@ router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest
         userId: user._id,
         fileName: req.file.filename,
         originalName: req.file.originalname,
-        filePath: req.file.path,
+        filePath: filePath,
         fileUrl: fileUrl,
         fileType: fileType,
         mimeType: req.file.mimetype,
         fileSize: req.file.size,
+        storageProvider,
+        storageBucket,
+        storageKey,
       })
     } catch (dbError) {
       console.error("Failed to save uploaded file to database:", dbError)

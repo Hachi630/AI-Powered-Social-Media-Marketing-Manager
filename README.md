@@ -337,6 +337,13 @@ GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
 
+# AWS S3 Configuration (Optional - for file storage)
+# If not configured, files will be stored locally
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_S3_BUCKET_NAME=your_bucket_name
+AWS_REGION=us-east-1
+
 # Twitter/X OAuth Credentials (Required for Twitter integration)
 TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
@@ -451,6 +458,35 @@ INSTAGRAM_APP_SECRET=your_instagram_app_secret
 - Get credentials from [Meta for Developers](https://developers.facebook.com/)
 - Configure redirect URIs in Meta App settings
 - Enable required permissions for posting content
+
+### AWS S3 File Storage (.env)
+
+For AWS S3 file storage (optional - for Brand Profile files and Instagram images), add the following to `backend/.env`:
+
+```env
+# AWS S3 Configuration (Optional)
+# If not configured, files will be stored locally
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_S3_BUCKET_NAME=your_bucket_name
+AWS_REGION=us-east-1
+```
+
+**Note**:
+- **Optional**: If S3 is not configured, the system will automatically fall back to local file storage
+- Get your AWS credentials from [AWS IAM Console](https://console.aws.amazon.com/iam/)
+- Create an S3 bucket in [AWS S3 Console](https://console.aws.amazon.com/s3/)
+- **Bucket Configuration**:
+  - **Brand Profile files**: Private access (uses presigned URLs)
+  - **Instagram images**: Public read access (required for Instagram API)
+- **CORS Configuration**: Ensure your S3 bucket has proper CORS settings for web access
+- **Bucket Policy**: For Instagram images, ensure the `instagram/` folder has public read access
+
+**File Organization**:
+- `brand-profile/{userId}/` - Brand Profile documents (private)
+- `instagram/{userId}/` - Instagram images/videos (public)
+- `images/` - General images
+- `files/` - General files
 
 ## 🐦 Twitter/X Integration
 

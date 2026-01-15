@@ -754,10 +754,11 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
       
       try {
         const imageUrl = req.file ? `/uploads/images/${req.file.filename}` : null;
+        const postType: 'image' | 'text' = imageUrl ? 'image' : 'text';
         const postData = {
           userId,
           platform: 'twitter' as const,
-          postType: (imageUrl ? 'image' : 'text') as const,
+          postType: postType as const,
           content: text.trim(),
           mediaAttachments: imageUrl ? [{
             type: 'image' as const,
