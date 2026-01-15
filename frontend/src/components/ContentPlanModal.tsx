@@ -26,7 +26,7 @@ import {
   GlobalOutlined,
 } from "@ant-design/icons";
 import { Dayjs } from "dayjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PLATFORMS } from "./CalendarItemModal";
 
 const { TextArea } = Input;
@@ -51,6 +51,195 @@ export default function ContentPlanModal({
   const [loading, setLoading] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<any[]>([]);
   const [planGenerated, setPlanGenerated] = useState(false);
+
+  // Inject calendar styles for scrollable and compact date picker
+  useEffect(() => {
+    const styleId = 'contentPlanDatePicker-styles';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+
+    styleElement.textContent = `
+      /* ContentPlan DatePicker - Compact and Scrollable */
+      .contentPlanDatePicker.ant-picker-dropdown {
+        z-index: 1050 !important;
+        max-height: 400px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel-container {
+        z-index: 1050 !important;
+        max-height: 400px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      
+      /* Smaller calendar cells */
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell {
+        width: auto !important;
+        height: 28px !important;
+        padding: 0 !important;
+        line-height: 28px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-inner {
+        width: 28px !important;
+        height: 28px !important;
+        line-height: 28px !important;
+        font-size: 13px !important;
+        margin: 0 auto !important;
+        border-radius: 4px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-content tbody tr {
+        height: 28px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-week-panel-row th {
+        width: auto !important;
+        height: 28px !important;
+        padding: 0 4px !important;
+        line-height: 28px !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        color: #666 !important;
+      }
+      
+      /* Compact spacing */
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-content {
+        width: 100% !important;
+        padding: 8px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-body {
+        padding: 8px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-header {
+        padding: 8px 12px !important;
+        min-height: 40px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-header-view {
+        font-size: 16px !important;
+        font-weight: 500 !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-prev-icon,
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-next-icon,
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-super-prev-icon,
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-super-next-icon {
+        font-size: 12px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel {
+        width: 280px !important;
+      }
+      
+      /* Scrollbar styling */
+      .contentPlanDatePicker.ant-picker-dropdown::-webkit-scrollbar {
+        width: 8px !important;
+        display: block !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown::-webkit-scrollbar-track {
+        background: #f1f1f1 !important;
+        border-radius: 4px !important;
+        margin: 4px 0 !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown::-webkit-scrollbar-thumb {
+        background: #c1c1c1 !important;
+        border-radius: 4px !important;
+        min-height: 20px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8 !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar {
+        width: 8px !important;
+        display: block !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar-track {
+        background: #f1f1f1 !important;
+        border-radius: 4px !important;
+        margin: 4px 0 !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1 !important;
+        border-radius: 4px !important;
+        min-height: 20px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8 !important;
+      }
+      
+      /* Firefox scrollbar */
+      .contentPlanDatePicker.ant-picker-dropdown {
+        scrollbar-width: thin !important;
+        scrollbar-color: #c1c1c1 #f1f1f1 !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-panel-container {
+        scrollbar-width: thin !important;
+        scrollbar-color: #c1c1c1 #f1f1f1 !important;
+      }
+      
+      /* Hover and selection styles */
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell:hover .ant-picker-cell-inner {
+        background-color: #f5f5f5 !important;
+        border-radius: 4px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-selected .ant-picker-cell-inner {
+        background-color: #AE906E !important;
+        color: #ffffff !important;
+        border-color: #AE906E !important;
+        border-radius: 4px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-selected:hover .ant-picker-cell-inner {
+        background-color: #AE906E !important;
+        color: #ffffff !important;
+      }
+      
+      /* Today's date */
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner {
+        border: 1px solid #AE906E !important;
+        border-radius: 4px !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today:not(.ant-picker-cell-selected) .ant-picker-cell-inner {
+        border: 1px solid #AE906E !important;
+        background-color: transparent !important;
+        color: inherit !important;
+      }
+      
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today:hover .ant-picker-cell-inner {
+        border-color: #AE906E !important;
+        background-color: rgba(174, 144, 110, 0.1) !important;
+      }
+    `;
+
+    return () => {
+      // Cleanup on unmount
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, []);
 
   const platformOptions = [
     { value: PLATFORMS.INSTAGRAM_POST, label: "Instagram Post" },
@@ -316,6 +505,7 @@ export default function ContentPlanModal({
                 format="YYYY-MM-DD"
                 size="large"
                 placeholder={["Start date", "End date"]}
+                popupClassName="contentPlanDatePicker"
               />
             </Form.Item>
           </Col>
