@@ -255,7 +255,16 @@ export default function CalendarPage({
     
     // Filter by platform
     if (selectedPlatforms.length > 0) {
-      filtered = filtered.filter(item => selectedPlatforms.includes(item.platform));
+      filtered = filtered.filter(item => {
+        // Map old Instagram platform values to new 'instagram' for backward compatibility
+        const normalizedPlatform = 
+          item.platform === 'instagram_post' || 
+          item.platform === 'instagram_story' || 
+          item.platform === 'instagram_reels'
+            ? 'instagram'
+            : item.platform;
+        return selectedPlatforms.includes(normalizedPlatform) || selectedPlatforms.includes(item.platform);
+      });
     }
     
     return filtered;
@@ -480,9 +489,7 @@ export default function CalendarPage({
           maxTagCount="responsive"
           bordered={false}
         >
-          <Option value={PLATFORMS.INSTAGRAM_POST}>Instagram Post</Option>
-          <Option value={PLATFORMS.INSTAGRAM_STORY}>Instagram Story</Option>
-          <Option value={PLATFORMS.INSTAGRAM_REELS}>Instagram Reels</Option>
+          <Option value={PLATFORMS.INSTAGRAM}>Instagram</Option>
           <Option value={PLATFORMS.FACEBOOK}>Facebook</Option>
           <Option value={PLATFORMS.TWITTER}>Twitter/X</Option>
           <Option value={PLATFORMS.LINKEDIN}>LinkedIn</Option>

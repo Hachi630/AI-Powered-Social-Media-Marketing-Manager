@@ -115,7 +115,13 @@ export default function DayView({ currentDate, items, onTimeSlotClick, onItemCli
           {timedItems.map(item => (
             <div
               key={item.id}
-              className={`${styles.eventCard} ${styles[`event_${item.platform}`]}`}
+              className={`${styles.eventCard} ${styles[`event_${
+                item.platform === 'instagram_post' || 
+                item.platform === 'instagram_story' || 
+                item.platform === 'instagram_reels'
+                  ? 'instagram'
+                  : item.platform
+              }`]}`}
               style={getItemStyle(item)}
               onClick={(e) => { e.stopPropagation(); onItemClick(item); }}
             >

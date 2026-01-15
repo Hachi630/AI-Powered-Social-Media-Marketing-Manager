@@ -53,9 +53,7 @@ export default function ContentPlanModal({
   const [planGenerated, setPlanGenerated] = useState(false);
 
   const platformOptions = [
-    { value: PLATFORMS.INSTAGRAM_POST, label: "Instagram Post" },
-    { value: PLATFORMS.INSTAGRAM_STORY, label: "Instagram Story" },
-    { value: PLATFORMS.INSTAGRAM_REELS, label: "Instagram Reels" },
+    { value: PLATFORMS.INSTAGRAM, label: "Instagram" },
     { value: PLATFORMS.FACEBOOK, label: "Facebook" },
     { value: PLATFORMS.TWITTER, label: "Twitter/X" },
     { value: PLATFORMS.LINKEDIN, label: "LinkedIn" },
@@ -230,9 +228,10 @@ export default function ContentPlanModal({
 
   const getPlatformColor = (platform: string) => {
     const colors: Record<string, string> = {
-      instagram_post: "#E4405F",
-      instagram_story: "#E4405F",
-      instagram_reels: "#E4405F",
+      instagram: "#E4405F",
+      instagram_post: "#E4405F", // Backward compatibility
+      instagram_story: "#E4405F", // Backward compatibility
+      instagram_reels: "#E4405F", // Backward compatibility
       facebook: "#1877F2",
       twitter: "#1DA1F2",
       linkedin: "#0A66C2",

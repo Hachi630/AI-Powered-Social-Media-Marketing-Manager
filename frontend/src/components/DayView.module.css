@@ -159,9 +159,10 @@
 }
 
 /* Platform specific colors */
-.event_instagram_post { background: #ffeef0; border-left-color: #E1306C; }
-.event_instagram_story { background: #fff0e6; border-left-color: #F77737; }
-.event_instagram_reels { background: #f0e6ff; border-left-color: #833AB4; }
+.event_instagram { background: #ffeef0; border-left-color: #E1306C; }
+.event_instagram_post { background: #ffeef0; border-left-color: #E1306C; } /* Backward compatibility */
+.event_instagram_story { background: #ffeef0; border-left-color: #E1306C; } /* Backward compatibility */
+.event_instagram_reels { background: #ffeef0; border-left-color: #E1306C; } /* Backward compatibility */
 .event_twitter { background: #f0f8ff; border-left-color: #1DA1F2; }
 .event_facebook { background: #eef4ff; border-left-color: #1877F2; }
 .event_linkedin { background: #eef6fb; border-left-color: #0077B5; }
