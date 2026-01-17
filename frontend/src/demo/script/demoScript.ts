@@ -1,12 +1,3 @@
-export type DemoTask =
-  | { type: "setDemoMode"; enabled: boolean; reset?: boolean }
-  | { type: "resetDemoData" }
-  | { type: "navigate"; route: string }
-  | { type: "waitFor"; selector: string; visible?: boolean; timeoutMs?: number }
-  | { type: "spotlight"; selector: string | null; title?: string; narration?: string }
-  | { type: "action"; name: string; payload?: unknown }
-  | { type: "sleep"; ms: number };
-
 export type DemoSlideCard = {
   title: string;
   description: string;
@@ -18,8 +9,9 @@ export type DemoSlideInfoCard = {
 };
 
 export type DemoSlideOverviewIcon = {
-  icon: string; // icon name or emoji
+  icon: string; // icon name, emoji, or image path
   label: string;
+  isImage?: boolean; // true if icon is an image path
 };
 
 export type DemoSlide = {
@@ -44,7 +36,6 @@ export type DemoStep = {
   title: string;
   narration: string;
   slide: DemoSlide;
-  tasks: DemoTask[];
 };
 
 export const demoScript: DemoStep[] = [
@@ -58,9 +49,36 @@ export const demoScript: DemoStep[] = [
       subtitle: "Lulin Yang, Kiki Xing, Tazwar Habib, Weijing Zhang, Xingyuan Zhou",
       bullets: [],
       slideType: "cover",
-      note: "Opening title slide. Demo stays hidden.",
+      note: "Opening title slide.",
     },
-    tasks: [],
+  },
+  {
+    id: "problem",
+    title: "Problem Statement",
+    narration: "The challenge small businesses face.",
+    slide: {
+      eyebrow: "",
+      title: "Small businesses don't have time for marketing ops.",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "fade",
+      note: "Problem statement slide.",
+    },
+  },
+  {
+    id: "solution",
+    title: "Solution",
+    narration: "Our solution to the problem.",
+    slide: {
+      eyebrow: "",
+      title: "We turn marketing ops into a guided workflow.",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "fade",
+      note: "Solution statement slide.",
+    },
   },
   {
     id: "overview",
@@ -69,7 +87,7 @@ export const demoScript: DemoStep[] = [
     slide: {
       eyebrow: "",
       title: "What We've Built",
-      subtitle: "Sprint 3 — five upgrades for a stable, guided demo",
+      subtitle: "",
       bullets: [],
       slideType: "overview",
       overviewIcons: [
@@ -82,6 +100,25 @@ export const demoScript: DemoStep[] = [
       transition: "fade",
       note: "Overview slide with 5 icons.",
     },
-    tasks: [],
+  },
+  {
+    id: "cloud",
+    title: "Cloud Deployment",
+    narration: "Our cloud infrastructure.",
+    slide: {
+      eyebrow: "",
+      title: "",
+      subtitle: "",
+      bullets: [],
+      slideType: "overview",
+      overviewIcons: [
+        { icon: "/img/Amplify.svg", label: "AWS Amplify", isImage: true },
+        { icon: "/img/Render logomark - Black.svg", label: "Render", isImage: true },
+        { icon: "/img/Simple Storage Service.svg", label: "AWS S3", isImage: true },
+        { icon: "/img/mongodb-svgrepo-com.svg", label: "MongoDB Atlas", isImage: true },
+      ],
+      transition: "fade",
+      note: "Cloud infrastructure with 4 components.",
+    },
   },
 ];

@@ -127,11 +127,15 @@
 
 .main {
   flex: 1;
-  padding: 12px 24px 24px;
-  display: grid;
-  grid-template-columns: minmax(340px, 1fr) minmax(360px, 1fr);
-  gap: 18px;
-  background: var(--deck-panel);
+  padding: 0;
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 10;
 }
 
 .mainFull {
@@ -289,13 +293,24 @@
 
 .deckPane {
   padding: 0;
-  background: var(--deck-panel);
+  background: transparent;
   margin: 0 !important;
   min-height: 100vh;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.deckPane > :global(div) {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(9, 43, 66, 0.14), transparent 30%),
+    radial-gradient(circle at 88% 18%, rgba(253, 179, 56, 0.18), transparent 36%),
+    linear-gradient(180deg, #f0f2f3 0%, #eef1f2 55%, #e9edef 100%) !important;
+  background-color: transparent !important;
 }
 
 .demoPane {
@@ -358,8 +373,8 @@
 }
 
 .slideFrame {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   background-color: var(--ant-color-white);
   position: relative;
   margin: 0;
@@ -891,6 +906,12 @@
   gap: 80px;
 }
 
+.overviewSlide:has(.architectureDiagram) {
+  justify-content: center;
+  padding: 60px 80px;
+  position: relative;
+}
+
 .overviewHeader {
   text-align: center;
   animation: fadeInUp 0.6s ease-out both;
@@ -913,11 +934,12 @@
 }
 
 .overviewIcons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  justify-content: center;
   gap: 60px;
-  max-width: 1000px;
+  max-width: 1200px;
   width: 100%;
+  flex-wrap: nowrap;
 }
 
 .overviewIconItem {
@@ -962,6 +984,133 @@
   letter-spacing: 0.1em;
 }
 
+/* Architecture Diagram Layout for Cloud Slide */
+.architectureDiagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 140px;
+  width: 100%;
+  max-width: 1600px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.15);
+}
+
+.architectureColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 70px;
+  align-items: center;
+  position: relative;
+}
+
+.architectureColumnHeader {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(23, 28, 29, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  margin-bottom: 15px;
+}
+
+.architectureCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.architectureCenterNode {
+  font-family: "Manrope", sans-serif;
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--deck-ink);
+  letter-spacing: -0.02em;
+}
+
+.architectureCenterLabel {
+  font-size: 16px;
+  font-weight: 500;
+  color: rgba(23, 28, 29, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+
+.architectureServiceItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  opacity: 0;
+  animation: serviceItemReveal 0.8s ease-out forwards;
+  position: relative;
+}
+
+.architectureServiceItem:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.architectureServiceItem:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes serviceItemReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.architectureServiceIcon {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(23, 28, 29, 0.08);
+  border-radius: 18px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(23, 28, 29, 0.06);
+  transition: all 0.3s ease;
+}
+
+.architectureServiceIcon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(23, 28, 29, 0.1);
+}
+
+.architectureServiceIcon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.architectureServiceRole {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(23, 28, 29, 0.5);
+  text-align: center;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.architectureServiceLabel {
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--deck-ink);
+  text-align: center;
+  margin: 0;
+  margin-top: -8px;
+}
+
 /* Keynote Style: Feature Slide */
 .featureSlide {
   width: 100%;
@@ -984,11 +1133,12 @@
 
 .featureTitle {
   font-family: "Fraunces", serif;
-  font-size: 64px;
+  font-size: 52px;
   font-weight: 700;
   color: var(--deck-ink);
   margin: 0;
   line-height: 1.1;
+  white-space: nowrap;
   animation: fadeInUp 0.6s ease-out both;
 }
 

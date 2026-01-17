@@ -1,21 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 // @ts-ignore - reveal.js doesn't have types
 import Reveal from "reveal.js";
-import { useDemoBridge } from "./runtime/useDemoBridge";
-import { useDemoRunner, type DeckApi } from "./runtime/useDemoRunner";
 import { demoScript } from "../demo/script/demoScript";
-import Live2DWidget from "../components/Live2DWidget";
-import { useAppSettings } from "../contexts/AppSettingsContext";
 import styles from "./DeckPage.module.css";
 
 export default function DeckPage() {
   const revealRef = useRef<HTMLDivElement>(null);
   const revealInstanceRef = useRef<Reveal | null>(null);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const [deckApi, setDeckApi] = useState<DeckApi | null>(null);
-  const [frameKey, setFrameKey] = useState(0);
-  const { ready, lastError: bridgeError, clearError, send, resetSession } = useDemoBridge(frameRef);
-  const { settings } = useAppSettings();
 
   const steps = demoScript;
 
@@ -40,24 +31,6 @@ export default function DeckPage() {
 
     reveal.initialize().then(() => {
       revealInstanceRef.current = reveal;
-      
-      // 暴露 API
-      setDeckApi({
-        skipTo: ({ slideIndex }) => {
-          reveal.slide(slideIndex);
-        },
-        stepForward: () => {
-          reveal.next();
-        },
-        stepBackward: () => {
-          reveal.prev();
-        },
-      });
-
-      // 监听 slide 变化
-      reveal.on('slidechanged', (event: { indexh: number }) => {
-        handleSlideChange(event.indexh);
-      });
     });
 
     return () => {
@@ -68,107 +41,10 @@ export default function DeckPage() {
     };
   }, []);
 
-  const runner = useDemoRunner({
-    steps,
-    ready,
-    send,
-    deckApi,
-    onStepChange: () => {},
-  });
-
-  const isRunning = runner.status === "running";
-  const errorMessage = runner.lastError ?? bridgeError;
-  const currentStep = steps[runner.stepIndex];
-  const showDemo = runner.stepIndex > 1 && !currentStep?.slide?.image;
-
-  const frameSrc = `/dashboard?embed=1`;
-
-  const handleSlideChange = useCallback(
-    (index: number) => {
-      if (isRunning) return;
-      runner.setStepIndex(index);
-    },
-    [isRunning, runner]
-  );
-
-  // 同步 reveal.js 到 runner 的 stepIndex
-  useEffect(() => {
-    if (revealInstanceRef.current && deckApi) {
-      const currentIndex = revealInstanceRef.current.getIndices().h;
-      if (currentIndex !== runner.stepIndex) {
-        revealInstanceRef.current.slide(runner.stepIndex);
-      }
-    }
-  }, [runner.stepIndex, deckApi]);
-
-  const handleResetData = useCallback(() => {
-    if (!ready) return;
-    send({ type: "RESET_DEMO_DATA" }).catch(() => undefined);
-  }, [ready, send]);
-
-  const handleReload = useCallback(() => {
-    resetSession();
-    setFrameKey((prev) => prev + 1);
-  }, [resetSession]);
-
-  useEffect(() => {
-    if (errorMessage) {
-      const timer = window.setTimeout(() => clearError(), 9000);
-      return () => window.clearTimeout(timer);
-    }
-  }, [clearError, errorMessage]);
-
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <div className={styles.brand}>
-            <div className={styles.brandTitle}>MELO Demo Deck</div>
-            <div className={styles.brandSubtitle}>Automated walkthrough</div>
-          </div>
-          <div className={styles.statusRow}>
-            <span className={`${styles.statusPill} ${ready ? styles.statusPillAccent : ""}`}>
-              {ready ? "DEMO READY" : "WAITING"}
-            </span>
-            <span>
-              Step {runner.stepIndex + 1} / {steps.length}
-            </span>
-            <span>Status: {runner.status.toUpperCase()}</span>
-          </div>
-        </div>
-        <div className={styles.controls}>
-          <button
-            className={`${styles.controlButton} ${styles.controlButtonPrimary}`}
-            onClick={isRunning ? runner.pause : runner.start}
-            disabled={!ready}
-          >
-            {isRunning ? "Pause" : "Play"}
-          </button>
-          <button className={styles.controlButton} onClick={runner.prev} disabled={!ready}>
-            Prev
-          </button>
-          <button className={styles.controlButton} onClick={runner.next} disabled={!ready}>
-            Next
-          </button>
-          <button className={styles.controlButton} onClick={runner.runCurrentStep} disabled={!ready}>
-            Run Step
-          </button>
-          <button className={styles.controlButton} onClick={runner.restart} disabled={!ready}>
-            Restart
-          </button>
-          <button className={`${styles.controlButton} ${styles.controlButtonGhost}`} onClick={handleResetData} disabled={!ready}>
-            Reset Data
-          </button>
-          <button className={`${styles.controlButton} ${styles.controlButtonGhost}`} onClick={handleReload}>
-            Reload Demo
-          </button>
-        </div>
-        {errorMessage && <div className={styles.error}>Demo error: {errorMessage}</div>}
-      </div>
-
-      <div className={`${styles.main} ${!showDemo ? styles.mainFull : ""}`}>
-        <section className={`${styles.panel} ${styles.deckPane}`}>
-          <span className={styles.panelLabel}>Slides</span>
+      <div className={styles.main}>
+        <section className={styles.deckPane}>
           
           {/* reveal.js 容器 */}
           <div ref={revealRef} className="reveal">
@@ -197,18 +73,92 @@ export default function DeckPage() {
                           <h1 className={styles.overviewTitle}>{step.slide.title}</h1>
                           <p className={styles.overviewSubtitle}>{step.slide.subtitle}</p>
                         </div>
-                        <div className={styles.overviewIcons}>
-                          {step.slide.overviewIcons?.map((icon, iconIndex) => (
-                            <div 
-                              key={`${step.id}-icon-${iconIndex}`} 
-                              className={styles.overviewIconItem}
-                              style={{ animationDelay: `${iconIndex * 0.2}s` }}
-                            >
-                              <div className={styles.overviewIcon}>{icon.icon}</div>
-                              <div className={styles.overviewIconLabel}>{icon.label}</div>
+                        {step.id === "cloud" ? (
+                          // Architecture diagram layout for cloud deployment
+                          <div className={styles.architectureDiagram}>
+                            {/* Left column: COMPUTE (Amplify + Render) */}
+                            <div className={styles.architectureColumn}>
+                              <div className={styles.architectureColumnHeader}>COMPUTE</div>
+                              <div className={styles.architectureServiceItem}>
+                                <div className={styles.architectureServiceIcon}>
+                                  <img
+                                    src={step.slide.overviewIcons?.[0].icon || ""}
+                                    alt={step.slide.overviewIcons?.[0].label || ""}
+                                  />
+                                </div>
+                                <div className={styles.architectureServiceRole}>Frontend Hosting</div>
+                                <div className={styles.architectureServiceLabel}>
+                                  {step.slide.overviewIcons?.[0].label}
+                                </div>
+                              </div>
+                              <div className={styles.architectureServiceItem}>
+                                <div className={styles.architectureServiceIcon}>
+                                  <img
+                                    src={step.slide.overviewIcons?.[1].icon || ""}
+                                    alt={step.slide.overviewIcons?.[1].label || ""}
+                                  />
+                                </div>
+                                <div className={styles.architectureServiceRole}>Backend API</div>
+                                <div className={styles.architectureServiceLabel}>
+                                  {step.slide.overviewIcons?.[1].label}
+                                </div>
+                              </div>
                             </div>
-                          ))}
-                        </div>
+
+                            {/* Right column: DATA (S3 + MongoDB Atlas) */}
+                            <div className={styles.architectureColumn}>
+                              <div className={styles.architectureColumnHeader}>DATA</div>
+                              <div className={styles.architectureServiceItem}>
+                                <div className={styles.architectureServiceIcon}>
+                                  <img
+                                    src={step.slide.overviewIcons?.[2].icon || ""}
+                                    alt={step.slide.overviewIcons?.[2].label || ""}
+                                  />
+                                </div>
+                                <div className={styles.architectureServiceRole}>File Storage</div>
+                                <div className={styles.architectureServiceLabel}>
+                                  {step.slide.overviewIcons?.[2].label}
+                                </div>
+                              </div>
+                              <div className={styles.architectureServiceItem}>
+                                <div className={styles.architectureServiceIcon}>
+                                  <img
+                                    src={step.slide.overviewIcons?.[3].icon || ""}
+                                    alt={step.slide.overviewIcons?.[3].label || ""}
+                                  />
+                                </div>
+                                <div className={styles.architectureServiceRole}>Database</div>
+                                <div className={styles.architectureServiceLabel}>
+                                  {step.slide.overviewIcons?.[3].label}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          // Regular icon grid for other overview slides
+                          <div className={styles.overviewIcons}>
+                            {step.slide.overviewIcons?.map((icon, iconIndex) => (
+                              <div
+                                key={`${step.id}-icon-${iconIndex}`}
+                                className={styles.overviewIconItem}
+                                style={{ animationDelay: `${iconIndex * 0.2}s` }}
+                              >
+                                <div className={styles.overviewIcon}>
+                                  {icon.isImage ? (
+                                    <img
+                                      src={icon.icon}
+                                      alt={icon.label}
+                                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    />
+                                  ) : (
+                                    icon.icon
+                                  )}
+                                </div>
+                                <div className={styles.overviewIconLabel}>{icon.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ) : isFeature ? (
                       <div className={styles.featureSlide}>
@@ -348,23 +298,6 @@ export default function DeckPage() {
             </div>
           </div>
         </section>
-
-        {showDemo && (
-          <section className={`${styles.panel} ${styles.demoPane}`}>
-            <span className={styles.panelLabel}>Live Demo</span>
-            <iframe
-              key={frameKey}
-              ref={frameRef}
-              className={styles.iframe}
-              src={frameSrc}
-              title="Melo Demo"
-              allow="clipboard-read; clipboard-write"
-            />
-          </section>
-        )}
-      </div>
-      <div className={styles.live2dDock}>
-        <Live2DWidget modelPath={settings.live2dModel} isPreview />
       </div>
     </div>
   );
