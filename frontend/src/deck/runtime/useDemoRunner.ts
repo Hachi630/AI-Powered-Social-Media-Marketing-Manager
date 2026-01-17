@@ -119,7 +119,7 @@ export const useDemoRunner = ({
     async (index: number) => {
       const step = steps[index];
       if (!step) return;
-      for (const task of step.tasks) {
+      for (const task of step.tasks || []) {
         if (!runningRef.current) return;
         await runTask(task, step);
       }

@@ -23,7 +23,7 @@ export default function ParticleBackground() {
       const endY = startY + Math.sin(angle) * distance;
       const duration = 8 + Math.random() * 12;
       const delay = Math.random() * 5;
-      const size = 2 + Math.random() * 4;
+      const size = 1 + Math.random() * 4;
 
       return {
         id: i,

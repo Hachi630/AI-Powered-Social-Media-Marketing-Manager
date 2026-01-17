@@ -1,3 +1,12 @@
+export type DemoTask =
+  | { type: "sleep"; ms: number }
+  | { type: "spotlight"; selector: string; title?: string; narration?: string }
+  | { type: "setDemoMode"; enabled: boolean; reset?: boolean }
+  | { type: "resetDemoData" }
+  | { type: "navigate"; route: string }
+  | { type: "waitFor"; selector: string; visible?: boolean; timeoutMs?: number }
+  | { type: "action"; name: string; payload?: unknown };
+
 export type DemoSlideCard = {
   title: string;
   description: string;
@@ -48,6 +57,7 @@ export type DemoStep = {
   title: string;
   narration: string;
   slide: DemoSlide;
+  tasks?: DemoTask[];
 };
 
 export const demoScript: DemoStep[] = [
@@ -61,6 +71,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "Lulin Yang, Kiki Xing, Tazwar Habib, Weijing Zhang, Xingyuan Zhou",
       bullets: [],
       slideType: "cover",
+      transition: "zoom",
       note: "Opening title slide.",
     },
   },
@@ -74,7 +85,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
-      transition: "fade",
+      transition: "concave",
       note: "Problem statement slide.",
     },
   },
@@ -88,7 +99,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
-      transition: "fade",
+      transition: "concave",
       note: "Solution statement slide.",
     },
   },
@@ -109,7 +120,7 @@ export const demoScript: DemoStep[] = [
         { icon: "📋", label: "Templates" },
         { icon: "✨", label: "UI Polish" },
       ],
-      transition: "fade",
+      transition: "convex",
       note: "Overview slide with 5 icons.",
     },
   },
@@ -129,7 +140,7 @@ export const demoScript: DemoStep[] = [
         { icon: "/img/Simple Storage Service.svg", label: "AWS S3", isImage: true },
         { icon: "/img/mongodb-svgrepo-com.svg", label: "MongoDB Atlas", isImage: true },
       ],
-      transition: "fade",
+      transition: "slide",
       note: "Cloud infrastructure with 4 components.",
     },
   },
@@ -159,7 +170,7 @@ export const demoScript: DemoStep[] = [
       bullets: [],
       slideType: "feature",
       featureTagline: "Reusable modules that perform a specific task with clear inputs and outputs.",
-      transition: "fade",
+      transition: "concave",
       note: "Skills definition slide.",
     },
   },
@@ -187,7 +198,7 @@ export const demoScript: DemoStep[] = [
           description: "Faster iteration, consistent behavior, easier to extend",
         },
       ],
-      transition: "fade",
+      transition: "slide",
       note: "Skills workflow with three stages.",
     },
   },
@@ -201,7 +212,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
-      transition: "fade",
+      transition: "concave",
       note: "Sprint 4 goals slide.",
     },
   },
@@ -215,7 +226,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
-      transition: "fade",
+      transition: "concave",
       note: "Thank you slide.",
     },
   },
