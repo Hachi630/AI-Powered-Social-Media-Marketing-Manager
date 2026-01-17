@@ -33,7 +33,7 @@ export default function PromptTemplateCard({ template, onClick }: PromptTemplate
             color: template.color,
           }}
         >
-          <IconComponent style={{ fontSize: 24 }} />
+          <IconComponent style={{ fontSize: 24 } as React.CSSProperties} />
         </div>
         <div className={styles.textContent}>
           <h3 className={styles.title}>{template.title}</h3>

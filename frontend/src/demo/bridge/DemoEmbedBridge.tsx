@@ -136,7 +136,7 @@ export default function DemoEmbedBridge() {
           return;
         }
 
-        replyErr(env, event.origin, "UNKNOWN_COMMAND", `Unknown command: ${cmd.type}`);
+        replyErr(env, event.origin, "UNKNOWN_COMMAND", `Unknown command: ${(cmd as any).type}`);
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Command failed";
         replyErr(env, event.origin, "CMD_FAILED", message, error);

@@ -342,7 +342,7 @@ export default function BrandProfile({
                 savedSelectedId &&
                 currentUser.companies.find((c: any) => c.id === savedSelectedId)
               ) {
-                const found = currentUser.companies.find(
+                const found: any = currentUser.companies.find(
                   (c: any) => c.id === savedSelectedId
                 );
                 if (found) {
