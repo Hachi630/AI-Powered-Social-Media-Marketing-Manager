@@ -177,12 +177,10 @@ export default function DeckPage() {
               return (
               <Slide key={step.id} backgroundColor="transparent" className={styles.slideFrame}>
                   {isCover ? (
-                    <div className={styles.cover}>
-                      <div className={styles.coverBody}>
-                        <div className={styles.coverSprint}>{step.slide.eyebrow}</div>
-                        <div className={styles.coverTitle}>{step.slide.title}</div>
-                        <div className={styles.coverNames}>{step.slide.subtitle}</div>
-                      </div>
+                    <div className={styles.coverBody}>
+                      <div className={styles.coverSprint}>{step.slide.eyebrow}</div>
+                      <div className={styles.coverTitle}>{step.slide.title}</div>
+                      <div className={styles.coverNames}>{step.slide.subtitle}</div>
                     </div>
                   ) : (
                     <div
