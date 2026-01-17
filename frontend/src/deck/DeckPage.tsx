@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 import Reveal from "reveal.js";
 import { demoScript } from "../demo/script/demoScript";
 import styles from "./DeckPage.module.css";
+import ParticleBackground from "./components/ParticleBackground";
+import TypewriterText from "./components/TypewriterText";
 
 export default function DeckPage() {
   const revealRef = useRef<HTMLDivElement>(null);
@@ -45,7 +47,7 @@ export default function DeckPage() {
     <div className={styles.page}>
       <div className={styles.main}>
         <section className={styles.deckPane}>
-          
+
           {/* reveal.js 容器 */}
           <div ref={revealRef} className="reveal">
             <div className="slides">
@@ -66,9 +68,12 @@ export default function DeckPage() {
                   >
                     {isCover ? (
                       <div className={styles.coverBody}>
+                        <ParticleBackground />
                         <div className={styles.coverSprint}>{step.slide.eyebrow}</div>
                         <div className={styles.coverTitle}>{step.slide.title}</div>
-                        <div className={styles.coverNames}>{step.slide.subtitle}</div>
+                        <div className={styles.coverNames}>
+                          <TypewriterText text={step.slide.subtitle} speed={50} delay={2500} />
+                        </div>
                       </div>
                     ) : isOverview ? (
                       <div className={styles.overviewSlide}>
