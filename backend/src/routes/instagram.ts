@@ -981,7 +981,6 @@ router.post(
             "Ensure the image URL is publicly accessible (not localhost). " +
             "For local testing, use ngrok or deploy to a public URL. " +
             "If using S3, ensure the bucket allows public read access and the file is uploaded with public-read ACL.",
-          imageUrl: finalImageUrl || finalVideoUrl,
         });
       }
 
