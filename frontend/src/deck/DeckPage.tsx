@@ -1,53 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Deck,
-  Slide,
-  Heading,
-  Text,
-  Notes,
-  DeckContext,
-} from "spectacle";
+import { useCallback, useEffect, useRef, useState } from "react";
+// @ts-ignore - reveal.js doesn't have types
+import Reveal from "reveal.js";
 import { useDemoBridge } from "./runtime/useDemoBridge";
 import { useDemoRunner, type DeckApi } from "./runtime/useDemoRunner";
 import { demoScript } from "../demo/script/demoScript";
 import Live2DWidget from "../components/Live2DWidget";
 import { useAppSettings } from "../contexts/AppSettingsContext";
 import styles from "./DeckPage.module.css";
-import { useContext } from "react";
-
-const DeckController = ({
-  onApiReady,
-  onSlideChange,
-}: {
-  onApiReady: (api: DeckApi) => void;
-  onSlideChange: (index: number) => void;
-}) => {
-  const deck = useContext(DeckContext);
-  const readyRef = useRef(false);
-  const slideRef = useRef(deck.activeView.slideIndex);
-
-  useEffect(() => {
-    if (!readyRef.current) {
-      onApiReady({
-        skipTo: deck.skipTo,
-        stepForward: deck.stepForward,
-        stepBackward: deck.stepBackward,
-      });
-      readyRef.current = true;
-    }
-  }, [deck, onApiReady]);
-
-  useEffect(() => {
-    if (slideRef.current !== deck.activeView.slideIndex) {
-      slideRef.current = deck.activeView.slideIndex;
-      onSlideChange(deck.activeView.slideIndex);
-    }
-  }, [deck.activeView.slideIndex, onSlideChange]);
-
-  return null;
-};
 
 export default function DeckPage() {
+  const revealRef = useRef<HTMLDivElement>(null);
+  const revealInstanceRef = useRef<Reveal | null>(null);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [deckApi, setDeckApi] = useState<DeckApi | null>(null);
   const [frameKey, setFrameKey] = useState(0);
@@ -55,30 +18,55 @@ export default function DeckPage() {
   const { settings } = useAppSettings();
 
   const steps = demoScript;
-  const deckTheme = useMemo(
-    () => ({
-      colors: {
-        primary: "#17171c",
-        secondary: "#f7f1e7",
-        tertiary: "#e4552d",
-        quaternary: "#2e5d52",
-        quinary: "#f3eee6",
-      },
-      fonts: {
-        header: "Fraunces, serif",
-        text: "Chakra Petch, sans-serif",
-        monospace: "IBM Plex Mono, monospace",
-      },
-      fontSizes: {
-        h1: "56px",
-        h2: "42px",
-        h3: "30px",
-        text: "22px",
-        monospace: "18px",
-      },
-    }),
-    []
-  );
+
+  // 初始化 reveal.js
+  useEffect(() => {
+    if (!revealRef.current || revealInstanceRef.current) return;
+
+    const reveal = new Reveal(revealRef.current, {
+      hash: false,
+      controls: false,
+      progress: false,
+      center: false,
+      transition: 'fade',
+      backgroundTransition: 'fade',
+      embedded: false,
+      width: '100%',
+      height: '100%',
+      margin: 0,
+      minScale: 1,
+      maxScale: 1,
+    });
+
+    reveal.initialize().then(() => {
+      revealInstanceRef.current = reveal;
+      
+      // 暴露 API
+      setDeckApi({
+        skipTo: ({ slideIndex }) => {
+          reveal.slide(slideIndex);
+        },
+        stepForward: () => {
+          reveal.next();
+        },
+        stepBackward: () => {
+          reveal.prev();
+        },
+      });
+
+      // 监听 slide 变化
+      reveal.on('slidechanged', (event: { indexh: number }) => {
+        handleSlideChange(event.indexh);
+      });
+    });
+
+    return () => {
+      if (revealInstanceRef.current) {
+        revealInstanceRef.current.destroy();
+        revealInstanceRef.current = null;
+      }
+    };
+  }, []);
 
   const runner = useDemoRunner({
     steps,
@@ -90,9 +78,10 @@ export default function DeckPage() {
 
   const isRunning = runner.status === "running";
   const errorMessage = runner.lastError ?? bridgeError;
-  const showDemo = runner.stepIndex > 1;
+  const currentStep = steps[runner.stepIndex];
+  const showDemo = runner.stepIndex > 1 && !currentStep?.slide?.image;
 
-  const frameSrc = useMemo(() => `/dashboard?embed=1`, []);
+  const frameSrc = `/dashboard?embed=1`;
 
   const handleSlideChange = useCallback(
     (index: number) => {
@@ -101,6 +90,16 @@ export default function DeckPage() {
     },
     [isRunning, runner]
   );
+
+  // 同步 reveal.js 到 runner 的 stepIndex
+  useEffect(() => {
+    if (revealInstanceRef.current && deckApi) {
+      const currentIndex = revealInstanceRef.current.getIndices().h;
+      if (currentIndex !== runner.stepIndex) {
+        revealInstanceRef.current.slide(runner.stepIndex);
+      }
+    }
+  }, [runner.stepIndex, deckApi]);
 
   const handleResetData = useCallback(() => {
     if (!ready) return;
@@ -170,50 +169,184 @@ export default function DeckPage() {
       <div className={`${styles.main} ${!showDemo ? styles.mainFull : ""}`}>
         <section className={`${styles.panel} ${styles.deckPane}`}>
           <span className={styles.panelLabel}>Slides</span>
-          <Deck theme={deckTheme} transition={{ from: { opacity: 0 }, enter: { opacity: 1 }, leave: { opacity: 0 } }}>
-            <DeckController onApiReady={setDeckApi} onSlideChange={handleSlideChange} />
-            {steps.map((step, index) => {
-              const isCover = index === 0;
-              return (
-              <Slide key={step.id} backgroundColor="transparent" className={styles.slideFrame}>
-                  {isCover ? (
-                    <div className={styles.coverBody}>
-                      <div className={styles.coverSprint}>{step.slide.eyebrow}</div>
-                      <div className={styles.coverTitle}>{step.slide.title}</div>
-                      <div className={styles.coverNames}>{step.slide.subtitle}</div>
-                    </div>
-                  ) : (
-                    <div
-                      className={`${styles.slide} ${
-                        step.slide.subtitle || step.slide.bullets.length > 0
-                          ? ""
-                          : styles.slideTitleOnly
-                      }`}
-                    >
-                      {step.slide.eyebrow && (
-                        <div className={styles.slideEyebrow}>{step.slide.eyebrow}</div>
-                      )}
-                      <Heading className={styles.slideTitle}>{step.slide.title}</Heading>
-                      {step.slide.subtitle && (
-                        <Text className={styles.slideSubtitle}>{step.slide.subtitle}</Text>
-                      )}
-                      {step.slide.bullets.length > 0 && (
-                        <ul className={styles.slideList}>
-                          {step.slide.bullets.map((bullet, index) => (
-                            <li key={`${step.id}-bullet-${index}`} className={styles.slideListItem}>
-                              {bullet}
-                            </li>
+          
+          {/* reveal.js 容器 */}
+          <div ref={revealRef} className="reveal">
+            <div className="slides">
+              {steps.map((step, index) => {
+                const isCover = step.slide.slideType === "cover";
+                const isOverview = step.slide.slideType === "overview";
+                const isFeature = step.slide.slideType === "feature";
+                const transition = step.slide.transition || "fade";
+                
+                return (
+                  <section 
+                    key={step.id} 
+                    className={`${styles.slideFrame} ${isCover ? styles.slideFrameCover : ""}`}
+                    data-transition={transition}
+                  >
+                    {isCover ? (
+                      <div className={styles.coverBody}>
+                        <div className={styles.coverSprint}>{step.slide.eyebrow}</div>
+                        <div className={styles.coverTitle}>{step.slide.title}</div>
+                        <div className={styles.coverNames}>{step.slide.subtitle}</div>
+                      </div>
+                    ) : isOverview ? (
+                      <div className={styles.overviewSlide}>
+                        <div className={styles.overviewHeader}>
+                          <h1 className={styles.overviewTitle}>{step.slide.title}</h1>
+                          <p className={styles.overviewSubtitle}>{step.slide.subtitle}</p>
+                        </div>
+                        <div className={styles.overviewIcons}>
+                          {step.slide.overviewIcons?.map((icon, iconIndex) => (
+                            <div 
+                              key={`${step.id}-icon-${iconIndex}`} 
+                              className={styles.overviewIconItem}
+                              style={{ animationDelay: `${iconIndex * 0.2}s` }}
+                            >
+                              <div className={styles.overviewIcon}>{icon.icon}</div>
+                              <div className={styles.overviewIconLabel}>{icon.label}</div>
+                            </div>
                           ))}
-                        </ul>
-                      )}
-                      <div className={styles.footerNote}>Step {index + 1}</div>
-                    </div>
-                  )}
-                  {step.slide.note && <Notes>{step.slide.note}</Notes>}
-                </Slide>
-              );
-            })}
-          </Deck>
+                        </div>
+                      </div>
+                    ) : isFeature ? (
+                      <div className={styles.featureSlide}>
+                        <div className={styles.featureContent}>
+                          <h1 className={styles.featureTitle}>{step.slide.title}</h1>
+                          <p className={styles.featureTagline}>{step.slide.featureTagline}</p>
+                          {step.slide.title === "Cloud deployment" && (
+                            <div className={styles.cloudVisual}>
+                              <div className={styles.cloud3D}>☁️</div>
+                              <div className={styles.cloudNodes}>
+                                <span className={styles.cloudNode}>AWS</span>
+                                <span className={styles.cloudNode}>Render</span>
+                              </div>
+                            </div>
+                          )}
+                          {step.slide.title === "AI robot" && (
+                            <div className={styles.live2dVisual}>
+                              <div className={styles.live2dCharacter}>🤖</div>
+                              <div className={styles.live2dBubble}>
+                                <span className={styles.bubbleText}>I'm here to help!</span>
+                              </div>
+                            </div>
+                          )}
+                          {step.slide.title === "Template system" && (
+                            <div className={styles.templateVisual}>
+                              {["Promo", "Event", "New menu", "Holiday"].map((template, idx) => (
+                                <div 
+                                  key={template}
+                                  className={styles.templateCard}
+                                  style={{ animationDelay: `${idx * 0.15}s` }}
+                                >
+                                  {template}
+                                </div>
+                              ))}
+                              <div className={styles.templateArrow}>Reuse → Faster</div>
+                            </div>
+                          )}
+                          {step.slide.title === "UI/UX improvements" && (
+                            <div className={styles.uiuxVisual}>
+                              <div className={styles.beforeAfter}>
+                                <div className={styles.beforeSection}>
+                                  <div className={styles.beforeLabel}>Before</div>
+                                  <div className={styles.beforeUI}></div>
+                                </div>
+                                <div className={styles.afterSection}>
+                                  <div className={styles.afterLabel}>After</div>
+                                  <div className={styles.afterUI}></div>
+                                </div>
+                              </div>
+                              <div className={styles.wipeSlider}></div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`${styles.slide} ${
+                          step.slide.subtitle || step.slide.bullets.length > 0 || step.slide.cards
+                            ? ""
+                            : styles.slideTitleOnly
+                        }`}
+                      >
+                        <div className={`${styles.slideHeader} ${step.slide.image && step.slide.infoCards ? styles.hasImageContent : ""}`}>
+                          <h1 className={styles.slideTitle}>{step.slide.title}</h1>
+                          {step.slide.subtitle && (
+                            <p className={styles.slideSubtitle}>{step.slide.subtitle}</p>
+                          )}
+                        </div>
+                        {step.slide.cards && step.slide.cards.length > 0 && (
+                          <div className={styles.slideCards}>
+                            {step.slide.cards.map((card, cardIndex) => (
+                              <div key={`${step.id}-card-${cardIndex}`} className={styles.slideCard}>
+                                <h3 className={styles.slideCardTitle}>{card.title}</h3>
+                                <p className={styles.slideCardDescription}>{card.description}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {step.slide.image && step.slide.infoCards ? (
+                          <div className={styles.slideContentWithImage}>
+                            <div className={styles.slideImageWrapper}>
+                              <div className={styles.slideImageContainer}>
+                                <img src={step.slide.image} alt={step.slide.title} className={styles.slideImage} />
+                              </div>
+                            </div>
+                            <div className={styles.slideInfoCards}>
+                              {step.slide.infoCards.map((card, cardIndex) => (
+                                <div key={`${step.id}-info-card-${cardIndex}`} className={styles.slideInfoCard}>
+                                  <div className={styles.slideInfoCardLabel}>{card.label}</div>
+                                  <div className={styles.slideInfoCardItems}>
+                                    {card.items.map((item, itemIndex) => (
+                                      <div key={`${step.id}-info-card-${cardIndex}-item-${itemIndex}`} className={styles.slideInfoCardItem}>
+                                        {item}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : step.slide.image && step.slide.bullets.length > 0 ? (
+                          <div className={styles.slideContentWithImage}>
+                            <div className={styles.slideImageContainer}>
+                              <img src={step.slide.image} alt={step.slide.title} className={styles.slideImage} />
+                            </div>
+                            <ul className={styles.slideList}>
+                              {step.slide.bullets.map((bullet, bulletIndex) => (
+                                <li key={`${step.id}-bullet-${bulletIndex}`} className={styles.slideListItem}>
+                                  {bullet}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <>
+                            {step.slide.image && (
+                              <div className={styles.slideImageContainer}>
+                                <img src={step.slide.image} alt={step.slide.title} className={styles.slideImage} />
+                              </div>
+                            )}
+                            {step.slide.bullets.length > 0 && (
+                              <ul className={styles.slideList}>
+                                {step.slide.bullets.map((bullet, bulletIndex) => (
+                                  <li key={`${step.id}-bullet-${bulletIndex}`} className={styles.slideListItem}>
+                                    {bullet}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         {showDemo && (
