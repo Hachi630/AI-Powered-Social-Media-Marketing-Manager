@@ -766,16 +766,12 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     };
   }, []);
 
-  // Inactivity detection - trigger crawl after 15 seconds
+  // Inactivity detection - DISABLED (user requested no automatic crawling)
   useInactivity({
     timeout: 15000,
-    enabled: isLoaded && !isDragging && !isCrawlingRef.current && !dialogOpen && !isPreview,
+    enabled: false, // Disabled automatic crawling
     onInactive: () => {
-      // Use ref to check latest state and call function
-      if (!isCrawlingRef.current && !isDragging && !dialogOpen && isLoaded && performCrawlAnimationRef.current) {
-        console.log('[ELO] User inactive for 15 seconds, starting crawl');
-        performCrawlAnimationRef.current();
-      }
+      // Crawl animation disabled by user request
     },
   });
 
