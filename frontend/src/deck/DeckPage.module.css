@@ -1111,6 +1111,56 @@
   margin-top: -8px;
 }
 
+/* Link Slide */
+.linkSlide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px;
+  position: relative;
+}
+
+.linkContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+.linkTitle {
+  font-family: "Manrope", sans-serif;
+  font-size: 48px;
+  font-weight: 600;
+  color: var(--deck-ink);
+  margin: 0;
+  text-align: center;
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+.linkUrl {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 32px;
+  font-weight: 500;
+  color: var(--deck-accent-2);
+  text-decoration: none;
+  padding: 24px 48px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid var(--deck-accent-2);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
+  box-shadow: 0 4px 20px rgba(16, 81, 134, 0.15);
+}
+
+.linkUrl:hover {
+  background: var(--deck-accent-2);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(16, 81, 134, 0.25);
+}
+
 /* Keynote Style: Feature Slide */
 .featureSlide {
   width: 100%;

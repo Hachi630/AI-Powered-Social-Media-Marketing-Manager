@@ -53,6 +53,7 @@ export default function DeckPage() {
                 const isCover = step.slide.slideType === "cover";
                 const isOverview = step.slide.slideType === "overview";
                 const isFeature = step.slide.slideType === "feature";
+                const isLink = step.slide.slideType === "link";
                 const transition = step.slide.transition || "fade";
                 
                 return (
@@ -211,6 +212,20 @@ export default function DeckPage() {
                               <div className={styles.wipeSlider}></div>
                             </div>
                           )}
+                        </div>
+                      </div>
+                    ) : isLink ? (
+                      <div className={styles.linkSlide}>
+                        <div className={styles.linkContent}>
+                          <h1 className={styles.linkTitle}>{step.slide.title}</h1>
+                          <a
+                            href={step.slide.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={styles.linkUrl}
+                          >
+                            {step.slide.link}
+                          </a>
                         </div>
                       </div>
                     ) : (

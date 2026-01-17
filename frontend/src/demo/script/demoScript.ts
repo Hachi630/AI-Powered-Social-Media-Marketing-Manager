@@ -25,10 +25,11 @@ export type DemoSlide = {
   imageSticker?: string;
   note?: string;
   // Keynote style additions
-  slideType?: "overview" | "feature" | "cover";
+  slideType?: "overview" | "feature" | "cover" | "link";
   overviewIcons?: DemoSlideOverviewIcon[];
   featureTagline?: string;
   transition?: string; // reveal.js transition
+  link?: string; // URL for link slide type
 };
 
 export type DemoStep = {
@@ -119,6 +120,21 @@ export const demoScript: DemoStep[] = [
       ],
       transition: "fade",
       note: "Cloud infrastructure with 4 components.",
+    },
+  },
+  {
+    id: "live-demo",
+    title: "Live Demo",
+    narration: "Visit our live deployment.",
+    slide: {
+      eyebrow: "",
+      title: "Try it live",
+      subtitle: "",
+      bullets: [],
+      slideType: "link",
+      link: "https://main.d1sxixpats4kxg.amplifyapp.com/",
+      transition: "fade",
+      note: "Live deployment link.",
     },
   },
 ];
