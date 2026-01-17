@@ -122,7 +122,7 @@ export const demoSteps: DemoStep[] = [
         });
 
         if (nextButton) {
-          nextButton.click();
+          (nextButton as HTMLButtonElement).click();
           console.log('[Demo] Navigated to February 2026');
         } else {
           console.warn('[Demo] Could not find next month button');

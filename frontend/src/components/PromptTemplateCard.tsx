@@ -26,14 +26,15 @@ export default function PromptTemplateCard({ template, onClick }: PromptTemplate
       }}
     >
       <div className={styles.cardContent}>
-        <div 
+        <div
           className={styles.iconWrapper}
-          style={{ 
+          style={{
             backgroundColor: `${template.color}15`,
             color: template.color,
+            fontSize: 24,
           }}
         >
-          <IconComponent style={{ fontSize: 24 } as React.CSSProperties} />
+          <IconComponent />
         </div>
         <div className={styles.textContent}>
           <h3 className={styles.title}>{template.title}</h3>
