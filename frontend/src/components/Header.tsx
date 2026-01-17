@@ -154,10 +154,10 @@ export default function Header({
               className={styles.mobileMenuButton}
             />
           )}
-          {isDemoBuild() && !isDemoMode() && (
+          {isDemoBuild() && !isDemoMode() && !isMobile && (
             <Button onClick={handleDemoStart}>Demo</Button>
           )}
-          {isDemoBuild() && isDemoMode() && (
+          {isDemoBuild() && isDemoMode() && !isMobile && (
             <Button onClick={handleDemoExit}>Exit Demo</Button>
           )}
           {!isLoggedIn ? (

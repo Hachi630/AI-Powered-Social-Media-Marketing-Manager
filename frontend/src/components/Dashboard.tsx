@@ -214,12 +214,7 @@ export default function Dashboard({
         <Content className={contentClass.trim()}>
           {isMobile ? (
             <>
-              {/* Mobile: Center title when no messages */}
-              {!hasMessages && (
-                <Typography.Title level={1} className={styles.mobileTitle}>
-                  {heroTitle}
-                </Typography.Title>
-              )}
+              {/* Mobile: Title removed */}
               {/* Mobile: Chat box container */}
               <div className={styles.mobileChatWrapper}>
                 <ChatBox

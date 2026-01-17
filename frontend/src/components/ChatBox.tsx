@@ -22,6 +22,7 @@ import {
   Spin,
   Dropdown,
   MenuProps,
+  Grid,
 } from "antd";
 import { useState, useEffect, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
@@ -31,9 +32,12 @@ import { chatService, ChatMessage } from "../services/chatService";
 import { uploadService } from "../services/uploadService";
 import ImageGenerationModal from "./ImageGenerationModal";
 import ContentPlanModal from "./ContentPlanModal";
+import PromptTemplatesGrid from "./PromptTemplatesGrid";
+import { promptTemplates } from "../constants/promptTemplates";
 import { getImageUrl } from "../utils/imageUtils";
 
 const { TextArea } = Input;
+const { useBreakpoint } = Grid;
 
 interface ChatBoxProps {
   conversationId?: string | null;
@@ -50,6 +54,8 @@ export default function ChatBox({
   onContentChange,
   onInsertContent,
 }: ChatBoxProps) {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [inputMessage, setInputMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +73,7 @@ export default function ChatBox({
   const [uploading, setUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<any>(null);
   const isInitializingRef = useRef(false);
   const previousHasMessagesRef = useRef(false);
 
@@ -314,6 +321,23 @@ export default function ChatBox({
     setInputMessage(value);
     updateTypingStatus(Boolean(value.trim()));
   };
+
+  const handleTemplateSelect = useCallback((prompt: string) => {
+    setInputMessage(prompt);
+    updateTypingStatus(Boolean(prompt.trim()));
+    // Focus the textarea after a short delay to ensure it's rendered
+    setTimeout(() => {
+      if (textAreaRef.current) {
+        const textarea = textAreaRef.current.resizableTextArea?.textArea || textAreaRef.current;
+        if (textarea) {
+          textarea.focus();
+          // Move cursor to end of text
+          const length = prompt.length;
+          textarea.setSelectionRange(length, length);
+        }
+      }
+    }, 100);
+  }, []);
 
   const handleFocus = () => {
     if (inputMessage.trim().length > 0) {
@@ -617,6 +641,25 @@ export default function ChatBox({
 
   // Dropdown menu items
   const menuItems: MenuProps["items"] = [
+    // Template options (only on mobile)
+    ...(isMobile && messages.length === 0
+      ? [
+          {
+            key: "templates",
+            label: "Templates",
+            type: "group" as const,
+            children: promptTemplates.map((template) => ({
+              key: `template-${template.id}`,
+              label: template.title,
+              icon: <template.icon />,
+              onClick: () => handleTemplateSelect(template.prompt),
+            })),
+          },
+          {
+            type: "divider" as const,
+          },
+        ]
+      : []),
     {
       key: "generate-image",
       label: <span data-demo-id="image-generate">Generate Image</span>,
@@ -1042,6 +1085,7 @@ export default function ChatBox({
             onDrop={handleDrop}
           >
             <TextArea
+              ref={textAreaRef}
               autoSize={{ minRows: 1, maxRows: 4 }}
               placeholder={
                 isDragOver ? "Drop files here" : "What would you like to know?"
@@ -1074,6 +1118,11 @@ export default function ChatBox({
           </Tooltip>
         </div>
       </Card>
+
+      {/* Template Grid - only show on desktop when there are no messages, separated from input box */}
+      {!isMobile && messages.length === 0 && (
+        <PromptTemplatesGrid onTemplateSelect={handleTemplateSelect} />
+      )}
 
       {/* Image Generation Modal */}
       <ImageGenerationModal
