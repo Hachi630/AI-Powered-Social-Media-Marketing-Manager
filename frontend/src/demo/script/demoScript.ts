@@ -25,11 +25,22 @@ export type DemoSlide = {
   imageSticker?: string;
   note?: string;
   // Keynote style additions
-  slideType?: "overview" | "feature" | "cover" | "link";
+  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list";
   overviewIcons?: DemoSlideOverviewIcon[];
   featureTagline?: string;
   transition?: string; // reveal.js transition
   link?: string; // URL for link slide type
+  // Dual image slide type
+  images?: {
+    src: string;
+    position: "left" | "right";
+    order: number;
+  }[];
+  // Vertical list items
+  listItems?: {
+    title: string;
+    description: string;
+  }[];
 };
 
 export type DemoStep = {
@@ -135,6 +146,77 @@ export const demoScript: DemoStep[] = [
       link: "https://main.d1sxixpats4kxg.amplifyapp.com/",
       transition: "fade",
       note: "Live deployment link.",
+    },
+  },
+  {
+    id: "what-are-skills",
+    title: "What are Skills?",
+    narration: "Explaining what skills are.",
+    slide: {
+      eyebrow: "",
+      title: "Skills",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      featureTagline: "Reusable modules that perform a specific task with clear inputs and outputs.",
+      transition: "fade",
+      note: "Skills definition slide.",
+    },
+  },
+  {
+    id: "skills-workflow",
+    title: "Skills Workflow",
+    narration: "How we use skills in our development process.",
+    slide: {
+      eyebrow: "",
+      title: "",
+      subtitle: "",
+      bullets: [],
+      slideType: "vertical-list",
+      listItems: [
+        {
+          title: "Spec-kit (Define)",
+          description: "Turn ideas into a clear, testable spec (scope, flows, acceptance criteria)",
+        },
+        {
+          title: "Claude Skills (Build)",
+          description: "Implement features as reusable \"skills\" (e.g., post generation, scheduling, file upload)",
+        },
+        {
+          title: "Outcome",
+          description: "Faster iteration, consistent behavior, easier to extend",
+        },
+      ],
+      transition: "fade",
+      note: "Skills workflow with three stages.",
+    },
+  },
+  {
+    id: "sprint-4-goals",
+    title: "Sprint 4 Goals",
+    narration: "Our goals for Sprint 4.",
+    slide: {
+      eyebrow: "",
+      title: "Sprint 4 Goals: Testing & Polish",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "fade",
+      note: "Sprint 4 goals slide.",
+    },
+  },
+  {
+    id: "thanks",
+    title: "Thanks",
+    narration: "Thank you.",
+    slide: {
+      eyebrow: "",
+      title: "Thanks",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "fade",
+      note: "Thank you slide.",
     },
   },
 ];

@@ -54,6 +54,8 @@ export default function DeckPage() {
                 const isOverview = step.slide.slideType === "overview";
                 const isFeature = step.slide.slideType === "feature";
                 const isLink = step.slide.slideType === "link";
+                const isDualImage = step.slide.slideType === "dual-image";
+                const isVerticalList = step.slide.slideType === "vertical-list";
                 const transition = step.slide.transition || "fade";
                 
                 return (
@@ -227,6 +229,33 @@ export default function DeckPage() {
                             {step.slide.link}
                           </a>
                         </div>
+                      </div>
+                    ) : isDualImage ? (
+                      <div className={styles.dualImageSlide}>
+                        {step.slide.images?.sort((a, b) => a.order - b.order).map((img, imgIndex) => (
+                          <div
+                            key={`${step.id}-image-${imgIndex}`}
+                            className={`${styles.dualImageItem} ${
+                              img.position === "left" ? styles.dualImageLeft : styles.dualImageRight
+                            }`}
+                            style={{ animationDelay: `${imgIndex * 1}s` }}
+                          >
+                            <img src={img.src} alt={`Image ${imgIndex + 1}`} className={styles.dualImage} />
+                          </div>
+                        ))}
+                      </div>
+                    ) : isVerticalList ? (
+                      <div className={styles.verticalListSlide}>
+                        {step.slide.listItems?.map((item, itemIndex) => (
+                          <div
+                            key={`${step.id}-item-${itemIndex}`}
+                            className={styles.verticalListItem}
+                            style={{ animationDelay: `${itemIndex * 0.2}s` }}
+                          >
+                            <h2 className={styles.verticalListTitle}>{item.title}</h2>
+                            <p className={styles.verticalListDescription}>{item.description}</p>
+                          </div>
+                        ))}
                       </div>
                     ) : (
                       <div
