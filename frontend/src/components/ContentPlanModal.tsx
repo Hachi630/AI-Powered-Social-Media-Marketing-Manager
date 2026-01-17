@@ -26,10 +26,12 @@ import {
   GlobalOutlined,
 } from "@ant-design/icons";
 import { Dayjs } from "dayjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PLATFORMS } from "./CalendarItemModal";
 import { isDemoMode } from "../demo/demoMode";
 import { demoChat } from "../demo/demoServices";
+import { parseCampaignText, ParsedCampaignDay } from "../utils/campaignParser";
+import dayjs from "dayjs";
 
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
@@ -39,6 +41,7 @@ const { Title, Text } = Typography;
 interface ContentPlanModalProps {
   open: boolean;
   goal?: string;
+  messageText?: string; // Optional message text to parse
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -46,6 +49,7 @@ interface ContentPlanModalProps {
 export default function ContentPlanModal({
   open,
   goal: initialGoal,
+  messageText,
   onClose,
   onSuccess,
 }: ContentPlanModalProps) {
@@ -53,6 +57,37 @@ export default function ContentPlanModal({
   const [loading, setLoading] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<any[]>([]);
   const [planGenerated, setPlanGenerated] = useState(false);
+
+  // Parse message text when modal opens
+  useEffect(() => {
+    if (open && messageText) {
+      const parsedDays = parseCampaignText(messageText);
+      if (parsedDays.length > 0) {
+        // Convert parsed days to plan format
+        const plan = parsedDays.map((day: ParsedCampaignDay) => ({
+          date: day.date,
+          platform: day.platform,
+          title: day.title,
+          content: day.content,
+          time: day.time,
+        }));
+        setGeneratedPlan(plan);
+        setPlanGenerated(true);
+        message.success(`Parsed ${plan.length} days from campaign text`);
+      }
+    }
+  }, [open, messageText]);
+
+  // Pre-fill form in demo mode
+  useEffect(() => {
+    if (open && isDemoMode()) {
+      form.setFieldsValue({
+        goal: "I want a 7-day Valentine's campaign for my cake shop. Warm and playful tone.",
+        dateRange: [dayjs("2026-02-08"), dayjs("2026-02-14")],
+        platforms: [PLATFORMS.INSTAGRAM, PLATFORMS.FACEBOOK, PLATFORMS.TWITTER, PLATFORMS.LINKEDIN],
+      });
+    }
+  }, [open, form]);
 
   const platformOptions = [
     { value: PLATFORMS.INSTAGRAM, label: "Instagram" },

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { demoSteps } from "./demoSteps";
 import { disableDemoMode, isDemoMode, resetDemoMode } from "./demoMode";
@@ -17,25 +17,33 @@ export default function DemoPresenter() {
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 120, left: 24 });
+  const [isDraggingTooltip, setIsDraggingTooltip] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const step = demoSteps[stepIndex];
   const isEmbed = new URLSearchParams(window.location.search).get("embed") === "1";
 
   const stepCount = demoSteps.length;
   const isActive = isDemoMode();
 
-  const updateSpotlight = useCallback(() => {
-    const targetRect = getTargetRect(step.target);
+  const updateSpotlight = useCallback((targetSelector?: string) => {
+    const selector = targetSelector ?? step.target;
+    const targetRect = getTargetRect(selector);
     setRect(targetRect);
     if (targetRect) {
+      const tooltipHeight = 280; // Estimated tooltip height
+      const tooltipWidth = 520; // Max tooltip width
       const top = Math.min(
-        window.innerHeight - 200,
-        Math.max(24, targetRect.bottom + 12)
+        window.innerHeight - tooltipHeight - 24,
+        Math.max(24, targetRect.bottom + 16)
       );
       const left = Math.min(
-        window.innerWidth - 380,
+        window.innerWidth - tooltipWidth - 24,
         Math.max(24, targetRect.left)
       );
       setTooltipPos({ top, left });
+    } else {
+      // If no target found, position tooltip at default location
+      setTooltipPos({ top: 120, left: 24 });
     }
   }, [step.target]);
 
@@ -43,14 +51,17 @@ export default function DemoPresenter() {
     async (nextIndex: number) => {
       const nextStep = demoSteps[nextIndex];
       if (!nextStep) return;
+
+      // Clear current spotlight immediately
+      setRect(null);
+
       if (nextStep.route && location.pathname !== nextStep.route) {
         navigate(nextStep.route);
       }
       setStepIndex(nextIndex);
-      if (nextStep.action) {
-        nextStep.action();
-      }
-      setTimeout(updateSpotlight, 300);
+      // Note: Action execution is handled by useEffect to prevent duplicates
+      // Update spotlight with the new step's target
+      setTimeout(() => updateSpotlight(nextStep.target), 300);
     },
     [location.pathname, navigate, updateSpotlight]
   );
@@ -69,13 +80,50 @@ export default function DemoPresenter() {
 
   const handleRestart = useCallback(() => {
     resetDemoMode();
-    goToStep(0);
-  }, [goToStep]);
+    // Reload the page to reset all state and show onboarding form
+    window.location.reload();
+  }, []);
 
   const handleExit = useCallback(() => {
     disableDemoMode();
     window.location.href = "/home";
   }, []);
+
+  // Tooltip drag handlers
+  const handleTooltipMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDraggingTooltip(true);
+    setDragOffset({
+      x: e.clientX - tooltipPos.left,
+      y: e.clientY - tooltipPos.top,
+    });
+    e.preventDefault();
+  }, [tooltipPos]);
+
+  // Mouse move handler
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDraggingTooltip) {
+        const newLeft = Math.max(0, Math.min(window.innerWidth - 520, e.clientX - dragOffset.x));
+        const newTop = Math.max(0, Math.min(window.innerHeight - 280, e.clientY - dragOffset.y));
+        setTooltipPos({ left: newLeft, top: newTop });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingTooltip(false);
+    };
+
+    if (isDraggingTooltip) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      return () => {
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+  }, [isActive, isDraggingTooltip, dragOffset]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -100,12 +148,29 @@ export default function DemoPresenter() {
     return () => window.removeEventListener("keydown", onKey);
   }, [isActive, handleBack, handleNext, handleRestart]);
 
+  // Track which step's action has been executed to prevent duplicate calls
+  const executedStepRef = useRef<number>(-1);
+  
   useEffect(() => {
     if (!isActive) return;
-    if (step?.action) {
+    // Only execute action once per step
+    if (step?.action && executedStepRef.current !== stepIndex) {
+      executedStepRef.current = stepIndex;
       step.action();
     }
-  }, [isActive, step]);
+  }, [isActive, stepIndex, step]);
+
+  // Hide onboarding form when reaching step 3 (index 3) or later
+  useEffect(() => {
+    if (!isActive) return;
+    // Step 3 is "Ask a Question" (index 3), step 4 is "Generate Image" (index 4)
+    if (stepIndex >= 3) {
+      // Mark onboarding as done in localStorage
+      localStorage.setItem("melo_demo_onboarding_done", "true");
+      // Dispatch event to close onboarding modal
+      window.dispatchEvent(new CustomEvent("demo-hide-onboarding"));
+    }
+  }, [isActive, stepIndex]);
 
   if (!isActive || isEmbed) return null;
 
@@ -124,30 +189,73 @@ export default function DemoPresenter() {
       };
   const canAdvance = !step.target || Boolean(rect);
 
+  // Only disable Next if target element is not found
+  const isNextDisabled = !canAdvance;
+
+  // Step 13 (wrap) should only show Exit button
+  const isFinalStep = stepIndex === stepCount - 1;
+
   return (
     <>
       <div className={styles.overlay} />
       <div className={styles.spotlight} style={spotlightStyle} />
       <div
         className={styles.tooltip}
-        style={{ top: tooltipPos.top, left: tooltipPos.left }}
+        style={{
+          top: tooltipPos.top,
+          left: tooltipPos.left,
+          cursor: isDraggingTooltip ? 'grabbing' : 'grab'
+        }}
       >
-        <div className={styles.tooltipTitle}>{step.title}</div>
-        <div className={styles.tooltipBody}>{step.narration}</div>
-      </div>
-      <div className={styles.controls}>
-        <button className={styles.controlButtonSecondary} onClick={handleBack}>
-          Back
-        </button>
-        <button className={styles.controlButton} onClick={handleNext} disabled={!canAdvance}>
-          Next
-        </button>
-        <button className={styles.controlButtonSecondary} onClick={handleRestart}>
-          Restart
-        </button>
-        <button className={styles.controlButtonSecondary} onClick={handleExit}>
-          Exit
-        </button>
+        <div
+          className={styles.tooltipHeader}
+          onMouseDown={handleTooltipMouseDown}
+          style={{ cursor: isDraggingTooltip ? 'grabbing' : 'grab' }}
+        >
+          <div className={styles.tooltipStepNumber}>
+            <span className={styles.tooltipStepBadge}>{stepIndex + 1}</span>
+            <span>Step {stepIndex + 1} of {stepCount}</span>
+          </div>
+          <div className={styles.tooltipProgress}>
+            <div className={styles.tooltipProgressBar}>
+              <div
+                className={styles.tooltipProgressFill}
+                style={{ width: `${((stepIndex + 1) / stepCount) * 100}%` }}
+              />
+            </div>
+            <span>{Math.round(((stepIndex + 1) / stepCount) * 100)}%</span>
+          </div>
+        </div>
+        <div className={styles.tooltipContent}>
+          <div className={styles.tooltipTitle}>
+            <span className={styles.tooltipTitleIcon}>📚</span>
+            {step.title}
+          </div>
+          <div className={styles.tooltipBody}>{step.narration}</div>
+          <div className={styles.tooltipControls}>
+            {isFinalStep ? (
+              // Step 13: Only show Exit button
+              <button className={styles.controlButton} onClick={handleExit}>
+                Exit
+              </button>
+            ) : (
+              <>
+                <button className={styles.controlButtonSecondary} onClick={handleBack}>
+                  Back
+                </button>
+                <button className={styles.controlButton} onClick={handleNext} disabled={isNextDisabled}>
+                  Next
+                </button>
+                <button className={styles.controlButtonSecondary} onClick={handleRestart}>
+                  Restart
+                </button>
+                <button className={styles.controlButtonSecondary} onClick={handleExit}>
+                  Exit
+                </button>
+              </>
+            )}
+          </div>
+        </div>
       </div>
       <div className={styles.pill}>Demo Mode</div>
     </>

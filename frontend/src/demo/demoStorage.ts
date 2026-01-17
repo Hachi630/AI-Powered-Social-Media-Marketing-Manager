@@ -118,11 +118,9 @@ export const setDemoBrandProfile = (
 };
 
 export const seedDemoCalendarForCurrentMonth = (): void => {
+  // Keep the original February dates for Valentine's campaign
+  // Don't modify the dates to current month
   const items = getDemoCalendarItems();
-  const baseDate = dayjs().startOf("month").add(1, "day");
-  const seeded = items.map((item, index) => ({
-    ...item,
-    date: baseDate.add(index + 2, "day").format("YYYY-MM-DD"),
-  }));
-  setDemoCalendarItems(seeded);
+  // Just ensure items are in storage, but don't change dates
+  setDemoCalendarItems(items);
 };

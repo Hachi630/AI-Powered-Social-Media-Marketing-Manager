@@ -204,6 +204,35 @@ function AppContent() {
     }
   }, [location, message]);
 
+  // Listen for demo event to hide onboarding
+  useEffect(() => {
+    const handleHideOnboarding = () => {
+      if (isDemoMode()) {
+        setShowOnboarding(false);
+      }
+    };
+    window.addEventListener("demo-hide-onboarding", handleHideOnboarding);
+    return () => {
+      window.removeEventListener("demo-hide-onboarding", handleHideOnboarding);
+    };
+  }, []);
+
+  // Listen for demo onboarding completed event to update user state
+  useEffect(() => {
+    const handleOnboardingCompleted = async () => {
+      if (isDemoMode()) {
+        const updatedUser = await demoAuth.getCurrentUser();
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
+      }
+    };
+    window.addEventListener("demo-onboarding-completed", handleOnboardingCompleted);
+    return () => {
+      window.removeEventListener("demo-onboarding-completed", handleOnboardingCompleted);
+    };
+  }, []);
+
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true);
     setUser(user);

@@ -66,6 +66,7 @@ export default function ChatBox({
   const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false);
   const [demoImagePrompt, setDemoImagePrompt] = useState("");
   const [lastUserMessage, setLastUserMessage] = useState<string>("");
+  const [lastMessageText, setLastMessageText] = useState<string>("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
     Array<{ url: string; name: string; type: string; size: number }>
@@ -202,13 +203,24 @@ export default function ChatBox({
     const hasContent = inputMessage.trim() || uploadedImages.length > 0;
     if (!hasContent || loading) return;
 
+    const messageContent = inputMessage.trim() ||
+      (uploadedImages.length > 0 || uploadedFiles.length > 0
+        ? `Uploaded ${uploadedImages.length > 0 ? `${uploadedImages.length} image(s)` : ""}${uploadedImages.length > 0 && uploadedFiles.length > 0 ? " and " : ""}${uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s)` : ""}`
+        : "");
+
+    // Check if the last user message is the same to prevent duplicates
+    const lastUserMessage = messages
+      .filter(msg => msg.role === 'user')
+      .pop();
+    if (lastUserMessage && lastUserMessage.content === messageContent && 
+        uploadedImages.length === 0 && uploadedFiles.length === 0) {
+      // Skip if it's a duplicate text message
+      return;
+    }
+
     const userMessage: ChatMessage = {
       role: "user",
-      content:
-        inputMessage.trim() ||
-        (uploadedImages.length > 0 || uploadedFiles.length > 0
-          ? `Uploaded ${uploadedImages.length > 0 ? `${uploadedImages.length} image(s)` : ""}${uploadedImages.length > 0 && uploadedFiles.length > 0 ? " and " : ""}${uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s)` : ""}`
-          : ""),
+      content: messageContent,
       images: uploadedImages.length > 0 ? [...uploadedImages] : undefined,
       files:
         uploadedFiles.length > 0
@@ -295,12 +307,13 @@ export default function ChatBox({
   };
 
   const handleOpenContentPlanModal = () => {
-    // Extract goal from conversation history
-    // Combine all user messages and assistant messages that mention calendar
-    const conversationText = messages
-      .map(msg => msg.content || '')
-      .join(' ');
+    // Extract the last assistant message which should contain the campaign plan
+    const lastAssistantMessage = messages
+      .filter(msg => msg.role === 'assistant')
+      .pop()?.content || '';
     setContentPlanModalOpen(true);
+    // Store the message text to pass to ContentPlanModal
+    setLastMessageText(lastAssistantMessage);
   };
 
   // Get conversation goal from history for ContentPlanModal
@@ -1137,7 +1150,11 @@ export default function ChatBox({
       <ContentPlanModal
         open={contentPlanModalOpen}
         goal={getConversationGoal()}
-        onClose={() => setContentPlanModalOpen(false)}
+        messageText={lastMessageText}
+        onClose={() => {
+          setContentPlanModalOpen(false);
+          setLastMessageText("");
+        }}
         onSuccess={handleContentPlanSuccess}
       />
     </div>
