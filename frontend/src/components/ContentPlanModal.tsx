@@ -28,6 +28,8 @@ import {
 import { Dayjs } from "dayjs";
 import { useState } from "react";
 import { PLATFORMS } from "./CalendarItemModal";
+import { isDemoMode } from "../demo/demoMode";
+import { demoChat } from "../demo/demoServices";
 
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
@@ -69,6 +71,16 @@ export default function ContentPlanModal({
       setLoading(true);
 
       const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs];
+
+      if (isDemoMode()) {
+        const demo = await demoChat.generatePlan();
+        if (demo.success) {
+          setGeneratedPlan(demo.plan || []);
+          setPlanGenerated(true);
+          message.success(`Generated ${demo.plan?.length || 0} content items`);
+          return;
+        }
+      }
 
       // Use BASE_API_URL if set (production), otherwise use relative path (development with vite proxy)
       const BASE_API_URL = import.meta.env.VITE_API_URL || '';
@@ -158,6 +170,16 @@ export default function ContentPlanModal({
 
     try {
       setLoading(true);
+
+      if (isDemoMode()) {
+        const demo = await demoChat.sendToCalendar();
+        if (demo.success) {
+          message.success(`Successfully added ${demo.count || 0} items to calendar`);
+          onSuccess();
+          handleClose();
+          return;
+        }
+      }
 
       // Use BASE_API_URL if set (production), otherwise use relative path (development with vite proxy)
       const BASE_API_URL = import.meta.env.VITE_API_URL || '';
@@ -261,12 +283,13 @@ export default function ContentPlanModal({
         body: { padding: "24px", maxHeight: "80vh", overflowY: "auto" },
       }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ goal: initialGoal }}
-        requiredMark={true}
-      >
+      <div data-demo-id="plan-modal">
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ goal: initialGoal }}
+          requiredMark={true}
+        >
         <Card
           size="small"
           style={{
@@ -511,7 +534,8 @@ export default function ContentPlanModal({
             </div>
           </div>
         )}
-      </Form>
+        </Form>
+      </div>
     </Modal>
   );
 }

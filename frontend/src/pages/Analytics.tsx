@@ -47,6 +47,8 @@ import {
 } from 'recharts'
 import Header from '../components/Header'
 import { User } from '../services/authService'
+import { isDemoMode } from '../demo/demoMode'
+import { demoAnalytics } from '../demo/demoServices'
 
 const { Content, Sider } = Layout
 const { Title, Text } = Typography
@@ -391,6 +393,13 @@ export default function Analytics({
 
   const fetchAnalytics = useCallback(async () => {
     try {
+      if (isDemoMode()) {
+        const data = await demoAnalytics()
+        if (data.success && data.analytics) {
+          setAnalytics(data.analytics)
+        }
+        return
+      }
       const token = localStorage.getItem('token')
       if (!token) {
         setLoading(false)
@@ -1114,7 +1123,7 @@ export default function Analytics({
                 <Title level={4} style={{ marginBottom: 20, fontSize: 18, fontWeight: 600, color: '#262626' }}>
                   Key Performance Indicators
                 </Title>
-                <Row gutter={[20, 20]}>
+                <Row gutter={[20, 20]} data-demo-id="analytics-kpi">
                   {/* 1. TOTAL POSTS */}
                   {overview.totalPosts && (
                     <Col xs={24} sm={12} md={6} lg={6} xl={6}>

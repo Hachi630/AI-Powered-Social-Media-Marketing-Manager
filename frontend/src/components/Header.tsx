@@ -10,6 +10,7 @@ import styles from './Header.module.css'
 import { UserOutlined, LogoutOutlined, MenuOutlined, SettingOutlined } from '@ant-design/icons'
 import { User } from '../services/authService'
 import { Avatar } from 'antd'
+import { enableDemoMode, disableDemoMode, isDemoBuild, isDemoMode, isEmbedMode, resetDemoMode } from '../demo/demoMode'
 
 const { useBreakpoint } = Grid
 
@@ -45,6 +46,7 @@ export default function Header({
   const navigate = useNavigate()
   const screens = useBreakpoint()
   const isMobile = !screens.lg
+  const embed = isEmbedMode()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
@@ -75,6 +77,17 @@ export default function Header({
     navigate('/home')
   }
 
+  const handleDemoStart = () => {
+    resetDemoMode()
+    enableDemoMode()
+    window.location.href = '/dashboard'
+  }
+
+  const handleDemoExit = () => {
+    disableDemoMode()
+    window.location.href = '/home'
+  }
+
   const userMenu: MenuProps = {
     items: [
       {
@@ -101,6 +114,10 @@ export default function Header({
     ],
   }
 
+  if (embed) {
+    return null
+  }
+
   return (
     <>
       <AntHeader className={styles.header}>
@@ -124,6 +141,11 @@ export default function Header({
           />
         )}
         <div className={styles.headerActions}>
+          {isDemoMode() && (
+            <span data-demo-id="demo-banner" className={styles.demoBadge}>
+              Demo Mode
+            </span>
+          )}
           {isLoggedIn && !isHomePage && isMobile && (
             <Button
               type="text"
@@ -131,6 +153,12 @@ export default function Header({
               onClick={() => setMobileMenuOpen(true)}
               className={styles.mobileMenuButton}
             />
+          )}
+          {isDemoBuild() && !isDemoMode() && (
+            <Button onClick={handleDemoStart}>Demo</Button>
+          )}
+          {isDemoBuild() && isDemoMode() && (
+            <Button onClick={handleDemoExit}>Exit Demo</Button>
           )}
           {!isLoggedIn ? (
             <Space size="middle">
@@ -159,6 +187,7 @@ export default function Header({
           onClose={() => setMobileMenuOpen(false)}
           open={mobileMenuOpen}
           width={280}
+          zIndex={4000}
           className={styles.mobileDrawer}
         >
           <Menu

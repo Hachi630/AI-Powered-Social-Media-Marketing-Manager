@@ -1,3 +1,6 @@
+import { isDemoMode } from "../demo/demoMode";
+import { demoMessaging } from "../demo/demoServices";
+
 const API_URL = import.meta.env.VITE_API_URL || ''
 
 export interface Contact {
@@ -25,6 +28,9 @@ export interface SendMessageResponse {
 }
 
 export async function getContacts(): Promise<Contact[]> {
+  if (isDemoMode()) {
+    return demoMessaging.getContacts();
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated')
@@ -50,6 +56,9 @@ export async function createContact(contact: {
   email?: string
   notes?: string
 }): Promise<Contact> {
+  if (isDemoMode()) {
+    return demoMessaging.createContact(contact as Contact);
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated')
@@ -82,6 +91,9 @@ export async function updateContact(
     notes?: string
   }
 ): Promise<Contact> {
+  if (isDemoMode()) {
+    return demoMessaging.updateContact(id, contact);
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated')
@@ -106,6 +118,9 @@ export async function updateContact(
 }
 
 export async function deleteContact(id: string): Promise<void> {
+  if (isDemoMode()) {
+    return demoMessaging.deleteContact(id);
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated')
@@ -125,6 +140,9 @@ export async function deleteContact(id: string): Promise<void> {
 }
 
 export async function sendSMS(request: SendMessageRequest): Promise<SendMessageResponse> {
+  if (isDemoMode()) {
+    return demoMessaging.sendSMS();
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated. Please log in again.')
@@ -157,6 +175,9 @@ export async function sendSMS(request: SendMessageRequest): Promise<SendMessageR
 }
 
 export async function sendMMS(request: SendMessageRequest): Promise<SendMessageResponse> {
+  if (isDemoMode()) {
+    return demoMessaging.sendMMS();
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated. Please log in again.')
@@ -189,6 +210,9 @@ export async function sendMMS(request: SendMessageRequest): Promise<SendMessageR
 }
 
 export async function sendWhatsApp(request: SendMessageRequest): Promise<SendMessageResponse> {
+  if (isDemoMode()) {
+    return demoMessaging.sendWhatsApp();
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated. Please log in again.')
@@ -243,6 +267,9 @@ export interface WhatsAppConversation {
 }
 
 export async function getWhatsAppConversations(): Promise<WhatsAppConversation[]> {
+  if (isDemoMode()) {
+    return demoMessaging.getWhatsAppConversations();
+  }
   const token = localStorage.getItem('token')
   if (!token) {
     throw new Error('Not authenticated')

@@ -156,6 +156,15 @@ html[data-darkreader-mode] .logoText {
   gap: 16px;
 }
 
+.demoBadge {
+  background: #111827;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .menu :global(.ant-menu-item) {
   color: #333333 !important;
   font-family: var(--font-family, "Inter", sans-serif) !important;
@@ -472,6 +481,11 @@ html[data-darkreader-mode] .header :global(.ant-btn-primary:hover) {
   padding: 16px 24px;
 }
 
+.mobileDrawer :global(.ant-drawer),
+.mobileDrawer :global(.ant-drawer-mask) {
+  z-index: 4000 !important;
+}
+
 [data-theme="warm"] .mobileDrawer :global(.ant-drawer-header) {
   background-color: #fefdf8;
   border-bottom: 1px solid #e1dbc3;
@@ -488,13 +502,13 @@ html[data-darkreader-mode] .header :global(.ant-btn-primary:hover) {
 }
 
 .mobileDrawer :global(.ant-drawer-body) {
-  background-color: var(--bg-primary, #f5f5f5);
+  background-color: #ffffff;
   padding: 0;
   overflow-x: hidden;
 }
 
 [data-theme="warm"] .mobileDrawer :global(.ant-drawer-body) {
-  background-color: #faf9f4;
+  background-color: #ffffff;
 }
 
 .mobileDrawer :global(.ant-menu) {

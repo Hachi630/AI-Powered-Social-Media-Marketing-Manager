@@ -58,6 +58,7 @@ export default function ChatBox({
   >(conversationId || null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false);
+  const [demoImagePrompt, setDemoImagePrompt] = useState("");
   const [lastUserMessage, setLastUserMessage] = useState<string>("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
@@ -347,6 +348,25 @@ export default function ChatBox({
     };
   }, []);
 
+  useEffect(() => {
+    const handleDemoImage = (event: CustomEvent) => {
+      const prompt = event.detail?.prompt;
+      if (prompt) {
+        setDemoImagePrompt(prompt);
+      }
+      setImageModalOpen(true);
+    };
+    const handleDemoPlan = () => {
+      setContentPlanModalOpen(true);
+    };
+    window.addEventListener('demo-open-image-modal', handleDemoImage as EventListener);
+    window.addEventListener('demo-open-plan-modal', handleDemoPlan as EventListener);
+    return () => {
+      window.removeEventListener('demo-open-image-modal', handleDemoImage as EventListener);
+      window.removeEventListener('demo-open-plan-modal', handleDemoPlan as EventListener);
+    };
+  }, []);
+
   // Auto-send pending ELO message when input is set and component is ready
   useEffect(() => {
     if (pendingELOMessageRef.current && inputMessage === pendingELOMessageRef.current && !loading && inputMessage.trim()) {
@@ -370,6 +390,10 @@ export default function ChatBox({
 
   const handleImageGenerate = () => {
     setImageModalOpen(true);
+  };
+
+  const handlePlanGenerate = () => {
+    setContentPlanModalOpen(true);
   };
 
   // File validation
@@ -595,9 +619,15 @@ export default function ChatBox({
   const menuItems: MenuProps["items"] = [
     {
       key: "generate-image",
-      label: "Generate Image",
+      label: <span data-demo-id="image-generate">Generate Image</span>,
       icon: <PictureOutlined />,
       onClick: handleImageGenerate,
+    },
+    {
+      key: "generate-plan",
+      label: <span data-demo-id="plan-generate">Generate Plan</span>,
+      icon: <CalendarOutlined />,
+      onClick: handlePlanGenerate,
     },
     {
       key: "upload-files",
@@ -906,6 +936,7 @@ export default function ChatBox({
                             icon={<CalendarOutlined />}
                             onClick={handleOpenContentPlanModal}
                             size="small"
+                            data-demo-id="plan-generate"
                           >
                             Send to Calendar
                           </Button>
@@ -992,6 +1023,7 @@ export default function ChatBox({
                 icon={<PlusOutlined />}
                 disabled={loading || uploading}
                 className={styles.plusButton}
+                data-demo-id="image-generate"
               />
             </Tooltip>
           </Dropdown>
@@ -1020,6 +1052,7 @@ export default function ChatBox({
               onFocus={handleFocus}
               onBlur={handleBlur}
               disabled={loading || uploading}
+              data-demo-id="chat-input"
             />
           </div>
           <Tooltip title="Send message">
@@ -1048,6 +1081,7 @@ export default function ChatBox({
         onCancel={() => setImageModalOpen(false)}
         onSuccess={handleImageSuccess}
         conversationId={currentConversationId}
+        initialPrompt={demoImagePrompt}
       />
 
       {/* Content Plan Modal */}

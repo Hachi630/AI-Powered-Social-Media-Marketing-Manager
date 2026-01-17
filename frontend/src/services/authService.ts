@@ -1,4 +1,6 @@
 // API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+import { isDemoMode, getDemoToken } from "../demo/demoMode";
+import { demoAuth } from "../demo/demoServices";
 const BASE_API_URL = import.meta.env.VITE_API_URL || ''
 const API_URL = `${BASE_API_URL}/api/auth`
 
@@ -55,6 +57,11 @@ export interface AuthResponse {
 export const authService = {
   // Register user
   register: async (email: string, password: string): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      localStorage.setItem("token", getDemoToken());
+      const user = await demoAuth.getCurrentUser();
+      return { success: true, token: getDemoToken(), user: user || undefined };
+    }
     try {
       const response = await fetch(`${API_URL}/register`, {
         method: 'POST',
@@ -75,6 +82,11 @@ export const authService = {
 
   // Login user
   login: async (email: string, password: string): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      localStorage.setItem("token", getDemoToken());
+      const user = await demoAuth.getCurrentUser();
+      return { success: true, token: getDemoToken(), user: user || undefined };
+    }
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -100,6 +112,9 @@ export const authService = {
 
   // Get current user
   getCurrentUser: async (): Promise<User | null> => {
+    if (isDemoMode()) {
+      return demoAuth.getCurrentUser();
+    }
     const token = localStorage.getItem('token')
     if (!token) return null
 
@@ -119,6 +134,7 @@ export const authService = {
 
   // Check if user is logged in
   isAuthenticated: (): boolean => {
+    if (isDemoMode()) return true;
     return !!localStorage.getItem('token')
   },
 
@@ -223,6 +239,9 @@ export const authService = {
     productImages?: string[]
     meloGoals?: string[]
   }): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      return demoAuth.completeOnboarding(onboardingData);
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }

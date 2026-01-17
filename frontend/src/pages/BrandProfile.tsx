@@ -33,6 +33,8 @@ import styles from "./BrandProfile.module.css";
 import { User, authService } from "../services/authService";
 import { uploadService } from "../services/uploadService";
 import { getImageUrl } from "../utils/imageUtils";
+import { isDemoMode } from "../demo/demoMode";
+import { demoBrandProfile } from "../demo/demoServices";
 
 const { Content } = Layout;
 
@@ -294,6 +296,29 @@ export default function BrandProfile({
   useEffect(() => {
     const loadAllData = async () => {
       if (isDataLoaded) return;
+
+      if (isDemoMode()) {
+        const demo = await demoBrandProfile.getProfile();
+        const demoCompany = createDefaultCompany(demo.brandName || "Maya’s Cake Studio");
+        const demoCompanyData = {
+          ...demoCompany,
+          brandName: demo.brandName,
+          industry: demo.industry,
+          toneOfVoice: demo.toneOfVoice,
+          customTone: demo.customTone,
+          targetAudience: demo.targetAudience,
+          knowledgeProducts: demo.knowledgeProducts,
+          companyDescription: demo.companyDescription,
+          productTypes: demo.productTypes,
+          productImages: demo.productImages,
+          meloGoals: demo.meloGoals,
+        };
+        setCompanies([demoCompanyData]);
+        setSelectedCompanyId(demoCompanyData.id);
+        loadCompanyData(demoCompanyData);
+        setIsDataLoaded(true);
+        return;
+      }
 
       if (isLoggedIn) {
         try {
@@ -1549,6 +1574,7 @@ export default function BrandProfile({
             onClick={handleSaveProfile}
             loading={loading}
             className={styles.saveButton}
+            data-demo-id="brand-profile-save"
           >
             Save
           </Button>
@@ -1592,7 +1618,7 @@ export default function BrandProfile({
             </div>
           </aside>
 
-          <main className={styles.formColumn}>
+          <main className={styles.formColumn} data-demo-id="brand-profile-form">
             <div className={styles.stepHeader}>
               <Typography.Text className={styles.stepHeaderLabel}>
                 Step {currentStep + 1}

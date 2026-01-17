@@ -40,6 +40,7 @@ import Header from '../components/Header'
 import MessagingSidebar, { type MessagingSection } from '../components/MessagingSidebar'
 import { User } from '../services/authService'
 import styles from '../components/Dashboard.module.css'
+import { isDemoMode } from '../demo/demoMode'
 
 const { useBreakpoint } = Grid
 import {
@@ -533,7 +534,7 @@ export default function Messaging({
             </Row>
           </div>
 
-          <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+          <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }} data-demo-id="messaging-panel">
           <Tabs
             activeKey={activeTab}
             onChange={(key) => {
@@ -691,6 +692,25 @@ export default function Messaging({
                                 handleSendMessage()
                               }}
                             />
+                            {isDemoMode() && (
+                              <div style={{ marginTop: 12, padding: 12, background: '#f6ffed', borderRadius: 8, border: '1px solid #b7eb8f' }}>
+                                <Text strong>Demo reply suggestion</Text>
+                                <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
+                                  "Yes! We can add a custom message card and frosting text. Want to reserve pickup for tomorrow?"
+                                </Text>
+                                <Button
+                                  size="small"
+                                  style={{ marginTop: 8 }}
+                                  onClick={() =>
+                                    setMessageText(
+                                      "Yes! We can add a custom message card and frosting text. Want to reserve pickup for tomorrow?"
+                                    )
+                                  }
+                                >
+                                  Use Suggestion
+                                </Button>
+                              </div>
+                            )}
                           </div>
 
                           {/* Action Buttons */}

@@ -6,6 +6,7 @@ import { authService } from '../services/authService';
 import { uploadService } from '../services/uploadService';
 import { useAppSettings } from '../contexts/AppSettingsContext';
 import styles from './OnboardingModal.module.css';
+import { isDemoMode } from '../demo/demoMode';
 
 // Lazy load Live2DWidget for preview
 const Live2DWidgetLazy = lazy(() => import('./Live2DWidget'));
@@ -148,8 +149,35 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       setSelectedCharacter(CHARACTER_OPTIONS[0].path);
       setLoading(false);
       setUploading(false);
+      if (isDemoMode()) {
+        setBrandName("Maya’s Cake Studio");
+        setSelectedTargetAudience(["Working Professionals", "Parents / Families"]);
+        setSelectedProductTypes(["Food & Beverage"]);
+        setSelectedMeloGoals(["Attract more customers", "Save time on content creation"]);
+        setSelectedPublishingPlatforms(["Instagram", "Facebook"]);
+        setSelectedContentTypes(["Social media posts"]);
+      }
     }
   }, [open]);
+
+  useEffect(() => {
+    const handleDemoStep = (event: CustomEvent) => {
+      const step = event.detail?.step;
+      if (typeof step === "number") {
+        setCurrentStep(step);
+      }
+    };
+    window.addEventListener(
+      "demo-onboarding-step",
+      handleDemoStep as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "demo-onboarding-step",
+        handleDemoStep as EventListener
+      );
+    };
+  }, []);
 
   const handleNext = () => {
     // Validate current step
@@ -585,7 +613,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
                 </Space>
               </Col>
               <Col xs={24} sm={24} md={12} lg={12}>
-                <div className={styles.characterPreview}>
+                <div className={styles.characterPreview} data-demo-id="onboarding-live2d">
                   <Text type="secondary" style={{ display: 'block', marginBottom: 8, textAlign: 'center' }}>
                     Preview
                   </Text>
@@ -617,7 +645,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       width={600}
       className={styles.onboardingModal}
     >
-      <div className={styles.modalContent}>
+      <div className={styles.modalContent} data-demo-id="onboarding-form">
         <div className={styles.progressSection}>
           <Progress
             percent={(currentStep / 8) * 100}
@@ -641,11 +669,11 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
               </Button>
             )}
             {currentStep < 8 ? (
-              <Button type="primary" icon={<RightOutlined />} onClick={handleNext}>
+              <Button type="primary" icon={<RightOutlined />} onClick={handleNext} data-demo-id="onboarding-submit">
                 Next
               </Button>
             ) : (
-              <Button type="primary" loading={loading} onClick={handleComplete}>
+              <Button type="primary" loading={loading} onClick={handleComplete} data-demo-id="onboarding-submit">
                 Complete
               </Button>
             )}
