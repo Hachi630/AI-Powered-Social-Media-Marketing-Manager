@@ -110,14 +110,14 @@ export const demoSteps: DemoStep[] = [
       // Navigate to February 2026
       setTimeout(() => {
         // Find the right arrow button to go to next month
-        const buttons = document.querySelectorAll('button[type="button"]');
-        let nextButton: HTMLElement | null = null;
+        const buttons = document.querySelectorAll<HTMLButtonElement>('button[type="button"]');
+        let nextButton: HTMLButtonElement | null = null;
 
         // Look for the button with RightOutlined icon
         buttons.forEach((btn) => {
           const hasRightIcon = btn.querySelector('.anticon-right');
           if (hasRightIcon) {
-            nextButton = btn as HTMLElement;
+            nextButton = btn;
           }
         });
 

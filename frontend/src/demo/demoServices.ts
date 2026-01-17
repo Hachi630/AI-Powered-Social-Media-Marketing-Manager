@@ -310,7 +310,7 @@ export const demoAnalytics = async () => {
         },
         totalAIWords: 8240,
         next7Days: DEMO_CALENDAR_ITEMS.map((item) => ({
-          type: "calendar",
+          type: "calendar" as const,
           id: item.id,
           title: item.title,
           platform: item.platform,

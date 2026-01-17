@@ -8,6 +8,7 @@ export const DEMO_USER = {
   email: "maya@cakeshop.demo",
   name: "Maya",
   onboardingCompleted: false,
+  createdAt: new Date().toISOString(),
 };
 
 const baseDate = dayjs().startOf("month").add(1, "day");

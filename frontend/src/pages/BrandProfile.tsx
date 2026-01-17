@@ -340,11 +340,20 @@ export default function BrandProfile({
 
               if (
                 savedSelectedId &&
-                currentUser.companies.find((c: CompanyData) => c.id === savedSelectedId)
+                currentUser.companies.find((c: any) => c.id === savedSelectedId)
               ) {
-                companyToLoad = currentUser.companies.find(
-                  (c: CompanyData) => c.id === savedSelectedId
-                ) as CompanyData;
+                const found = currentUser.companies.find(
+                  (c: any) => c.id === savedSelectedId
+                );
+                if (found) {
+                  companyToLoad = {
+                    ...companyToLoad,
+                    ...found,
+                    toneAdjectives: found.toneAdjectives || [],
+                    toneDos: found.toneDos || [],
+                    toneDonts: found.toneDonts || [],
+                  } as CompanyData;
+                }
                 setSelectedCompanyId(savedSelectedId);
               } else {
                 setSelectedCompanyId(companyToLoad.id);
