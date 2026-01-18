@@ -139,8 +139,19 @@ export default function LinkedInDashboard({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     isMobile || isTablet
   );
+  
+  // Get initial platform from URL params, default to "linkedin"
+  const location = useLocation();
+  const getInitialPlatform = (): SocialPlatform => {
+    const params = new URLSearchParams(location.search);
+    const platformParam = params.get("platform");
+    if (platformParam && ["linkedin", "twitter", "facebook", "instagram"].includes(platformParam)) {
+      return platformParam as SocialPlatform;
+    }
+    return "linkedin";
+  };
   const [selectedPlatform, setSelectedPlatform] =
-    useState<SocialPlatform>("linkedin");
+    useState<SocialPlatform>(getInitialPlatform());
 
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -452,8 +463,14 @@ export default function LinkedInDashboard({
     loadSocialStatus();
   }, [jwt]);
 
-  // Get current location to watch for URL changes
-  const location = useLocation();
+  // Update selectedPlatform when URL platform parameter changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const platformParam = params.get("platform");
+    if (platformParam && ["linkedin", "twitter", "facebook", "instagram"].includes(platformParam)) {
+      setSelectedPlatform(platformParam as SocialPlatform);
+    }
+  }, [location.search]);
 
   // Handle Facebook/Instagram OAuth callback (like Twitter)
   useEffect(() => {

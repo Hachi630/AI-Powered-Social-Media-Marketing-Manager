@@ -171,11 +171,11 @@ router.get("/callback", async (req: Request, res: Response) => {
         return res.json({
           success: true,
           message: "Redirecting to social dashboard",
-          redirectUrl: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard`,
+          redirectUrl: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?platform=facebook`,
         });
       }
       return res.redirect(
-        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard`
+        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?platform=facebook`
       );
     }
 
@@ -312,8 +312,8 @@ router.get("/callback", async (req: Request, res: Response) => {
         // Include instagram=connected if Instagram was auto-connected
         const instagramConnected = !!user.socialConnections?.instagram?.userId;
         const redirectUrl = instagramConnected
-          ? `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`
-          : `${clientUrl}/socialdashboard?facebook=connected`;
+          ? `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=facebook`
+          : `${clientUrl}/socialdashboard?facebook=connected&platform=facebook`;
 
         if (isFrontendCallback) {
           const response: any = {
