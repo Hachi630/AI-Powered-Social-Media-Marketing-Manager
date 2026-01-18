@@ -778,13 +778,43 @@ export default function BrandProfile({
 
       saveCurrentToCompany();
 
+      // Build updated companies array directly from current form values
+      // This ensures we use the latest form data, not stale state
+      const updatedCompanies = companies.map((company) => {
+        if (company.id === selectedCompanyId) {
+          return {
+            ...company,
+            name: brandName.trim() || company.name,
+            brandName: brandName.trim(),
+            industry: industry.trim(),
+            toneOfVoice: toneOfVoice,
+            customTone: customTone.trim(),
+            knowledgeProducts: [...knowledgeProducts],
+            targetAudience: [...audienceTags],
+            companyDescription: companyDescription.trim(),
+            brandLogoUrl: brandLogoUrl.trim(),
+            productTypes: [...productTypes],
+            productImages: [...productImages],
+            meloGoals: [...meloGoals],
+          };
+        }
+        return company;
+      });
+
+      // Update companies array in state before saving
+      setCompanies(updatedCompanies);
+      
+      // Save to localStorage
+      localStorage.setItem("melo_companies", JSON.stringify(updatedCompanies));
+
       const response = await authService.updateProfile({
         brandName: brandName.trim(),
         industry: industry.trim(),
         toneOfVoice,
         knowledgeProducts,
         targetAudience: audienceTags,
-        companyDescription: companyDescription.trim(),
+        companyDescription,
+        companies: updatedCompanies, // CRITICAL: Send companies array with productImages
       });
 
       if (response.success && response.user) {

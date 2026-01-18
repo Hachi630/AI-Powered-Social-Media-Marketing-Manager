@@ -183,11 +183,11 @@ router.get("/callback", async (req: Request, res: Response) => {
         return res.json({
           success: true,
           message: "Redirecting to social dashboard",
-          redirectUrl: `${clientUrl}/socialdashboard?instagram=connected`,
+          redirectUrl: `${clientUrl}/socialdashboard?instagram=connected&platform=instagram`,
         });
       }
       return res.redirect(
-        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?instagram=connected`
+        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?instagram=connected&platform=instagram`
       );
     }
 
@@ -348,7 +348,7 @@ router.get("/callback", async (req: Request, res: Response) => {
             process.env.CLIENT_URL ||
             process.env.FRONTEND_URL ||
             "http://localhost:3000";
-          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`;
 
           if (isFrontendCallback) {
             return res.json({
@@ -449,7 +449,7 @@ router.get("/callback", async (req: Request, res: Response) => {
                 process.env.CLIENT_URL ||
                 process.env.FRONTEND_URL ||
                 "http://localhost:3000";
-              const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+              const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`;
 
               if (isFrontendCallback) {
                 return res.json({
@@ -553,7 +553,7 @@ router.get("/callback", async (req: Request, res: Response) => {
         process.env.CLIENT_URL ||
         process.env.FRONTEND_URL ||
         "http://localhost:3000";
-      const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+      const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`;
 
       if (isFrontendCallback) {
         return res.json({
@@ -1165,7 +1165,7 @@ router.post(
       res.json({
         success: true,
         message: "Successfully connected Instagram and Facebook Page",
-        redirectUrl: `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`,
+        redirectUrl: `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`,
         instagram: {
           userId: instagramAccount.instagramAccountId,
           username: instagramAccount.username,
@@ -1263,7 +1263,7 @@ router.get(
           id: instagram.userId,
           username: profileResponse.data.username || instagram.username,
           name: profileResponse.data.username || instagram.username,
-          email: null, // Instagram API doesn't provide email
+          email: freshUser.email || null, // Use user's email from database (Instagram API doesn't provide email)
           picture: null,
           accountType: instagram.accountType || 'BUSINESS', // Use stored accountType or default
         };
@@ -1277,7 +1277,7 @@ router.get(
           id: instagram.userId,
           username: instagram.username,
           name: instagram.username || "Instagram Account",
-          email: null,
+          email: freshUser.email || null, // Use user's email from database
           picture: null,
           accountType: instagram.accountType || 'BUSINESS',
         };
