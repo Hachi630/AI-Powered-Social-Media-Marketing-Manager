@@ -2,7 +2,7 @@
 
 Melo is an AI-powered social media and marketing management platform that helps businesses create, manage, and optimize their social media content and marketing strategies.
 
-## 📋 Table of Contents 
+## 📋 Table of Contents
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -14,6 +14,11 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [LinkedIn Integration](#-linkedin-integration)
 - [Deployment](#-deployment)
 - [Additional Features](#-additional-features)
+  - [Content Plan Generation](#content-plan-generation)
+  - [Campaign Management](#campaign-management)
+  - [Multi-Company Support](#multi-company-support)
+  - [ELO AI Assistant](#elo-ai-assistant)
+  - [Demo Mode & Interactive Product Tour](#demo-mode--interactive-product-tour)
 - [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
@@ -42,6 +47,8 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **Facebook & Instagram Integration**: Connect Facebook and Instagram accounts via OAuth and publish content directly
 - **ELO AI Assistant**: Interactive Live2D AI assistant with intelligent guidance, quick actions, and proactive tips
 - **ELO Crawl Animation**: When user is inactive for 15 seconds, ELO slowly crawls across the screen with smooth animation
+- **Demo Mode**: Interactive product tour with step-by-step guidance using spotlight effects and tooltips
+- **PPT-Style Presentation**: Guided walkthrough of all major features with draggable tooltips and keyboard navigation
 - **Dark Mode**: Built-in dark mode support with theme toggle
 - **Responsive Design**: Modern UI built with Ant Design, fully responsive across devices
 
@@ -183,6 +190,11 @@ Melo/
 │   │   │   ├── CalendarItemModal.tsx
 │   │   │   ├── ContentPlanModal.tsx
 │   │   │   └── LinkedInDashboard.tsx
+│   │   ├── demo/            # Demo mode components
+│   │   │   ├── DemoPresenter.tsx
+│   │   │   ├── demoSteps.ts
+│   │   │   ├── demoMode.ts
+│   │   │   └── demoServices.ts
 │   │   ├── pages/           # Page components
 │   │   │   ├── BrandProfile.tsx
 │   │   │   ├── Calendar.tsx
@@ -824,6 +836,31 @@ Interactive Live2D AI assistant that provides intelligent guidance and proactive
 - **Crawl Animation**: When user is inactive for 15 seconds, ELO slowly crawls across the screen (50 pixels/second, 5-15 seconds duration) with smooth, natural movement
 - **Page Persistence**: Chat dialog opens on current page without navigation
 - **Context-Aware**: Welcome messages adapt based on current page (Dashboard, Calendar, etc.)
+
+### Demo Mode & Interactive Product Tour
+
+PPT-style interactive walkthrough that guides users through all major features:
+
+- **Step-by-Step Guidance**: 13-step guided tour covering onboarding, AI features, calendar, scheduling, and analytics
+- **Spotlight Effects**: Dynamic spotlight highlights target UI elements
+- **Draggable Tooltips**: Informative tooltips that can be repositioned by dragging
+- **Progress Tracking**: Visual progress bar showing completion percentage
+- **Keyboard Navigation**: Arrow keys (Left/Right) for navigation, Escape to restart
+- **Automated Actions**: Simulates user interactions (form filling, image generation, plan creation)
+- **Multi-Page Tour**: Seamlessly navigates across different pages (Dashboard, Calendar, Settings, Analytics, Messaging)
+- **Feature Demonstrations**:
+  - Onboarding form with Live2D assistant selection
+  - AI-powered chat and question answering
+  - Image generation with custom prompts
+  - Content plan generation and calendar integration
+  - Calendar scheduling with time picker
+  - Brand profile configuration
+  - Social dashboard management
+  - Analytics and KPI insights
+  - Messaging capabilities
+- **Demo Controls**: Back, Next, Restart, and Exit buttons for full control
+- **Context-Aware**: Tooltips adjust position based on screen layout
+- **Demo Banner**: Persistent "Demo Mode" indicator during tour
 
 ## 🔧 Troubleshooting
 
