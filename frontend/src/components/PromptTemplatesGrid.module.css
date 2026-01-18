@@ -1,0 +1,16 @@
+.templatesContainer {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .templatesContainer {
+    gap: 8px;
+    margin-top: 12px;
+  }
+}

@@ -15,6 +15,8 @@ export interface ICompanyData {
   productTypes?: string[]
   productImages?: string[]
   meloGoals?: string[]
+  publishingPlatforms?: string[]
+  contentTypes?: string[]
 }
 
 export interface IUser extends Document {
@@ -214,6 +216,14 @@ const UserSchema: Schema = new Schema(
           default: [],
         },
         meloGoals: {
+          type: [String],
+          default: [],
+        },
+        publishingPlatforms: {
+          type: [String],
+          default: [],
+        },
+        contentTypes: {
           type: [String],
           default: [],
         },

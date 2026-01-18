@@ -656,9 +656,9 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     const distance = Math.sqrt(
       Math.pow(targetX - currentPos.x, 2) + Math.pow(targetY - currentPos.y, 2)
     );
-    // Calculate duration based on distance - very slow crawl movement (about 40-60 pixels per second)
-    const pixelsPerSecond = 50; // Very slow crawl speed for realistic crawling feel
-    const duration = Math.max(5000, Math.min(15000, (distance / pixelsPerSecond) * 1000)); // 5-15 seconds based on distance
+    // Calculate duration based on distance - extremely slow crawl movement for smooth, natural feel
+    const pixelsPerSecond = 20; // Much slower crawl speed (reduced from 50 to 20)
+    const duration = Math.max(8000, Math.min(25000, (distance / pixelsPerSecond) * 1000)); // 8-25 seconds based on distance
     const startTime = Date.now();
     const startX = currentPos.x;
     const startY = currentPos.y;
@@ -699,11 +699,11 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
             const returnStartY = targetY;
             // Calculate return duration based on distance
             const returnDistance = Math.sqrt(
-              Math.pow(originalPositionRef.current.x - targetX, 2) + 
+              Math.pow(originalPositionRef.current.x - targetX, 2) +
               Math.pow(originalPositionRef.current.y - targetY, 2)
             );
-            const pixelsPerSecond = 50; // Same slow speed for return
-            const returnDuration = Math.max(4000, Math.min(12000, (returnDistance / pixelsPerSecond) * 1000)); // 4-12 seconds to return
+            const pixelsPerSecond = 20; // Much slower return speed (reduced from 50 to 20)
+            const returnDuration = Math.max(6000, Math.min(20000, (returnDistance / pixelsPerSecond) * 1000)); // 6-20 seconds to return
 
             const returnAnimate = () => {
               const returnElapsed = Date.now() - returnStartTime;
@@ -766,16 +766,12 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     };
   }, []);
 
-  // Inactivity detection - trigger crawl after 15 seconds
+  // Inactivity detection - DISABLED (user requested no automatic crawling)
   useInactivity({
     timeout: 15000,
-    enabled: isLoaded && !isDragging && !isCrawlingRef.current && !dialogOpen && !isPreview,
+    enabled: false, // Disabled automatic crawling
     onInactive: () => {
-      // Use ref to check latest state and call function
-      if (!isCrawlingRef.current && !isDragging && !dialogOpen && isLoaded && performCrawlAnimationRef.current) {
-        console.log('[ELO] User inactive for 15 seconds, starting crawl');
-        performCrawlAnimationRef.current();
-      }
+      // Crawl animation disabled by user request
     },
   });
 

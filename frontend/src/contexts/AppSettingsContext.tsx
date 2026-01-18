@@ -522,6 +522,28 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [settings]);
 
+  // Listen for demo settings update event
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const newSettings = { ...DEFAULT_SETTINGS, ...parsed };
+          setSettings(newSettings);
+          setPendingSettings(newSettings);
+        }
+      } catch (error) {
+        console.error("Failed to reload app settings:", error);
+      }
+    };
+
+    window.addEventListener("demo-settings-updated", handleSettingsUpdate);
+    return () => {
+      window.removeEventListener("demo-settings-updated", handleSettingsUpdate);
+    };
+  }, []);
+
   const updatePendingSettings = (newSettings: Partial<AppSettings>) => {
     setPendingSettings((prev) => ({ ...prev, ...newSettings }));
   };

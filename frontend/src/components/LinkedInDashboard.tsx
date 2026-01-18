@@ -109,6 +109,30 @@ import {
 } from "../services/socialService";
 import { User } from "../services/authService";
 import { getImageUrl } from "../utils/imageUtils";
+import { isDemoMode } from "../demo/demoMode";
+
+// Demo mode mock data for LinkedIn
+const DEMO_LINKEDIN_METRICS = {
+  connected: true,
+  profile: {
+    name: "Maya Chen",
+    picture: "/src/img/melo-logo.jpg",
+    email: "maya@sweetcakeshop.com",
+    sub: "demo-user-linkedin",
+  },
+  organizations: [
+    {
+      id: "demo-org-1",
+      name: "Sweet Cake Shop",
+      logoUrl: "https://via.placeholder.com/48/FF69B4/FFFFFF?text=SC",
+    },
+  ],
+  metrics: {
+    followers: 1234,
+    connections: 567,
+    profileViews: 890,
+  },
+};
 
 interface LinkedInDashboardProps {
   isLoggedIn?: boolean;
@@ -215,8 +239,8 @@ export default function LinkedInDashboard({
   // Instagram Post states
   const [instagramPostText, setInstagramPostText] = useState("");
   const [instagramPostType, setInstagramPostType] = useState<
-    "text" | "image" | "video" | "link"
-  >("text");
+    "image" | "video"
+  >("image");
 
   const [instagramSelectedImage, setInstagramSelectedImage] =
     useState<File | null>(null);
@@ -287,6 +311,13 @@ export default function LinkedInDashboard({
   // Load LinkedIn metrics
   useEffect(() => {
     const loadMetrics = async () => {
+      // Demo mode override - set mock data immediately
+      if (isDemoMode()) {
+        setMetrics(DEMO_LINKEDIN_METRICS);
+        setLoading(false);
+        return;
+      }
+
       if (!jwt) {
         setLoading(false);
         return;
@@ -643,6 +674,14 @@ export default function LinkedInDashboard({
   }, [jwt, metrics?.connected]);
 
   const handleRefreshMetrics = async () => {
+    // Demo mode - refresh with mock data
+    if (isDemoMode()) {
+      setLoading(true);
+      setMetrics(DEMO_LINKEDIN_METRICS);
+      setLoading(false);
+      return;
+    }
+
     if (!jwt) return;
     setLoading(true);
     try {
@@ -1486,7 +1525,7 @@ export default function LinkedInDashboard({
       );
     }
 
-    const isConnected = metrics?.connected === true;
+    const isConnected = isDemoMode() ? true : (metrics?.connected === true);
     const profile = metrics?.profile;
 
     return (
@@ -1677,6 +1716,7 @@ export default function LinkedInDashboard({
                 }}
                 styles={{ body: { padding: 24 } }}
               >
+                <div data-demo-id="social-post-box">
                 <div
                   style={{
                     display: "flex",
@@ -2036,6 +2076,7 @@ export default function LinkedInDashboard({
                   >
                     {posting ? "Publishing..." : "Post to LinkedIn"}
                   </Button>
+                </div>
                 </div>
               </Card>
             )}
@@ -3180,7 +3221,7 @@ export default function LinkedInDashboard({
                     value={instagramPostType}
                     onChange={(value) => {
                       setInstagramPostType(
-                        value as "text" | "image" | "video" | "link"
+                        value as "image" | "video"
                       );
                       if (value !== "image") {
                         handleInstagramRemoveImage();
@@ -3188,23 +3229,8 @@ export default function LinkedInDashboard({
                       if (value !== "video") {
                         handleInstagramVideoClear();
                       }
-                      if (value !== "link") {
-                        setInstagramLinkUrl("");
-                        setInstagramLinkTitle("");
-                        setInstagramLinkDescription("");
-                      }
                     }}
                     options={[
-                      {
-                        label: (
-                          <Tooltip title="Text Post">
-                            <span>
-                              <SendOutlined /> Text
-                            </span>
-                          </Tooltip>
-                        ),
-                        value: "text",
-                      },
                       {
                         label: (
                           <Tooltip title="Image Post">
@@ -3225,16 +3251,6 @@ export default function LinkedInDashboard({
                         ),
                         value: "video",
                       },
-                      {
-                        label: (
-                          <Tooltip title="Link Post">
-                            <span>
-                              <LinkOutlined /> Link
-                            </span>
-                          </Tooltip>
-                        ),
-                        value: "link",
-                      },
                     ]}
                     style={{ marginBottom: 8 }}
                   />
@@ -3249,33 +3265,6 @@ export default function LinkedInDashboard({
                   autoSize={{ minRows: 3, maxRows: 6 }}
                   style={{ marginBottom: 16, borderRadius: 8 }}
                 />
-
-                {/* Link Fields */}
-                {instagramPostType === "link" && (
-                  <div style={{ marginBottom: 16 }}>
-                    <Input
-                      placeholder="Enter URL (e.g., https://example.com)"
-                      value={instagramLinkUrl}
-                      onChange={(e) => setInstagramLinkUrl(e.target.value)}
-                      prefix={<LinkOutlined />}
-                      style={{ marginBottom: 8, borderRadius: 8 }}
-                    />
-                    <Input
-                      placeholder="Link title (optional)"
-                      value={instagramLinkTitle}
-                      onChange={(e) => setInstagramLinkTitle(e.target.value)}
-                      style={{ marginBottom: 8, borderRadius: 8 }}
-                    />
-                    <Input
-                      placeholder="Link description (optional)"
-                      value={instagramLinkDescription}
-                      onChange={(e) =>
-                        setInstagramLinkDescription(e.target.value)
-                      }
-                      style={{ borderRadius: 8 }}
-                    />
-                  </div>
-                )}
 
                 {/* Image Upload Section */}
                 {instagramPostType === "image" && (
@@ -3476,7 +3465,7 @@ export default function LinkedInDashboard({
 
                           // Reset form
                           setInstagramPostText("");
-                          setInstagramPostType("text");
+                          setInstagramPostType("image");
                           setInstagramSelectedImage(null);
                           setInstagramImagePreview(null);
                           setInstagramSelectedVideo(null);
@@ -3484,9 +3473,6 @@ export default function LinkedInDashboard({
                             URL.revokeObjectURL(instagramVideoPreview);
                           }
                           setInstagramVideoPreview(null);
-                          setInstagramLinkUrl("");
-                          setInstagramLinkTitle("");
-                          setInstagramLinkDescription("");
                         } else {
                           message.error(result.error || "Failed to post to Instagram");
                         }
@@ -3825,7 +3811,7 @@ export default function LinkedInDashboard({
   };
 
   // Define isConnected at component level for use in return statement
-  const isConnected = metrics?.connected === true;
+  const isConnected = isDemoMode() ? true : (metrics?.connected === true);
 
   return (
     <Layout className={`${styles.dashboard} ${styles.dashboardLight}`}>

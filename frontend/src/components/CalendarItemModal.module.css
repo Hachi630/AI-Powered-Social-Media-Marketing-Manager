@@ -1,28 +1,25 @@
-.modal {
-  /* Modal specific styles if needed */
+.drawer {
+  /* Drawer specific styles if needed */
 }
 
-.modal :global(.ant-modal-wrap) {
+.drawer :global(.ant-drawer),
+.drawer :global(.ant-drawer-mask) {
+  z-index: 3000 !important;
+}
+
+.drawer :global(.ant-drawer-content) {
   z-index: 2000 !important;
 }
 
-.modal :global(.ant-modal) {
-  z-index: 2000 !important;
-}
-
-.modal :global(.ant-modal-mask) {
-  z-index: 1999 !important;
-}
-
-.modal :global(.ant-modal-body) {
+.drawer :global(.ant-drawer-body) {
   padding: 24px;
 }
 
-.modal :global(.ant-form-item) {
+.drawer :global(.ant-form-item) {
   margin-bottom: 16px;
 }
 
-.modal :global(.ant-tabs-content-holder) {
+.drawer :global(.ant-tabs-content-holder) {
   margin-top: 16px;
 }
 
@@ -90,7 +87,7 @@
 }
 
 .imageUploadArea:hover {
-  border-color: #1890ff;
+  border-color: #10b981;
 }
 
 /* Mobile responsive styles for image upload buttons */
@@ -111,26 +108,26 @@
   }
   
   /* Make Status and Campaign fields vertical on mobile */
-  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) {
+  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) {
     flex-direction: column !important;
     width: 100% !important;
     align-items: stretch !important;
   }
   
-  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) {
+  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) {
     width: 100% !important;
     flex: 1 1 100% !important;
     margin-bottom: 0 !important;
   }
   
-  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) {
+  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) {
     width: 100% !important;
     flex: 1 1 100% !important;
     margin-bottom: 16px !important;
   }
   
-  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-select),
-  .modal :global(.ant-modal-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-input) {
+  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-select),
+  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-input) {
     width: 100% !important;
   }
 }

@@ -725,20 +725,34 @@ router.post(
             
             // Delete local temporary file
             fs.unlinkSync(imageFile.path);
-          } catch (s3Error) {
-            console.error("[Instagram Share] S3 upload failed, using local storage:", s3Error);
-            // Fall back to local storage
-            const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-            const relativePath = `/uploads/images/${imageFile.filename}`;
-            finalImageUrl = `${backendUrl}${relativePath}`;
-            console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+          } catch (s3Error: any) {
+            console.error("[Instagram Share] S3 upload failed:", s3Error);
+            // Don't fallback to local storage - Instagram cannot access localhost URLs
+            // If S3 is configured but upload fails, throw an error
+            // Provide helpful error message based on error type
+            let errorMessage = s3Error.message || 'Unknown error';
+            if (errorMessage.includes('does not allow ACLS') || errorMessage.includes('ACL')) {
+              errorMessage = 
+                `S3 bucket does not allow ACLs. ` +
+                `Your S3 bucket uses "Bucket owner enforced" Object Ownership, which disables ACLs. ` +
+                `To enable public access for Instagram images, you need to configure a Bucket Policy instead: ` +
+                `Go to S3 Console > Your Bucket > Permissions > Bucket Policy, and add a policy that allows public read access for "instagram/*" objects. ` +
+                `Example: {"Version":"2012-10-17","Statement":[{"Sid":"PublicRead","Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::BUCKET_NAME/instagram/*"}]} ` +
+                `Also ensure "Block public access" settings allow the bucket policy to grant public access.`;
+            }
+            throw new Error(
+              `Failed to upload image to S3: ${errorMessage}. ` +
+              `Instagram API requires publicly accessible URLs and cannot access localhost.`
+            );
           }
         } else {
-          // Use local storage
-          const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-          const relativePath = `/uploads/images/${imageFile.filename}`;
-          finalImageUrl = `${backendUrl}${relativePath}`;
-          console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+          // S3 is not configured - Instagram requires publicly accessible URLs
+          // Don't use local storage as Instagram API cannot access localhost URLs
+          throw new Error(
+            'S3 is not configured. Instagram API requires publicly accessible image URLs. ' +
+            'Please configure AWS S3 (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION) or use Google Drive for image storage. ' +
+            'Localhost URLs are not accessible by Instagram API.'
+          );
         }
       }
       
@@ -761,20 +775,34 @@ router.post(
             
             // Delete local temporary file
             fs.unlinkSync(videoFile.path);
-          } catch (s3Error) {
-            console.error("[Instagram Share] S3 upload failed, using local storage:", s3Error);
-            // Fall back to local storage
-            const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-            const relativePath = `/uploads/images/${videoFile.filename}`;
-            finalVideoUrl = `${backendUrl}${relativePath}`;
-            console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+          } catch (s3Error: any) {
+            console.error("[Instagram Share] S3 upload failed:", s3Error);
+            // Don't fallback to local storage - Instagram cannot access localhost URLs
+            // If S3 is configured but upload fails, throw an error
+            // Provide helpful error message based on error type
+            let errorMessage = s3Error.message || 'Unknown error';
+            if (errorMessage.includes('does not allow ACLS') || errorMessage.includes('ACL')) {
+              errorMessage = 
+                `S3 bucket does not allow ACLs. ` +
+                `Your S3 bucket uses "Bucket owner enforced" Object Ownership, which disables ACLs. ` +
+                `To enable public access for Instagram videos, you need to configure a Bucket Policy instead: ` +
+                `Go to S3 Console > Your Bucket > Permissions > Bucket Policy, and add a policy that allows public read access for "instagram/*" objects. ` +
+                `Example: {"Version":"2012-10-17","Statement":[{"Sid":"PublicRead","Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::BUCKET_NAME/instagram/*"}]} ` +
+                `Also ensure "Block public access" settings allow the bucket policy to grant public access.`;
+            }
+            throw new Error(
+              `Failed to upload video to S3: ${errorMessage}. ` +
+              `Instagram API requires publicly accessible URLs and cannot access localhost.`
+            );
           }
         } else {
-          // Use local storage
-          const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-          const relativePath = `/uploads/images/${videoFile.filename}`;
-          finalVideoUrl = `${backendUrl}${relativePath}`;
-          console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+          // S3 is not configured - Instagram requires publicly accessible URLs
+          // Don't use local storage as Instagram API cannot access localhost URLs
+          throw new Error(
+            'S3 is not configured. Instagram API requires publicly accessible video URLs. ' +
+            'Please configure AWS S3 (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION) or use Google Drive for video storage. ' +
+            'Localhost URLs are not accessible by Instagram API.'
+          );
         }
       }
 
@@ -928,6 +956,31 @@ router.post(
           message:
             "Instagram access token expired or invalid. Please reconnect your account.",
           requiresAuth: true,
+        });
+      }
+
+      // Check if it's an S3 upload error
+      if (error.message && (error.message.includes('S3 upload failed') || error.message.includes('S3 is not configured'))) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      // Check if it's the "Only photo or video can be accepted as media type" error
+      // This usually means Instagram API cannot access the image URL
+      if (
+        error.response?.data?.error?.message?.includes('Only photo or video can be accepted as media type') ||
+        error.message?.includes('Only photo or video can be accepted as media type')
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Failed to create media container: Only photo or video can be accepted as media type. " +
+            "This usually means Instagram API cannot access the image URL. " +
+            "Ensure the image URL is publicly accessible (not localhost). " +
+            "For local testing, use ngrok or deploy to a public URL. " +
+            "If using S3, ensure the bucket allows public read access and the file is uploaded with public-read ACL.",
         });
       }
 

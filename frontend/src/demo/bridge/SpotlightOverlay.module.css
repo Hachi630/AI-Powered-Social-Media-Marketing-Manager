@@ -1,0 +1,43 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 13, 22, 0.62);
+  z-index: 6000;
+  pointer-events: none;
+}
+
+.spotlight {
+  position: fixed;
+  border-radius: 14px;
+  box-shadow: 0 0 0 9999px rgba(11, 13, 22, 0.62);
+  outline: 2px solid rgba(255, 255, 255, 0.92);
+  transition: all 140ms ease;
+  pointer-events: none;
+  z-index: 6001;
+}
+
+.tooltip {
+  position: fixed;
+  max-width: 360px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0b1020;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+  z-index: 6002;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.body {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(11, 16, 32, 0.72);
+}
+

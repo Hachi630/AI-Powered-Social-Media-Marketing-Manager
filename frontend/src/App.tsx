@@ -29,6 +29,11 @@ import FacebookCallback from "./pages/FacebookCallback";
 import OnboardingModal from "./components/OnboardingModal";
 import Analytics from "./pages/Analytics";
 import Messaging from "./pages/Messaging";
+import DemoPresenter from "./demo/DemoPresenter";
+import { isDemoMode } from "./demo/demoMode";
+import { demoAuth } from "./demo/demoServices";
+import DeckPage from "./deck/DeckPage";
+import DemoEmbedBridge from "./demo/bridge/DemoEmbedBridge";
 
 // Lazy load Live2D Widget to prevent import-time errors
 const Live2DWidgetLazy = lazy(() =>
@@ -101,9 +106,28 @@ function AppContent() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const { message } = AntApp.useApp();
   const { resetSettings } = useAppSettings();
+  const isDeckRoute = location.pathname === "/deck";
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (isDeckRoute) {
+        setIsLoading(false);
+        return;
+      }
+      if (isDemoMode()) {
+        const demoUser = await demoAuth.getCurrentUser();
+        if (demoUser) {
+          setIsLoggedIn(true);
+          setUser(demoUser);
+          const hasSeenOnboarding =
+            localStorage.getItem("melo_demo_onboarding_done") === "true";
+          if (!hasSeenOnboarding) {
+            setShowOnboarding(true);
+          }
+        }
+        setIsLoading(false);
+        return;
+      }
       if (authService.isAuthenticated()) {
         const currentUser = await authService.getCurrentUser();
         if (currentUser) {
@@ -130,7 +154,7 @@ function AppContent() {
       setIsLoading(false);
     };
     checkAuth();
-  }, []);
+  }, [isDeckRoute, resetSettings]);
 
   // Check for holidays and show reminder
   useEffect(() => {
@@ -179,6 +203,35 @@ function AppContent() {
       window.history.replaceState({}, "", location.pathname);
     }
   }, [location, message]);
+
+  // Listen for demo event to hide onboarding
+  useEffect(() => {
+    const handleHideOnboarding = () => {
+      if (isDemoMode()) {
+        setShowOnboarding(false);
+      }
+    };
+    window.addEventListener("demo-hide-onboarding", handleHideOnboarding);
+    return () => {
+      window.removeEventListener("demo-hide-onboarding", handleHideOnboarding);
+    };
+  }, []);
+
+  // Listen for demo onboarding completed event to update user state
+  useEffect(() => {
+    const handleOnboardingCompleted = async () => {
+      if (isDemoMode()) {
+        const updatedUser = await demoAuth.getCurrentUser();
+        if (updatedUser) {
+          setUser(updatedUser);
+        }
+      }
+    };
+    window.addEventListener("demo-onboarding-completed", handleOnboardingCompleted);
+    return () => {
+      window.removeEventListener("demo-onboarding-completed", handleOnboardingCompleted);
+    };
+  }, []);
 
   const handleLoginSuccess = (user: User) => {
     setIsLoggedIn(true);
@@ -247,6 +300,10 @@ function AppContent() {
               user={user}
             />
           }
+        />
+        <Route
+          path="/deck"
+          element={<DeckPage />}
         />
         <Route
           path="/dashboard"
@@ -341,14 +398,18 @@ function AppContent() {
       </Routes>
       {/* Live2D Widget - shown on all pages when logged in and enabled */}
       {/* Using dynamic import to prevent import-time errors */}
-      {isLoggedIn && (
+      {!isDeckRoute && isLoggedIn && (
         <Live2DWidgetWrapper isLoggedIn={isLoggedIn} user={user} />
       )}
       {/* Onboarding Modal */}
-      <OnboardingModal
-        open={showOnboarding}
-        onComplete={handleOnboardingComplete}
-      />
+      {!isDeckRoute && (
+        <OnboardingModal
+          open={showOnboarding}
+          onComplete={handleOnboardingComplete}
+        />
+      )}
+      {!isDeckRoute && <DemoPresenter />}
+      <DemoEmbedBridge />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import {
-  Modal,
+  Drawer,
   Form,
   Input,
   Select,
@@ -34,18 +34,14 @@ const { TextArea } = Input
 const { Option } = Select
 
 export const PLATFORMS = {
-  INSTAGRAM_POST: 'instagram_post',
-  INSTAGRAM_STORY: 'instagram_story',
-  INSTAGRAM_REELS: 'instagram_reels',
+  INSTAGRAM: 'instagram',
   FACEBOOK: 'facebook',
   TWITTER: 'twitter',
   LINKEDIN: 'linkedin',
 } as const
 
 const platformOptions = [
-  { value: PLATFORMS.INSTAGRAM_POST, label: 'Instagram Post' },
-  { value: PLATFORMS.INSTAGRAM_STORY, label: 'Instagram Story' },
-  { value: PLATFORMS.INSTAGRAM_REELS, label: 'Instagram Reels' },
+  { value: PLATFORMS.INSTAGRAM, label: 'Instagram' },
   { value: PLATFORMS.FACEBOOK, label: 'Facebook' },
   { value: PLATFORMS.TWITTER, label: 'Twitter/X' },
   { value: PLATFORMS.LINKEDIN, label: 'LinkedIn' },
@@ -62,6 +58,7 @@ interface CalendarItemModalProps {
   item?: CalendarItem | null
   defaultDate?: Dayjs
   defaultTime?: string
+  isMobile?: boolean
   onClose: () => void
   onSave: () => void
   onItemUpdate?: (item: CalendarItem) => void
@@ -72,6 +69,7 @@ export default function CalendarItemModal({
   item,
   defaultDate,
   defaultTime,
+  isMobile = false,
   onClose,
   onSave,
   onItemUpdate,
@@ -106,13 +104,20 @@ export default function CalendarItemModal({
         })
         setImageUrl(item.imageUrl || null)
         // Set active tab to main platform
-        setActivePlatformTab(item.platform)
+        // Map old Instagram platform values to new 'instagram' for backward compatibility
+        const normalizedPlatform = 
+          item.platform === 'instagram_post' || 
+          item.platform === 'instagram_story' || 
+          item.platform === 'instagram_reels'
+            ? 'instagram'
+            : item.platform;
+        setActivePlatformTab(normalizedPlatform)
         // Preview mode by default for existing items
         setIsEditing(false)
       } else {
         // Create mode: set defaults
         form.setFieldsValue({
-          platform: PLATFORMS.INSTAGRAM_POST,
+          platform: PLATFORMS.INSTAGRAM,
           date: defaultDate || dayjs(),
           time: defaultTime ? dayjs(defaultTime, 'HH:mm') : null,
           title: '',
@@ -122,12 +127,33 @@ export default function CalendarItemModal({
           variants: {},
         })
         setImageUrl(null)
-        setActivePlatformTab(PLATFORMS.INSTAGRAM_POST)
+        setActivePlatformTab(PLATFORMS.INSTAGRAM)
         // Create mode: always in editing state
         setIsEditing(true)
       }
     }
   }, [open, item, defaultDate, defaultTime, form])
+
+  useEffect(() => {
+    const handleDemoSchedule = (event: CustomEvent) => {
+      const time = event.detail?.time as string | undefined
+      if (!open || !time) return
+      form.setFieldsValue({
+        time: dayjs(time, 'HH:mm'),
+        status: 'scheduled',
+      })
+      if (item) {
+        calendarService.updateCalendarItem(item.id, {
+          time,
+          status: 'scheduled',
+        })
+      }
+    }
+    window.addEventListener('demo-calendar-schedule', handleDemoSchedule as EventListener)
+    return () => {
+      window.removeEventListener('demo-calendar-schedule', handleDemoSchedule as EventListener)
+    }
+  }, [form, item, open])
 
   const loadCampaigns = async () => {
     const response = await campaignService.getCampaigns()
@@ -341,7 +367,14 @@ export default function CalendarItemModal({
         variants: item.variants || {},
       })
       setImageUrl(item.imageUrl || null)
-      setActivePlatformTab(item.platform)
+      // Map old Instagram platform values to new 'instagram' for backward compatibility
+      const normalizedPlatform = 
+        item.platform === 'instagram_post' || 
+        item.platform === 'instagram_story' || 
+        item.platform === 'instagram_reels'
+          ? 'instagram'
+          : item.platform;
+      setActivePlatformTab(normalizedPlatform)
     }
     setIsEditing(false)
   }
@@ -443,7 +476,14 @@ export default function CalendarItemModal({
 
 
   const getPlatformLabel = (platform: string) => {
-    return platformOptions.find((opt) => opt.value === platform)?.label || platform
+    // Map old Instagram platform values to new 'instagram' for backward compatibility
+    const normalizedPlatform = 
+      platform === 'instagram_post' || 
+      platform === 'instagram_story' || 
+      platform === 'instagram_reels'
+        ? 'instagram'
+        : platform;
+    return platformOptions.find((opt) => opt.value === normalizedPlatform)?.label || platform
   }
 
   const getStatusColor = (status: string) => {
@@ -465,13 +505,16 @@ export default function CalendarItemModal({
   ]
 
   return (
-    <Modal
+    <Drawer
       title={isEditMode ? (isPreviewMode ? 'Calendar Item Details' : 'Edit Calendar Item') : 'Create Calendar Item'}
       open={open}
-      onCancel={handleClose}
-      footer={null}
-      width={800}
-      className={styles.modal}
+      onClose={handleClose}
+      width={isMobile ? '100%' : 420}
+      placement="right"
+      mask={isMobile}
+      zIndex={3000}
+      className={styles.drawer}
+      data-demo-id="calendar-event-modal"
     >
       {isPreviewMode && item ? (
         // Preview Mode
@@ -565,7 +608,7 @@ export default function CalendarItemModal({
           </Form.Item>
 
           <Form.Item name="time" label="Time" style={{ flex: 1 }}>
-            <TimePicker style={{ width: '100%' }} format="HH:mm" />
+            <TimePicker style={{ width: '100%' }} format="HH:mm" data-demo-id="calendar-time-picker" />
           </Form.Item>
         </Space>
 
@@ -674,7 +717,7 @@ export default function CalendarItemModal({
 
         <Space orientation="horizontal" size="middle" style={{ width: '100%' }}>
           <Form.Item name="status" label="Status" style={{ flex: 1 }}>
-            <Select placeholder="Select status">
+            <Select placeholder="Select status" data-demo-id="calendar-status-badge">
               {statusOptions.map((option) => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
@@ -714,7 +757,7 @@ export default function CalendarItemModal({
         onCancel={() => setImageGenModalOpen(false)}
         onSuccess={handleImageGenSuccess}
       />
-    </Modal>
+    </Drawer>
   )
 }
 

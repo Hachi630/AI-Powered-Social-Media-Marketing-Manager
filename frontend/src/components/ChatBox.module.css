@@ -901,3 +901,7 @@
   color: #B1A285;
 }
 
+/* Template Grid Styles - imported from PromptTemplatesGrid */
+/* Note: Template grid styles are in PromptTemplatesGrid.module.css */
+/* This section is reserved for any ChatBox-specific template overrides if needed */
+
