@@ -109,6 +109,30 @@ import {
 } from "../services/socialService";
 import { User } from "../services/authService";
 import { getImageUrl } from "../utils/imageUtils";
+import { isDemoMode } from "../demo/demoMode";
+
+// Demo mode mock data for LinkedIn
+const DEMO_LINKEDIN_METRICS = {
+  connected: true,
+  profile: {
+    name: "Maya Chen",
+    picture: "/src/img/melo-logo.jpg",
+    email: "maya@sweetcakeshop.com",
+    sub: "demo-user-linkedin",
+  },
+  organizations: [
+    {
+      id: "demo-org-1",
+      name: "Sweet Cake Shop",
+      logoUrl: "https://via.placeholder.com/48/FF69B4/FFFFFF?text=SC",
+    },
+  ],
+  metrics: {
+    followers: 1234,
+    connections: 567,
+    profileViews: 890,
+  },
+};
 
 interface LinkedInDashboardProps {
   isLoggedIn?: boolean;
@@ -276,6 +300,13 @@ export default function LinkedInDashboard({
   // Load LinkedIn metrics
   useEffect(() => {
     const loadMetrics = async () => {
+      // Demo mode override - set mock data immediately
+      if (isDemoMode()) {
+        setMetrics(DEMO_LINKEDIN_METRICS);
+        setLoading(false);
+        return;
+      }
+
       if (!jwt) {
         setLoading(false);
         return;
@@ -626,6 +657,14 @@ export default function LinkedInDashboard({
   }, [jwt, metrics?.connected]);
 
   const handleRefreshMetrics = async () => {
+    // Demo mode - refresh with mock data
+    if (isDemoMode()) {
+      setLoading(true);
+      setMetrics(DEMO_LINKEDIN_METRICS);
+      setLoading(false);
+      return;
+    }
+
     if (!jwt) return;
     setLoading(true);
     try {
@@ -1469,7 +1508,7 @@ export default function LinkedInDashboard({
       );
     }
 
-    const isConnected = metrics?.connected === true;
+    const isConnected = isDemoMode() ? true : (metrics?.connected === true);
     const profile = metrics?.profile;
 
     return (
@@ -1661,6 +1700,7 @@ export default function LinkedInDashboard({
                 }}
                 styles={{ body: { padding: 24 } }}
               >
+                <div data-demo-id="social-post-box">
                 <div
                   style={{
                     display: "flex",
@@ -2020,6 +2060,7 @@ export default function LinkedInDashboard({
                   >
                     {posting ? "Publishing..." : "Post to LinkedIn"}
                   </Button>
+                </div>
                 </div>
               </Card>
             )}
@@ -3757,7 +3798,7 @@ export default function LinkedInDashboard({
   };
 
   // Define isConnected at component level for use in return statement
-  const isConnected = metrics?.connected === true;
+  const isConnected = isDemoMode() ? true : (metrics?.connected === true);
 
   return (
     <Layout className={`${styles.dashboard} ${styles.dashboardLight}`}>

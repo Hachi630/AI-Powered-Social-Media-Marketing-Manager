@@ -318,6 +318,12 @@ export const demoAnalytics = async () => {
           time: item.time,
           status: item.status,
         })),
+        bestPostingTimes: {
+          instagram: "10:00 AM - 11:00 AM (Weekdays)",
+          facebook: "1:00 PM - 3:00 PM (Wed-Fri)",
+          twitter: "12:00 PM - 1:00 PM (Mon-Fri)",
+          overall: "10:00 AM - 11:00 AM (Tuesday & Thursday)"
+        },
       },
       breakdown: {
         postsByPlatform: { instagram: 5, facebook: 4, twitter: 3, linkedin: 2 },

@@ -5,6 +5,7 @@ export interface DemoStep {
   target?: string;
   narration: string;
   action?: () => Promise<void> | void;
+  requireManualNext?: boolean; // If true, user must manually click Next even if target is found
 }
 
 export const demoSteps: DemoStep[] = [
@@ -136,6 +137,7 @@ export const demoSteps: DemoStep[] = [
     route: "/calendar",
     target: "[data-demo-id='calendar-time-picker']",
     narration: "Set a time and mark it scheduled.",
+    requireManualNext: true,
     action: () => {
       // Click the first calendar event to open the detail modal
       setTimeout(() => {
@@ -154,10 +156,19 @@ export const demoSteps: DemoStep[] = [
     narration: "Fill brand profile details for Maya's cake shop.",
   },
   {
+    id: "social-dashboard",
+    title: "Social Dashboard",
+    route: "/socialdashboard",
+    target: "[data-demo-id='social-post-box']",
+    narration: "Manage all your social media accounts in one place.",
+  },
+  {
     id: "analytics",
     title: "Analytics",
     route: "/analytics",
+    target: "[data-demo-id='analytics-kpi-cards']",
     narration: "Review KPI highlights and best timing insights.",
+    requireManualNext: true,
   },
   {
     id: "messaging",
@@ -171,7 +182,7 @@ export const demoSteps: DemoStep[] = [
     title: "AI Assistant",
     route: "/dashboard",
     target: "[data-demo-id='chat-input']",
-    narration: "Ask me anything! I can guide you through the system features.",
+    narration: "We have a lovely AI assistant. If you have any questions, feel free to ask!",
   },
   {
     id: "wrap",

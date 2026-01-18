@@ -32,14 +32,30 @@ export default function DemoPresenter() {
     if (targetRect) {
       const tooltipHeight = 280; // Estimated tooltip height
       const tooltipWidth = 520; // Max tooltip width
+
+      // Check if target is on the left side of the screen (e.g., sidebar content)
+      const isLeftSide = targetRect.left < window.innerWidth / 2;
+
       const top = Math.min(
         window.innerHeight - tooltipHeight - 24,
-        Math.max(24, targetRect.bottom + 16)
+        Math.max(24, targetRect.top)
       );
-      const left = Math.min(
-        window.innerWidth - tooltipWidth - 24,
-        Math.max(24, targetRect.left)
-      );
+
+      let left;
+      if (isLeftSide) {
+        // Position tooltip on the right side if target is on the left
+        left = Math.min(
+          window.innerWidth - tooltipWidth - 24,
+          Math.max(targetRect.right + 24, window.innerWidth - tooltipWidth - 24)
+        );
+      } else {
+        // Position tooltip on the left or below if target is on the right
+        left = Math.min(
+          window.innerWidth - tooltipWidth - 24,
+          Math.max(24, targetRect.left)
+        );
+      }
+
       setTooltipPos({ top, left });
     } else {
       // If no target found, position tooltip at default location
@@ -189,8 +205,8 @@ export default function DemoPresenter() {
       };
   const canAdvance = !step.target || Boolean(rect);
 
-  // Only disable Next if target element is not found
-  const isNextDisabled = !canAdvance;
+  // Disable Next if target element is not found, or if step requires manual next
+  const isNextDisabled = step.requireManualNext ? false : !canAdvance;
 
   // Step 13 (wrap) should only show Exit button
   const isFinalStep = stepIndex === stepCount - 1;
