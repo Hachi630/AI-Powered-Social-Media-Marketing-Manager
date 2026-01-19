@@ -1731,3 +1731,106 @@
     font-size: 18px;
   }
 }
+
+/* Image Showcase Slide */
+.imageShowcaseSlide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  background: transparent;
+}
+
+.imageShowcaseImg {
+  max-width: 90%;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+@media (max-width: 980px) {
+  .imageShowcaseSlide {
+    padding: 20px;
+  }
+
+  .imageShowcaseImg {
+    max-width: 95%;
+    max-height: 80vh;
+  }
+}
+
+/* Image Zoom Slide - 带缩放聚焦动画 */
+.imageZoomSlide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  background: transparent;
+  overflow: hidden;
+}
+
+.imageZoomContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: imageZoomAnimation 4s ease-in-out forwards;
+}
+
+.imageZoomImg {
+  width: auto;
+  height: auto;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  transform-origin: center center;
+}
+
+/* 动画：先显示完整图片，然后缩放聚焦到模板卡片区域 */
+@keyframes imageZoomAnimation {
+  0% {
+    /* 初始状态：显示完整图片 */
+    transform: scale(1) translateX(0) translateY(0);
+  }
+  30% {
+    /* 保持完整视图一段时间 */
+    transform: scale(1) translateX(0) translateY(0);
+  }
+  100% {
+    /* 最终状态：放大并聚焦到模板卡片区域（图片下半部分中间） */
+    transform: scale(2.2) translateX(0) translateY(-12%);
+  }
+}
+
+@media (max-width: 980px) {
+  .imageZoomSlide {
+    padding: 0;
+  }
+
+  @keyframes imageZoomAnimation {
+    0% {
+      transform: scale(1) translateX(0) translateY(0);
+    }
+    30% {
+      transform: scale(1) translateX(0) translateY(0);
+    }
+    100% {
+      transform: scale(1.8) translateX(0) translateY(-10%);
+    }
+  }
+}

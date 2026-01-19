@@ -34,7 +34,7 @@ export type DemoSlide = {
   imageSticker?: string;
   note?: string;
   // Keynote style additions
-  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list";
+  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list" | "image-showcase" | "image-zoom";
   overviewIcons?: DemoSlideOverviewIcon[];
   featureTagline?: string;
   transition?: string; // reveal.js transition
@@ -160,46 +160,61 @@ export const demoScript: DemoStep[] = [
     },
   },
   {
-    id: "what-are-skills",
-    title: "What are Skills?",
-    narration: "Explaining what skills are.",
+    id: "ai-robot",
+    title: "AI Robot",
+    narration: "We added an AI Robot to help users navigate our system.",
     slide: {
       eyebrow: "",
-      title: "Skills",
+      title: "We added an AI Robot to help users use our system.",
       subtitle: "",
       bullets: [],
       slideType: "feature",
-      featureTagline: "Reusable modules that perform a specific task with clear inputs and outputs.",
       transition: "concave",
-      note: "Skills definition slide.",
+      note: "AI Robot introduction slide.",
     },
   },
   {
-    id: "skills-workflow",
-    title: "Skills Workflow",
-    narration: "How we use skills in our development process.",
+    id: "ai-robot-demo",
+    title: "AI Robot Demo",
+    narration: "Meet our AI assistant.",
     slide: {
       eyebrow: "",
       title: "",
       subtitle: "",
       bullets: [],
-      slideType: "vertical-list",
-      listItems: [
-        {
-          title: "Spec-kit (Define)",
-          description: "Turn ideas into a clear, testable spec (scope, flows, acceptance criteria)",
-        },
-        {
-          title: "Claude Skills (Build)",
-          description: "Implement features as reusable \"skills\" (e.g., post generation, scheduling, file upload)",
-        },
-        {
-          title: "Outcome",
-          description: "Faster iteration, consistent behavior, easier to extend",
-        },
-      ],
-      transition: "slide",
-      note: "Skills workflow with three stages.",
+      slideType: "image-showcase",
+      image: "/img/entrance_transparent.webp",
+      transition: "fade",
+      note: "AI Robot image showcase.",
+    },
+  },
+  {
+    id: "templates-intro",
+    title: "Templates",
+    narration: "We created templates for users who don't know how to write prompts.",
+    slide: {
+      eyebrow: "",
+      title: "We created templates for users who don't know how to write prompts.",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "concave",
+      note: "Templates introduction slide.",
+    },
+  },
+  {
+    id: "templates-demo",
+    title: "Templates Demo",
+    narration: "See our template cards in action.",
+    slide: {
+      eyebrow: "",
+      title: "",
+      subtitle: "",
+      bullets: [],
+      slideType: "image-zoom",
+      image: "/img/templates-screenshot.png",
+      transition: "fade",
+      note: "Templates screenshot with zoom animation.",
     },
   },
   {

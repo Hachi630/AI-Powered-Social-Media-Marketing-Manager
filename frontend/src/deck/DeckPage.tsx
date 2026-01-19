@@ -58,6 +58,8 @@ export default function DeckPage() {
                 const isLink = step.slide.slideType === "link";
                 const isDualImage = step.slide.slideType === "dual-image";
                 const isVerticalList = step.slide.slideType === "vertical-list";
+                const isImageShowcase = step.slide.slideType === "image-showcase";
+                const isImageZoom = step.slide.slideType === "image-zoom";
                 const transition = step.slide.transition || "fade";
                 
                 return (
@@ -261,6 +263,28 @@ export default function DeckPage() {
                             <p className={styles.verticalListDescription}>{item.description}</p>
                           </div>
                         ))}
+                      </div>
+                    ) : isImageShowcase ? (
+                      <div className={styles.imageShowcaseSlide}>
+                        {step.slide.image && (
+                          <img
+                            src={step.slide.image}
+                            alt={step.slide.title || "Showcase"}
+                            className={styles.imageShowcaseImg}
+                          />
+                        )}
+                      </div>
+                    ) : isImageZoom ? (
+                      <div className={styles.imageZoomSlide}>
+                        {step.slide.image && (
+                          <div className={styles.imageZoomContainer}>
+                            <img
+                              src={step.slide.image}
+                              alt={step.slide.title || "Zoom"}
+                              className={styles.imageZoomImg}
+                            />
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <div

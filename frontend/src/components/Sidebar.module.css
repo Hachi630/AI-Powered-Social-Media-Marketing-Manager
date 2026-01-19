@@ -48,7 +48,7 @@
 }
 
 [data-theme="warm"] .headerTitle {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #b1a285 !important;
 }
 
@@ -142,7 +142,7 @@
 }
 
 [data-theme="warm"] .title {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #908066 !important;
 }
 
@@ -278,7 +278,7 @@
   }
 
   [data-theme="warm"] .chatItem :global(.ant-typography) {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -288,7 +288,7 @@
   }
 
   [data-theme="warm"] .sectionTitle {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -298,7 +298,7 @@
   }
 
   [data-theme="warm"] .searchInput :global(.ant-input) {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -472,7 +472,7 @@
   }
 
   [data-theme="warm"] .userSection .userName {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   }
 
   .userSection .userEmail {
@@ -482,7 +482,7 @@
   }
 
   [data-theme="warm"] .userSection .userEmail {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   }
 
   .userSection :global(.ant-avatar) {
@@ -509,7 +509,7 @@
 }
 
 [data-theme="warm"] .sectionTitle {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #b1a285 !important;
 }
 
