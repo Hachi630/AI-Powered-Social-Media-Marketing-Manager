@@ -236,8 +236,9 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
 
         // Load model
         console.log(`Live2D: Loading model from ${modelPath}`);
+        // Disable autoInteract to avoid conflicts with manual interaction setup
         const model = await Live2DModel.from(modelPath, {
-          autoInteract: true,
+          autoInteract: false,
         });
         console.log('Live2D: Model loaded successfully', model);
 
@@ -264,9 +265,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         setIsLoaded(true);
         console.log('Live2D: Model added to stage, widget should be visible now');
 
-        // Enable interactions for click
-        modelAny.interactive = true;
-        modelAny.cursor = 'pointer';
+        // Use native canvas click instead of pixi.js interactive to avoid errors
+        // Don't set interactive/cursor properties that cause pixi.js errors
 
         // Set event mode to allow both click and drag
         // Pixi v6 uses interactive, v7 uses eventMode. We are on v6.
@@ -296,35 +296,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         // Play idle motion after a delay
         setTimeout(playIdleMotion, 1000);
 
-        // Set up click handler - toggle dialog open/close
-        if (modelAny.on) {
-          modelAny.on('pointertap', async () => {
-          // Stop crawl animation if user clicks (use ref for latest state)
-          if (isCrawlingRef.current) {
-            stopCrawlAnimation();
-            return;
-          }
-
-          console.log('[ELO] Model clicked, toggling dialog');
-          // Toggle ELO dialog
-          setDialogOpen(prev => {
-            const newState = !prev;
-            console.log('[ELO] Dialog state changed:', newState);
-            return newState;
-          });
-          // Play tap motion if available
-          try {
-            if (typeof model.motion === 'function') {
-              await (model.motion as any)('tap', 0);
-            }
-          } catch (error) {
-            // Motion may not exist, that's okay
-            console.debug('Tap motion not available');
-          }
-          });
-        }
-
-        // Mouse follow (eye tracking)
+        // Mouse follow (eye tracking) - set up after model is loaded
         const handleMouseMove = (event: MouseEvent) => {
           if (!model || !model.internalModel) return;
 
@@ -362,9 +334,11 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
 
         window.addEventListener('mousemove', handleMouseMove);
 
-        return () => {
-          window.removeEventListener('mousemove', handleMouseMove);
-        };
+        // Set canvas cursor style for click indication
+        const canvasElement = canvasRef.current?.querySelector('canvas');
+        if (canvasElement) {
+          canvasElement.style.cursor = 'pointer';
+        }
       } catch (error) {
         console.error('Failed to load Live2D model:', error);
         setLoadError(error instanceof Error ? error.message : 'Unknown error');
@@ -490,8 +464,43 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = async (e: MouseEvent) => {
       if (dragStartPosRef.current) {
+        const timeElapsed = Date.now() - dragStartPosRef.current.time;
+        const moveDistance = Math.sqrt(
+          Math.pow(e.clientX - dragStartPosRef.current.x, 2) +
+          Math.pow(e.clientY - dragStartPosRef.current.y, 2)
+        );
+
+        // If it's a click (not a drag): time < 300ms and moveDistance < 5px
+        if (!isDragging && timeElapsed < 300 && moveDistance < 5) {
+          // Stop crawl animation if user clicks
+          if (isCrawlingRef.current) {
+            stopCrawlAnimation();
+            dragStartPosRef.current = null;
+            setIsDragging(false);
+            return;
+          }
+
+          console.log('[ELO] Model clicked, toggling dialog');
+          // Toggle ELO dialog
+          setDialogOpen(prev => {
+            const newState = !prev;
+            console.log('[ELO] Dialog state changed:', newState);
+            return newState;
+          });
+          // Play tap motion if available
+          try {
+            const model = modelRef.current;
+            if (model && typeof (model as any).motion === 'function') {
+              await ((model as any).motion as any)('tap', 0);
+            }
+          } catch (error) {
+            // Motion may not exist, that's okay
+            console.debug('Tap motion not available');
+          }
+        }
+
         // Save position to localStorage if dragged
         if (isDragging) {
           localStorage.setItem('live2d-widget-position', JSON.stringify(position));
@@ -509,7 +518,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, position]);
+  }, [isDragging, position, stopCrawlAnimation]);
 
   // Handle touch events for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
