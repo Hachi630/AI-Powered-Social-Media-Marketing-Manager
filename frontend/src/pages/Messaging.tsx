@@ -57,7 +57,7 @@ import {
 } from '../services/messagingService'
 import { uploadService } from '../services/uploadService'
 
-const { Content, Sider } = Layout
+const { Content } = Layout
 const { Title, Text } = Typography
 const { TextArea } = Input
 
@@ -361,7 +361,7 @@ export default function Messaging({
 
   if (loading) {
     return (
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ minHeight: '100vh', background: '#ffffff' }}>
         <Header
           isLoggedIn={isLoggedIn}
           onLoginSuccess={onLoginSuccess}
@@ -379,49 +379,30 @@ export default function Messaging({
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: '#ffffff' }}>
       <Header
         isLoggedIn={isLoggedIn}
         onLoginSuccess={onLoginSuccess}
         onLogout={onLogout}
         user={user}
       />
-      <Layout style={{ background: '#f0f2f5' }}>
+      <Layout style={{ background: '#ffffff' }}>
         {/* Sidebar */}
         {!isMobile && (
-          <Sider
-            width={280}
-            collapsedWidth={80}
+          <MessagingSidebar
             collapsed={sidebarCollapsed}
-            theme="light"
-            trigger={null}
-            breakpoint="lg"
-            style={{
-              background: '#fafafa',
-              borderRight: '1px solid rgba(0, 0, 0, 0.06)',
-              boxShadow: '2px 0 8px rgba(0, 0, 0, 0.04)',
-              position: 'sticky',
-              top: 99,
-              height: 'calc(100vh - 99px)',
-              overflowY: 'auto',
-              overflowX: 'hidden',
+            onToggleSidebar={handleToggleSidebar}
+            selectedSection={selectedSection}
+            onSectionSelect={(section) => {
+              setSelectedSection(section)
+              // Update activeTab based on section selection
+              if (section === 'new-number') {
+                setActiveTab('new')
+              } else if (section === 'contacts') {
+                setActiveTab('contact')
+              }
             }}
-          >
-            <MessagingSidebar
-              collapsed={sidebarCollapsed}
-              onToggleSidebar={handleToggleSidebar}
-              selectedSection={selectedSection}
-              onSectionSelect={(section) => {
-                setSelectedSection(section)
-                // Update activeTab based on section selection
-                if (section === 'new-number') {
-                  setActiveTab('new')
-                } else if (section === 'contacts') {
-                  setActiveTab('contact')
-                }
-              }}
-            />
-          </Sider>
+          />
         )}
         {isMobile && (
           <Drawer
@@ -451,9 +432,9 @@ export default function Messaging({
         )}
         <Content 
           className={`${styles.content} ${styles.contentLight}`}
-          style={{ 
+          style={{
             padding: isMobile ? '16px 0' : '32px 0',
-            background: '#f0f2f5',
+            background: '#ffffff',
             minHeight: 'calc(100vh - 99px)',
             overflow: 'auto',
             flex: '1 1 auto',
