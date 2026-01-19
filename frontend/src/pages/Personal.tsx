@@ -585,7 +585,7 @@ export default function Personal({
     if (isEditing) {
       handleCancel()
     }
-    onClose()
+    onClose?.()
   }
 
   return (

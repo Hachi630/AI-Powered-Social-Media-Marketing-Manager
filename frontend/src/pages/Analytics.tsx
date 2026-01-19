@@ -1288,7 +1288,7 @@ export default function Analytics({
                 </Row>
 
                   {/* Best Posting Times */}
-                  {overview.bestPostingTimes && (
+                  {(overview as any).bestPostingTimes && (
                     <Card
                       data-demo-id="analytics-best-time"
                       style={{
@@ -1309,25 +1309,25 @@ export default function Analytics({
                         <Col xs={24} sm={12} md={6}>
                           <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
                             <Text strong style={{ color: '#1890ff', fontSize: 13, display: 'block', marginBottom: 4 }}>Instagram</Text>
-                            <Text style={{ fontSize: 12, color: '#595959' }}>{overview.bestPostingTimes.instagram}</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.instagram}</Text>
                           </div>
                         </Col>
                         <Col xs={24} sm={12} md={6}>
                           <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
                             <Text strong style={{ color: '#fa8c16', fontSize: 13, display: 'block', marginBottom: 4 }}>Facebook</Text>
-                            <Text style={{ fontSize: 12, color: '#595959' }}>{overview.bestPostingTimes.facebook}</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.facebook}</Text>
                           </div>
                         </Col>
                         <Col xs={24} sm={12} md={6}>
                           <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
                             <Text strong style={{ color: '#722ed1', fontSize: 13, display: 'block', marginBottom: 4 }}>Twitter</Text>
-                            <Text style={{ fontSize: 12, color: '#595959' }}>{overview.bestPostingTimes.twitter}</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.twitter}</Text>
                           </div>
                         </Col>
                         <Col xs={24} sm={12} md={6}>
                           <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
                             <Text strong style={{ color: '#52c41a', fontSize: 13, display: 'block', marginBottom: 4 }}>Overall Best</Text>
-                            <Text style={{ fontSize: 12, color: '#595959' }}>{overview.bestPostingTimes.overall}</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.overall}</Text>
                           </div>
                         </Col>
                       </Row>

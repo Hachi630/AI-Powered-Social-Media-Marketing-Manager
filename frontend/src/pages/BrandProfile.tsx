@@ -1002,7 +1002,6 @@ export default function BrandProfile({
                 </Typography.Text>
                 <Select
                   id="industry-select"
-                  name="industry"
                   size="large"
                   value={industry || undefined}
                   onChange={(value) => {
