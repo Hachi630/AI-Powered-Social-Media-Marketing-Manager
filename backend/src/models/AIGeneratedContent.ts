@@ -6,7 +6,7 @@ export interface IAIGeneratedContent extends Document {
   contentType: 'text' | 'image' | 'content_plan' | 'suggestion' | 'summary' | 'translation'
   input: string // User prompt/input
   output: string // AI-generated content
-  model: string // e.g., 'gemini-2.5-flash', 'gemini-2.5-flash-image'
+  aiModel: string // e.g., 'gemini-2.5-flash', 'gemini-2.5-flash-image'
   parameters?: {
     temperature?: number
     maxTokens?: number
@@ -94,7 +94,7 @@ const AIGeneratedContentSchema: Schema = new Schema(
       type: String,
       required: true,
     },
-    model: {
+    aiModel: {
       type: String,
       required: true,
       index: true,
@@ -161,7 +161,7 @@ const AIGeneratedContentSchema: Schema = new Schema(
 
 // Indexes for efficient queries
 AIGeneratedContentSchema.index({ userId: 1, contentType: 1, createdAt: -1 })
-AIGeneratedContentSchema.index({ userId: 1, model: 1 })
+AIGeneratedContentSchema.index({ userId: 1, aiModel: 1 })
 AIGeneratedContentSchema.index({ conversationId: 1 })
 AIGeneratedContentSchema.index({ usedInPost: 1 })
 AIGeneratedContentSchema.index({ createdAt: -1 })
