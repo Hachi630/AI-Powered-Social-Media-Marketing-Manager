@@ -14,11 +14,13 @@ const getTargetRect = (selector?: string): DOMRect | null => {
 export default function DemoPresenter() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [showWelcomeVideo, setShowWelcomeVideo] = useState(true);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 120, left: 24 });
   const [isDraggingTooltip, setIsDraggingTooltip] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const videoRef = useRef<HTMLVideoElement>(null);
   const step = demoSteps[stepIndex];
   const isEmbed = new URLSearchParams(window.location.search).get("embed") === "1";
 
@@ -105,6 +107,14 @@ export default function DemoPresenter() {
     window.location.href = "/home";
   }, []);
 
+  const handleSkipVideo = useCallback(() => {
+    setShowWelcomeVideo(false);
+  }, []);
+
+  const handleVideoEnd = useCallback(() => {
+    setShowWelcomeVideo(false);
+  }, []);
+
   // Tooltip drag handlers
   const handleTooltipMouseDown = useCallback((e: React.MouseEvent) => {
     setIsDraggingTooltip(true);
@@ -189,6 +199,29 @@ export default function DemoPresenter() {
   }, [isActive, stepIndex]);
 
   if (!isActive || isEmbed) return null;
+
+  // Show welcome video first
+  if (showWelcomeVideo) {
+    return (
+      <div className={styles.videoOverlay}>
+        <div className={styles.videoContainer}>
+          <video
+            ref={videoRef}
+            className={styles.welcomeVideo}
+            autoPlay
+            onEnded={handleVideoEnd}
+            controls={false}
+          >
+            <source src="/img/welcome.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <button className={styles.skipButton} onClick={handleSkipVideo}>
+            Skip Video
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const spotlightStyle = rect
     ? {
