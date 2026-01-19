@@ -1,13 +1,13 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
-import User from '../models/User'
-import CalendarItem from '../models/CalendarItem'
-import Conversation from '../models/Conversation'
-import Campaign from '../models/Campaign'
-import Event from '../models/Event'
-import SocialMediaPost from '../models/SocialMediaPost'
-import AIGeneratedContent from '../models/AIGeneratedContent'
-import MediaFile from '../models/MediaFile'
+import { requireAuth } from '../middleware/auth.js'
+import User from '../models/User.js'
+import CalendarItem from '../models/CalendarItem.js'
+import Conversation from '../models/Conversation.js'
+import Campaign from '../models/Campaign.js'
+import Event from '../models/Event.js'
+import SocialMediaPost from '../models/SocialMediaPost.js'
+import AIGeneratedContent from '../models/AIGeneratedContent.js'
+import MediaFile from '../models/MediaFile.js'
 import {
   getAllPosts,
   calculateTopPostingTimes,
@@ -24,7 +24,7 @@ import {
   calculatePlatformUsagePatterns,
   calculateBestPostingTimesByFrequency,
   syncAyrsharePostsToDatabase,
-} from '../services/ayrshareService'
+} from '../services/ayrshareService.js'
 import {
   getBestHoursPerPlatform,
   getBestDaysPerPlatform,
@@ -36,7 +36,7 @@ import {
   getHashtagTrends,
   getCountryInsights,
   getAvailableTimePeriods,
-} from '../services/bestTimeAnalyticsService'
+} from '../services/bestTimeAnalyticsService.js'
 
 const router = Router()
 
@@ -496,8 +496,8 @@ router.get('/', requireAuth, async (req: any, res) => {
     
     console.log(`[Analytics] Events time series: ${eventsTimeSeries.length} entries`)
     console.log(`[Analytics] Server timezone offset: ${timezoneString}`)
-    console.log(`[Analytics] Events time series data:`, eventsTimeSeries.map(e => ({ date: e._id, count: e.count })))
-    console.log(`[Analytics] Upcoming week calendar items:`, upcomingWeekEvents.map(e => ({ date: e._id, count: e.count })))
+    console.log(`[Analytics] Events time series data:`, eventsTimeSeries.map((e: any) => ({ date: e._id, count: e.count })))
+    console.log(`[Analytics] Upcoming week calendar items:`, upcomingWeekEvents.map((e: any) => ({ date: e._id, count: e.count })))
 
     // Debug logging
     console.log('Analytics Data:', {
@@ -1231,12 +1231,12 @@ router.get('/', requireAuth, async (req: any, res) => {
           
           // Convert date strings to Date objects and sort chronologically (oldest first)
           const sortedDates = dateCounts
-            .map(d => {
+            .map((d: any) => {
               // Parse the date string (format: YYYY-MM-DD)
               const [year, month, day] = d.date.split('-').map(Number)
               return new Date(year, month - 1, day)
             })
-            .sort((a, b) => a.getTime() - b.getTime())
+            .sort((a: any, b: any) => a.getTime() - b.getTime())
           
           // Calculate current streak (from most recent date backwards)
           let currentStreak = 1
@@ -1743,9 +1743,9 @@ router.get('/', requireAuth, async (req: any, res) => {
 
         // Find peak times
         const peakTimes = goldenWindowHeatmap
-          .sort((a, b) => (b.avgImpressions || 0) - (a.avgImpressions || 0))
+          .sort((a: any, b: any) => (b.avgImpressions || 0) - (a.avgImpressions || 0))
           .slice(0, 5)
-          .map(item => `${item.day} ${item.hour}:00`)
+          .map((item: any) => `${item.day} ${item.hour}:00`)
 
         // Process Strategic Analytics - Consistency Index
         let consistencyIndex = null
@@ -1798,7 +1798,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Strategic Analytics - Lead Time Analysis
         let leadTimeAnalysis = null
         try {
-          const [conversations, publishedPosts] = leadTimeSources || [[], []]
+          const [conversations, publishedPosts] = (leadTimeSources || [[], []]) as [any[], any[]]
           const leadTimes: number[] = []
           
           (conversations || []).forEach((conv: any) => {
@@ -1991,7 +1991,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Strategic Analytics - Event Impact Analysis
         let eventImpactAnalysis = null
         try {
-          const [events, postsWithImpressions] = eventImpactSources || [[], []]
+          const [events, postsWithImpressions] = (eventImpactSources || [[], []]) as [any[], any[]]
           const eventWindows: any[] = []
           const nonEventImpressions: number[] = []
           
@@ -2151,7 +2151,7 @@ router.get('/ayrshare/posting-times', requireAuth, async (req: any, res) => {
     }).sort({ publishedAt: -1 }).limit(500)
     
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
@@ -2289,7 +2289,7 @@ router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
     }).sort({ publishedAt: -1 }).limit(500)
     
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
@@ -2470,7 +2470,7 @@ router.get('/ayrshare/recommendations', requireAuth, async (req: any, res) => {
     }).sort({ publishedAt: -1 }).limit(500)
     
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
@@ -2551,7 +2551,7 @@ router.get('/ayrshare/all', requireAuth, async (req: any, res) => {
     }).sort({ publishedAt: -1 }).limit(500)
     
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
