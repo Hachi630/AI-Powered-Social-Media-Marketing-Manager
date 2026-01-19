@@ -15,6 +15,7 @@ export default function DemoPresenter() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showWelcomeVideo, setShowWelcomeVideo] = useState(true);
+  const [videoEnded, setVideoEnded] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [tooltipPos, setTooltipPos] = useState({ top: 120, left: 24 });
@@ -112,6 +113,14 @@ export default function DemoPresenter() {
   }, []);
 
   const handleVideoEnd = useCallback(() => {
+    // Pause video at last frame instead of hiding
+    setVideoEnded(true);
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+  }, []);
+
+  const handleStartDemo = useCallback(() => {
     setShowWelcomeVideo(false);
   }, []);
 
@@ -215,9 +224,16 @@ export default function DemoPresenter() {
             <source src="/img/welcome.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          <button className={styles.skipButton} onClick={handleSkipVideo}>
-            Skip Video
-          </button>
+          {!videoEnded && (
+            <button className={styles.skipButton} onClick={handleSkipVideo}>
+              Skip Video
+            </button>
+          )}
+          {videoEnded && (
+            <button className={styles.startDemoButton} onClick={handleStartDemo}>
+              Welcome to Demo Mode
+            </button>
+          )}
         </div>
       </div>
     );
