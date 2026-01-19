@@ -1944,8 +1944,9 @@ router.get('/', requireAuth, async (req: any, res) => {
           let promotionalCount = 0
           let educationalCount = 0
           let neutralCount = 0
-          
-          (contentPurposeSources || []).forEach((item: any) => {
+
+          const contentPurposeArray: any[] = contentPurposeSources || []
+          contentPurposeArray.forEach((item: any) => {
             try {
               const content = (item?.content || '').toLowerCase()
               const hasPromotional = promotionalKeywords.some(keyword => content.includes(keyword))
@@ -2040,7 +2041,8 @@ router.get('/', requireAuth, async (req: any, res) => {
           
           // Calculate baseline (non-event days)
           const allEventDates = new Set<string>()
-          (events || []).forEach((e: any) => {
+          const eventsForDates: any[] = events || []
+          eventsForDates.forEach((e: any) => {
             try {
               if (e?.date) {
                 const d = new Date(e.date)
