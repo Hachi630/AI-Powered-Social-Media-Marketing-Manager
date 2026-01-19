@@ -1,3 +1,24 @@
+/* Force all demo mode elements to use Inter font, overriding theme fonts */
+.overlay,
+.spotlight,
+.tooltip,
+.tooltip *,
+.tooltipHeader,
+.tooltipHeader *,
+.tooltipContent,
+.tooltipContent *,
+.tooltipTitle,
+.tooltipBody,
+.tooltipControls,
+.tooltipControls *,
+.controlButton,
+.controlButtonSecondary,
+.pill,
+.skipButton,
+.startDemoButton {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -40,6 +61,7 @@
   z-index: 5001;
   border: 2px solid #1677ff;
   overflow: hidden;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
 }
 
 .tooltipHeader {
@@ -190,4 +212,107 @@
   z-index: 5002;
   box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+/* Welcome Video Styles */
+.videoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.videoContainer {
+  position: relative;
+  width: 90%;
+  max-width: 1200px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.welcomeVideo {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #000;
+  border-radius: 16px;
+}
+
+.skipButton {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10001;
+  pointer-events: auto;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+.skipButton:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.startDemoButton {
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #1677ff 0%, #4096ff 100%);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 16px 48px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10001;
+  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.4);
+  animation: slideUp 0.5s ease;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.startDemoButton:hover {
+  background: linear-gradient(135deg, #4096ff 0%, #69b1ff 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateX(-50%) translateY(-4px);
+  box-shadow: 0 12px 32px rgba(22, 119, 255, 0.5);
 }

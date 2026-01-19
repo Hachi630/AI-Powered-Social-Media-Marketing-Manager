@@ -39,9 +39,10 @@ function DraggableCalendarItem({ item, onClick, isMonthView = false }: { item: C
         className={styles.monthEventLabel}
         onClick={onClick}
         style={{ borderLeftColor: color }}
+        data-platform={item.platform}
         data-demo-id={item.id === "demo-cal-1" ? "calendar-event-demo" : undefined}
       >
-        <PlatformIcon platform={item.platform} style={{ marginRight: 4, fontSize: '11px', opacity: 0.65 }} />
+        <PlatformIcon platform={item.platform} style={{ marginRight: 4, fontSize: '11px', opacity: 0.7 }} />
         <span className={styles.eventLabelText}>{item.title}</span>
       </div>
     );

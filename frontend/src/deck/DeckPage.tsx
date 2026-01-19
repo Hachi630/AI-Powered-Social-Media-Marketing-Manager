@@ -58,6 +58,9 @@ export default function DeckPage() {
                 const isLink = step.slide.slideType === "link";
                 const isDualImage = step.slide.slideType === "dual-image";
                 const isVerticalList = step.slide.slideType === "vertical-list";
+                const isImageShowcase = step.slide.slideType === "image-showcase";
+                const isImageZoom = step.slide.slideType === "image-zoom";
+                const isGrid2x2 = step.slide.slideType === "grid-2x2";
                 const transition = step.slide.transition || "fade";
                 
                 return (
@@ -259,6 +262,44 @@ export default function DeckPage() {
                           >
                             <h2 className={styles.verticalListTitle}>{item.title}</h2>
                             <p className={styles.verticalListDescription}>{item.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : isImageShowcase ? (
+                      <div className={styles.imageShowcaseSlide}>
+                        {step.slide.image && (
+                          <img
+                            src={step.slide.image}
+                            alt={step.slide.title || "Showcase"}
+                            className={styles.imageShowcaseImg}
+                          />
+                        )}
+                      </div>
+                    ) : isImageZoom ? (
+                      <div className={styles.imageZoomSlide}>
+                        {step.slide.image && (
+                          <div className={styles.imageZoomContainer}>
+                            <img
+                              src={step.slide.image}
+                              alt={step.slide.title || "Zoom"}
+                              className={styles.imageZoomImg}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ) : isGrid2x2 ? (
+                      <div className={styles.grid2x2Slide}>
+                        {step.slide.gridImages?.map((imgSrc, imgIndex) => (
+                          <div
+                            key={`${step.id}-grid-${imgIndex}`}
+                            className={styles.grid2x2Item}
+                            style={{ animationDelay: `${imgIndex * 0.15}s` }}
+                          >
+                            <img
+                              src={imgSrc}
+                              alt={`Mascot ${imgIndex + 1}`}
+                              className={styles.grid2x2Img}
+                            />
                           </div>
                         ))}
                       </div>
