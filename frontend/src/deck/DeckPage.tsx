@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 // @ts-ignore - reveal.js doesn't have types
-import Reveal from "reveal.js";
+import Reveal from "reveal.js/dist/reveal.esm.js";
 import { demoScript } from "../demo/script/demoScript";
 import styles from "./DeckPage.module.css";
 import ParticleBackground from "./components/ParticleBackground";

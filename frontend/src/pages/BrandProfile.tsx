@@ -182,6 +182,8 @@ function TagInput({
       ) : null}
       <div className={styles.tagInputControl}>
         <Input
+          id={`tag-input-${label || 'default'}`}
+          name={`tag-input-${label || 'default'}`}
           value={inputValue}
           placeholder={placeholder}
           onChange={(event) => setInputValue(event.target.value)}
@@ -813,7 +815,7 @@ export default function BrandProfile({
         toneOfVoice,
         knowledgeProducts,
         targetAudience: audienceTags,
-        companyDescription,
+        companyDescription: companyDescription.trim(),
         companies: updatedCompanies, // CRITICAL: Send companies array with productImages
       });
 
@@ -977,6 +979,8 @@ export default function BrandProfile({
                   Brand Name *
                 </Typography.Text>
                 <Input
+                  id="brand-name-input"
+                  name="brandName"
                   size="large"
                   placeholder="e.g., Melo Studio"
                   value={brandName}
@@ -997,6 +1001,8 @@ export default function BrandProfile({
                   Industry *
                 </Typography.Text>
                 <Select
+                  id="industry-select"
+                  name="industry"
                   size="large"
                   value={industry || undefined}
                   onChange={(value) => {
@@ -1026,6 +1032,8 @@ export default function BrandProfile({
             </Typography.Text>
             <div className={styles.sectionBody}>
               <Input.TextArea
+                id="company-description-textarea"
+                name="companyDescription"
                 size="large"
                 placeholder="Share the mission, what you sell, and what makes you unique. Example: We craft small-batch candles inspired by wellness rituals."
                 value={companyDescription}
