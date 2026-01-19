@@ -105,7 +105,8 @@ export default function DemoPresenter() {
 
   const handleExit = useCallback(() => {
     disableDemoMode();
-    window.location.href = "/home";
+    // Stay on current page, just reload to remove demo mode
+    window.location.reload();
   }, []);
 
   const handleSkipVideo = useCallback(() => {
@@ -218,18 +219,20 @@ export default function DemoPresenter() {
             ref={videoRef}
             className={styles.welcomeVideo}
             autoPlay
+            muted
+            playsInline
+            preload="auto"
             onEnded={handleVideoEnd}
             controls={false}
           >
             <source src="/img/welcome.mp4" type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          {!videoEnded && (
+          {!videoEnded ? (
             <button className={styles.skipButton} onClick={handleSkipVideo}>
               Skip Video
             </button>
-          )}
-          {videoEnded && (
+          ) : (
             <button className={styles.startDemoButton} onClick={handleStartDemo}>
               Welcome to Demo Mode
             </button>

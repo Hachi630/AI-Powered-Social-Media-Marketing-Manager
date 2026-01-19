@@ -227,15 +227,16 @@
   height: auto;
   display: block;
   background: #000;
+  border-radius: 16px;
 }
 
 .skipButton {
   position: absolute;
   top: 24px;
   right: 24px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   color: #ffffff;
   padding: 12px 24px;
   border-radius: 8px;
@@ -244,6 +245,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   z-index: 10001;
+  pointer-events: auto;
 }
 
 .skipButton:hover {
