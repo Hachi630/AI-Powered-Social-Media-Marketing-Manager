@@ -17,7 +17,7 @@
     radial-gradient(circle at 20% 20%, rgba(253, 179, 56, 0.18), transparent 55%),
     radial-gradient(circle at 80% 10%, rgba(16, 81, 134, 0.16), transparent 48%),
     linear-gradient(160deg, #f0f2f3 0%, #edf0f2 45%, #eef1f2 100%);
-  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
 
 :global(body) {
@@ -49,7 +49,7 @@
 }
 
 .brandTitle {
-  font-family: "Fraunces", serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 26px;
   letter-spacing: 0.02em;
 }
@@ -261,7 +261,7 @@
 
 /* Override reveal.js default styles */
 .reveal .slides section {
-  font-family: "Chakra Petch", "Segoe UI", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   color: var(--deck-ink);
 }
 
@@ -421,7 +421,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-family: "Manrope", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   width: auto;
   max-width: 90%;
   margin: auto;
@@ -487,7 +487,7 @@
 }
 
 .slideTitle {
-  font-family: "Fraunces", serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 56px;
   line-height: 1.1;
   color: rgba(23, 28, 29, 1);
@@ -642,7 +642,7 @@
 }
 
 .slideInfoCardLabel {
-  font-family: "Chakra Petch", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   font-weight: 600;
   color: rgba(23, 28, 29, 0.65);
@@ -672,7 +672,7 @@
 }
 
 .slideInfoCardItem {
-  font-family: "Chakra Petch", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 18px;
   font-weight: 400;
   color: rgba(23, 28, 29, 0.85);
@@ -751,7 +751,7 @@
 }
 
 .slideCardTitle {
-  font-family: "Chakra Petch", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 20px;
   font-weight: 600;
   color: rgba(23, 28, 29, 1);
@@ -761,7 +761,7 @@
 }
 
 .slideCardDescription {
-  font-family: "Chakra Petch", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: rgba(23, 28, 29, 0.7);
@@ -918,7 +918,7 @@
 }
 
 .overviewTitle {
-  font-family: "Fraunces", serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 72px;
   font-weight: 700;
   color: var(--deck-ink);
@@ -1024,7 +1024,7 @@
 }
 
 .architectureCenterNode {
-  font-family: "Manrope", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 72px;
   font-weight: 700;
   color: var(--deck-ink);
@@ -1130,7 +1130,7 @@
 }
 
 .linkTitle {
-  font-family: "Manrope", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 48px;
   font-weight: 600;
   color: var(--deck-ink);
@@ -1140,7 +1140,7 @@
 }
 
 .linkUrl {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 32px;
   font-weight: 500;
   color: var(--deck-accent-2);
@@ -1182,7 +1182,7 @@
 }
 
 .featureTitle {
-  font-family: "Fraunces", serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 52px;
   font-weight: 700;
   color: var(--deck-ink);
@@ -1700,7 +1700,7 @@
 }
 
 .verticalListTitle {
-  font-family: "Fraunces", serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 42px;
   font-weight: 700;
   color: var(--deck-ink);
@@ -1709,7 +1709,7 @@
 }
 
 .verticalListDescription {
-  font-family: "Chakra Petch", sans-serif;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   font-size: 22px;
   font-weight: 400;
   color: var(--deck-muted);

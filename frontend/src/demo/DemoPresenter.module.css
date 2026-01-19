@@ -1,3 +1,24 @@
+/* Force all demo mode elements to use Inter font, overriding theme fonts */
+.overlay,
+.spotlight,
+.tooltip,
+.tooltip *,
+.tooltipHeader,
+.tooltipHeader *,
+.tooltipContent,
+.tooltipContent *,
+.tooltipTitle,
+.tooltipBody,
+.tooltipControls,
+.tooltipControls *,
+.controlButton,
+.controlButtonSecondary,
+.pill,
+.skipButton,
+.startDemoButton {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -40,6 +61,7 @@
   z-index: 5001;
   border: 2px solid #1677ff;
   overflow: hidden;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
 }
 
 .tooltipHeader {
@@ -190,6 +212,7 @@
   z-index: 5002;
   box-shadow: 0 4px 12px rgba(22, 119, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
 }
 
 /* Welcome Video Styles */
@@ -246,6 +269,7 @@
   transition: all 0.3s ease;
   z-index: 10001;
   pointer-events: auto;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
 }
 
 .skipButton:hover {
@@ -272,6 +296,7 @@
   z-index: 10001;
   box-shadow: 0 8px 24px rgba(22, 119, 255, 0.4);
   animation: slideUp 0.5s ease;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
 }
 
 @keyframes slideUp {
