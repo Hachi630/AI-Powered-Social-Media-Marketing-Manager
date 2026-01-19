@@ -5,7 +5,7 @@
   gap: 24px;
   height: 99px !important;
   padding: 0 32px;
-  /* 透明玻璃效果 */
+  /* Transparent glass effect */
   background: rgba(255, 255, 255, 0.15) !important;
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
@@ -18,13 +18,13 @@
     0 8px 32px rgba(0, 0, 0, 0.08),
     0 2px 8px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  /* 添加微妙的渐变光泽 */
+  /* Add subtle gradient sheen */
   background-image: 
     linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
 }
 
 [data-theme="warm"] .header {
-  /* 暖色主题的透明玻璃效果 */
+  /* Transparent glass effect for warm theme */
   background: rgba(254, 253, 248, 0.2) !important;
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
@@ -308,7 +308,7 @@ html[data-darkreader-mode] .menu :global(.ant-menu-item-selected::after) {
   display: none !important;
 }
 
-/* Header button styles - 透明玻璃效果 */
+/* Header button styles - Transparent glass effect */
 .header :global(.ant-btn) {
   color: var(--text-primary, #1e1e1e) !important;
   border-color: rgba(255, 255, 255, 0.2) !important;
@@ -435,7 +435,7 @@ html[data-darkreader-mode] .header :global(.ant-btn-primary:hover) {
     inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
 }
 
-/* Avatar styles - 液态玻璃效果 */
+/* Avatar styles - Liquid glass effect */
 .header :global(.ant-avatar) {
   border: 2px solid rgba(255, 255, 255, 0.4) !important;
   box-shadow: 
