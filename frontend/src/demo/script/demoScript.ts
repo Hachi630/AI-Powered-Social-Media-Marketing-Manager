@@ -34,7 +34,7 @@ export type DemoSlide = {
   imageSticker?: string;
   note?: string;
   // Keynote style additions
-  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list" | "image-showcase" | "image-zoom";
+  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list" | "image-showcase" | "image-zoom" | "grid-2x2";
   overviewIcons?: DemoSlideOverviewIcon[];
   featureTagline?: string;
   transition?: string; // reveal.js transition
@@ -50,6 +50,8 @@ export type DemoSlide = {
     title: string;
     description: string;
   }[];
+  // Grid 2x2 images
+  gridImages?: string[];
 };
 
 export type DemoStep = {
@@ -188,6 +190,26 @@ export const demoScript: DemoStep[] = [
       note: "AI Robot image showcase.",
     },
   },
+    {
+    id: "ai-robot-mascots",
+    title: "AI Robot Mascots",
+    narration: "Meet our AI assistant mascots.",
+    slide: {
+      eyebrow: "",
+      title: "",
+      subtitle: "",
+      bullets: [],
+      slideType: "grid-2x2",
+      gridImages: [
+        "/img/mascot1_float.gif",
+        "/img/mascot2_float.gif",
+        "/img/mascot3_float.gif",
+        "/img/mascot4_float.gif",
+      ],
+      transition: "fade",
+      note: "AI Robot mascots grid slide.",
+    },
+  },
   {
     id: "templates-intro",
     title: "Templates",
@@ -215,6 +237,34 @@ export const demoScript: DemoStep[] = [
       image: "/img/templates-screenshot.png",
       transition: "fade",
       note: "Templates screenshot with zoom animation.",
+    },
+  },
+  {
+    id: "skills-intro",
+    title: "Skills Introduction",
+    narration: "What are skills.",
+    slide: {
+      eyebrow: "",
+      title: "Skills are task-focused AI capabilities\nthat allow the assistant to understand user intent and perform specific actions more accurately.",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "concave",
+      note: "Skills introduction slide.",
+    },
+  },
+  {
+    id: "skills-custom",
+    title: "Custom Skills",
+    narration: "Our custom marketing skills.",
+    slide: {
+      eyebrow: "",
+      title: "We designed our own marketing-focused skills\nto improve output quality in real business scenarios.",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      transition: "concave",
+      note: "Custom marketing skills slide.",
     },
   },
   {
