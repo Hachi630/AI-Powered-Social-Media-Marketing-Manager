@@ -242,12 +242,15 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         console.log('Live2D: Model loaded successfully', model);
 
         // Scale model to fit container
-        const scale = Math.min(200 / model.width, 200 / model.height) * 0.8;
-        model.scale.set(scale);
+        const modelAny = model as any;
+        const scale = Math.min(200 / (modelAny.width || 200), 200 / (modelAny.height || 200)) * 0.8;
+        if (modelAny.scale) {
+          modelAny.scale.set(scale);
+        }
 
         // Center model in container
-        model.x = (200 - model.width) / 2;
-        model.y = (200 - model.height) / 2;
+        modelAny.x = (200 - (modelAny.width || 200)) / 2;
+        modelAny.y = (200 - (modelAny.height || 200)) / 2;
 
         // Check if app is still valid/mounted before adding child
         if (!app || app !== appRef.current || !app.stage) {
@@ -256,14 +259,14 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           return;
         }
 
-        app.stage.addChild(model);
+        app.stage.addChild(modelAny as any);
         modelRef.current = model;
         setIsLoaded(true);
         console.log('Live2D: Model added to stage, widget should be visible now');
 
         // Enable interactions for click
-        model.interactive = true;
-        model.cursor = 'pointer';
+        modelAny.interactive = true;
+        modelAny.cursor = 'pointer';
 
         // Set event mode to allow both click and drag
         // Pixi v6 uses interactive, v7 uses eventMode. We are on v6.
@@ -294,7 +297,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         setTimeout(playIdleMotion, 1000);
 
         // Set up click handler - toggle dialog open/close
-        model.on('pointertap', async () => {
+        if (modelAny.on) {
+          modelAny.on('pointertap', async () => {
           // Stop crawl animation if user clicks (use ref for latest state)
           if (isCrawlingRef.current) {
             stopCrawlAnimation();
@@ -317,7 +321,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
             // Motion may not exist, that's okay
             console.debug('Tap motion not available');
           }
-        });
+          });
+        }
 
         // Mouse follow (eye tracking)
         const handleMouseMove = (event: MouseEvent) => {
