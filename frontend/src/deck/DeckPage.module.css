@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Fraunces:opsz,wght@9..144,400;700;900&family=IBM+Plex+Mono:wght@500&family=Manrope:wght@400;500;600;700&display=swap");
+/* Google Fonts are loaded in index.html for better compatibility */
 
 .page {
   --deck-bg: #f0f2f3;
