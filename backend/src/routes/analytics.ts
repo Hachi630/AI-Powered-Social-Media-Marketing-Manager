@@ -1757,7 +1757,8 @@ router.get('/', requireAuth, async (req: any, res) => {
           
           const activeDaysSet = new Set<string>()
           const consistencyHeatmap: any[] = []
-          (consistencyIndexData || []).forEach((item: any) => {
+          const indexDataArray: any[] = consistencyIndexData || []
+          indexDataArray.forEach((item: any) => {
             if (item?._id?.year === currentYear && item?._id?.month === currentMonth) {
               const dayKey = `${item._id.year}-${item._id.month}-${item._id.day}`
               activeDaysSet.add(dayKey)
@@ -1800,16 +1801,18 @@ router.get('/', requireAuth, async (req: any, res) => {
         try {
           const [conversations, publishedPosts] = (leadTimeSources || [[], []]) as [any[], any[]]
           const leadTimes: number[] = []
-          
-          (conversations || []).forEach((conv: any) => {
+
+          const conversationsArray: any[] = conversations || []
+          conversationsArray.forEach((conv: any) => {
             try {
               const convCreatedAt = conv?.createdAt ? new Date(conv.createdAt).getTime() : null
               if (!convCreatedAt || isNaN(convCreatedAt)) return
               
               const convContent = String(conv?.messages?.[0]?.content || '').toLowerCase()
-              
+
               // Find matching published post by content similarity
-              (publishedPosts || []).forEach((post: any) => {
+              const publishedPostsArray: any[] = publishedPosts || []
+              publishedPostsArray.forEach((post: any) => {
                 try {
                   const postContent = post?.content?.toLowerCase() || ''
                   const postPublishedAt = post?.publishedAt ? new Date(post.publishedAt).getTime() : null
@@ -1994,8 +1997,9 @@ router.get('/', requireAuth, async (req: any, res) => {
           const [events, postsWithImpressions] = (eventImpactSources || [[], []]) as [any[], any[]]
           const eventWindows: any[] = []
           const nonEventImpressions: number[] = []
-          
-          (events || []).forEach((event: any) => {
+
+          const eventsArray: any[] = events || []
+          eventsArray.forEach((event: any) => {
             try {
               if (!event?.date) return
               const eventDate = new Date(event.date)
@@ -2005,8 +2009,9 @@ router.get('/', requireAuth, async (req: any, res) => {
               windowStart.setDate(windowStart.getDate() - 1) // Day before
               const windowEnd = new Date(eventDate)
               windowEnd.setDate(windowEnd.getDate() + 2) // 2 days after
-              
-              const eventWindowPosts = (postsWithImpressions || []).filter((post: any) => {
+
+              const postsArray: any[] = postsWithImpressions || []
+              const eventWindowPosts = postsArray.filter((post: any) => {
                 try {
                   if (!post?.publishedAt) return false
                   const postDate = new Date(post.publishedAt)
@@ -2047,8 +2052,9 @@ router.get('/', requireAuth, async (req: any, res) => {
               // Skip if error
             }
           })
-          
-          (postsWithImpressions || []).forEach((post: any) => {
+
+          const postsWithImpressionsArray: any[] = postsWithImpressions || []
+          postsWithImpressionsArray.forEach((post: any) => {
             try {
               if (!post?.publishedAt) return
               const postDate = new Date(post.publishedAt)
