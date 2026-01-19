@@ -33,7 +33,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: "Inter, system-ui, sans-serif",
   accentColor: "#bacf65",
   darkMode: false,
-  live2dModel: "/umiushi/うみうしモデル.model3.json",
+  live2dModel: "/umiushi/model.model3.json",
   enableElo: true,
 };
 

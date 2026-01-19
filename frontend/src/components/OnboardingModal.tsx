@@ -86,7 +86,7 @@ const CONTENT_TYPES_OPTIONS = [
 
 // Character options for Step 8
 const CHARACTER_OPTIONS = [
-  { name: "Umiushi", path: "/umiushi/うみうしモデル.model3.json", color: "#8ecae6" },
+  { name: "Umiushi", path: "/umiushi/model.model3.json", color: "#8ecae6" },
   { name: "Kurage", path: "/kurage/クラゲモデル.model3.json", color: "#219ebc" },
   { name: "Kurione", path: "/kurione/クリオネモデル.model3.json", color: "#023047" },
   { name: "Mendako", path: "/mendako/めんだこモデル.model3.json", color: "#ffb703" },

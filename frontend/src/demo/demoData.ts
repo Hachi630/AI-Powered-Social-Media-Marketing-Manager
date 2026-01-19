@@ -2,6 +2,8 @@ import dayjs from "dayjs";
 import { CalendarItem } from "../services/calendarService";
 import { ChatMessage, Conversation, ConversationListItem } from "../services/chatService";
 import { Contact, WhatsAppConversation } from "../services/messagingService";
+// Import demo image for proper bundling
+import demoImage from "/img/i2.jpg?url";
 
 export const DEMO_USER = {
   id: "demo-maya",
@@ -24,7 +26,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "09:00",
     title: 'Day 1: "Love is in the Oven" Launch',
     content: "Love is in the air... and in the oven! ❤️✨ We are officially kicking off Valentine's Week at Maya's Cake Studio! Whether you need a treat for your boo, your bestie, or just you (we don't judge!), we've got the goods. Swipe to see our limited-time Valentine's menu featuring heart-shaped brownies and rose-swirl cupcakes! 🌹🍫 Pre-order link in bio before we sell out!",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),
@@ -39,7 +41,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "10:00",
     title: 'Day 2: "School Crush & Lunchbox Love"',
     content: "Pack a little extra love in their lunchbox this week! 💌 Our decorated sugar cookies and brownie bites are the perfect surprise for the kids—or that campus crush you've been eyeing in the library. 😉 Grab a box of 6 or 12 today! Tag a parent (or a crush) who needs a hint!",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),
@@ -54,7 +56,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "14:00",
     title: "Day 3: Galentine's Day Prep",
     content: "Who needs a date when you have cake? 👯‍♀️💕 Ladies, get ready for Galentine's! We're talking dessert tables filled with pink velvet cupcakes and gooey brownies for your girls' night in. Because best friends are the real soulmates. Order a 'Bestie Box' for pickup!",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),
@@ -69,7 +71,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "11:00",
     title: 'Day 4: The "Grand Gesture"',
     content: "Flowers are nice, but have you ever tried cake? 🎂👀 If you really want to wow them this year, skip the drugstore chocolates and go for one of our custom Mini Cakes (Bento Cakes). Small enough to share, sweet enough to say 'I love you' perfectly. Only a few custom slots left! Message us to claim yours.",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),
@@ -84,7 +86,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "16:00",
     title: 'Day 5: The "Don\'t Panic!" Reminder',
     content: "48 Hours to go! ⏰ This is your friendly reminder from Maya's Cake Studio: Don't show up empty-handed! We still have a few cupcake assortments and cookie boxes available for pre-order. Be the hero of Valentine's Day. 🦸‍♂️🦸‍♀️ Click the link in bio to secure the goods!",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),
@@ -99,7 +101,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "12:00",
     title: "Day 6: Galentine's / Self-Love Celebration",
     content: "Happy Galentine's Day! 🥂 Whether you're celebrating with the squad or having a cozy night in, you deserve a treat. Stop by the studio today to grab a single cupcake or a fudgy brownie just for you. Treat yourself—you've earned it! Open until 8PM for walk-ins!",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),
@@ -114,7 +116,7 @@ export const DEMO_CALENDAR_ITEMS: CalendarItem[] = [
     time: "08:00",
     title: "Day 7: The Big Day!",
     content: "Happy Valentine's Day from the whole team at Maya's Cake Studio! ❤️🧁 We are feeling the love today! We have a few extra sweets in the case for last-minute gifters, but hurry in before they vanish. Thank you for letting us be a small part of your love stories! Come say hi! We're open until sold out!",
-    imageUrl: "/img/i2.jpg",
+    imageUrl: demoImage,
     status: "draft",
     createdAt: baseDate.toISOString(),
     updatedAt: baseDate.toISOString(),

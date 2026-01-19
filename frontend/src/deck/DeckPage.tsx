@@ -449,7 +449,7 @@ export default function DeckPage() {
         </section>
         {/* Live2D AI Robot in bottom right corner */}
         <div className={styles.live2dDock}>
-          <Live2DWidget modelPath="/umiushi/うみうしモデル.model3.json" />
+          <Live2DWidget modelPath="/umiushi/model.model3.json" />
         </div>
       </div>
     </div>

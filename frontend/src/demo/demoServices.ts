@@ -3,6 +3,8 @@ import {
   DEMO_USER,
   DEMO_CALENDAR_ITEMS,
 } from "./demoData";
+// Import demo image for proper bundling
+import demoGeneratedImage from "/img/i2.jpg?url";
 import {
   getDemoBrandProfile,
   getDemoCalendarItems,
@@ -162,7 +164,7 @@ export const demoChat = {
     await delay(500);
     return {
       success: true,
-      imageUrl: "/img/i2.jpg",
+      imageUrl: demoGeneratedImage,
       conversationId: "demo-conv-1",
     };
   },
