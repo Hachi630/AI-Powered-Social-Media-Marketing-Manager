@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#E3F2FD"/>
+      <stop offset="50%" stop-color="#BBDEFB"/>
+      <stop offset="100%" stop-color="#E1F5FE"/>
+    </radialGradient>
+    <radialGradient id="kirbyBody" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#FFC8D4"/>
+      <stop offset="100%" stop-color="#FFB6C1"/>
+    </radialGradient>
+    <radialGradient id="kirbyFeet" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#FF4D6D"/>
+      <stop offset="100%" stop-color="#DC143C"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#bgGradient)"/>
+
+  <!-- Concentric circles -->
+  <circle cx="200" cy="200" r="180" fill="none" stroke="#B3E5FC" stroke-width="20" opacity="0.3"/>
+  <circle cx="200" cy="200" r="140" fill="none" stroke="#81D4FA" stroke-width="15" opacity="0.4"/>
+  <circle cx="200" cy="200" r="100" fill="none" stroke="#4FC3F7" stroke-width="10" opacity="0.3"/>
+
+  <!-- Connection lines -->
+  <g stroke="#90CAF9" stroke-width="2" opacity="0.6">
+    <line x1="200" y1="200" x2="80" y2="80"/>
+    <line x1="200" y1="200" x2="320" y2="80"/>
+    <line x1="200" y1="200" x2="80" y2="320"/>
+    <line x1="200" y1="200" x2="320" y2="320"/>
+    <line x1="200" y1="200" x2="50" y2="200"/>
+    <line x1="200" y1="200" x2="350" y2="200"/>
+    <line x1="200" y1="200" x2="200" y2="50"/>
+    <line x1="200" y1="200" x2="200" y2="350"/>
+    <line x1="200" y1="200" x2="130" y2="60"/>
+    <line x1="200" y1="200" x2="270" y2="60"/>
+    <line x1="200" y1="200" x2="60" y2="130"/>
+    <line x1="200" y1="200" x2="340" y2="130"/>
+  </g>
+
+  <!-- Floating icons around -->
+  <!-- Top icons -->
+  <g transform="translate(80, 60)">
+    <circle r="18" fill="#E3F2FD" stroke="#64B5F6" stroke-width="2"/>
+    <rect x="-8" y="-8" width="16" height="16" fill="none" stroke="#42A5F5" stroke-width="2" rx="2"/>
+    <line x1="-4" y1="0" x2="4" y2="0" stroke="#42A5F5" stroke-width="2"/>
+    <line x1="0" y1="-4" x2="0" y2="4" stroke="#42A5F5" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(200, 40)">
+    <circle r="16" fill="#E8F5E9" stroke="#81C784" stroke-width="2"/>
+    <path d="M-6,-2 L0,6 L6,-6" fill="none" stroke="#66BB6A" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(320, 60)">
+    <circle r="18" fill="#FFF3E0" stroke="#FFB74D" stroke-width="2"/>
+    <rect x="-7" y="-7" width="14" height="14" fill="none" stroke="#FFA726" stroke-width="2" rx="2"/>
+  </g>
+
+  <!-- Side icons -->
+  <g transform="translate(45, 150)">
+    <circle r="15" fill="#E1F5FE" stroke="#4FC3F7" stroke-width="2"/>
+    <circle r="5" fill="none" stroke="#29B6F6" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(355, 150)">
+    <circle r="15" fill="#F3E5F5" stroke="#BA68C8" stroke-width="2"/>
+    <path d="M-5,-5 L5,5 M-5,5 L5,-5" stroke="#AB47BC" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(50, 250)">
+    <circle r="16" fill="#FFEBEE" stroke="#EF9A9A" stroke-width="2"/>
+    <circle r="4" fill="#EF5350"/>
+  </g>
+
+  <g transform="translate(350, 250)">
+    <circle r="16" fill="#E8F5E9" stroke="#A5D6A7" stroke-width="2"/>
+    <rect x="-5" y="-5" width="10" height="10" fill="#81C784" rx="2"/>
+  </g>
+
+  <!-- Bottom icons -->
+  <g transform="translate(100, 340)">
+    <circle r="14" fill="#FFF8E1" stroke="#FFD54F" stroke-width="2"/>
+    <polygon points="0,-6 6,4 -6,4" fill="#FFC107"/>
+  </g>
+
+  <g transform="translate(200, 360)">
+    <circle r="14" fill="#E0F7FA" stroke="#4DD0E1" stroke-width="2"/>
+    <rect x="-5" y="-5" width="10" height="10" fill="none" stroke="#26C6DA" stroke-width="2"/>
+  </g>
+
+  <g transform="translate(300, 340)">
+    <circle r="14" fill="#FCE4EC" stroke="#F48FB1" stroke-width="2"/>
+    <circle r="4" fill="none" stroke="#EC407A" stroke-width="2"/>
+  </g>
+
+  <!-- Small dots -->
+  <g fill="#90CAF9" opacity="0.6">
+    <circle cx="120" cy="100" r="4"/>
+    <circle cx="280" cy="100" r="4"/>
+    <circle cx="60" cy="200" r="3"/>
+    <circle cx="340" cy="200" r="3"/>
+    <circle cx="120" cy="300" r="4"/>
+    <circle cx="280" cy="300" r="4"/>
+    <circle cx="150" cy="350" r="3"/>
+    <circle cx="250" cy="350" r="3"/>
+  </g>
+
+  <!-- Kirby holding cube -->
+  <!-- Kirby left arm -->
+  <ellipse cx="155" cy="195" rx="22" ry="18" fill="#FFB6C1" transform="rotate(-20 155 195)"/>
+
+  <!-- Kirby body -->
+  <ellipse cx="200" cy="210" rx="60" ry="55" fill="url(#kirbyBody)"/>
+
+  <!-- Kirby right arm holding cube -->
+  <ellipse cx="250" cy="190" rx="20" ry="16" fill="#FFB6C1" transform="rotate(25 250 190)"/>
+
+  <!-- Cube/Box in hands -->
+  <g transform="translate(230, 175)">
+    <!-- Cube faces -->
+    <rect x="0" y="5" width="30" height="30" fill="#4FC3F7" stroke="#29B6F6" stroke-width="2" rx="4"/>
+    <rect x="5" y="0" width="30" height="30" fill="#81D4FA" stroke="#29B6F6" stroke-width="2" rx="4"/>
+    <!-- Cube highlight -->
+    <rect x="10" y="5" width="8" height="8" fill="#B3E5FC" rx="2"/>
+    <!-- Cube ribbon -->
+    <line x1="20" y1="0" x2="20" y2="30" stroke="#FFD54F" stroke-width="3"/>
+    <line x1="5" y1="15" x2="35" y2="15" stroke="#FFD54F" stroke-width="3"/>
+  </g>
+
+  <!-- Kirby feet -->
+  <ellipse cx="170" cy="260" rx="24" ry="15" fill="url(#kirbyFeet)"/>
+  <ellipse cx="230" cy="260" rx="24" ry="15" fill="url(#kirbyFeet)"/>
+
+  <!-- Kirby blush -->
+  <ellipse cx="155" cy="215" rx="12" ry="8" fill="#FF9999" opacity="0.6"/>
+  <ellipse cx="245" cy="215" rx="12" ry="8" fill="#FF9999" opacity="0.6"/>
+
+  <!-- Kirby eyes -->
+  <ellipse cx="180" cy="195" rx="10" ry="15" fill="#2E7DD1"/>
+  <ellipse cx="215" cy="195" rx="10" ry="15" fill="#2E7DD1"/>
+
+  <!-- Eye highlights -->
+  <ellipse cx="176" cy="189" rx="4" ry="6" fill="#fff"/>
+  <ellipse cx="211" cy="189" rx="4" ry="6" fill="#fff"/>
+
+  <!-- Kirby mouth -->
+  <ellipse cx="198" cy="230" rx="8" ry="6" fill="#333"/>
+  <ellipse cx="198" cy="232" rx="5" ry="3" fill="#FF6B8A"/>
+</svg>

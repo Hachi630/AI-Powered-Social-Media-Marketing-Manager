@@ -180,6 +180,15 @@ export default function DeckPage() {
                         <div className={styles.featureContent}>
                           <h1 className={styles.featureTitle}>{step.slide.title}</h1>
                           <p className={styles.featureTagline}>{step.slide.featureTagline}</p>
+                          {step.slide.image && (
+                            <div className={
+                              step.slide.image.includes('kirby-robot') ? styles.featureImageLarge :
+                              step.slide.image.includes('Thanks') ? styles.featureImageXLarge :
+                              styles.featureImage
+                            }>
+                              <img src={step.slide.image} alt="" />
+                            </div>
+                          )}
                           {step.slide.title === "Cloud deployment" && (
                             <div className={styles.cloudVisual}>
                               <div className={styles.cloud3D}>☁️</div>
