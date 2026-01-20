@@ -234,20 +234,28 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           }
         }
 
+        // Normalize model path - ensure it uses the correct filename
+        let normalizedModelPath = modelPath;
+        // Migrate old Japanese filename to new English filename
+        if (normalizedModelPath.includes('うみうしモデル') || normalizedModelPath.includes('/umiushi/うみうしモデル')) {
+          normalizedModelPath = "/umiushi/model.model3.json";
+          console.log('Live2D: Migrated old model path to:', normalizedModelPath);
+        }
+        
         // Load model with full URL for production
-        const fullModelPath = modelPath.startsWith('http')
-          ? modelPath
-          : `${window.location.origin}${modelPath}`;
+        const fullModelPath = normalizedModelPath.startsWith('http')
+          ? normalizedModelPath
+          : `${window.location.origin}${normalizedModelPath}`;
         console.log(`Live2D: Loading model from ${fullModelPath}`);
 
         const model = await Live2DModel.from(fullModelPath, {
-          autoInteract: true,
+          autoInteract: false, // Disabled to avoid pixi.js conflicts
         }).catch((loadError) => {
           console.error('Live2D: Model load error:', loadError);
           // Try without origin prefix as fallback
-          if (!modelPath.startsWith('http')) {
+          if (!normalizedModelPath.startsWith('http')) {
             console.log('Live2D: Retrying with relative path...');
-            return Live2DModel.from(modelPath, { autoInteract: true });
+            return Live2DModel.from(normalizedModelPath, { autoInteract: false });
           }
           throw loadError;
         });
