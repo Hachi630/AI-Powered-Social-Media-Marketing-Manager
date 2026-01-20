@@ -34,7 +34,17 @@ export type DemoSlide = {
   imageSticker?: string;
   note?: string;
   // Keynote style additions
-  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list" | "image-showcase" | "image-zoom" | "grid-2x2";
+  slideType?: "overview" | "feature" | "cover" | "link" | "dual-image" | "vertical-list" | "image-showcase" | "image-zoom" | "grid-2x2" | "grid-2x3" | "template-cards" | "code-block";
+  // Template cards for 2x2 grid display
+  templateCards?: {
+    icon: string;
+    iconBgColor: string;
+    borderColor: string;
+    title: string;
+    description: string;
+  }[];
+  // Code block content
+  codeContent?: string;
   overviewIcons?: DemoSlideOverviewIcon[];
   featureTagline?: string;
   transition?: string; // reveal.js transition
@@ -87,6 +97,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
+      image: "/img/kirby-busy.svg",
       transition: "concave",
       note: "Problem statement slide.",
     },
@@ -101,6 +112,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
+      image: "/img/kirby-guide.svg",
       transition: "concave",
       note: "Solution statement slide.",
     },
@@ -116,11 +128,12 @@ export const demoScript: DemoStep[] = [
       bullets: [],
       slideType: "overview",
       overviewIcons: [
-        { icon: "☁️", label: "Cloud" },
-        { icon: "📖", label: "User Guide" },
-        { icon: "🤖", label: "AI Robot" },
-        { icon: "📋", label: "Templates" },
-        { icon: "✨", label: "UI Polish" },
+        { icon: "☁️", label: "CLOUD" },
+        { icon: "📖", label: "USER GUIDE" },
+        { icon: "🤖", label: "AI ROBOT" },
+        { icon: "📋", label: "TEMPLATES" },
+        { icon: "🔌", label: "MCP" },
+        { icon: "✨", label: "UI POLISH" },
       ],
       transition: "convex",
       note: "Overview slide with 5 icons.",
@@ -171,45 +184,46 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
+      image: "/img/kirby-robot.svg",
       transition: "concave",
       note: "AI Robot introduction slide.",
     },
   },
-  {
-    id: "ai-robot-demo",
-    title: "AI Robot Demo",
-    narration: "Meet our AI assistant.",
-    slide: {
-      eyebrow: "",
-      title: "",
-      subtitle: "",
-      bullets: [],
-      slideType: "image-showcase",
-      image: "/img/entrance_transparent.webp",
-      transition: "fade",
-      note: "AI Robot image showcase.",
-    },
-  },
-    {
-    id: "ai-robot-mascots",
-    title: "AI Robot Mascots",
-    narration: "Meet our AI assistant mascots.",
-    slide: {
-      eyebrow: "",
-      title: "",
-      subtitle: "",
-      bullets: [],
-      slideType: "grid-2x2",
-      gridImages: [
-        "/img/mascot1_float.gif",
-        "/img/mascot2_float.gif",
-        "/img/mascot3_float.gif",
-        "/img/mascot4_float.gif",
-      ],
-      transition: "fade",
-      note: "AI Robot mascots grid slide.",
-    },
-  },
+  // {
+  //   id: "ai-robot-demo",
+  //   title: "AI Robot Demo",
+  //   narration: "Meet our AI assistant.",
+  //   slide: {
+  //     eyebrow: "",
+  //     title: "",
+  //     subtitle: "",
+  //     bullets: [],
+  //     slideType: "image-showcase",
+  //     image: "/img/entrance_transparent.webp",
+  //     transition: "fade",
+  //     note: "AI Robot image showcase.",
+  //   },
+  // },
+  //   {
+  //   id: "ai-robot-mascots",
+  //   title: "AI Robot Mascots",
+  //   narration: "Meet our AI assistant mascots.",
+  //   slide: {
+  //     eyebrow: "",
+  //     title: "",
+  //     subtitle: "",
+  //     bullets: [],
+  //     slideType: "grid-2x2",
+  //     gridImages: [
+  //       "/img/mascot1_float.gif",
+  //       "/img/mascot2_float.gif",
+  //       "/img/mascot3_float.gif",
+  //       "/img/mascot4_float.gif",
+  //     ],
+  //     transition: "fade",
+  //     note: "AI Robot mascots grid slide.",
+  //   },
+  // },
   {
     id: "templates-intro",
     title: "Templates",
@@ -219,52 +233,172 @@ export const demoScript: DemoStep[] = [
       title: "We created templates for users who don't know how to write prompts.",
       subtitle: "",
       bullets: [],
-      slideType: "feature",
+      slideType: "template-cards",
+      templateCards: [
+        {
+          icon: "☕",
+          iconBgColor: "#FEE2E2",
+          borderColor: "#F87171",
+          title: "Food & Restaurant",
+          description: "Create engaging social media content for your restaurant, cafe, or bakery",
+        },
+        {
+          icon: "👗",
+          iconBgColor: "#D1FAE5",
+          borderColor: "#34D399",
+          title: "Fashion & Apparel",
+          description: "Create product descriptions and styling suggestions for your clothing or accessory store",
+        },
+        {
+          icon: "💖",
+          iconBgColor: "#FCE7F3",
+          borderColor: "#F472B6",
+          title: "Beauty & Salon",
+          description: "Create service showcases and case studies for your beauty salon, hair salon, or nail salon",
+        },
+        {
+          icon: "🏠",
+          iconBgColor: "#D1FAE5",
+          borderColor: "#6EE7B7",
+          title: "Home & Decor",
+          description: "Create product showcases and styling inspiration for your furniture or home decor store",
+        },
+      ],
       transition: "concave",
-      note: "Templates introduction slide.",
+      note: "Templates introduction slide with 4 template cards.",
     },
   },
   {
-    id: "templates-demo",
-    title: "Templates Demo",
-    narration: "See our template cards in action.",
+    id: "template-food",
+    title: "Food & Restaurant Template",
+    narration: "Template prompt for food and restaurant businesses.",
+    slide: {
+      eyebrow: "",
+      title: "Food & Restaurant",
+      subtitle: "",
+      bullets: [],
+      slideType: "code-block",
+      codeContent: `I'm a [restaurant/cafe/bakery] owner and want to create social media marketing content. Please help me:
+
+1. Create an attractive Instagram post copy for our new [dish name]
+2. Include product features, taste descriptions, and recommendations
+3. Use warm and appealing language style
+4. Add appropriate hashtag suggestions
+5. Provide the best posting time recommendations
+
+Please generate complete social media content for me.`,
+      transition: "slide",
+      note: "Food & Restaurant template prompt.",
+    },
+  },
+  {
+    id: "mcp-intro",
+    title: "MCP Introduction",
+    narration: "Ensuring output quality via a custom MCP framework.",
+    slide: {
+      eyebrow: "",
+      title: "Ensuring output quality via a custom MCP framework.",
+      subtitle: "",
+      bullets: [],
+      slideType: "feature",
+      image: "/img/MCP.png",
+      transition: "concave",
+      note: "MCP introduction slide.",
+    },
+  },
+  {
+    id: "mcp-architecture",
+    title: "MCP Architecture",
+    narration: "Our MCP Copywriter architecture with RAG context injection.",
     slide: {
       eyebrow: "",
       title: "",
       subtitle: "",
       bullets: [],
-      slideType: "image-zoom",
-      image: "/img/templates-screenshot.png",
+      slideType: "image-showcase",
+      image: "/img/mcp-architecture.svg",
       transition: "fade",
-      note: "Templates screenshot with zoom animation.",
+      note: "MCP Copywriter architecture diagram.",
     },
   },
+  // {
+  //   id: "templates-demo",
+  //   title: "Templates Demo",
+  //   narration: "See our template cards in action.",
+  //   slide: {
+  //     eyebrow: "",
+  //     title: "",
+  //     subtitle: "",
+  //     bullets: [],
+  //     slideType: "image-zoom",
+  //     image: "/img/templates-screenshot.png",
+  //     transition: "fade",
+  //     note: "Templates screenshot with zoom animation.",
+  //   },
+  // },
+  // {
+  //   id: "skills-intro",
+  //   title: "Skills Introduction",
+  //   narration: "What are skills.",
+  //   slide: {
+  //     eyebrow: "",
+  //     title: "Skills are task-focused AI capabilities\nthat allow the assistant to understand user intent and perform specific actions more accurately.",
+  //     subtitle: "",
+  //     bullets: [],
+  //     slideType: "feature",
+  //     transition: "concave",
+  //     note: "Skills introduction slide.",
+  //   },
+  // },
+  // {
+  //   id: "skills-custom",
+  //   title: "Custom Skills",
+  //   narration: "Our custom marketing skills.",
+  //   slide: {
+  //     eyebrow: "",
+  //     title: "We designed our own marketing-focused skills\nto improve output quality in real business scenarios.",
+  //     subtitle: "",
+  //     bullets: [],
+  //     slideType: "feature",
+  //     transition: "concave",
+  //     note: "Custom marketing skills slide.",
+  //   },
+  // },
   {
-    id: "skills-intro",
-    title: "Skills Introduction",
-    narration: "What are skills.",
+    id: "ui-redesign",
+    title: "UI Redesign",
+    narration: "We redesigned our interface with flat design.",
     slide: {
       eyebrow: "",
-      title: "Skills are task-focused AI capabilities\nthat allow the assistant to understand user intent and perform specific actions more accurately.",
+      title: "We redesigned our interface with flat gradient design.",
       subtitle: "",
       bullets: [],
       slideType: "feature",
+      image: "/img/paint.png",
       transition: "concave",
-      note: "Skills introduction slide.",
+      note: "UI redesign introduction slide.",
     },
   },
   {
-    id: "skills-custom",
-    title: "Custom Skills",
-    narration: "Our custom marketing skills.",
+    id: "ui-screenshots",
+    title: "UI Screenshots",
+    narration: "Screenshots of our redesigned interface.",
     slide: {
       eyebrow: "",
-      title: "We designed our own marketing-focused skills\nto improve output quality in real business scenarios.",
+      title: "",
       subtitle: "",
       bullets: [],
-      slideType: "feature",
-      transition: "concave",
-      note: "Custom marketing skills slide.",
+      slideType: "grid-2x3",
+      gridImages: [
+        "/img/S1.png",
+        "/img/S2.png",
+        "/img/S3.png",
+        "/img/S4.png",
+        "/img/S5.png",
+        "/img/S6.png",
+      ],
+      transition: "fade",
+      note: "UI screenshots 2x3 grid.",
     },
   },
   {
@@ -277,6 +411,7 @@ export const demoScript: DemoStep[] = [
       subtitle: "",
       bullets: [],
       slideType: "feature",
+      image: "/img/kirby-testing.png",
       transition: "concave",
       note: "Sprint 4 goals slide.",
     },
@@ -287,10 +422,11 @@ export const demoScript: DemoStep[] = [
     narration: "Thank you.",
     slide: {
       eyebrow: "",
-      title: "Thanks",
+      title: "",
       subtitle: "",
       bullets: [],
       slideType: "feature",
+      image: "/img/Thanks.png",
       transition: "concave",
       note: "Thank you slide.",
     },

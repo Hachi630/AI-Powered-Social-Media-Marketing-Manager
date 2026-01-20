@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <!-- Background elements - floating papers/tasks -->
+  <g opacity="0.6">
+    <!-- Floating paper 1 -->
+    <rect x="50" y="30" width="40" height="50" fill="#fff" stroke="#ddd" stroke-width="2" rx="3" transform="rotate(-15 70 55)"/>
+    <line x1="58" y1="45" x2="82" y2="45" stroke="#ddd" stroke-width="2"/>
+    <line x1="58" y1="55" x2="78" y2="55" stroke="#ddd" stroke-width="2"/>
+    <line x1="58" y1="65" x2="75" y2="65" stroke="#ddd" stroke-width="2"/>
+
+    <!-- Floating paper 2 -->
+    <rect x="320" y="40" width="35" height="45" fill="#fff" stroke="#ddd" stroke-width="2" rx="3" transform="rotate(20 337 62)"/>
+    <line x1="328" y1="55" x2="348" y2="55" stroke="#ddd" stroke-width="2"/>
+    <line x1="328" y1="65" x2="345" y2="65" stroke="#ddd" stroke-width="2"/>
+
+    <!-- Floating paper 3 -->
+    <rect x="280" y="200" width="38" height="48" fill="#fff" stroke="#ddd" stroke-width="2" rx="3" transform="rotate(10 299 224)"/>
+    <line x1="288" y1="215" x2="310" y2="215" stroke="#ddd" stroke-width="2"/>
+    <line x1="288" y1="225" x2="305" y2="225" stroke="#ddd" stroke-width="2"/>
+  </g>
+
+  <!-- Clock showing busy time -->
+  <g transform="translate(320, 100)">
+    <circle cx="0" cy="0" r="25" fill="#fff" stroke="#FFB6C1" stroke-width="3"/>
+    <circle cx="0" cy="0" r="2" fill="#FF69B4"/>
+    <line x1="0" y1="0" x2="0" y2="-15" stroke="#FF69B4" stroke-width="3" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="10" y2="5" stroke="#FF69B4" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- Stack of papers/work on head -->
+  <g transform="translate(175, 80)">
+    <rect x="0" y="20" width="50" height="8" fill="#fff" stroke="#ddd" stroke-width="1" rx="1"/>
+    <rect x="2" y="12" width="46" height="8" fill="#fff" stroke="#ddd" stroke-width="1" rx="1"/>
+    <rect x="4" y="4" width="42" height="8" fill="#fff" stroke="#ddd" stroke-width="1" rx="1"/>
+    <rect x="6" y="-4" width="38" height="8" fill="#fff" stroke="#ddd" stroke-width="1" rx="1"/>
+  </g>
+
+  <!-- Kirby left arm holding phone -->
+  <ellipse cx="115" cy="165" rx="28" ry="22" fill="#FFB6C1" transform="rotate(-30 115 165)"/>
+
+  <!-- Main Kirby body with soft shading -->
+  <defs>
+    <radialGradient id="kirbyBodyGradient" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#FFC8D4"/>
+      <stop offset="100%" stop-color="#FFB6C1"/>
+    </radialGradient>
+    <radialGradient id="kirbyFeetGradient" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#FF4D6D"/>
+      <stop offset="100%" stop-color="#DC143C"/>
+    </radialGradient>
+  </defs>
+
+  <ellipse cx="200" cy="175" rx="80" ry="72" fill="url(#kirbyBodyGradient)"/>
+
+  <!-- Kirby right arm -->
+  <ellipse cx="285" cy="165" rx="26" ry="20" fill="#FFB6C1" transform="rotate(25 285 165)"/>
+
+  <!-- Kirby feet -->
+  <ellipse cx="155" cy="242" rx="32" ry="20" fill="url(#kirbyFeetGradient)"/>
+  <ellipse cx="245" cy="242" rx="32" ry="20" fill="url(#kirbyFeetGradient)"/>
+
+  <!-- Phone in hand -->
+  <rect x="80" y="140" width="22" height="36" fill="#333" rx="4" transform="rotate(-25 91 158)"/>
+  <rect x="84" y="146" width="14" height="22" fill="#4FC3F7" rx="2" transform="rotate(-25 91 158)"/>
+
+  <!-- Kirby blush circles -->
+  <ellipse cx="145" cy="180" rx="16" ry="10" fill="#FF9999" opacity="0.7"/>
+  <ellipse cx="255" cy="180" rx="16" ry="10" fill="#FF9999" opacity="0.7"/>
+
+  <!-- Tired/stressed eyes (—_—) -->
+  <line x1="165" y1="158" x2="188" y2="158" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+  <line x1="212" y1="158" x2="235" y2="158" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Small sweat drop -->
+  <path d="M265 125 Q270 142 265 152 Q260 142 265 125" fill="#87CEEB"/>
+
+  <!-- Tired mouth -->
+  <path d="M185 198 Q200 192 215 198" stroke="#333" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+  <!-- Social media icons floating around -->
+  <!-- Instagram-like icon -->
+  <g transform="translate(60, 130)">
+    <rect x="0" y="0" width="24" height="24" fill="#E1306C" rx="6"/>
+    <circle cx="12" cy="12" r="5" fill="none" stroke="#fff" stroke-width="2"/>
+    <circle cx="18" cy="6" r="2" fill="#fff"/>
+  </g>
+
+  <!-- Twitter/X-like icon -->
+  <g transform="translate(335, 175)">
+    <circle cx="12" cy="12" r="12" fill="#1DA1F2"/>
+    <path d="M8 16 Q12 12 8 8 Q14 10 18 8 Q14 12 18 16 Q12 14 8 16" fill="#fff"/>
+  </g>
+
+  <!-- Facebook-like icon -->
+  <g transform="translate(80, 210)">
+    <circle cx="10" cy="10" r="10" fill="#4267B2"/>
+    <text x="7" y="15" fill="#fff" font-size="14" font-weight="bold">f</text>
+  </g>
+
+  <!-- Stress lines -->
+  <g stroke="#FFB6C1" stroke-width="2" opacity="0.8">
+    <line x1="130" y1="95" x2="120" y2="80"/>
+    <line x1="145" y1="100" x2="140" y2="83"/>
+    <line x1="255" y1="100" x2="260" y2="83"/>
+    <line x1="270" y1="95" x2="280" y2="80"/>
+  </g>
+</svg>

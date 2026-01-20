@@ -13,24 +13,26 @@
   --border-light: #f1f4f8;
   --border-medium: #e5e7eb;
 
-  /* 白色背景 - 与 Dashboard 一致 */
+  /* White background - consistent with Dashboard */
   background: #ffffff !important;
   background-color: #ffffff !important;
 
-  /* 精致边框 + 微妙阴影 */
+  /* Refined border + subtle shadow */
   border-right: 1px solid var(--border-light) !important;
   box-shadow:
     2px 0 8px rgba(0, 0, 0, 0.02),
     inset -1px 0 0 rgba(255, 255, 255, 0.8);
 
-  /* 修正 sticky 定位 */
+  /* Fix sticky positioning */
   position: sticky !important;
-  top: 64px !important;
-  height: calc(100vh - 64px) !important;
-  overflow-y: auto !important;
+  top: 99px !important;
+  min-height: calc(100vh - 99px) !important;
+  height: auto !important;
+  align-self: stretch;
+  overflow-y: visible !important;
   overflow-x: hidden !important;
 
-  /* 过渡效果 */
+  /* Transition effect */
   transition: box-shadow 0.3s ease;
 }
 
@@ -73,7 +75,7 @@
   position: relative;
 }
 
-/* 装饰性渐变线 */
+/* Decorative gradient line */
 .header::after {
   content: '';
   position: absolute;

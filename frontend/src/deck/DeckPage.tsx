@@ -5,6 +5,7 @@ import { demoScript } from "../demo/script/demoScript";
 import styles from "./DeckPage.module.css";
 import ParticleBackground from "./components/ParticleBackground";
 import TypewriterText from "./components/TypewriterText";
+import Live2DWidget from "../components/Live2DWidget";
 
 export default function DeckPage() {
   const revealRef = useRef<HTMLDivElement>(null);
@@ -61,6 +62,9 @@ export default function DeckPage() {
                 const isImageShowcase = step.slide.slideType === "image-showcase";
                 const isImageZoom = step.slide.slideType === "image-zoom";
                 const isGrid2x2 = step.slide.slideType === "grid-2x2";
+                const isGrid2x3 = step.slide.slideType === "grid-2x3";
+                const isTemplateCards = step.slide.slideType === "template-cards";
+                const isCodeBlock = step.slide.slideType === "code-block";
                 const transition = step.slide.transition || "fade";
                 
                 return (
@@ -176,6 +180,15 @@ export default function DeckPage() {
                         <div className={styles.featureContent}>
                           <h1 className={styles.featureTitle}>{step.slide.title}</h1>
                           <p className={styles.featureTagline}>{step.slide.featureTagline}</p>
+                          {step.slide.image && (
+                            <div className={
+                              step.slide.image.includes('kirby-robot') ? styles.featureImageLarge :
+                              step.slide.image.includes('Thanks') ? styles.featureImageXLarge :
+                              styles.featureImage
+                            }>
+                              <img src={step.slide.image} alt="" />
+                            </div>
+                          )}
                           {step.slide.title === "Cloud deployment" && (
                             <div className={styles.cloudVisual}>
                               <div className={styles.cloud3D}>☁️</div>
@@ -303,6 +316,61 @@ export default function DeckPage() {
                           </div>
                         ))}
                       </div>
+                    ) : isGrid2x3 ? (
+                      <div className={styles.grid2x3Slide}>
+                        {step.slide.gridImages?.map((imgSrc, imgIndex) => (
+                          <div
+                            key={`${step.id}-grid-${imgIndex}`}
+                            className={styles.grid2x3Item}
+                            style={{ animationDelay: `${imgIndex * 0.12}s` }}
+                          >
+                            <img
+                              src={imgSrc}
+                              alt={`Screenshot ${imgIndex + 1}`}
+                              className={styles.grid2x3Img}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : isTemplateCards ? (
+                      <div className={styles.templateCardsSlide}>
+                        <h1 className={styles.templateCardsTitle}>{step.slide.title}</h1>
+                        <div className={styles.templateCardsGrid}>
+                          {step.slide.templateCards?.map((card, cardIndex) => (
+                            <div
+                              key={`${step.id}-template-${cardIndex}`}
+                              className={`${styles.templateCardItem} ${cardIndex === 0 ? styles.templateCardClickable : ""}`}
+                              style={{
+                                animationDelay: `${cardIndex * 0.15}s`,
+                                borderColor: card.borderColor,
+                              }}
+                              onClick={cardIndex === 0 ? () => {
+                                revealInstanceRef.current?.next();
+                              } : undefined}
+                            >
+                              <div
+                                className={styles.templateCardIcon}
+                                style={{ backgroundColor: card.iconBgColor }}
+                              >
+                                {card.icon}
+                              </div>
+                              <h3 className={styles.templateCardTitle}>{card.title}</h3>
+                              <p className={styles.templateCardDesc}>{card.description}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : isCodeBlock ? (
+                      <div className={styles.codeBlockSlide}>
+                        <h1 className={styles.codeBlockTitle}>{step.slide.title}</h1>
+                        <div className={styles.codeBlockContainer}>
+                          <pre className={styles.codeBlockPre}>
+                            <code className={styles.codeBlockCode}>
+                              {step.slide.codeContent}
+                            </code>
+                          </pre>
+                        </div>
+                      </div>
                     ) : (
                       <div
                         className={`${styles.slide} ${
@@ -388,6 +456,10 @@ export default function DeckPage() {
             </div>
           </div>
         </section>
+        {/* Live2D AI Robot in bottom right corner */}
+        <div className={styles.live2dDock}>
+          <Live2DWidget modelPath="/umiushi/model.model3.json" />
+        </div>
       </div>
     </div>
   );

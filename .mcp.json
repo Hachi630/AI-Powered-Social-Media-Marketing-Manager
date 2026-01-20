@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "melo-copywriter": {
+      "command": "node",
+      "args": ["d:/React/Melo/mcp-servers/melo-copywriter/dist/index.js"],
+      "env": {
+        "GEMINI_API_KEY": "YOUR_GOOGLE_API_KEY",
+        "GEMINI_MODEL": "gemini-2.0-flash"
+      }
+    }
+  }
+}

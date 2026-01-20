@@ -449,7 +449,7 @@ function Live2DWidgetWrapper({ isLoggedIn, user }: { isLoggedIn: boolean; user: 
     <ErrorBoundary fallback={null}>
       <Suspense fallback={null}>
         <Live2DWidgetLazy
-          modelPath={settings.live2dModel || "/umiushi/うみうしモデル.model3.json"}
+          modelPath={settings.live2dModel || "/umiushi/model.model3.json"}
           onSendToDashboard={handleSendToDashboard}
         />
       </Suspense>
