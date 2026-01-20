@@ -234,10 +234,22 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           }
         }
 
-        // Load model
-        console.log(`Live2D: Loading model from ${modelPath}`);
-        const model = await Live2DModel.from(modelPath, {
+        // Load model with full URL for production
+        const fullModelPath = modelPath.startsWith('http')
+          ? modelPath
+          : `${window.location.origin}${modelPath}`;
+        console.log(`Live2D: Loading model from ${fullModelPath}`);
+
+        const model = await Live2DModel.from(fullModelPath, {
           autoInteract: true,
+        }).catch((loadError) => {
+          console.error('Live2D: Model load error:', loadError);
+          // Try without origin prefix as fallback
+          if (!modelPath.startsWith('http')) {
+            console.log('Live2D: Retrying with relative path...');
+            return Live2DModel.from(modelPath, { autoInteract: true });
+          }
+          throw loadError;
         });
         console.log('Live2D: Model loaded successfully', model);
 

@@ -2,9 +2,8 @@ import dayjs from "dayjs";
 import {
   DEMO_USER,
   DEMO_CALENDAR_ITEMS,
+  getDemoImageUrl,
 } from "./demoData";
-// Import demo image for proper bundling
-import demoGeneratedImage from "/img/i2.jpg?url";
 import {
   getDemoBrandProfile,
   getDemoCalendarItems,
@@ -164,7 +163,7 @@ export const demoChat = {
     await delay(500);
     return {
       success: true,
-      imageUrl: demoGeneratedImage,
+      imageUrl: getDemoImageUrl(),
       conversationId: "demo-conv-1",
     };
   },

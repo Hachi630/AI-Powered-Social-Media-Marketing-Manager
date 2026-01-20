@@ -37,3 +37,41 @@ customHeaders:
     headers:
       - key: 'Cache-Control'
         value: 'public, max-age=31536000, immutable'
+  # Live2D model files - proper MIME types and CORS
+  - pattern: '**/*.moc3'
+    headers:
+      - key: 'Content-Type'
+        value: 'application/octet-stream'
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '**/*.model3.json'
+    headers:
+      - key: 'Content-Type'
+        value: 'application/json'
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '**/*.physics3.json'
+    headers:
+      - key: 'Content-Type'
+        value: 'application/json'
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '**/*.cdi3.json'
+    headers:
+      - key: 'Content-Type'
+        value: 'application/json'
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '**/*.motion3.json'
+    headers:
+      - key: 'Content-Type'
+        value: 'application/json'
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  # Live2D JS libraries
+  - pattern: '**/lib/*.js'
+    headers:
+      - key: 'Content-Type'
+        value: 'application/javascript'
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
