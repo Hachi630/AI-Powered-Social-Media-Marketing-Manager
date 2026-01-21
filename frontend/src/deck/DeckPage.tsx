@@ -34,6 +34,9 @@ export default function DeckPage() {
       maxScale: 1,
       // Speaker notes plugin - press 'S' to open speaker view
       plugins: [RevealNotes],
+      // Enable postMessage for speaker notes communication
+      postMessage: true,
+      postMessageEvents: true,
     });
 
     reveal.initialize().then(() => {

@@ -213,7 +213,7 @@ export const demoScript: DemoStep[] = [
   {
     id: "templates-intro",
     title: "Templates",
-    narration: "We created templates for users who don't know how to write prompts.",
+    narration: "",
     slide: {
       eyebrow: "",
       title: "We created templates for users who don't know how to write prompts.",
@@ -226,7 +226,7 @@ export const demoScript: DemoStep[] = [
           iconBgColor: "#FEE2E2",
           borderColor: "#F87171",
           title: "Food & Restaurant",
-          description: "Create engaging social media content for your restaurant, cafe, or bakery",
+          description: "Now, I’d like to introduce two key features: the Templates system and the MCP framework.\n First, I’ll talk about Templates. During development, we found that many small business owners want to use AI for marketing, but don’t know how to write effective prompts or where to start. \nTo solve this, we created a template system tailored to different industries, allowing users to get started quickly.\n We currently have four main template categories:",
         },
         {
           icon: "👗",
@@ -257,7 +257,7 @@ export const demoScript: DemoStep[] = [
   {
     id: "template-food",
     title: "Food & Restaurant Template",
-    narration: "Template prompt for food and restaurant businesses.",
+    narration: "",
     slide: {
       eyebrow: "",
       title: "Food & Restaurant",
@@ -274,13 +274,13 @@ export const demoScript: DemoStep[] = [
 
 Please generate complete social media content for me.`,
       transition: "slide",
-      note: "Food & Restaurant template prompt.",
+      note: "Food & Restaurant, for restaurants, cafes, and bakeries, helping generate engaging Instagram posts with product highlights and taste descriptions.\n Fashion & Apparel, providing product descriptions and styling suggestions for clothing and accessory stores.\n Beauty & Salon, helping salons showcase services and customer case studies.\n Home & Decor, offering product showcases and styling inspiration for furniture and home decor stores.\n Each template includes structured prompts. Users simply fill in basic information, such as the store or product name, and the system generates professional marketing content. This allows even users with no AI experience to easily create high-quality social media posts.",
     },
   },
   {
     id: "mcp-intro",
     title: "MCP Introduction",
-    narration: "Ensuring output quality via a custom MCP framework.",
+    narration: "",
     slide: {
       eyebrow: "",
       title: "Ensuring output quality via a custom MCP framework.",
@@ -289,13 +289,13 @@ Please generate complete social media content for me.`,
       slideType: "feature",
       image: "/img/MCP.png",
       transition: "concave",
-      note: "MCP introduction slide.",
+      note: "Now, let me introduce the MCP framework. MCP stands for Model Context Protocol, a custom framework we developed to improve the quality and consistency of AI-generated content.",
     },
   },
   {
     id: "mcp-architecture",
     title: "MCP Architecture",
-    narration: "Our MCP Copywriter architecture with RAG context injection.",
+    narration: "",
     slide: {
       eyebrow: "",
       title: "",
@@ -304,7 +304,7 @@ Please generate complete social media content for me.`,
       slideType: "image-showcase",
       image: "/img/mcp-architecture.svg",
       transition: "fade",
-      note: "MCP Copywriter architecture diagram.",
+      note: "Standard AI output often lacks industry context and brand alignment. To address this, our MCP framework uses RAG (Retrieval-Augmented Generation) to inject relevant marketing knowledge, brand guidelines, and best practices into the generation process.\n When a user requests content, the system first retrieves contextual information—such as industry writing style, brand voice, and target audience—and then combines it with the user’s input to generate more accurate, business-aligned content.\n This approach improves both content quality and consistency, ensuring a unified brand voice across social posts, product descriptions, and marketing copy.\n Together with the Templates system, MCP makes MELO not just an AI tool, but an intelligent marketing assistant designed for small businesses.",
     },
   },
   // {
