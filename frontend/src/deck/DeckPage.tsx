@@ -20,7 +20,8 @@ export default function DeckPage() {
     if (!revealRef.current || revealInstanceRef.current) return;
 
     const reveal = new Reveal(revealRef.current, {
-      hash: true,
+      hash: false,
+      respondToHashChanges: false,
       controls: false,
       progress: false,
       center: false,
