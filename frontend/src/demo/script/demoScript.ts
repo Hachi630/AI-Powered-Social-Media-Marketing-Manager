@@ -129,11 +129,11 @@ export const demoScript: DemoStep[] = [
       slideType: "overview",
       overviewIcons: [
         { icon: "☁️", label: "CLOUD" },
-        { icon: "📖", label: "USER GUIDE" },
         { icon: "🤖", label: "AI ROBOT" },
         { icon: "📋", label: "TEMPLATES" },
         { icon: "🔌", label: "MCP" },
         { icon: "✨", label: "UI POLISH" },
+        { icon: "📖", label: "USER GUIDE" },
       ],
       transition: "convex",
       note: "Overview slide with 5 icons.",
@@ -159,21 +159,7 @@ export const demoScript: DemoStep[] = [
       note: "Cloud infrastructure with 4 components.",
     },
   },
-  {
-    id: "live-demo",
-    title: "Live Demo",
-    narration: "Visit our live deployment.",
-    slide: {
-      eyebrow: "",
-      title: "Try it live",
-      subtitle: "",
-      bullets: [],
-      slideType: "link",
-      link: "https://main.d1sxixpats4kxg.amplifyapp.com/",
-      transition: "fade",
-      note: "Live deployment link.",
-    },
-  },
+
   {
     id: "ai-robot",
     title: "AI Robot",
@@ -416,6 +402,22 @@ Please generate complete social media content for me.`,
       note: "Sprint 4 goals slide.",
     },
   },
+    {
+    id: "live-demo",
+    title: "Live Demo",
+    narration: "Visit our live deployment.",
+    slide: {
+      eyebrow: "",
+      title: "Try it live",
+      subtitle: "",
+      bullets: [],
+      slideType: "link",
+      link: "https://main.d1sxixpats4kxg.amplifyapp.com/",
+      transition: "fade",
+      note: "Live deployment link.",
+    },
+  },
+
   {
     id: "thanks",
     title: "Thanks",
