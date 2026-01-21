@@ -28,10 +28,25 @@ export default function DemoPresenter() {
   const stepCount = demoSteps.length;
   const isActive = isDemoMode();
 
-  const updateSpotlight = useCallback((targetSelector?: string) => {
+  const updateSpotlight = useCallback((targetSelector?: string, currentStepIndex?: number) => {
     const selector = targetSelector ?? step.target;
     const targetRect = getTargetRect(selector);
     setRect(targetRect);
+
+    // Use provided stepIndex or fall back to current state
+    const activeStepIndex = currentStepIndex ?? stepIndex;
+
+    // Special case: Step 3 (index 2, "robot" - Live2D selection)
+    // Position tooltip at bottom-left to avoid covering the Live2D preview
+    if (activeStepIndex === 2) {
+      const tooltipHeight = 280;
+      setTooltipPos({
+        top: window.innerHeight - tooltipHeight - 100,
+        left: 24
+      });
+      return;
+    }
+
     if (targetRect) {
       const tooltipHeight = 280; // Estimated tooltip height
       const tooltipWidth = 520; // Max tooltip width
@@ -64,7 +79,7 @@ export default function DemoPresenter() {
       // If no target found, position tooltip at default location
       setTooltipPos({ top: 120, left: 24 });
     }
-  }, [step.target]);
+  }, [step.target, stepIndex]);
 
   const goToStep = useCallback(
     async (nextIndex: number) => {
@@ -79,8 +94,8 @@ export default function DemoPresenter() {
       }
       setStepIndex(nextIndex);
       // Note: Action execution is handled by useEffect to prevent duplicates
-      // Update spotlight with the new step's target
-      setTimeout(() => updateSpotlight(nextStep.target), 300);
+      // Update spotlight with the new step's target and index
+      setTimeout(() => updateSpotlight(nextStep.target, nextIndex), 300);
     },
     [location.pathname, navigate, updateSpotlight]
   );
