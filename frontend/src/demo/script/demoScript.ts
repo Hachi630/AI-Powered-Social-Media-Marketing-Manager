@@ -251,7 +251,7 @@ export const demoScript: DemoStep[] = [
         },
       ],
       transition: "concave",
-      note: "Now, I’d like to introduce two key features: the Templates system and the MCP framework.\n First, I’ll talk about Templates. During development, we found that many small business owners want to use AI for marketing, but don’t know how to write effective prompts or where to start. \nTo solve this, we created a template system tailored to different industries, allowing users to get started quickly.\n We currently have four main template categories:",
+      note: "Now, I’d like to introduce two key features: the Templates system and the MCP framework.\nFirst, I’ll talk about Templates. During development, we found that many small business owners want to use AI for marketing, but don’t know how to write effective prompts or where to start.\nTo solve this, we created a template system tailored to different industries, allowing users to get started quickly.\nWe currently have four main template categories. Each template includes structured prompts. Users simply fill in basic information, such as the store or product name, and the system generates professional marketing content. This allows even users with no AI experience to easily create high-quality social media posts.  ",
     },
   },
   {
@@ -274,7 +274,7 @@ export const demoScript: DemoStep[] = [
 
 Please generate complete social media content for me.`,
       transition: "slide",
-      note: "Food & Restaurant, for restaurants, cafes, and bakeries, helping generate engaging Instagram posts with product highlights and taste descriptions.\n Fashion & Apparel, providing product descriptions and styling suggestions for clothing and accessory stores.\n Beauty & Salon, helping salons showcase services and customer case studies.\n Home & Decor, offering product showcases and styling inspiration for furniture and home decor stores.\n Each template includes structured prompts. Users simply fill in basic information, such as the store or product name, and the system generates professional marketing content. This allows even users with no AI experience to easily create high-quality social media posts.",
+      note: "This is an example of our Food & Restaurant template. As you can see, it provides a structured prompt that guides users through creating Instagram content. The template asks for product features, taste descriptions, hashtag suggestions, and posting time recommendations. Users simply fill in their dish name and business type, and the AI generates complete, ready-to-use social media content.",
     },
   },
   {
