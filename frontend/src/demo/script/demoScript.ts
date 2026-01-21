@@ -226,7 +226,7 @@ export const demoScript: DemoStep[] = [
           iconBgColor: "#FEE2E2",
           borderColor: "#F87171",
           title: "Food & Restaurant",
-          description: "Now, I’d like to introduce two key features: the Templates system and the MCP framework.\n First, I’ll talk about Templates. During development, we found that many small business owners want to use AI for marketing, but don’t know how to write effective prompts or where to start. \nTo solve this, we created a template system tailored to different industries, allowing users to get started quickly.\n We currently have four main template categories:",
+          description: "Create engaging social media content for yourrestaurant, cafe, or bakery",
         },
         {
           icon: "👗",
@@ -251,7 +251,7 @@ export const demoScript: DemoStep[] = [
         },
       ],
       transition: "concave",
-      note: "Templates introduction slide with 4 template cards.",
+      note: "Now, I’d like to introduce two key features: the Templates system and the MCP framework.\n First, I’ll talk about Templates. During development, we found that many small business owners want to use AI for marketing, but don’t know how to write effective prompts or where to start. \nTo solve this, we created a template system tailored to different industries, allowing users to get started quickly.\n We currently have four main template categories:",
     },
   },
   {

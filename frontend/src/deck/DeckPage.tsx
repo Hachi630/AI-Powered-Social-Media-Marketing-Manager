@@ -12,12 +12,15 @@ import Live2DWidget from "../components/Live2DWidget";
 export default function DeckPage() {
   const revealRef = useRef<HTMLDivElement>(null);
   const revealInstanceRef = useRef<Reveal | null>(null);
+  const initializedRef = useRef(false);
 
   const steps = demoScript;
 
   // 初始化 reveal.js
   useEffect(() => {
-    if (!revealRef.current || revealInstanceRef.current) return;
+    // Prevent double initialization in StrictMode
+    if (!revealRef.current || initializedRef.current) return;
+    initializedRef.current = true;
 
     const reveal = new Reveal(revealRef.current, {
       hash: false,
@@ -37,7 +40,7 @@ export default function DeckPage() {
       plugins: [RevealNotes],
       // Enable postMessage for speaker notes communication
       postMessage: true,
-      postMessageEvents: true,
+      postMessageEvents: false,
     });
 
     reveal.initialize().then(() => {
