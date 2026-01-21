@@ -399,7 +399,7 @@ function AppContent() {
       {/* Live2D Widget - shown on all pages when logged in and enabled */}
       {/* Using dynamic import to prevent import-time errors */}
       {!isDeckRoute && isLoggedIn && (
-        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} user={user} />
+        <Live2DWidgetWrapper isLoggedIn={isLoggedIn} user={user} showOnboarding={showOnboarding} />
       )}
       {/* Onboarding Modal */}
       {!isDeckRoute && (
@@ -415,16 +415,29 @@ function AppContent() {
 }
 
 // Wrapper component to access useAppSettings context
-function Live2DWidgetWrapper({ isLoggedIn, user }: { isLoggedIn: boolean; user: User | null }) {
+function Live2DWidgetWrapper({ isLoggedIn, user, showOnboarding }: { isLoggedIn: boolean; user: User | null; showOnboarding: boolean }) {
   const { settings } = useAppSettings();
+
+  // In demo mode, also check localStorage flags for onboarding completion
+  // This handles the case where user state hasn't updated yet but localStorage has
+  const demoOnboardingDone = isDemoMode() && (
+    localStorage.getItem("melo_demo_onboarding_done") === "true" ||
+    localStorage.getItem("melo_demo_onboarding_completed") === "true"
+  );
+
+  // In demo mode, don't show Live2D while onboarding modal is open
+  // The Live2D preview inside OnboardingModal is sufficient during onboarding
+  const hideDuringDemoOnboarding = isDemoMode() && showOnboarding;
 
   // Only show ELO widget if:
   // 1. User is logged in
   // 2. ELO is enabled in settings
-  // 3. User has completed onboarding
-  const shouldShowElo = isLoggedIn && 
-    settings.enableElo === true && 
-    user?.onboardingCompleted;
+  // 3. User has completed onboarding (or in demo mode, localStorage flag is set)
+  // 4. Not during demo onboarding (to avoid duplicate Live2D)
+  const shouldShowElo = isLoggedIn &&
+    settings.enableElo === true &&
+    (user?.onboardingCompleted || demoOnboardingDone) &&
+    !hideDuringDemoOnboarding;
 
   // Debug logging
   if (isLoggedIn) {
@@ -432,6 +445,8 @@ function Live2DWidgetWrapper({ isLoggedIn, user }: { isLoggedIn: boolean; user: 
       isLoggedIn,
       enableElo: settings.enableElo,
       onboardingCompleted: user?.onboardingCompleted,
+      demoOnboardingDone,
+      hideDuringDemoOnboarding,
       shouldShowElo,
     });
   }

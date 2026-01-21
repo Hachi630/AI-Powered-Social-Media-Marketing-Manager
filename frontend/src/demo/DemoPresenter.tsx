@@ -203,8 +203,12 @@ export default function DemoPresenter() {
     if (stepIndex >= 3) {
       // Mark onboarding as done in localStorage
       localStorage.setItem("melo_demo_onboarding_done", "true");
-      // Dispatch event to close onboarding modal
-      window.dispatchEvent(new CustomEvent("demo-hide-onboarding"));
+      // Add a small delay to ensure user state is updated before closing onboarding modal
+      // This prevents the race condition where Live2D widget disappears because
+      // user.onboardingCompleted is not yet true when the modal closes
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("demo-hide-onboarding"));
+      }, 300);
     }
   }, [isActive, stepIndex]);
 
