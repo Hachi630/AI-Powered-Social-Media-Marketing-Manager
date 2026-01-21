@@ -278,7 +278,9 @@ function AppContent() {
         <Route
           path="/"
           element={
-            isLoggedIn ? (
+            // In demo mode, always show HomePage at root path
+            // For regular users, redirect to dashboard if logged in
+            isLoggedIn && !isDemoMode() ? (
               <Navigate to="/dashboard" replace />
             ) : (
               <HomePage

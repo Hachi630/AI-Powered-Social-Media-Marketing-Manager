@@ -1,5 +1,10 @@
 /* Google Fonts are loaded in index.html for better compatibility */
 
+/* Hide speaker notes in normal view - only show in speaker mode */
+:global(.reveal aside.notes) {
+  display: none !important;
+}
+
 .page {
   --deck-bg: #f0f2f3;
   --deck-ink: #171c1d;

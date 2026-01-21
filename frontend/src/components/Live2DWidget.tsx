@@ -88,12 +88,14 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
 
     const widgetWidth = 200;
     const widgetHeight = 200;
-    const margin = 20; // Margin from edges
-    
+    const marginRight = 20; // Margin from right edge
+    const marginBottom = 120; // Margin from bottom edge - increased to ensure dialog is fully visible
+
     // Calculate bottom right position - ensure it's in the bottom right corner
+    // with enough space above for the ELO dialog to be fully visible
     const calculatePosition = () => {
-      const defaultX = window.innerWidth - widgetWidth - margin;
-      const defaultY = window.innerHeight - widgetHeight - margin;
+      const defaultX = window.innerWidth - widgetWidth - marginRight;
+      const defaultY = window.innerHeight - widgetHeight - marginBottom;
       return { x: defaultX, y: defaultY };
     };
 
@@ -105,8 +107,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         const defaultPos = calculatePosition();
         // If saved position is too far from bottom right, reset to default
         const distanceFromBottomRight = Math.sqrt(
-          Math.pow((window.innerWidth - margin - widgetWidth) - (parsed.x || defaultPos.x), 2) +
-          Math.pow((window.innerHeight - margin - widgetHeight) - (parsed.y || defaultPos.y), 2)
+          Math.pow((window.innerWidth - marginRight - widgetWidth) - (parsed.x || defaultPos.x), 2) +
+          Math.pow((window.innerHeight - marginBottom - widgetHeight) - (parsed.y || defaultPos.y), 2)
         );
         // If saved position is more than 100px away from bottom right, use default
         if (distanceFromBottomRight > 100) {
@@ -114,8 +116,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           localStorage.setItem('live2d-widget-position', JSON.stringify(defaultPos));
         } else {
           // Ensure saved position is valid (within viewport)
-          const validX = Math.max(margin, Math.min(parsed.x || defaultPos.x, window.innerWidth - widgetWidth - margin));
-          const validY = Math.max(margin, Math.min(parsed.y || defaultPos.y, window.innerHeight - widgetHeight - margin));
+          const validX = Math.max(marginRight, Math.min(parsed.x || defaultPos.x, window.innerWidth - widgetWidth - marginRight));
+          const validY = Math.max(20, Math.min(parsed.y || defaultPos.y, window.innerHeight - widgetHeight - 20));
           setPosition({ x: validX, y: validY });
         }
       } catch {
@@ -132,8 +134,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       const defaultPos = calculatePosition();
       setPosition(prev => {
         // Keep relative position, but ensure it stays in bottom right area
-        const newX = Math.min(prev.x, window.innerWidth - widgetWidth - margin);
-        const newY = Math.min(prev.y, window.innerHeight - widgetHeight - margin);
+        const newX = Math.min(prev.x, window.innerWidth - widgetWidth - marginRight);
+        const newY = Math.min(prev.y, window.innerHeight - widgetHeight - 20);
         return { x: newX, y: newY };
       });
     };

@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 // @ts-ignore - reveal.js doesn't have types
 import Reveal from "reveal.js/dist/reveal.esm.js";
+// @ts-ignore - reveal.js plugins don't have types
+import RevealNotes from "reveal.js/plugin/notes/notes.esm.js";
 import { demoScript } from "../demo/script/demoScript";
 import styles from "./DeckPage.module.css";
 import ParticleBackground from "./components/ParticleBackground";
@@ -18,7 +20,7 @@ export default function DeckPage() {
     if (!revealRef.current || revealInstanceRef.current) return;
 
     const reveal = new Reveal(revealRef.current, {
-      hash: false,
+      hash: true,
       controls: false,
       progress: false,
       center: false,
@@ -30,6 +32,8 @@ export default function DeckPage() {
       margin: 0,
       minScale: 1,
       maxScale: 1,
+      // Speaker notes plugin - press 'S' to open speaker view
+      plugins: [RevealNotes],
     });
 
     reveal.initialize().then(() => {
@@ -450,6 +454,12 @@ export default function DeckPage() {
                         )}
                       </div>
                     )}
+                    {/* Speaker notes - press 'S' to open speaker view */}
+                    <aside className="notes">
+                      <p><strong>{step.title}</strong></p>
+                      <p style={{ whiteSpace: 'pre-wrap' }}>{step.narration}</p>
+                      {step.slide.note && <p style={{ whiteSpace: 'pre-wrap' }}><em>{step.slide.note}</em></p>}
+                    </aside>
                   </section>
                 );
               })}
