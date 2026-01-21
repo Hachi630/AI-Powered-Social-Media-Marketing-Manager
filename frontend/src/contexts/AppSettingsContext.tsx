@@ -37,6 +37,16 @@ const DEFAULT_SETTINGS: AppSettings = {
   enableElo: true,
 };
 
+// Helper function to migrate old model paths to new paths
+const migrateModelPath = (path: string): string => {
+  // Migrate old Japanese filename to new English filename
+  if (path.includes('うみうしモデル') || path.includes('/umiushi/うみうしモデル')) {
+    return "/umiushi/model.model3.json";
+  }
+  // Keep other paths as-is
+  return path;
+};
+
 const STORAGE_KEY = "melo_app_settings";
 
 // Helper function to calculate text color based on background
@@ -145,7 +155,14 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        // Migrate old model paths to new paths
+        if (parsed.live2dModel) {
+          parsed.live2dModel = migrateModelPath(parsed.live2dModel);
+        }
+        const migratedSettings = { ...DEFAULT_SETTINGS, ...parsed };
+        // Save migrated settings back to localStorage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedSettings));
+        return migratedSettings;
       }
     } catch (error) {
       console.error("Failed to load app settings:", error);
