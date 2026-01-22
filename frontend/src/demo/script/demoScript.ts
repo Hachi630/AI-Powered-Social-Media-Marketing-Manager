@@ -84,7 +84,7 @@ export const demoScript: DemoStep[] = [
       bullets: [],
       slideType: "cover",
       transition: "zoom",
-      note: "Hi everyone, this is our Sprint 3 presentation for MELO, an AI-powered social media and marketing assistant. \nI’ll briefly go through the problem we’re addressing, our solution approach, and what we’ve built in this sprint.",
+      note: "Hi everyone, this is our Sprint 3 presentation for MELO,an AI-powered social media and marketing assistant.\nI’ll briefly recap the problem, our solution, and then focus on what we built in this sprint.",
     },
   },
   {
@@ -99,7 +99,7 @@ export const demoScript: DemoStep[] = [
       slideType: "feature",
       image: "/img/kirby-busy.svg",
       transition: "concave",
-      note: "To quickly recap the problem, small businesses usually don’t have the time or resources for structured marketing operations. \nTasks like planning content, writing posts, and managing multiple platforms are often done by one person, alongside other business responsibilities. \nThis makes marketing fragmented, inefficient, and hard to maintain consistently.",
+      note: "Just to recap, small businesses often don’t have time for structured marketing operations.\nContent creation, planning, and publishing are usually fragmented and hard to manage consistently.",
     },
   },
   {
@@ -114,7 +114,7 @@ export const demoScript: DemoStep[] = [
       slideType: "feature",
       image: "/img/kirby-guide.svg",
       transition: "concave",
-      note: "Our solution focuses on turning these scattered marketing tasks into a guided workflow. Instead of isolated tools, MELO supports users step by step — from defining their brand, to creating content, to planning and publishing. \nAI is used to assist and guide the process, while users remain in control of final decisions.",
+      note: "Our approach is to turn these scattered tasks into a guided workflow,where AI supports users step by step while keeping them in control.",
     },
   },
   {
@@ -136,7 +136,7 @@ export const demoScript: DemoStep[] = [
         { icon: "📖", label: "USER GUIDE" },
       ],
       transition: "convex",
-      note: "In this sprint, we focused on improving how users interact with the system. \nWe enhanced the AI assistant so it can guide users and help answer questions about how the system works, rather than only generating content. This makes the platform easier to understand, especially for first-time users. \nWe also introduced structured templates to support users who are not familiar with prompt writing. These templates help users get higher-quality and more consistent AI outputs without needing advanced prompt engineering skills. \nIn addition, we refined the user interface to make the overall visual style more consistent and polished, improving usability across different parts of the system.",
+      note: "In this sprint, we focused on improving how users interact with the system.\nWe enhanced the AI assistant so it can guide users and help answer questions about how the system works, not just generate content.\nWe also introduced structured templates to help users who are not familiar with prompt writing achieve better and more consistent AI outputs.\nFinally, we refined the user interface to make the overall visual style more consistent and easier to use across the platform.",
     },
   },
   {
@@ -274,7 +274,7 @@ export const demoScript: DemoStep[] = [
 
 Please generate complete social media content for me.`,
       transition: "slide",
-      note: "This is an example of our Food & Restaurant template. As you can see, it provides a structured prompt that guides users through creating Instagram content. The template asks for product features, taste descriptions, hashtag suggestions, and posting time recommendations. Users simply fill in their dish name and business type, and the AI generates complete, ready-to-use social media content.",
+      note: "This is our Food & Restaurant template, which guides users to create Instagram content by entering a dish name and business type, then automatically generates ready-to-use posts with key details like descriptions, hashtags, and timing.",
     },
   },
   {
@@ -289,7 +289,7 @@ Please generate complete social media content for me.`,
       slideType: "feature",
       image: "/img/MCP.png",
       transition: "concave",
-      note: "Now, let me introduce the MCP framework. MCP stands for Model Context Protocol, a custom framework we developed to improve the quality and consistency of AI-generated content.",
+      note: "Now, let me introduce the MCP framework. MCP stands for Model Context Protocol, a custom framework designed to improve the quality and consistency of AI-generated content.",
     },
   },
   {
@@ -304,7 +304,7 @@ Please generate complete social media content for me.`,
       slideType: "image-showcase",
       image: "/img/mcp-architecture.svg",
       transition: "fade",
-      note: "Standard AI output often lacks industry context and brand alignment. To address this, our MCP framework uses RAG (Retrieval-Augmented Generation) to inject relevant marketing knowledge, brand guidelines, and best practices into the generation process.\n When a user requests content, the system first retrieves contextual information—such as industry writing style, brand voice, and target audience—and then combines it with the user’s input to generate more accurate, business-aligned content.\n This approach improves both content quality and consistency, ensuring a unified brand voice across social posts, product descriptions, and marketing copy.\n Together with the Templates system, MCP makes MELO not just an AI tool, but an intelligent marketing assistant designed for small businesses.",
+      note: "Standard AI often lacks industry context and brand alignment. MCP addresses this by using Retrieval-Augmented Generation (RAG) to inject relevant marketing knowledge, brand guidelines, and best practices into the content generation process.\nWhen a user requests content, the system first retrieves key context—such as brand voice, industry style, and target audience—and combines it with the user’s input to produce accurate, business-aligned output.\nTogether with the Templates system, MCP enables MELO to deliver consistent, high-quality marketing content, positioning it as an intelligent marketing assistant for small businesses.",
     },
   },
   // {
@@ -384,7 +384,7 @@ Please generate complete social media content for me.`,
         "/img/S6.png",
       ],
       transition: "fade",
-      note: "You can see six screenshots here. They show our clean and easy-to-use interface. The first one is our dashboard with AI content templates for restaurants, fashion, beauty, and home decoration. The second shows our calendar where you can schedule and drag marketing campaigns. The third is the brand profile page with settings and progress tracking. \nThe fourth screenshot shows our social dashboard with LinkedIn, Twitter, Instagram, and Facebook all in one place. The fifth shows analytics with charts and numbers. The last one is our messaging platform for WhatsApp and SMS. All these pages use the same flat gradient design we just talked about.",
+      note: "You can see six screenshots here. They show our clean and easy-to-use interface. All these pages use the same flat gradient design we just talked about. And configProvider sets up themes: default white-gray, warm beige, and dark mode.",
     },
   },
   {
