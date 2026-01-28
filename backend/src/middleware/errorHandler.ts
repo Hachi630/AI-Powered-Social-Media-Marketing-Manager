@@ -30,9 +30,23 @@ export const errorHandler = (
     error = { message, statusCode: 400 }
   }
 
+  // Provide detailed error message
+  let errorMessage = 'An error occurred'
+  
+  if (error.message) {
+    errorMessage = error.message
+  } else if (error instanceof Error) {
+    errorMessage = error.toString()
+  } else if (typeof error === 'string') {
+    errorMessage = error
+  } else if (error && typeof error === 'object') {
+    // Try to extract message from error object
+    errorMessage = (error as any).message || (error as any).error || JSON.stringify(error)
+  }
+  
   res.status(error.statusCode || 500).json({
     success: false,
-    message: error.message || 'Server Error',
+    message: errorMessage,
   })
 }
 

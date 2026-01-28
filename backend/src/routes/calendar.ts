@@ -4,8 +4,20 @@ import { protect } from '../middleware/auth'
 import { AuthRequest } from '../types'
 import CalendarItem from '../models/CalendarItem'
 import Event from '../models/Event'
+import User from '../models/User'
 import { twitterService } from '../services/twitterService'
 import TwitterToken from '../models/TwitterToken'
+import LinkedInToken from '../models/LinkedInToken'
+import { createLinkedInPost, createLinkedInPostWithImage, getLinkedInMemberId, initializeImageUpload, uploadImageToLinkedIn } from '../services/linkedinService'
+import { shareToFacebook } from '../services/facebookService'
+import { saveSocialMediaPost } from '../services/databaseService'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { dirname } from 'path'
+import fs from 'fs'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 const router = express.Router()
 
@@ -632,7 +644,9 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'Calendar item not found' })
     }
 
-    // Currently only Twitter is supported for direct posting
+    // Get content variant for the platform or use default content
+    let content = item.variants?.[platform] || item.content;
+    
     if (platform === 'twitter') {
       // Check if user has connected their Twitter account
       const twitterToken = await TwitterToken.findOne({ userId: user._id });
@@ -644,9 +658,6 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
           requiresAuth: true
         });
       }
-
-      // Check if item has content variant for Twitter
-      let content = item.variants?.twitter || item.content;
       
       // Post to Twitter using user's tokens
       const result = await twitterService.postTweet(
@@ -660,6 +671,39 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
         // Update item status to published if successful
         item.status = 'published';
         await item.save();
+        
+        // Save to SocialMediaPost database for analytics
+        try {
+          // Get absolute URL for image if it exists
+          let imageUrl = item.imageUrl;
+          if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+            // Convert relative path to absolute URL
+            const backendUrl = process.env.BACKEND_URL || process.env.CLIENT_URL || 'http://localhost:5000';
+            imageUrl = imageUrl.startsWith('/') ? `${backendUrl}${imageUrl}` : `${backendUrl}/${imageUrl}`;
+          }
+          
+          const mediaAttachments = imageUrl ? [{
+            type: 'image' as const,
+            url: imageUrl,
+            thumbnailUrl: imageUrl,
+          }] : undefined;
+          
+          await saveSocialMediaPost({
+            userId: user._id,
+            platform: 'twitter',
+            postType: imageUrl ? 'image' : 'text',
+            content: content,
+            mediaAttachments: mediaAttachments,
+            platformPostId: result.tweetId,
+            status: 'published',
+            publishedAt: new Date(),
+            calendarItemId: item._id,
+          });
+          console.log('✅ Twitter post saved to database for analytics');
+        } catch (dbError: any) {
+          console.error('Failed to save Twitter post to database:', dbError);
+          // Don't fail the request if DB save fails
+        }
         
         return res.json({
           success: true,
@@ -685,6 +729,260 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
           message: errorMessage,
           code: errorCode,
           details: result.error?.data || result.error?.errors
+        });
+      }
+    } else if (platform === 'linkedin') {
+      // Check if user has connected their LinkedIn account
+      const linkedinToken = await LinkedInToken.findOne({ userId: user._id });
+      
+      if (!linkedinToken || !linkedinToken.accessToken) {
+        return res.status(401).json({
+          success: false,
+          message: 'LinkedIn account not connected. Please connect your LinkedIn account first.',
+          requiresAuth: true
+        });
+      }
+
+      try {
+        // Get LinkedIn member ID (use stored one if available, otherwise fetch it)
+        let memberId = linkedinToken.liMemberId;
+        if (!memberId) {
+          memberId = await getLinkedInMemberId(linkedinToken.accessToken);
+          if (!memberId) {
+            return res.status(500).json({
+              success: false,
+              message: 'Failed to get LinkedIn member ID'
+            });
+          }
+        }
+
+        // For now, only support personal posts (organization posting would need organizationId parameter)
+        const isOrganization = false;
+        const authorId = memberId;
+
+        let result;
+        
+        // If image exists, post with image
+        if (item.imageUrl) {
+          // Get absolute image path
+          const imagePath = path.join(__dirname, '../../', item.imageUrl);
+          
+          if (fs.existsSync(imagePath)) {
+            // Initialize image upload
+            const uploadResult = await initializeImageUpload(
+              linkedinToken.accessToken,
+              authorId,
+              isOrganization
+            );
+            
+            if (!uploadResult.success || !uploadResult.uploadUrl || !uploadResult.imageUrn) {
+              console.error('Failed to initialize LinkedIn image upload:', uploadResult);
+              return res.status(500).json({
+                success: false,
+                message: uploadResult.error || 'Failed to initialize LinkedIn image upload'
+              });
+            }
+            
+            // Read image file
+            const imageBuffer = fs.readFileSync(imagePath);
+            
+            // Detect content type from file extension
+            const ext = path.extname(imagePath).toLowerCase();
+            const contentTypeMap: Record<string, string> = {
+              '.jpg': 'image/jpeg',
+              '.jpeg': 'image/jpeg',
+              '.png': 'image/png',
+              '.gif': 'image/gif',
+              '.webp': 'image/webp'
+            };
+            const contentType = contentTypeMap[ext] || 'image/jpeg';
+            
+            // Upload image
+            const imageUploadResult = await uploadImageToLinkedIn(
+              uploadResult.uploadUrl,
+              imageBuffer,
+              contentType
+            );
+            
+            if (!imageUploadResult.success) {
+              console.error('Failed to upload image to LinkedIn:', imageUploadResult);
+              return res.status(500).json({
+                success: false,
+                message: imageUploadResult.error || 'Failed to upload image to LinkedIn'
+              });
+            }
+            
+            // Create post with image
+            result = await createLinkedInPostWithImage(
+              linkedinToken.accessToken,
+              authorId,
+              content,
+              uploadResult.imageUrn,
+              isOrganization
+            );
+          } else {
+            // Image file not found, post text only
+            result = await createLinkedInPost(
+              linkedinToken.accessToken,
+              authorId,
+              content,
+              isOrganization
+            );
+          }
+        } else {
+          // No image, post text only
+          result = await createLinkedInPost(
+            linkedinToken.accessToken,
+            authorId,
+            content,
+            isOrganization
+          );
+        }
+        
+        if (result.success) {
+          // Update item status to published if successful
+          item.status = 'published';
+          await item.save();
+          
+          // Save to SocialMediaPost database for analytics
+          try {
+            // Get absolute URL for image if it exists
+            let imageUrl = item.imageUrl;
+            if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+              // Convert relative path to absolute URL
+              const backendUrl = process.env.BACKEND_URL || process.env.CLIENT_URL || 'http://localhost:5000';
+              imageUrl = imageUrl.startsWith('/') ? `${backendUrl}${imageUrl}` : `${backendUrl}/${imageUrl}`;
+            }
+            
+            const mediaAttachments = imageUrl ? [{
+              type: 'image' as const,
+              url: imageUrl,
+              thumbnailUrl: imageUrl,
+            }] : undefined;
+            
+            await saveSocialMediaPost({
+              userId: user._id,
+              platform: 'linkedin',
+              postType: imageUrl ? 'image' : 'text',
+              content: content,
+              mediaAttachments: mediaAttachments,
+              platformPostId: result.postId,
+              status: 'published',
+              publishedAt: new Date(),
+              calendarItemId: item._id,
+            });
+            console.log('✅ LinkedIn post saved to database for analytics');
+          } catch (dbError: any) {
+            console.error('Failed to save LinkedIn post to database:', dbError);
+            // Don't fail the request if DB save fails
+          }
+          
+          return res.json({
+            success: true,
+            message: 'Successfully posted to LinkedIn',
+            postId: result.postId
+          });
+        } else {
+          return res.status(500).json({
+            success: false,
+            message: result.error || 'Failed to post to LinkedIn'
+          });
+        }
+      } catch (error: any) {
+        console.error('LinkedIn posting error:', error);
+        return res.status(500).json({
+          success: false,
+          message: error.message || 'Failed to post to LinkedIn'
+        });
+      }
+    } else if (platform === 'facebook') {
+      // Check if user has connected their Facebook account
+      const freshUser = await User.findById(user._id);
+      if (!freshUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const facebook = freshUser.socialConnections?.facebook;
+      
+      if (!facebook || !facebook.accessToken || !facebook.userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Facebook account not connected. Please connect your Facebook account first.',
+          requiresAuth: true
+        });
+      }
+
+      try {
+        // Get absolute image path if image exists
+        let imagePath: string | undefined;
+        if (item.imageUrl) {
+          const fullImagePath = path.join(__dirname, '../../', item.imageUrl);
+          if (fs.existsSync(fullImagePath)) {
+            imagePath = fullImagePath;
+          }
+        }
+
+        // Post to Facebook
+        const result = await shareToFacebook(
+          facebook.userId, // pageId
+          facebook.accessToken, // pageAccessToken
+          {
+            text: content,
+            imagePath: imagePath
+          }
+        );
+        
+        // Update item status to published if successful
+        item.status = 'published';
+        await item.save();
+        
+        // Save to SocialMediaPost database for analytics
+        try {
+          // Get absolute URL for image if it exists
+          let imageUrl = item.imageUrl;
+          if (imageUrl && !imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+            // Convert relative path to absolute URL
+            const backendUrl = process.env.BACKEND_URL || process.env.CLIENT_URL || 'http://localhost:5000';
+            imageUrl = imageUrl.startsWith('/') ? `${backendUrl}${imageUrl}` : `${backendUrl}/${imageUrl}`;
+          }
+          
+          const mediaAttachments = imageUrl ? [{
+            type: 'image' as const,
+            url: imageUrl,
+            thumbnailUrl: imageUrl,
+          }] : undefined;
+          
+          await saveSocialMediaPost({
+            userId: user._id,
+            platform: 'facebook',
+            postType: imageUrl ? 'image' : 'text',
+            content: content,
+            mediaAttachments: mediaAttachments,
+            platformPostId: result.postId,
+            status: 'published',
+            publishedAt: new Date(),
+            calendarItemId: item._id,
+          });
+          console.log('✅ Facebook post saved to database for analytics');
+        } catch (dbError: any) {
+          console.error('Failed to save Facebook post to database:', dbError);
+          // Don't fail the request if DB save fails
+        }
+        
+        return res.json({
+          success: true,
+          message: 'Successfully posted to Facebook',
+          postId: result.postId,
+          permalink: result.permalink
+        });
+      } catch (error: any) {
+        console.error('Facebook posting error:', error);
+        return res.status(500).json({
+          success: false,
+          message: error.message || 'Failed to post to Facebook'
         });
       }
     } else {

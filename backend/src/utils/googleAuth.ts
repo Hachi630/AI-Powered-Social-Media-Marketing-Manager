@@ -45,7 +45,22 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
       throw new Error('Invalid token: No payload found')
     }
 
-    console.log('[Google Auth] Token verified successfully, email:', payload.email)
+    console.log('[Google Auth] Token verified successfully')
+    console.log('[Google Auth] Full payload received from Google:', {
+      email: payload.email,
+      name: payload.name,
+      picture: payload.picture,
+      picture_url: payload.picture ? payload.picture.substring(0, 100) + '...' : 'NOT PROVIDED',
+      has_picture: !!payload.picture,
+      sub: payload.sub,
+      given_name: payload.given_name,
+      family_name: payload.family_name,
+      email_verified: payload.email_verified,
+      // Log all available keys to see what Google provides
+      available_keys: Object.keys(payload).filter(key => 
+        ['email', 'name', 'picture', 'sub', 'given_name', 'family_name', 'email_verified'].includes(key)
+      )
+    })
 
     // Extract and return user information
     const userInfo: GoogleUserInfo = {
@@ -57,6 +72,14 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
       given_name: payload.given_name,
       family_name: payload.family_name,
     }
+
+    console.log('[Google Auth] Extracted user info:', {
+      email: userInfo.email,
+      name: userInfo.name,
+      picture: userInfo.picture ? userInfo.picture.substring(0, 100) + '...' : 'NOT PROVIDED',
+      has_picture: !!userInfo.picture,
+      sub: userInfo.sub
+    })
 
     // Validate required fields
     if (!userInfo.email) {
@@ -86,7 +109,9 @@ export async function verifyGoogleToken(idToken: string): Promise<GoogleUserInfo
       throw new Error('Invalid token format')
     }
     
-    throw new Error(`Google token verification failed: ${error.message || 'Unknown error'}`)
+    // Provide a more descriptive error message
+    const errorDetails = error.message || error.code || 'Unknown error'
+    throw new Error(`Google token verification failed: ${errorDetails}`)
   }
 }
 

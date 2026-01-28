@@ -10,6 +10,7 @@ import { dirname } from "path";
 import fs from "fs";
 import { AuthRequest } from "../types/index.js";
 import { twitterService } from "../services/twitterService.js";
+import { saveSocialMediaPost } from "../services/databaseService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -729,6 +730,30 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
     );
 
     if (result.success) {
+      // Save to SocialMediaPost database for analytics
+      try {
+        const mediaAttachments = imagePath ? [{
+          type: 'image' as const,
+          url: imagePath.replace(process.cwd(), ''),
+          thumbnailUrl: imagePath.replace(process.cwd(), ''),
+        }] : undefined;
+        
+        await saveSocialMediaPost({
+          userId: userId,
+          platform: 'twitter',
+          postType: imagePath ? 'image' : 'text',
+          content: text.trim(),
+          mediaAttachments: mediaAttachments,
+          platformPostId: result.tweetId,
+          status: 'published',
+          publishedAt: new Date(),
+        });
+        console.log('✅ Twitter post saved to database for analytics');
+      } catch (dbError: any) {
+        console.error('Failed to save Twitter post to database:', dbError);
+        // Don't fail the request if DB save fails
+      }
+
       // Clean up uploaded image file after successful post
       if (req.file && imagePath && fs.existsSync(imagePath)) {
         try {

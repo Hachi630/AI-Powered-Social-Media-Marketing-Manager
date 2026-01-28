@@ -55,40 +55,132 @@ export const authService = {
   // Register user
   register: async (email: string, password: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_URL}/register`, {
+      const url = `${API_URL}/register`
+      console.log('[Auth Service] Register request to:', url)
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       })
+      
+      if (!response.ok) {
+        // Try to extract error message from response
+        let errorMessage = `Server error: ${response.status} ${response.statusText}`
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json()
+            errorMessage = errorData.message || errorData.error || errorMessage
+            console.error('[Auth Service] Register error (JSON):', errorData)
+          } else {
+            const errorText = await response.text()
+            if (errorText) {
+              try {
+                const parsed = JSON.parse(errorText)
+                errorMessage = parsed.message || parsed.error || errorText.substring(0, 200)
+              } catch {
+                errorMessage = errorText.substring(0, 200) || errorMessage
+              }
+            }
+            console.error('[Auth Service] Register error (text):', errorText.substring(0, 200))
+          }
+        } catch (parseError: any) {
+          console.error('[Auth Service] Failed to parse error response:', parseError)
+          if (response.status === 500) {
+            errorMessage = 'Server error. Please check backend logs or try again later.'
+          } else if (response.status === 400) {
+            errorMessage = 'Invalid request. Please check your email and password.'
+          }
+        }
+        return { success: false, message: errorMessage }
+      }
+      
       const data = await response.json()
       if (data.token) {
         localStorage.setItem('token', data.token)
       }
       return data
-    } catch (error) {
-      return { success: false, message: 'Network error' }
+    } catch (error: any) {
+      console.error('[Auth Service] Register network error:', error)
+      let errorMessage = 'Network error: Unable to connect to server'
+      if (error.message) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMessage = 'Network error: Unable to connect to server. Please make sure the backend server is running on port 5000.'
+        } else {
+          errorMessage = `Network error: ${error.message}`
+        }
+      }
+      return { success: false, message: errorMessage }
     }
   },
 
   // Login user
   login: async (email: string, password: string): Promise<AuthResponse> => {
     try {
-      const response = await fetch(`${API_URL}/login`, {
+      const url = `${API_URL}/login`
+      console.log('[Auth Service] Login request to:', url)
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       })
+      
+      if (!response.ok) {
+        // Try to extract error message from response
+        let errorMessage = `Server error: ${response.status} ${response.statusText}`
+        try {
+          const contentType = response.headers.get('content-type')
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json()
+            errorMessage = errorData.message || errorData.error || errorMessage
+            console.error('[Auth Service] Login error (JSON):', errorData)
+          } else {
+            const errorText = await response.text()
+            if (errorText) {
+              try {
+                const parsed = JSON.parse(errorText)
+                errorMessage = parsed.message || parsed.error || errorText.substring(0, 200)
+              } catch {
+                errorMessage = errorText.substring(0, 200) || errorMessage
+              }
+            }
+            console.error('[Auth Service] Login error (text):', errorText.substring(0, 200))
+          }
+        } catch (parseError: any) {
+          console.error('[Auth Service] Failed to parse error response:', parseError)
+          if (response.status === 401) {
+            errorMessage = 'Invalid email or password. Please try again.'
+          } else if (response.status === 500) {
+            errorMessage = 'Server error. Please check backend logs or try again later.'
+          } else if (response.status === 400) {
+            errorMessage = 'Invalid request. Please check your email and password.'
+          }
+        }
+        return { success: false, message: errorMessage }
+      }
+      
       const data = await response.json()
       if (data.token) {
         localStorage.setItem('token', data.token)
       }
       return data
-    } catch (error) {
-      return { success: false, message: 'Network error' }
+    } catch (error: any) {
+      console.error('[Auth Service] Login network error:', error)
+      let errorMessage = 'Network error: Unable to connect to server'
+      if (error.message) {
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          errorMessage = 'Network error: Unable to connect to server. Please make sure the backend server is running on port 5000.'
+        } else {
+          errorMessage = `Network error: ${error.message}`
+        }
+      }
+      return { success: false, message: errorMessage }
     }
   },
 
@@ -138,16 +230,84 @@ export const authService = {
       console.log('[Auth Service] Google login response status:', response.status)
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }))
-        console.error('[Auth Service] Google login error:', errorData)
+        // Try to extract error message from response
+        let errorMessage = `Server error: ${response.status} ${response.statusText}`
+        try {
+          // Clone the response to read it without consuming the original
+          const responseClone = response.clone()
+          const contentType = response.headers.get('content-type')
+          
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await responseClone.json()
+            console.error('[Auth Service] Google login error (JSON):', {
+              status: response.status,
+              statusText: response.statusText,
+              errorData: errorData,
+              message: errorData?.message,
+              error: errorData?.error,
+              success: errorData?.success
+            })
+            
+            // Extract error message from various possible fields
+            errorMessage = errorData?.message || 
+                         errorData?.error || 
+                         errorData?.error?.message ||
+                         (typeof errorData === 'string' ? errorData : errorMessage)
+          } else {
+            // Try to get text response
+            const errorText = await responseClone.text()
+            console.error('[Auth Service] Google login error (text):', {
+              status: response.status,
+              statusText: response.statusText,
+              errorText: errorText.substring(0, 200)
+            })
+            if (errorText) {
+              // Try to parse as JSON if it looks like JSON
+              try {
+                const parsed = JSON.parse(errorText)
+                errorMessage = parsed.message || parsed.error || errorText.substring(0, 200)
+              } catch {
+                errorMessage = errorText.substring(0, 200) || errorMessage
+              }
+            }
+          }
+        } catch (parseError: any) {
+          console.error('[Auth Service] Failed to parse error response:', {
+            parseError: parseError,
+            message: parseError?.message,
+            status: response.status,
+            statusText: response.statusText
+          })
+          // Use status-based error messages
+          if (response.status === 401) {
+            errorMessage = 'Authentication failed. Invalid Google token. Please try again.'
+          } else if (response.status === 400) {
+            errorMessage = 'Invalid request. Please check your credentials.'
+          } else if (response.status === 500) {
+            errorMessage = 'Server error. Please check backend logs or try again later.'
+          } else if (response.status === 403) {
+            errorMessage = 'Access forbidden. Please check your Google OAuth configuration.'
+          } else if (response.status === 0 || response.status >= 500) {
+            errorMessage = 'Unable to connect to server. Please check your connection.'
+          }
+        }
+        
+        console.error('[Auth Service] Final error message:', errorMessage)
         return { 
           success: false, 
-          message: errorData.message || `Server error: ${response.status}` 
+          message: errorMessage
         }
       }
       
       const data = await response.json()
       console.log('[Auth Service] Google login success:', data.success)
+      console.log('[Auth Service] User data received:', {
+        id: data.user?.id,
+        email: data.user?.email,
+        name: data.user?.name,
+        avatar: data.user?.avatar,
+        hasAvatar: !!data.user?.avatar
+      })
       
       if (data.token) {
         localStorage.setItem('token', data.token)

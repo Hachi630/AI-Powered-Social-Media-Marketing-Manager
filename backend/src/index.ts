@@ -1,9 +1,23 @@
+// Set Mongoose buffer settings FIRST, before any Mongoose imports or model usage
+import mongoose from 'mongoose'
+mongoose.set('bufferTimeoutMS', 30000) // Increase buffer timeout to 30 seconds
+mongoose.set('bufferCommands', true) // Enable command buffering
+
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
+import cron from 'node-cron';
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// Load env vars
+dotenv.config()
+
+// Import routes AFTER mongoose buffer settings are configured
 import { connectDB } from './config/database.js'
 import authRoutes from './routes/auth.js'
 import chatRoutes from './routes/chat.js'
@@ -18,14 +32,7 @@ import twitterRoutes from "./routes/twitter.js";
 import analyticsRoutes from "./routes/analytics.js";
 import messagingRoutes from "./routes/messaging.js";
 import ayrshareRoutes from "./routes/ayrshare.js";
-import cron from 'node-cron';
 import { checkAndPublishScheduledItems } from './services/schedulerService.js';
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
-// Load env vars
-dotenv.config()
 
 // Connect to database and start scheduler
 connectDB().then(() => {

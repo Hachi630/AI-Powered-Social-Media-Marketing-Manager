@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import { OAuth2Client } from "google-auth-library";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 import User from "../models/User.js";
 import { generateToken } from "../utils/jwt.js";
 import { protect } from "../middleware/auth.js";
@@ -49,6 +50,15 @@ const router = express.Router();
 // @access  Public
 router.post("/register", async (req: Request, res: Response) => {
   try {
+    // Check MongoDB connection before proceeding
+    if (mongoose.connection.readyState !== 1) {
+      console.error('[Register] MongoDB not connected. ReadyState:', mongoose.connection.readyState)
+      return res.status(503).json({ 
+        success: false, 
+        message: 'Database connection error. Please check your MongoDB connection and try again.' 
+      })
+    }
+
     const { email, password } = req.body;
 
     // Simple validation
@@ -61,8 +71,27 @@ router.post("/register", async (req: Request, res: Response) => {
     // Normalize email to lowercase (matching schema behavior)
     const normalizedEmail = email.toLowerCase().trim();
 
+    // Validate password is provided and not empty
+    if (!password || password.trim().length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Password is required" });
+    }
+
     // Check if user exists
-    const userExists = await User.findOne({ email: normalizedEmail });
+    let userExists;
+    try {
+      userExists = await User.findOne({ email: normalizedEmail });
+    } catch (dbError: any) {
+      console.error('[Register] Database error checking existing user:', dbError);
+      if (dbError.message?.includes('buffering timed out') || dbError.message?.includes('ECONNREFUSED') || dbError.message?.includes('querySrv')) {
+        return res.status(503).json({ 
+          success: false, 
+          message: 'Database connection error. Unable to connect to MongoDB. Please check your MongoDB connection.' 
+        });
+      }
+      throw dbError; // Re-throw if it's a different error
+    }
 
     if (userExists) {
       console.log(`[Register] User already exists: ${normalizedEmail}`);
@@ -71,11 +100,28 @@ router.post("/register", async (req: Request, res: Response) => {
         .json({ success: false, message: "User already exists" });
     }
 
+    console.log(`[Register] Creating user with email: ${normalizedEmail}`);
+
     // Create user (Store password in plain text as requested)
-    const user = await User.create({
-      email: normalizedEmail,
-      password,
-    });
+    // Explicitly set authProvider to ensure password requirement is met
+    let user;
+    try {
+      user = await User.create({
+        email: normalizedEmail,
+        password: password.trim(),
+        authProvider: 'local', // Explicitly set to ensure password is required
+      });
+      console.log(`[Register] User created successfully: ${user._id}`);
+    } catch (dbError: any) {
+      console.error('[Register] Database error creating user:', dbError);
+      if (dbError.message?.includes('buffering timed out') || dbError.message?.includes('ECONNREFUSED') || dbError.message?.includes('querySrv')) {
+        return res.status(503).json({ 
+          success: false, 
+          message: 'Database connection error. Unable to connect to MongoDB. Please check your MongoDB connection.' 
+        });
+      }
+      throw dbError; // Re-throw if it's a different error
+    }
 
     if (user) {
       res.status(201).json({
@@ -108,7 +154,43 @@ router.post("/register", async (req: Request, res: Response) => {
       res.status(400).json({ success: false, message: "Invalid user data" });
     }
   } catch (error: any) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[Register] Error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code,
+    });
+    
+    // Provide detailed error message
+    let errorMessage = 'Failed to register user'
+    
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error instanceof Error) {
+      errorMessage = error.toString()
+    }
+    
+    // Provide more specific error messages based on error type
+    if (error.code === 11000 || error.message?.includes('duplicate') || error.message?.includes('E11000')) {
+      errorMessage = 'User with this email already exists'
+    } else if (error.name === 'ValidationError' && error.errors) {
+      const validationErrors = Object.values(error.errors).map((val: any) => val.message).join(', ')
+      errorMessage = `Validation error: ${validationErrors}`
+    } else if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT' || error.message?.includes('ECONNREFUSED') || error.message?.includes('querySrv')) {
+      errorMessage = 'Database connection error. Unable to connect to MongoDB. Please check your MongoDB connection string and network settings.'
+    } else if (error.name === 'MongooseError' || error.name === 'MongoError' || error.name === 'MongoServerError') {
+      errorMessage = 'Database error occurred. Please check your MongoDB connection and try again.'
+    } else if (error.message?.includes('password')) {
+      errorMessage = error.message
+    } else if (error.message?.includes('buffering timed out') || error.message?.includes('buffering')) {
+      errorMessage = 'Database connection timeout. MongoDB is not connected. Please check your MongoDB connection and restart the backend server.'
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+    });
   }
 });
 
@@ -198,7 +280,15 @@ router.post("/google", async (req: Request, res: Response) => {
     let googleUser;
     try {
       googleUser = await verifyGoogleToken(idToken);
+      console.log('[Google OAuth] User info from Google:', {
+        email: googleUser.email,
+        name: googleUser.name,
+        picture: googleUser.picture ? googleUser.picture.substring(0, 100) + '...' : 'NOT PROVIDED',
+        has_picture: !!googleUser.picture,
+        sub: googleUser.sub
+      });
     } catch (error: any) {
+      console.error('[Google OAuth] Token verification failed:', error);
       return res.status(401).json({
         success: false,
         message: error.message || "Invalid Google token",
@@ -223,8 +313,12 @@ router.post("/google", async (req: Request, res: Response) => {
       if (googleUser.name && !user.name) {
         user.name = googleUser.name;
       }
-      if (googleUser.picture && !user.avatar) {
+      // Always update avatar from Google if available (keeps it in sync)
+      if (googleUser.picture) {
         user.avatar = googleUser.picture;
+        console.log('[Google OAuth] Updated user avatar from Google:', googleUser.picture);
+      } else {
+        console.log('[Google OAuth] No picture provided by Google for user:', googleUser.email);
       }
       await user.save();
     } else {
@@ -239,6 +333,14 @@ router.post("/google", async (req: Request, res: Response) => {
       });
     }
 
+    // Log avatar for debugging
+    console.log('[Google OAuth] Returning user with avatar:', {
+      userId: user._id.toString(),
+      email: user.email,
+      avatar: user.avatar,
+      hasAvatar: !!user.avatar
+    });
+
     // Return user and token
     res.status(200).json({
       success: true,
@@ -252,7 +354,7 @@ router.post("/google", async (req: Request, res: Response) => {
         gender: user.gender,
         address: user.address,
         aboutMe: user.aboutMe,
-        avatar: user.avatar,
+        avatar: user.avatar || undefined, // Ensure avatar is included even if null
         industry: user.industry,
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
@@ -271,10 +373,32 @@ router.post("/google", async (req: Request, res: Response) => {
       message: error.message,
       stack: error.stack,
       name: error.name,
+      code: error.code,
     });
+    
+    // Provide detailed error message
+    let errorMessage = "Failed to authenticate with Google"
+    
+    if (error.message) {
+      errorMessage = error.message
+    } else if (error instanceof Error) {
+      errorMessage = error.toString()
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    }
+    
+    // Provide more specific error messages based on error type
+    if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
+      errorMessage = "Database connection error. Please try again."
+    } else if (error.name === 'MongooseError' || error.name === 'MongoError') {
+      errorMessage = "Database error occurred. Please try again."
+    } else if (error.message?.includes('token')) {
+      errorMessage = error.message
+    }
+    
     res.status(500).json({
       success: false,
-      message: error.message || "Failed to authenticate with Google",
+      message: errorMessage,
       error: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
@@ -317,6 +441,14 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
       ];
     }
 
+    console.log('[GET /me] Returning user data:', {
+      id: user._id.toString(),
+      email: user.email,
+      avatar: user.avatar,
+      hasAvatar: !!user.avatar,
+      authProvider: user.authProvider
+    });
+
     res.status(200).json({
       success: true,
       user: {
@@ -330,7 +462,7 @@ router.get("/me", protect, async (req: AuthRequest, res: Response) => {
         gender: user.gender,
         address: user.address,
         aboutMe: user.aboutMe,
-        avatar: user.avatar,
+        avatar: user.avatar || undefined, // Explicitly ensure avatar is included
         industry: user.industry,
         toneOfVoice: user.toneOfVoice,
         knowledgeProducts: user.knowledgeProducts,
