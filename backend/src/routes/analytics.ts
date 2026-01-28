@@ -46,7 +46,7 @@ const router = Router()
 router.get('/', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Get user-specific counts in parallel for better performance
     const [
       totalCalendarItems,
@@ -59,25 +59,25 @@ router.get('/', requireAuth, async (req: any, res) => {
     ] = await Promise.all([
       // Total calendar items for this user
       CalendarItem.countDocuments({ userId }),
-
+      
       // Total conversations for this user
       Conversation.countDocuments({ userId }),
-
+      
       // Total campaigns for this user
       Campaign.countDocuments({ userId }),
-
+      
       // Total posts generated for this user
       SocialMediaPost.countDocuments({ userId }),
-
+      
       // Total LinkedIn posts deployed for this user
-      SocialMediaPost.countDocuments({
+      SocialMediaPost.countDocuments({ 
         userId,
         platform: 'linkedin'
       }),
-
+      
       // Total AI-generated content for this user
       AIGeneratedContent.countDocuments({ userId }),
-
+      
       // Total media files for this user
       MediaFile.countDocuments({ userId }),
     ])
@@ -112,7 +112,7 @@ router.get('/', requireAuth, async (req: any, res) => {
           }
         }
       ]),
-
+      
       // Posts by status for this user
       SocialMediaPost.aggregate([
         {
@@ -125,7 +125,7 @@ router.get('/', requireAuth, async (req: any, res) => {
           }
         }
       ]),
-
+      
       // AI content by type for this user
       AIGeneratedContent.aggregate([
         {
@@ -138,7 +138,7 @@ router.get('/', requireAuth, async (req: any, res) => {
           }
         }
       ]),
-
+      
       // Recent activity (last 7 days) - detailed breakdown by activity type
       Promise.all([
         // Social media posts for this user
@@ -239,7 +239,7 @@ router.get('/', requireAuth, async (req: any, res) => {
       ]).then(([postsData, conversationsData, calendarItemsData, eventsData, aiContentData]) => {
         // Combine all activity types by date
         const activityMap = new Map()
-
+        
         // Initialize all dates for the last 7 days
         const today = new Date()
         for (let i = 6; i >= 0; i--) {
@@ -257,50 +257,50 @@ router.get('/', requireAuth, async (req: any, res) => {
             total: 0
           })
         }
-
+        
         // Add posts data
         postsData.forEach((item: any) => {
           if (activityMap.has(item._id)) {
             activityMap.get(item._id).posts = item.posts || 0
           }
         })
-
+        
         // Add conversations data
         conversationsData.forEach((item: any) => {
           if (activityMap.has(item._id)) {
             activityMap.get(item._id).conversations = item.conversations || 0
           }
         })
-
+        
         // Add calendar items data
         calendarItemsData.forEach((item: any) => {
           if (activityMap.has(item._id)) {
             activityMap.get(item._id).calendarItems = item.calendarItems || 0
           }
         })
-
+        
         // Add events data
         eventsData.forEach((item: any) => {
           if (activityMap.has(item._id)) {
             activityMap.get(item._id).events = item.events || 0
           }
         })
-
+        
         // Add AI content data
         aiContentData.forEach((item: any) => {
           if (activityMap.has(item._id)) {
             activityMap.get(item._id).aiContent = item.aiContent || 0
           }
         })
-
+        
         // Calculate totals
         activityMap.forEach((value) => {
           value.total = value.posts + value.conversations + value.calendarItems + value.events + value.aiContent
         })
-
+        
         return Array.from(activityMap.values()).sort((a, b) => a.date.localeCompare(b.date))
       }),
-
+      
       // Campaigns time-series for this user (last 30 days)
       Campaign.aggregate([
         {
@@ -317,7 +317,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $sort: { _id: 1 } },
         { $limit: 30 }
       ]),
-
+      
       // Calendar items time-series for this user (last 30 days)
       CalendarItem.aggregate([
         {
@@ -334,7 +334,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $sort: { _id: 1 } },
         { $limit: 30 }
       ]),
-
+      
       // Conversations time-series for this user (last 30 days)
       Conversation.aggregate([
         {
@@ -351,7 +351,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $sort: { _id: 1 } },
         { $limit: 30 }
       ]),
-
+      
       // Posts time-series for this user (last 30 days)
       SocialMediaPost.aggregate([
         {
@@ -368,7 +368,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $sort: { _id: 1 } },
         { $limit: 30 }
       ]),
-
+      
       // LinkedIn posts time-series for this user (last 30 days)
       SocialMediaPost.aggregate([
         {
@@ -388,7 +388,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $sort: { _id: 1 } },
         { $limit: 30 }
       ]),
-
+      
       // AI content time-series for this user (last 30 days)
       AIGeneratedContent.aggregate([
         {
@@ -405,7 +405,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $sort: { _id: 1 } },
         { $limit: 30 }
       ]),
-
+      
       // Media files time-series for this user (last 30 days)
       MediaFile.aggregate([
         {
@@ -427,10 +427,10 @@ router.get('/', requireAuth, async (req: any, res) => {
     // Get events time series for this user (group by date when event was created) - last 30 days
     // Use server's local timezone for date grouping to match user's local date
     const serverTimezoneOffset = -new Date().getTimezoneOffset() / 60 // Offset in hours (e.g., +10 for Australia)
-    const timezoneString = serverTimezoneOffset >= 0
+    const timezoneString = serverTimezoneOffset >= 0 
       ? `+${String(serverTimezoneOffset).padStart(2, '0')}:00`
       : `${String(serverTimezoneOffset).padStart(3, '0')}:00`
-
+    
     const eventsTimeSeries = await Event.aggregate([
       {
         $match: {
@@ -443,8 +443,8 @@ router.get('/', requireAuth, async (req: any, res) => {
       {
         $group: {
           _id: {
-            $dateToString: {
-              format: '%Y-%m-%d',
+            $dateToString: { 
+              format: '%Y-%m-%d', 
               date: '$createdAt',
               timezone: timezoneString // Use server's local timezone instead of UTC
             }
@@ -454,13 +454,13 @@ router.get('/', requireAuth, async (req: any, res) => {
       },
       { $sort: { _id: 1 } }
     ])
-
+    
     // Get upcoming week calendar items (grouped by date) - next 7 days from CalendarItems table
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const nextWeek = new Date(today)
     nextWeek.setDate(nextWeek.getDate() + 7)
-
+    
     const upcomingWeekEvents = await CalendarItem.aggregate([
       {
         $match: {
@@ -474,30 +474,30 @@ router.get('/', requireAuth, async (req: any, res) => {
       {
         $group: {
           _id: {
-            $dateToString: {
-              format: '%Y-%m-%d',
+            $dateToString: { 
+              format: '%Y-%m-%d', 
               date: '$date',
               timezone: timezoneString
             }
           },
           count: { $sum: 1 },
-          items: {
-            $push: {
+          items: { 
+            $push: { 
               id: { $toString: '$_id' },
               title: '$title',
               platform: '$platform',
               time: '$time'
-            }
+            } 
           }
         }
       },
       { $sort: { _id: 1 } }
     ])
-
+    
     console.log(`[Analytics] Events time series: ${eventsTimeSeries.length} entries`)
     console.log(`[Analytics] Server timezone offset: ${timezoneString}`)
-    console.log(`[Analytics] Events time series data:`, eventsTimeSeries.map(e => ({ date: e._id, count: e.count })))
-    console.log(`[Analytics] Upcoming week calendar items:`, upcomingWeekEvents.map(e => ({ date: e._id, count: e.count })))
+    console.log(`[Analytics] Events time series data:`, eventsTimeSeries.map((e: any) => ({ date: e._id, count: e.count })))
+    console.log(`[Analytics] Upcoming week calendar items:`, upcomingWeekEvents.map((e: any) => ({ date: e._id, count: e.count })))
 
     // Debug logging
     console.log('Analytics Data:', {
@@ -616,16 +616,12 @@ router.get('/', requireAuth, async (req: any, res) => {
             totalShares: { $sum: { $ifNull: ['$shares', 0] } },
             totalViews: { $sum: { $ifNull: ['$views', 0] } },
             postCount: { $sum: 1 },
-            avgEngagement: {
-              $avg: {
-                $add: [
-                  { $ifNull: ['$likes', 0] },
-                  { $ifNull: ['$comments', 0] },
-                  { $ifNull: ['$shares', 0] },
-                  { $divide: [{ $ifNull: ['$views', 0] }, 10] }
-                ]
-              }
-            }
+            avgEngagement: { $avg: { $add: [
+              { $ifNull: ['$likes', 0] },
+              { $ifNull: ['$comments', 0] },
+              { $ifNull: ['$shares', 0] },
+              { $divide: [{ $ifNull: ['$views', 0] }, 10] }
+            ]}}
           }
         }
       ]),
@@ -788,11 +784,11 @@ router.get('/', requireAuth, async (req: any, res) => {
       ]),
       // Hourly Distribution (from time field)
       CalendarItem.aggregate([
-        {
-          $match: {
-            userId,
-            time: { $exists: true, $ne: null }
-          }
+        { 
+          $match: { 
+            userId, 
+            time: { $exists: true, $ne: null } 
+          } 
         },
         {
           $addFields: {
@@ -879,9 +875,9 @@ router.get('/', requireAuth, async (req: any, res) => {
       // Advanced Analytics - Media Asset Utilization
       Promise.all([
         MediaFile.countDocuments({ userId }),
-        SocialMediaPost.countDocuments({
-          userId,
-          mediaAttachments: { $exists: true, $ne: [] }
+        SocialMediaPost.countDocuments({ 
+          userId, 
+          mediaAttachments: { $exists: true, $ne: [] } 
         }),
       ]).then(([totalAssets, usedAssets]) => ({
         totalAssets,
@@ -896,12 +892,12 @@ router.get('/', requireAuth, async (req: any, res) => {
       ]),
       // Advanced Analytics - Golden Window Heatmap
       SocialMediaPost.aggregate([
-        {
-          $match: {
-            userId,
+        { 
+          $match: { 
+            userId, 
             publishedAt: { $exists: true, $ne: null },
             impressions: { $exists: true }
-          }
+          } 
         },
         {
           $addFields: {
@@ -1020,8 +1016,8 @@ router.get('/', requireAuth, async (req: any, res) => {
           $match: {
             userId,
             status: 'published',
-            publishedAt: {
-              $exists: true,
+            publishedAt: { 
+              $exists: true, 
               $ne: null,
               $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Last 7 days
             }
@@ -1079,7 +1075,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         }
       ]),
     ])
-
+    
     const engagementData = totalEngagement[0] || {
       totalLikes: 0,
       totalComments: 0,
@@ -1092,57 +1088,50 @@ router.get('/', requireAuth, async (req: any, res) => {
       avgViews: 0,
       publishedCount: 0,
     }
-
-    const totalEngagementScore = engagementData.totalLikes + engagementData.totalComments +
-      engagementData.totalShares + (engagementData.totalViews / 10)
-
-    const avgEngagementPerPost = engagementData.publishedCount > 0
-      ? totalEngagementScore / engagementData.publishedCount
+    
+    const totalEngagementScore = engagementData.totalLikes + engagementData.totalComments + 
+                                 engagementData.totalShares + (engagementData.totalViews / 10)
+    
+    const avgEngagementPerPost = engagementData.publishedCount > 0 
+      ? totalEngagementScore / engagementData.publishedCount 
       : 0
-
+    
     const recentStats = recentPostsStats[0] || { count: 0, published: 0, scheduled: 0, draft: 0 }
     const campaignStats = campaignPostsStats[0] || { totalCampaignPosts: 0, campaignsWithPosts: 0 }
     const velocityStats = contentVelocity[0] || { avgPerDay: 0, totalDays: 0 }
-
+    
     // Calculate content health score (0-100)
     const contentHealthScore = (() => {
       let score = 0
       const maxScore = 100
-
+      
       // Publishing rate (30 points)
       const publishRate = publishingRate.rate
       score += Math.min(30, (publishRate / 100) * 30)
-
+      
       // Scheduling efficiency (25 points)
       const scheduleEff = schedulingEfficiency.scheduledRate
       score += Math.min(25, (scheduleEff / 100) * 25)
-
+      
       // Content velocity (20 points) - at least 1 post per day is good
       const velocity = velocityStats.avgPerDay || 0
       score += Math.min(20, (velocity / 2) * 20)
-
+      
       // Engagement (15 points) - if there's engagement data
       if (avgEngagementPerPost > 0) {
         score += Math.min(15, (avgEngagementPerPost / 100) * 15)
       } else {
         score += 5 // Base score if no engagement data yet
       }
-
+      
       // Campaign activity (10 points)
       const activeCampaigns = campaignsByStatus.find((c: any) => c._id === 'active')?.count || 0
       score += Math.min(10, activeCampaigns * 2)
-
+      
       return Math.round(score)
     })()
 
     // Format the comprehensive response
-    // Compute total posts across all platforms using aggregation result,
-    // this guarantees we include Twitter, Facebook, etc. if they appear in postsByPlatform.
-    const totalPostsAcrossPlatforms = (postsByPlatform || []).reduce((sum: number, p: any) => {
-      const count = typeof p?.count === 'number' ? p.count : 0
-      return sum + count
-    }, 0)
-
     const analytics = {
       overview: {
         // Core counts
@@ -1154,13 +1143,13 @@ router.get('/', requireAuth, async (req: any, res) => {
         totalLinkedInPosts,
         totalAIGeneratedContent,
         totalMediaFiles,
-
+        
         // Post status breakdown
         publishedPosts,
         scheduledPosts,
         draftPosts,
         failedPosts,
-
+        
         // Engagement metrics
         totalEngagement: Math.round(totalEngagementScore),
         avgEngagementPerPost: Math.round(avgEngagementPerPost * 100) / 100,
@@ -1173,43 +1162,41 @@ router.get('/', requireAuth, async (req: any, res) => {
         avgComments: Math.round(engagementData.avgComments * 100) / 100,
         avgShares: Math.round(engagementData.avgShares * 100) / 100,
         avgViews: Math.round(engagementData.avgViews * 100) / 100,
-
+        
         // AI metrics
         aiContentUsedInPosts: aiContentUsage,
         aiEfficiency: Math.round(aiEfficiency.efficiency * 100) / 100,
         aiContentGenerated: aiEfficiency.generated,
-
+        
         // Productivity metrics
         contentVelocity: Math.round(velocityStats.avgPerDay * 100) / 100,
         schedulingRate: Math.round(schedulingEfficiency.schedulingRate * 100) / 100,
         scheduledItemsRate: Math.round(schedulingEfficiency.scheduledRate * 100) / 100,
         publishingRate: Math.round(publishingRate.rate * 100) / 100,
-
+        
         // Content health
         contentHealthScore,
-
+        
         // Recent activity (last 30 days)
         recentPostsCreated: recentStats.count,
         recentPostsPublished: recentStats.published,
         recentPostsScheduled: recentStats.scheduled,
         recentPostsDraft: recentStats.draft,
-
+        
         // Campaign metrics
         campaignPosts: campaignStats.totalCampaignPosts,
         campaignsWithPosts: campaignStats.campaignsWithPosts,
-
+        
         // Core KPI Metrics (4 Main Metrics)
-        // totalPosts.total uses aggregated counts across all platforms to ensure
-        // posts from Twitter, Facebook, etc. are included even if counting logic changes.
         totalPosts: {
-          total: totalPostsAcrossPlatforms,
+          total: totalPostsGenerated,
           published: publishedPosts,
           publishedText: `${publishedPosts} published`
         },
         scheduledItems: (() => {
           const scheduledCount = calendarItemsByStatus.find((s: any) => s._id === 'scheduled')?.count || 0
-          const scheduledPct = totalCalendarItems > 0
-            ? ((scheduledCount / totalCalendarItems) * 100).toFixed(1)
+          const scheduledPct = totalCalendarItems > 0 
+            ? ((scheduledCount / totalCalendarItems) * 100).toFixed(1) 
             : '0.0'
           return {
             total: totalCalendarItems,
@@ -1228,7 +1215,7 @@ router.get('/', requireAuth, async (req: any, res) => {
             usagePct: `${usagePct}% used in posts`
           }
         })(),
-
+        
         // Operations Metrics (for databases without engagement data)
         mostActivePlatform: (() => {
           const platform = mostActivePlatformData?.[0]
@@ -1239,41 +1226,41 @@ router.get('/', requireAuth, async (req: any, res) => {
             date: d._id, // This is already a date string like "2024-01-07"
             count: d.count
           }))
-
+          
           if (dateCounts.length === 0) return { daysInRow: 0, totalActiveDays: 0 }
-
+          
           // Convert date strings to Date objects and sort chronologically (oldest first)
           const sortedDates = dateCounts
-            .map(d => {
+            .map((d: any) => {
               // Parse the date string (format: YYYY-MM-DD)
               const [year, month, day] = d.date.split('-').map(Number)
               return new Date(year, month - 1, day)
             })
-            .sort((a, b) => a.getTime() - b.getTime())
-
+            .sort((a: any, b: any) => a.getTime() - b.getTime())
+          
           // Calculate current streak (from most recent date backwards)
           let currentStreak = 1
           const today = new Date()
           today.setHours(0, 0, 0, 0)
-
+          
           // Find the most recent posting date
           const mostRecentDate = sortedDates[sortedDates.length - 1]
           const mostRecentDateOnly = new Date(mostRecentDate)
           mostRecentDateOnly.setHours(0, 0, 0, 0)
-
+          
           // Check if most recent date is today or yesterday (within 1 day)
           const daysSinceLastPost = Math.floor((today.getTime() - mostRecentDateOnly.getTime()) / (1000 * 60 * 60 * 24))
-
+          
           if (daysSinceLastPost <= 1) {
             // Calculate streak backwards from most recent date
             for (let i = sortedDates.length - 2; i >= 0; i--) {
               const nextDate = sortedDates[i + 1]
               const currentDate = sortedDates[i]
-
+              
               // Calculate difference in days
               const diffTime = nextDate.getTime() - currentDate.getTime()
               const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
+              
               if (diffDays === 1) {
                 // Consecutive day
                 currentStreak++
@@ -1286,18 +1273,18 @@ router.get('/', requireAuth, async (req: any, res) => {
             // Last post was more than 1 day ago, so current streak is 0
             currentStreak = 0
           }
-
+          
           // Calculate longest streak overall (for reference)
           let longestStreak = 1
           let tempStreak = 1
-
+          
           for (let i = 1; i < sortedDates.length; i++) {
             const prevDate = sortedDates[i - 1]
             const currDate = sortedDates[i]
-
+            
             const diffTime = currDate.getTime() - prevDate.getTime()
             const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
+            
             if (diffDays === 1) {
               tempStreak++
               longestStreak = Math.max(longestStreak, tempStreak)
@@ -1305,9 +1292,9 @@ router.get('/', requireAuth, async (req: any, res) => {
               tempStreak = 1
             }
           }
-
-          return {
-            daysInRow: currentStreak,
+          
+          return { 
+            daysInRow: currentStreak, 
             totalActiveDays: dateCounts.length,
             longestStreak: longestStreak
           }
@@ -1316,7 +1303,7 @@ router.get('/', requireAuth, async (req: any, res) => {
           // Calculate from AIGeneratedContent.output field (not content)
           const aiContents = aiWordsGeneratedSources || []
           let totalWords = 0
-
+          
           aiContents.forEach((item: any) => {
             if (item?.output) {
               try {
@@ -1334,7 +1321,7 @@ router.get('/', requireAuth, async (req: any, res) => {
                     // If JSON parse fails, use original text
                   }
                 }
-
+                
                 // Count words (split by whitespace)
                 const words = String(text).trim().split(/\s+/).filter((w: string) => w.length > 0)
                 totalWords += words.length
@@ -1343,14 +1330,14 @@ router.get('/', requireAuth, async (req: any, res) => {
               }
             }
           })
-
+          
           return totalWords
         })(),
         totalAIWordsGenerated: (() => {
           // Keep for backward compatibility
           const aiContents = aiWordsGeneratedSources || []
           let totalWords = 0
-
+          
           aiContents.forEach((item: any) => {
             if (item?.output) {
               try {
@@ -1367,7 +1354,7 @@ router.get('/', requireAuth, async (req: any, res) => {
                     // If JSON parse fails, use original text
                   }
                 }
-
+                
                 const words = String(text).trim().split(/\s+/).filter((w: string) => w.length > 0)
                 totalWords += words.length
               } catch (err) {
@@ -1375,10 +1362,10 @@ router.get('/', requireAuth, async (req: any, res) => {
               }
             }
           })
-
-          return {
-            words: totalWords,
-            contentCount: aiContents.length
+          
+          return { 
+            words: totalWords, 
+            contentCount: aiContents.length 
           }
         })(),
         humanVsAICost: (() => {
@@ -1475,15 +1462,15 @@ router.get('/', requireAuth, async (req: any, res) => {
           publishedAt: post.publishedAt,
           createdAt: post.createdAt,
         })),
-        bestPlatform: engagementByPlatform.length > 0
-          ? engagementByPlatform.reduce((best: any, current: any) =>
-            current.avgEngagement > (best?.avgEngagement || 0) ? current : best
-          )._id
+        bestPlatform: engagementByPlatform.length > 0 
+          ? engagementByPlatform.reduce((best: any, current: any) => 
+              current.avgEngagement > (best?.avgEngagement || 0) ? current : best
+            )._id
           : null,
         mostProductiveDay: recentActivity.length > 0
-          ? recentActivity.reduce((best: any, current: any) =>
-            current.total > (best?.total || 0) ? current : best
-          ).date
+          ? recentActivity.reduce((best: any, current: any) => 
+              current.total > (best?.total || 0) ? current : best
+            ).date
           : null,
       },
       recentActivity: recentActivity.map((item: any) => ({
@@ -1500,11 +1487,11 @@ router.get('/', requireAuth, async (req: any, res) => {
           date: item._id,
           count: item.count
         })),
-        events: eventsTimeSeries.length > 0
+        events: eventsTimeSeries.length > 0 
           ? eventsTimeSeries.map((item: any) => ({
-            date: item._id,
-            count: item.count
-          }))
+              date: item._id,
+              count: item.count
+            }))
           : [],
         calendarItems: calendarItemsTimeSeries.map((item: any) => ({
           date: item._id,
@@ -1575,14 +1562,14 @@ router.get('/', requireAuth, async (req: any, res) => {
           count: item.count
         }))
         const peakDay = dailyActivity.length > 0
-          ? dailyActivity.reduce((best: any, current: any) =>
-            current.count > (best?.count || 0) ? current : best
-          )
+          ? dailyActivity.reduce((best: any, current: any) => 
+              current.count > (best?.count || 0) ? current : best
+            )
           : null
         const quietDay = dailyActivity.length > 0
-          ? dailyActivity.reduce((worst: any, current: any) =>
-            current.count < (worst?.count || Infinity) ? current : worst
-          )
+          ? dailyActivity.reduce((worst: any, current: any) => 
+              current.count < (worst?.count || Infinity) ? current : worst
+            )
           : null
 
         // Process hourly distribution
@@ -1617,8 +1604,8 @@ router.get('/', requireAuth, async (req: any, res) => {
             contentTypeBreakdown: calendarItemsByContentType.map((item: any) => ({
               platform: item._id,
               count: item.count,
-              percentage: calendarItemsWithMedia.total > 0
-                ? Math.round((item.count / calendarItemsWithMedia.total) * 100 * 100) / 100
+              percentage: calendarItemsWithMedia.total > 0 
+                ? Math.round((item.count / calendarItemsWithMedia.total) * 100 * 100) / 100 
                 : 0
             })),
           },
@@ -1627,8 +1614,8 @@ router.get('/', requireAuth, async (req: any, res) => {
             platformDistribution: calendarItemsByContentType.map((item: any) => ({
               platform: item._id,
               count: item.count,
-              percentage: calendarItemsWithMedia.total > 0
-                ? Math.round((item.count / calendarItemsWithMedia.total) * 100 * 100) / 100
+              percentage: calendarItemsWithMedia.total > 0 
+                ? Math.round((item.count / calendarItemsWithMedia.total) * 100 * 100) / 100 
                 : 0
             })),
             platformDiversityScore,
@@ -1638,8 +1625,8 @@ router.get('/', requireAuth, async (req: any, res) => {
             statusOverview: calendarItemsByStatus.reduce((acc: any, item: any) => {
               acc[item._id] = {
                 count: item.count,
-                percentage: calendarItemsWithMedia.total > 0
-                  ? Math.round((item.count / calendarItemsWithMedia.total) * 100 * 100) / 100
+                percentage: calendarItemsWithMedia.total > 0 
+                  ? Math.round((item.count / calendarItemsWithMedia.total) * 100 * 100) / 100 
                   : 0
               }
               return acc
@@ -1673,7 +1660,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         const contentVelocity = {
           ...funnel,
           conversionRate: Math.round(funnel.conversionRate * 100) / 100,
-          insight: funnel.bottleneck === 'approval'
+          insight: funnel.bottleneck === 'approval' 
             ? 'You have a bottleneck in your approval process. Consider streamlining your workflow.'
             : null,
         }
@@ -1688,7 +1675,7 @@ router.get('/', requireAuth, async (req: any, res) => {
           humanTimeTotal: aiEfficiencyData.count * HUMAN_TIME_SECONDS * 1000, // Convert to ms
           timeSaved: (aiEfficiencyData.count * HUMAN_TIME_SECONDS * 1000) - aiEfficiencyData.totalProcessingTime,
           timeSavedHours: Math.round(((aiEfficiencyData.count * HUMAN_TIME_SECONDS * 1000) - aiEfficiencyData.totalProcessingTime) / (1000 * 60 * 60) * 100) / 100,
-          efficiencyRatio: aiEfficiencyData.totalProcessingTime > 0
+          efficiencyRatio: aiEfficiencyData.totalProcessingTime > 0 
             ? Math.round(((aiEfficiencyData.count * HUMAN_TIME_SECONDS * 1000) / aiEfficiencyData.totalProcessingTime) * 100) / 100
             : 0,
         } : null
@@ -1719,7 +1706,7 @@ router.get('/', requireAuth, async (req: any, res) => {
           unusedAssets: mediaUtilizationStats.unusedAssets,
           utilizationRate: Math.round(mediaUtilizationStats.utilizationRate * 100) / 100,
           untappedPotential: mediaUtilizationStats.unusedAssets,
-          insight: mediaUtilizationStats.unusedAssets > 0
+          insight: mediaUtilizationStats.unusedAssets > 0 
             ? `You have ${mediaUtilizationStats.unusedAssets} assets ready to go that aren't working for you yet.`
             : null,
         } : null
@@ -1737,7 +1724,7 @@ router.get('/', requireAuth, async (req: any, res) => {
             contentDNAHashtagMap.set(hashtag, (contentDNAHashtagMap.get(hashtag) || 0) + 1)
           }
         })
-
+        
         const contentDNA = Array.from(contentDNAHashtagMap.entries())
           .map(([hashtag, count]) => ({ hashtag: `#${hashtag}`, count }))
           .sort((a, b) => b.count - a.count)
@@ -1756,9 +1743,9 @@ router.get('/', requireAuth, async (req: any, res) => {
 
         // Find peak times
         const peakTimes = goldenWindowHeatmap
-          .sort((a, b) => (b.avgImpressions || 0) - (a.avgImpressions || 0))
+          .sort((a: any, b: any) => (b.avgImpressions || 0) - (a.avgImpressions || 0))
           .slice(0, 5)
-          .map(item => `${item.day} ${item.hour}:00`)
+          .map((item: any) => `${item.day} ${item.hour}:00`)
 
         // Process Strategic Analytics - Consistency Index
         let consistencyIndex = null
@@ -1767,10 +1754,11 @@ router.get('/', requireAuth, async (req: any, res) => {
           const currentYear = currentDate.getFullYear()
           const currentMonth = currentDate.getMonth() + 1
           const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
-
+          
           const activeDaysSet = new Set<string>()
-          const consistencyHeatmap: any[] = [];
-          ((consistencyIndexData as any[]) || []).forEach((item: any) => {
+          const consistencyHeatmap: any[] = []
+          const indexDataArray: any[] = consistencyIndexData || []
+          indexDataArray.forEach((item: any) => {
             if (item?._id?.year === currentYear && item?._id?.month === currentMonth) {
               const dayKey = `${item._id.year}-${item._id.month}-${item._id.day}`
               activeDaysSet.add(dayKey)
@@ -1782,12 +1770,12 @@ router.get('/', requireAuth, async (req: any, res) => {
               })
             }
           })
-
-          const consistencyScore = daysInMonth > 0
-            ? Math.round((activeDaysSet.size / daysInMonth) * 100)
+          
+          const consistencyScore = daysInMonth > 0 
+            ? Math.round((activeDaysSet.size / daysInMonth) * 100) 
             : 0
           const inactiveDays = daysInMonth - activeDaysSet.size
-
+          
           consistencyIndex = {
             score: consistencyScore,
             activeDays: activeDaysSet.size,
@@ -1811,29 +1799,31 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Strategic Analytics - Lead Time Analysis
         let leadTimeAnalysis = null
         try {
-          const [conversations, publishedPosts] = leadTimeSources || [[], []]
-          const leadTimes: number[] = [];
+          const [conversations, publishedPosts] = (leadTimeSources || [[], []]) as [any[], any[]]
+          const leadTimes: number[] = []
 
-          ((conversations as any[]) || []).forEach((conv: any) => {
+          const conversationsArray: any[] = conversations || []
+          conversationsArray.forEach((conv: any) => {
             try {
               const convCreatedAt = conv?.createdAt ? new Date(conv.createdAt).getTime() : null
               if (!convCreatedAt || isNaN(convCreatedAt)) return
-
-              const convContent = conv?.messages?.[0]?.content?.toLowerCase() || '';
+              
+              const convContent = String(conv?.messages?.[0]?.content || '').toLowerCase()
 
               // Find matching published post by content similarity
-              ((publishedPosts as any[]) || []).forEach((post: any) => {
+              const publishedPostsArray: any[] = publishedPosts || []
+              publishedPostsArray.forEach((post: any) => {
                 try {
                   const postContent = post?.content?.toLowerCase() || ''
                   const postPublishedAt = post?.publishedAt ? new Date(post.publishedAt).getTime() : null
                   if (!postPublishedAt || isNaN(postPublishedAt)) return
-
+                  
                   // Simple similarity check: if post content contains key words from conversation
                   const convWords = convContent.split(/\s+/).filter((w: string) => w.length > 4)
-                  const hasMatch = convWords.length > 0 && convWords.some((word: string) =>
+                  const hasMatch = convWords.length > 0 && convWords.some((word: string) => 
                     postContent.includes(word)
                   )
-
+                  
                   if (hasMatch && postPublishedAt > convCreatedAt) {
                     const leadTimeHours = (postPublishedAt - convCreatedAt) / (1000 * 60 * 60)
                     if (leadTimeHours > 0 && leadTimeHours < 720) { // Less than 30 days
@@ -1848,26 +1838,26 @@ router.get('/', requireAuth, async (req: any, res) => {
               // Skip this conversation if there's an error
             }
           })
-
+          
           const avgLeadTimeHours = leadTimes.length > 0
             ? Math.round((leadTimes.reduce((a, b) => a + b, 0) / leadTimes.length) * 100) / 100
             : null
           const leadTimeTrend = leadTimes.length >= 2
             ? leadTimes.slice(-10).map((_, idx) => ({
-              index: idx,
-              hours: leadTimes[leadTimes.length - 10 + idx] || 0
-            }))
+                index: idx,
+                hours: leadTimes[leadTimes.length - 10 + idx] || 0
+              }))
             : []
-
+          
           leadTimeAnalysis = {
             avgLeadTimeHours,
             leadTimeTrend,
             totalMatchedPairs: leadTimes.length,
-            insight: avgLeadTimeHours && avgLeadTimeHours > 72
+            insight: avgLeadTimeHours && avgLeadTimeHours > 72 
               ? `Average lead time is ${Math.round(avgLeadTimeHours / 24)} days. Consider streamlining your workflow.`
               : avgLeadTimeHours && avgLeadTimeHours < 24
-                ? `Great! Your team is getting faster - average lead time is ${Math.round(avgLeadTimeHours)} hours.`
-                : null
+              ? `Great! Your team is getting faster - average lead time is ${Math.round(avgLeadTimeHours)} hours.`
+              : null
           }
         } catch (err) {
           console.error('Error processing lead time analysis:', err)
@@ -1882,25 +1872,25 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Strategic Analytics - Viral Coefficient
         let viralCoefficient = null
         try {
-          const viralPosts = ((viralCoefficientData as any[]) || []).map((post: any) => ({
+          const viralPosts = (viralCoefficientData || []).map((post: any) => ({
             likes: post?.likes || 0,
             shares: post?.shares || 0,
             impressions: post?.impressions || 0,
             viralCoefficient: post?.viralCoefficient || 0
           }))
-
+          
           const avgViralCoefficient = viralPosts.length > 0
-            ? Math.round((viralPosts.reduce((sum, p) => sum + (p.viralCoefficient || 0), 0) / viralPosts.length) * 1000) / 1000
+            ? Math.round((viralPosts.reduce((sum: number, p: any) => sum + (p.viralCoefficient || 0), 0) / viralPosts.length) * 1000) / 1000
             : 0
           const topViralPosts = viralPosts
-            .sort((a, b) => (b.viralCoefficient || 0) - (a.viralCoefficient || 0))
+            .sort((a: any, b: any) => (b.viralCoefficient || 0) - (a.viralCoefficient || 0))
             .slice(0, 10)
-
+          
           viralCoefficient = {
             avgCoefficient: avgViralCoefficient,
             topViralPosts,
             totalPosts: viralPosts.length,
-            insight: avgViralCoefficient > 0.1
+            insight: avgViralCoefficient > 0.1 
               ? `Your content has high viral potential! Average shares-to-likes ratio is ${avgViralCoefficient.toFixed(2)}.`
               : null
           }
@@ -1917,22 +1907,22 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Strategic Analytics - Media Mix Diversity
         let mediaMixDiversity = null
         try {
-          const mediaMix = ((mediaMixData as any[]) || []).map((item: any) => ({
+          const mediaMix = (mediaMixData || []).map((item: any) => ({
             type: item?._id || 'unknown',
             count: item?.count || 0
           }))
-          const totalMediaFiles = mediaMix.reduce((sum, item) => sum + (item.count || 0), 0)
-          const mediaMixBreakdown = mediaMix.map(item => ({
+          const totalMediaFiles = mediaMix.reduce((sum: number, item: any) => sum + (item.count || 0), 0)
+          const mediaMixBreakdown = mediaMix.map((item: any) => ({
             ...item,
             percentage: totalMediaFiles > 0 ? Math.round((item.count / totalMediaFiles) * 100) : 0
           }))
-          const imagePercentage = mediaMixBreakdown.find(m => m.type === 'image')?.percentage || 0
+          const imagePercentage = mediaMixBreakdown.find((m: any) => m.type === 'image')?.percentage || 0
           const isImageHeavy = imagePercentage > 80
-
+          
           mediaMixDiversity = {
             breakdown: mediaMixBreakdown,
             totalFiles: totalMediaFiles,
-            insight: isImageHeavy
+            insight: isImageHeavy 
               ? `Your media mix is ${imagePercentage}% images. Video content generates 3x more engagement; consider uploading more Reels/TikToks.`
               : null
           }
@@ -1950,17 +1940,18 @@ router.get('/', requireAuth, async (req: any, res) => {
         try {
           const promotionalKeywords = ['buy', 'sale', 'order', 'purchase', 'discount', 'deal', 'offer', 'promo', 'limited', 'now']
           const educationalKeywords = ['how to', 'tips', 'recipe', 'enjoy', 'learn', 'guide', 'tutorial', 'help', 'benefit', 'why']
-
+          
           let promotionalCount = 0
           let educationalCount = 0
-          let neutralCount = 0;
+          let neutralCount = 0
 
-          ((contentPurposeSources as any[]) || []).forEach((item: any) => {
+          const contentPurposeArray: any[] = contentPurposeSources || []
+          contentPurposeArray.forEach((item: any) => {
             try {
               const content = (item?.content || '').toLowerCase()
               const hasPromotional = promotionalKeywords.some(keyword => content.includes(keyword))
               const hasEducational = educationalKeywords.some(keyword => content.includes(keyword))
-
+              
               if (hasPromotional && !hasEducational) {
                 promotionalCount++
               } else if (hasEducational && !hasPromotional) {
@@ -1975,7 +1966,7 @@ router.get('/', requireAuth, async (req: any, res) => {
               // Skip this item if there's an error
             }
           })
-
+          
           const totalContentItems = promotionalCount + educationalCount + neutralCount
           const breakdown = [
             { type: 'Promotional', count: promotionalCount, percentage: totalContentItems > 0 ? Math.round((promotionalCount / totalContentItems) * 100) : 0 },
@@ -1984,11 +1975,11 @@ router.get('/', requireAuth, async (req: any, res) => {
           ]
           const promotionalPercentage = breakdown.find(c => c.type === 'Promotional')?.percentage || 0
           const isTooPromotional = totalContentItems > 0 && promotionalPercentage > 80
-
+          
           contentPurposeBreakdown = {
             breakdown,
             totalItems: totalContentItems,
-            insight: isTooPromotional
+            insight: isTooPromotional 
               ? `Your content is ${promotionalPercentage}% promotional. Add more value-based posts to prevent audience burnout.`
               : null
           }
@@ -2004,22 +1995,24 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Strategic Analytics - Event Impact Analysis
         let eventImpactAnalysis = null
         try {
-          const [events, postsWithImpressions] = eventImpactSources || [[], []]
+          const [events, postsWithImpressions] = (eventImpactSources || [[], []]) as [any[], any[]]
           const eventWindows: any[] = []
-          const nonEventImpressions: number[] = [];
+          const nonEventImpressions: number[] = []
 
-          ((events as any[]) || []).forEach((event: any) => {
+          const eventsArray: any[] = events || []
+          eventsArray.forEach((event: any) => {
             try {
               if (!event?.date) return
               const eventDate = new Date(event.date)
               if (isNaN(eventDate.getTime())) return
-
+              
               const windowStart = new Date(eventDate)
               windowStart.setDate(windowStart.getDate() - 1) // Day before
               const windowEnd = new Date(eventDate)
               windowEnd.setDate(windowEnd.getDate() + 2) // 2 days after
 
-              const eventWindowPosts = ((postsWithImpressions as any[]) || []).filter((post: any) => {
+              const postsArray: any[] = postsWithImpressions || []
+              const eventWindowPosts = postsArray.filter((post: any) => {
                 try {
                   if (!post?.publishedAt) return false
                   const postDate = new Date(post.publishedAt)
@@ -2028,10 +2021,10 @@ router.get('/', requireAuth, async (req: any, res) => {
                   return false
                 }
               })
-
+              
               const eventImpressions = eventWindowPosts.reduce((sum: number, post: any) => sum + (post?.impressions || 0), 0)
               const avgEventImpressions = eventWindowPosts.length > 0 ? eventImpressions / eventWindowPosts.length : 0
-
+              
               eventWindows.push({
                 eventDate: event.date,
                 eventNumber: event?.eventNumber || 0,
@@ -2045,10 +2038,11 @@ router.get('/', requireAuth, async (req: any, res) => {
               // Skip this event if there's an error
             }
           })
-
+          
           // Calculate baseline (non-event days)
-          const allEventDates = new Set();
-          ((events as any[]) || []).forEach((e: any) => {
+          const allEventDates = new Set<string>()
+          const eventsForDates: any[] = events || []
+          eventsForDates.forEach((e: any) => {
             try {
               if (e?.date) {
                 const d = new Date(e.date)
@@ -2059,9 +2053,10 @@ router.get('/', requireAuth, async (req: any, res) => {
             } catch {
               // Skip if error
             }
-          });
+          })
 
-          ((postsWithImpressions as any[]) || []).forEach((post: any) => {
+          const postsWithImpressionsArray: any[] = postsWithImpressions || []
+          postsWithImpressionsArray.forEach((post: any) => {
             try {
               if (!post?.publishedAt) return
               const postDate = new Date(post.publishedAt)
@@ -2074,28 +2069,28 @@ router.get('/', requireAuth, async (req: any, res) => {
               // Skip if error
             }
           })
-
+          
           const avgNonEventImpressions = nonEventImpressions.length > 0
-            ? Math.round(nonEventImpressions.reduce((a, b) => a + b, 0) / nonEventImpressions.length)
+            ? Math.round(nonEventImpressions.reduce((a: number, b: number) => a + b, 0) / nonEventImpressions.length)
             : 0
           const avgEventImpressions = eventWindows.length > 0
-            ? Math.round(eventWindows.reduce((sum, e) => sum + (e.avgImpressions || 0), 0) / eventWindows.length)
+            ? Math.round(eventWindows.reduce((sum: number, e: any) => sum + (e.avgImpressions || 0), 0) / eventWindows.length)
             : 0
           const eventImpactRatio = avgNonEventImpressions > 0
             ? Math.round((avgEventImpressions / avgNonEventImpressions) * 100) / 100
             : 0
-
+          
           eventImpactAnalysis = {
             eventWindows,
             avgEventImpressions,
             avgNonEventImpressions,
             impactRatio: eventImpactRatio,
             totalEvents: (events || []).length,
-            insight: eventImpactRatio > 1.5
+            insight: eventImpactRatio > 1.5 
               ? `Events are driving ${Math.round((eventImpactRatio - 1) * 100)}% more impressions than regular days.`
               : eventImpactRatio < 1 && (events || []).length > 0
-                ? `Events are underperforming. Consider reviewing your event marketing strategy.`
-                : null
+              ? `Events are underperforming. Consider reviewing your event marketing strategy.`
+              : null
           }
         } catch (err) {
           console.error('Error processing event impact analysis:', err)
@@ -2155,32 +2150,32 @@ router.get('/', requireAuth, async (req: any, res) => {
 router.get('/ayrshare/posting-times', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Get posts from database
     const dbPosts = await SocialMediaPost.find({
       userId,
       status: 'published',
       publishedAt: { $exists: true },
     }).sort({ publishedAt: -1 }).limit(500)
-
+    
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
     const freshMetrics = await updatePostEngagementMetrics(postsForUpdate)
-
+    
     // Convert to Ayrshare format with platform normalization and fresh metrics
-    const ayrsharePosts = dbPosts.map((post) => {
+    const ayrsharePosts = dbPosts.map((post: any) => {
       let platform = post.platform?.toLowerCase() || ''
       // Normalize platform names
       if (platform === 'x' || platform === 'twitter/x') {
         platform = 'twitter'
       }
-
+      
       const postId = post.platformPostId || post._id.toString()
       const freshData = freshMetrics[postId]
-
+      
       return {
         id: post._id.toString(),
         postId: postId,
@@ -2195,20 +2190,20 @@ router.get('/ayrshare/posting-times', requireAuth, async (req: any, res) => {
         },
       }
     })
-
+    
     // Try to get additional posts from Ayrshare API
     const ayrshareApiPosts = await getAllPosts(100)
-
+    
     // Combine and deduplicate
-    const allPosts = [...ayrsharePosts] as any[]
-    ayrshareApiPosts.forEach((apiPost) => {
-      if (!allPosts.find((p) => p.postId === apiPost.postId)) {
+    const allPosts = [...ayrsharePosts]
+    ayrshareApiPosts.forEach((apiPost: any) => {
+      if (!allPosts.find((p: any) => p.postId === apiPost.postId)) {
         allPosts.push(apiPost)
       }
     })
-
+    
     const topPostingTimes = calculateTopPostingTimes(allPosts)
-
+    
     res.json({
       success: true,
       postingTimes: topPostingTimes,
@@ -2228,31 +2223,31 @@ router.get('/ayrshare/posting-times', requireAuth, async (req: any, res) => {
 router.post('/ayrshare/update-metrics', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Get posts from database
     const dbPosts = await SocialMediaPost.find({
       userId,
       status: 'published',
       publishedAt: { $exists: true },
     }).sort({ publishedAt: -1 }).limit(500)
-
+    
     // Prepare posts for metrics update
     const postsForUpdate = dbPosts.map(post => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
-
+    
     // Fetch fresh engagement metrics from Ayrshare
     const metrics = await updatePostEngagementMetrics(postsForUpdate)
-
+    
     // Update posts in database with fresh metrics
-    const updatePromises = Object.entries(metrics).map(async ([postId, metricsData]) => {
-      const post = dbPosts.find(p =>
+    const updatePromises = Object.entries(metrics).map(async ([postId, metricsData]: [string, any]) => {
+      const post = dbPosts.find((p: any) =>
         (p.platformPostId && p.platformPostId === postId) ||
         p._id.toString() === postId
       )
 
-      if (post) {
+      if (post && metricsData) {
         await SocialMediaPost.findByIdAndUpdate(post._id, {
           likes: metricsData.likes,
           comments: metricsData.comments,
@@ -2262,9 +2257,9 @@ router.post('/ayrshare/update-metrics', requireAuth, async (req: any, res) => {
         })
       }
     })
-
+    
     await Promise.all(updatePromises)
-
+    
     res.json({
       success: true,
       message: `Updated metrics for ${Object.keys(metrics).length} posts`,
@@ -2285,7 +2280,7 @@ router.post('/ayrshare/update-metrics', requireAuth, async (req: any, res) => {
 router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Auto-sync posts from Ayrshare before generating heatmaps
     try {
       await syncAyrsharePostsToDatabase(userId.toString())
@@ -2293,32 +2288,32 @@ router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
     } catch (syncError: any) {
       console.warn('[Heatmaps] Sync failed, continuing with existing data:', syncError.message)
     }
-
+    
     // Get posts from database (now includes synced Ayrshare posts)
     const dbPosts = await SocialMediaPost.find({
       userId,
       status: 'published',
       publishedAt: { $exists: true },
     }).sort({ publishedAt: -1 }).limit(500)
-
+    
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
     const freshMetrics = await updatePostEngagementMetrics(postsForUpdate)
-
+    
     // Convert to Ayrshare format with platform normalization and fresh metrics
-    const ayrsharePosts = dbPosts.map((post) => {
+    const ayrsharePosts = dbPosts.map((post: any) => {
       let platform = post.platform?.toLowerCase() || ''
       // Normalize platform names
       if (platform === 'x' || platform === 'twitter/x') {
         platform = 'twitter'
       }
-
+      
       const postId = post.platformPostId || post._id.toString()
       const freshData = freshMetrics[postId]
-
+      
       return {
         id: post._id.toString(),
         postId: postId,
@@ -2333,46 +2328,46 @@ router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
         },
       }
     })
-
+    
     // Debug: Log platform distribution
-    const platformCounts = ayrsharePosts.reduce((acc: Record<string, number>, post) => {
+    const platformCounts = ayrsharePosts.reduce((acc: Record<string, number>, post: any) => {
       acc[post.platform] = (acc[post.platform] || 0) + 1
       return acc
     }, {})
     console.log('[Ayrshare Heatmaps] Platform distribution from DB:', platformCounts)
     console.log('[Ayrshare Heatmaps] Total posts from DB:', ayrsharePosts.length)
-    console.log('[Ayrshare Heatmaps] Sample posts:', ayrsharePosts.slice(0, 3).map(p => ({
+    console.log('[Ayrshare Heatmaps] Sample posts:', ayrsharePosts.slice(0, 3).map((p: any) => ({
       platform: p.platform,
       postedDate: p.postedDate,
       hasAnalytics: !!p.analytics
     })))
-
+    
     // Try to get additional posts from Ayrshare API
     const ayrshareApiPosts = await getAllPosts(200)
     console.log('[Ayrshare Heatmaps] Posts from Ayrshare API:', ayrshareApiPosts.length)
-
+    
     // Debug: Log platform distribution from Ayrshare API
-    const apiPlatformCounts = ayrshareApiPosts.reduce((acc: Record<string, number>, post) => {
+    const apiPlatformCounts = ayrshareApiPosts.reduce((acc: Record<string, number>, post: any) => {
       acc[post.platform] = (acc[post.platform] || 0) + 1
       return acc
     }, {})
     console.log('[Ayrshare Heatmaps] Platform distribution from Ayrshare API:', apiPlatformCounts)
-    console.log('[Ayrshare Heatmaps] Sample Ayrshare API posts:', ayrshareApiPosts.slice(0, 5).map(p => ({
+    console.log('[Ayrshare Heatmaps] Sample Ayrshare API posts:', ayrshareApiPosts.slice(0, 5).map((p: any) => ({
       platform: p.platform,
       postedDate: p.postedDate,
       postId: p.postId,
     })))
-
+    
     // Combine and deduplicate
-    const allPosts = [...ayrsharePosts] as any[]
+    const allPosts = [...ayrsharePosts]
     ayrshareApiPosts.forEach((apiPost: any) => {
-      if (!allPosts.find((p) => p.postId === apiPost.postId)) {
+      if (!allPosts.find((p: any) => p.postId === apiPost.postId)) {
         allPosts.push(apiPost)
       }
     })
-
+    
     // Debug: Log final platform distribution
-    const finalPlatformCounts = allPosts.reduce((acc: Record<string, number>, post) => {
+    const finalPlatformCounts = allPosts.reduce((acc: Record<string, number>, post: any) => {
       acc[post.platform] = (acc[post.platform] || 0) + 1
       return acc
     }, {})
@@ -2382,8 +2377,8 @@ router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
     const heatmaps = generatePlatformHeatmaps(allPosts)
 
     // Debug: Log heatmap data
-    Object.entries(heatmaps).forEach(([platform, data]) => {
-      const nonZeroData = data.filter(d => d.value > 0)
+    Object.entries(heatmaps).forEach(([platform, data]: [string, any]) => {
+      const nonZeroData = data.filter((d: any) => d.value > 0)
       console.log(`[Ayrshare Heatmaps] ${platform}: ${data.length} total cells, ${nonZeroData.length} with data`)
       if (nonZeroData.length > 0) {
         console.log(`[Ayrshare Heatmaps] ${platform} sample data:`, nonZeroData.slice(0, 3))
@@ -2391,7 +2386,7 @@ router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
         console.log(`[Ayrshare Heatmaps] WARNING: ${platform} has no data!`)
       }
     })
-
+    
     res.json({
       success: true,
       heatmaps,
@@ -2411,16 +2406,16 @@ router.get('/ayrshare/heatmaps', requireAuth, async (req: any, res) => {
 router.get('/ayrshare/consistency', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Get posts from database
     const dbPosts = await SocialMediaPost.find({
       userId,
       status: 'published',
       publishedAt: { $exists: true },
     }).sort({ publishedAt: -1 }).limit(500)
-
+    
     // Convert to Ayrshare format with platform normalization
-    const ayrsharePosts = dbPosts.map((post) => {
+    const ayrsharePosts = dbPosts.map((post: any) => {
       let platform = post.platform?.toLowerCase() || ''
       // Normalize platform names
       if (platform === 'x' || platform === 'twitter/x') {
@@ -2441,20 +2436,20 @@ router.get('/ayrshare/consistency', requireAuth, async (req: any, res) => {
         },
       }
     })
-
+    
     // Try to get additional posts from Ayrshare API
     const ayrshareApiPosts = await getAllPosts(100)
-
+    
     // Combine and deduplicate
-    const allPosts = [...ayrsharePosts] as any[]
-    ayrshareApiPosts.forEach((apiPost) => {
-      if (!allPosts.find((p) => p.postId === apiPost.postId)) {
+    const allPosts = [...ayrsharePosts]
+    ayrshareApiPosts.forEach((apiPost: any) => {
+      if (!allPosts.find((p: any) => p.postId === apiPost.postId)) {
         allPosts.push(apiPost)
       }
     })
-
+    
     const consistency = calculatePostingConsistency(allPosts)
-
+    
     res.json({
       success: true,
       consistency,
@@ -2474,32 +2469,32 @@ router.get('/ayrshare/consistency', requireAuth, async (req: any, res) => {
 router.get('/ayrshare/recommendations', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Get posts from database
     const dbPosts = await SocialMediaPost.find({
       userId,
       status: 'published',
       publishedAt: { $exists: true },
     }).sort({ publishedAt: -1 }).limit(500)
-
+    
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
     const freshMetrics = await updatePostEngagementMetrics(postsForUpdate)
-
+    
     // Convert to Ayrshare format with platform normalization and fresh metrics
-    const ayrsharePosts = dbPosts.map((post) => {
+    const ayrsharePosts = dbPosts.map((post: any) => {
       let platform = post.platform?.toLowerCase() || ''
       // Normalize platform names
       if (platform === 'x' || platform === 'twitter/x') {
         platform = 'twitter'
       }
-
+      
       const postId = post.platformPostId || post._id.toString()
       const freshData = freshMetrics[postId]
-
+      
       return {
         id: post._id.toString(),
         postId: postId,
@@ -2514,28 +2509,28 @@ router.get('/ayrshare/recommendations', requireAuth, async (req: any, res) => {
         },
       }
     })
-
+    
     // Try to get additional posts from Ayrshare API
     const ayrshareApiPosts = await getAllPosts(100)
-
+    
     // Combine and deduplicate
-    const allPosts = [...ayrsharePosts] as any[]
-    ayrshareApiPosts.forEach((apiPost) => {
-      if (!allPosts.find((p) => p.postId === apiPost.postId)) {
+    const allPosts = [...ayrsharePosts]
+    ayrshareApiPosts.forEach((apiPost: any) => {
+      if (!allPosts.find((p: any) => p.postId === apiPost.postId)) {
         allPosts.push(apiPost)
       }
     })
-
+    
     const postingTimes = calculateTopPostingTimes(allPosts)
     const consistency = calculatePostingConsistency(allPosts)
     const heatmaps = generatePlatformHeatmaps(allPosts)
-
+    
     const recommendations = getIndustryRecommendations(
       postingTimes,
       consistency,
       heatmaps
     )
-
+    
     res.json({
       success: true,
       recommendations,
@@ -2555,32 +2550,32 @@ router.get('/ayrshare/recommendations', requireAuth, async (req: any, res) => {
 router.get('/ayrshare/all', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Get posts from database
     const dbPosts = await SocialMediaPost.find({
       userId,
       status: 'published',
       publishedAt: { $exists: true },
     }).sort({ publishedAt: -1 }).limit(500)
-
+    
     // Fetch fresh engagement metrics from Ayrshare
-    const postsForUpdate = dbPosts.map(post => ({
+    const postsForUpdate = dbPosts.map((post: any) => ({
       postId: post._id.toString(),
       platformPostId: post.platformPostId,
     }))
     const freshMetrics = await updatePostEngagementMetrics(postsForUpdate)
-
+    
     // Convert to Ayrshare format with platform normalization and fresh metrics
-    const ayrsharePosts = dbPosts.map((post) => {
+    const ayrsharePosts = dbPosts.map((post: any) => {
       let platform = post.platform?.toLowerCase() || ''
       // Normalize platform names
       if (platform === 'x' || platform === 'twitter/x') {
         platform = 'twitter'
       }
-
+      
       const postId = post.platformPostId || post._id.toString()
       const freshData = freshMetrics[postId]
-
+      
       return {
         id: post._id.toString(),
         postId: postId,
@@ -2595,20 +2590,20 @@ router.get('/ayrshare/all', requireAuth, async (req: any, res) => {
         },
       }
     })
-
+    
     // Try to get additional posts from Ayrshare API
     const ayrshareApiPosts = await getAllPosts(100)
-
+    
     // Combine and deduplicate
-    const allPosts = [...ayrsharePosts] as any[]
-    ayrshareApiPosts.forEach((apiPost) => {
-      if (!allPosts.find((p) => p.postId === apiPost.postId)) {
+    const allPosts = [...ayrsharePosts]
+    ayrshareApiPosts.forEach((apiPost: any) => {
+      if (!allPosts.find((p: any) => p.postId === apiPost.postId)) {
         allPosts.push(apiPost)
       }
     })
-
+    
     // Debug: Log platform distribution
-    const platformCounts = allPosts.reduce((acc: Record<string, number>, post) => {
+    const platformCounts = allPosts.reduce((acc: Record<string, number>, post: any) => {
       acc[post.platform] = (acc[post.platform] || 0) + 1
       return acc
     }, {})
@@ -2636,13 +2631,13 @@ router.get('/ayrshare/all', requireAuth, async (req: any, res) => {
 
     // Debug: Log heatmap data structure
     console.log('[Ayrshare All Analytics] Heatmap platforms:', Object.keys(heatmaps))
-    Object.entries(heatmaps).forEach(([platform, data]) => {
+    Object.entries(heatmaps).forEach(([platform, data]: [string, any]) => {
       console.log(`[Ayrshare All Analytics] ${platform}: ${data.length} data points`)
     })
     console.log('[Ayrshare All Analytics] Engagement metrics:', engagementMetrics)
     console.log('[Ayrshare All Analytics] Platform performance:', Object.keys(platformPerformance))
     console.log('[Ayrshare All Analytics] Frequency insights - Posts by day:', frequencyByDay.length)
-
+    
     res.json({
       success: true,
       data: {
@@ -2678,7 +2673,7 @@ router.get('/ayrshare/all', requireAuth, async (req: any, res) => {
 router.get('/ayrshare/frequency-insights', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
-
+    
     // Auto-sync posts from Ayrshare before calculating insights
     try {
       await syncAyrsharePostsToDatabase(userId.toString())
@@ -2686,7 +2681,7 @@ router.get('/ayrshare/frequency-insights', requireAuth, async (req: any, res) =>
     } catch (syncError: any) {
       console.warn('[Frequency Insights] Sync failed, continuing with existing data:', syncError.message)
     }
-
+    
     // Get posts from database (now includes synced Ayrshare posts)
     const dbPosts = await SocialMediaPost.find({
       userId,
@@ -2696,12 +2691,12 @@ router.get('/ayrshare/frequency-insights', requireAuth, async (req: any, res) =>
         { scheduledAt: { $exists: true } },
       ],
     }).sort({ publishedAt: -1, scheduledAt: -1 }).limit(500)
-
+    
     // Get posts from Ayrshare history
     const ayrshareApiPosts = await getAllPosts(200)
-
+    
     // Convert database posts to Ayrshare format
-    const dbPostsFormatted = dbPosts.map((post) => {
+    const dbPostsFormatted = dbPosts.map((post: any) => {
       let platform = post.platform?.toLowerCase() || ''
       if (platform === 'x' || platform === 'twitter/x') {
         platform = 'twitter'
@@ -2720,20 +2715,20 @@ router.get('/ayrshare/frequency-insights', requireAuth, async (req: any, res) =>
     })
 
     // Combine and deduplicate
-    const allPosts: any[] = [...dbPostsFormatted]
-    ayrshareApiPosts.forEach((apiPost) => {
-      if (!allPosts.find((p) => p.postId === apiPost.postId)) {
+    const allPosts = [...dbPostsFormatted]
+    ayrshareApiPosts.forEach((apiPost: any) => {
+      if (!allPosts.find((p: any) => p.postId === apiPost.postId)) {
         allPosts.push(apiPost)
       }
     })
-
+    
     // Calculate frequency-based insights
     const frequencyByDay = calculatePostingFrequencyByDay(allPosts)
     const frequencyByHour = calculatePostingFrequencyByHour(allPosts)
     const platformUsagePatterns = calculatePlatformUsagePatterns(allPosts)
     const bestPostingTimesByFrequency = calculateBestPostingTimesByFrequency(allPosts)
     const consistency = calculatePostingConsistency(allPosts)
-
+    
     res.json({
       success: true,
       data: {
@@ -2761,11 +2756,11 @@ router.get('/ayrshare/frequency-insights', requireAuth, async (req: any, res) =>
 router.post('/ayrshare/sync-posts', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id.toString()
-
+    
     console.log(`[Ayrshare Sync] Starting sync for user: ${userId}`)
-
+    
     const result = await syncAyrsharePostsToDatabase(userId)
-
+    
     res.json({
       success: true,
       message: 'Posts synced successfully',
@@ -2983,9 +2978,9 @@ router.get('/best-time/all', requireAuth, async (req: any, res) => {
     const { platform, year, month } = req.query
     const yearNum = year ? parseInt(year) : undefined
     const monthNum = month ? parseInt(month) : undefined
-
+    
     console.log(`[Best Time Analytics] Fetching all analytics${platform ? ` for platform: ${platform}` : ''}${yearNum ? ` year: ${yearNum}` : ''}${monthNum ? ` month: ${monthNum}` : ''}`)
-
+    
     const [
       bestHours,
       bestDays,
@@ -3007,7 +3002,7 @@ router.get('/best-time/all', requireAuth, async (req: any, res) => {
       getHashtagTrends(20),
       getCountryInsights(),
     ])
-
+    
     // Log data summary for debugging
     const dataSummary = {
       bestHours: bestHours ? Object.keys(bestHours).length : 0,
@@ -3020,9 +3015,9 @@ router.get('/best-time/all', requireAuth, async (req: any, res) => {
       hashtags: hashtags ? hashtags.length : 0,
       countries: countries ? countries.length : 0,
     }
-
+    
     console.log('[Best Time Analytics] Data summary:', dataSummary)
-
+    
     const responseData = {
       bestHours: bestHours || {},
       bestDays: bestDays || {},
@@ -3034,7 +3029,7 @@ router.get('/best-time/all', requireAuth, async (req: any, res) => {
       hashtags: hashtags || [],
       countries: countries || [],
     }
-
+    
     res.json({
       success: true,
       data: responseData,

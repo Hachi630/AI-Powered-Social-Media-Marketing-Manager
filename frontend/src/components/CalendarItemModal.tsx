@@ -1,5 +1,5 @@
 import {
-  Modal,
+  Drawer,
   Form,
   Input,
   Select,
@@ -58,6 +58,7 @@ interface CalendarItemModalProps {
   item?: CalendarItem | null
   defaultDate?: Dayjs
   defaultTime?: string
+  isMobile?: boolean
   onClose: () => void
   onSave: () => void
   onItemUpdate?: (item: CalendarItem) => void
@@ -68,6 +69,7 @@ export default function CalendarItemModal({
   item,
   defaultDate,
   defaultTime,
+  isMobile = false,
   onClose,
   onSave,
   onItemUpdate,
@@ -131,6 +133,27 @@ export default function CalendarItemModal({
       }
     }
   }, [open, item, defaultDate, defaultTime, form])
+
+  useEffect(() => {
+    const handleDemoSchedule = (event: CustomEvent) => {
+      const time = event.detail?.time as string | undefined
+      if (!open || !time) return
+      form.setFieldsValue({
+        time: dayjs(time, 'HH:mm'),
+        status: 'scheduled',
+      })
+      if (item) {
+        calendarService.updateCalendarItem(item.id, {
+          time,
+          status: 'scheduled',
+        })
+      }
+    }
+    window.addEventListener('demo-calendar-schedule', handleDemoSchedule as EventListener)
+    return () => {
+      window.removeEventListener('demo-calendar-schedule', handleDemoSchedule as EventListener)
+    }
+  }, [form, item, open])
 
   const loadCampaigns = async () => {
     const response = await campaignService.getCampaigns()
@@ -482,13 +505,16 @@ export default function CalendarItemModal({
   ]
 
   return (
-    <Modal
+    <Drawer
       title={isEditMode ? (isPreviewMode ? 'Calendar Item Details' : 'Edit Calendar Item') : 'Create Calendar Item'}
       open={open}
-      onCancel={handleClose}
-      footer={null}
-      width={800}
-      className={styles.modal}
+      onClose={handleClose}
+      width={isMobile ? '100%' : 420}
+      placement="right"
+      mask={isMobile}
+      zIndex={3000}
+      className={styles.drawer}
+      data-demo-id="calendar-event-modal"
     >
       {isPreviewMode && item ? (
         // Preview Mode
@@ -582,7 +608,7 @@ export default function CalendarItemModal({
           </Form.Item>
 
           <Form.Item name="time" label="Time" style={{ flex: 1 }}>
-            <TimePicker style={{ width: '100%' }} format="HH:mm" />
+            <TimePicker style={{ width: '100%' }} format="HH:mm" data-demo-id="calendar-time-picker" />
           </Form.Item>
         </Space>
 
@@ -691,7 +717,7 @@ export default function CalendarItemModal({
 
         <Space orientation="horizontal" size="middle" style={{ width: '100%' }}>
           <Form.Item name="status" label="Status" style={{ flex: 1 }}>
-            <Select placeholder="Select status">
+            <Select placeholder="Select status" data-demo-id="calendar-status-badge">
               {statusOptions.map((option) => (
                 <Option key={option.value} value={option.value}>
                   {option.label}
@@ -731,7 +757,7 @@ export default function CalendarItemModal({
         onCancel={() => setImageGenModalOpen(false)}
         onSuccess={handleImageGenSuccess}
       />
-    </Modal>
+    </Drawer>
   )
 }
 

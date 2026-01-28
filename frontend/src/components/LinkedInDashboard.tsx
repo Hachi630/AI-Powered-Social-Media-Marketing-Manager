@@ -24,6 +24,8 @@ import {
   Segmented,
   Tooltip,
   App,
+  Drawer,
+  FloatButton,
 } from "antd";
 import {
   LinkedinOutlined,
@@ -59,6 +61,7 @@ import {
   MenuUnfoldOutlined,
   RocketOutlined,
   CheckCircleOutlined,
+  MenuOutlined,
 } from "@ant-design/icons";
 import { useState, useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
@@ -109,6 +112,30 @@ import {
 } from "../services/socialService";
 import { User } from "../services/authService";
 import { getImageUrl } from "../utils/imageUtils";
+import { isDemoMode } from "../demo/demoMode";
+
+// Demo mode mock data for LinkedIn
+const DEMO_LINKEDIN_METRICS = {
+  connected: true,
+  profile: {
+    name: "Maya Chen",
+    picture: "/src/img/melo-logo.jpg",
+    email: "maya@sweetcakeshop.com",
+    sub: "demo-user-linkedin",
+  },
+  organizations: [
+    {
+      id: "demo-org-1",
+      name: "Sweet Cake Shop",
+      logoUrl: "https://via.placeholder.com/48/FF69B4/FFFFFF?text=SC",
+    },
+  ],
+  metrics: {
+    followers: 1234,
+    connections: 567,
+    profileViews: 890,
+  },
+};
 
 interface LinkedInDashboardProps {
   isLoggedIn?: boolean;
@@ -139,8 +166,20 @@ export default function LinkedInDashboard({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     isMobile || isTablet
   );
+  const [sidebarDrawerOpen, setSidebarDrawerOpen] = useState(false);
+  
+  // Get initial platform from URL params, default to "linkedin"
+  const location = useLocation();
+  const getInitialPlatform = (): SocialPlatform => {
+    const params = new URLSearchParams(location.search);
+    const platformParam = params.get("platform");
+    if (platformParam && ["linkedin", "twitter", "facebook", "instagram"].includes(platformParam)) {
+      return platformParam as SocialPlatform;
+    }
+    return "linkedin";
+  };
   const [selectedPlatform, setSelectedPlatform] =
-    useState<SocialPlatform>("linkedin");
+    useState<SocialPlatform>(getInitialPlatform());
 
   const [metrics, setMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -204,8 +243,8 @@ export default function LinkedInDashboard({
   // Instagram Post states
   const [instagramPostText, setInstagramPostText] = useState("");
   const [instagramPostType, setInstagramPostType] = useState<
-    "text" | "image" | "video" | "link"
-  >("text");
+    "image" | "video"
+  >("image");
 
   const [instagramSelectedImage, setInstagramSelectedImage] =
     useState<File | null>(null);
@@ -276,6 +315,13 @@ export default function LinkedInDashboard({
   // Load LinkedIn metrics
   useEffect(() => {
     const loadMetrics = async () => {
+      // Demo mode override - set mock data immediately
+      if (isDemoMode()) {
+        setMetrics(DEMO_LINKEDIN_METRICS);
+        setLoading(false);
+        return;
+      }
+
       if (!jwt) {
         setLoading(false);
         return;
@@ -452,8 +498,14 @@ export default function LinkedInDashboard({
     loadSocialStatus();
   }, [jwt]);
 
-  // Get current location to watch for URL changes
-  const location = useLocation();
+  // Update selectedPlatform when URL platform parameter changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const platformParam = params.get("platform");
+    if (platformParam && ["linkedin", "twitter", "facebook", "instagram"].includes(platformParam)) {
+      setSelectedPlatform(platformParam as SocialPlatform);
+    }
+  }, [location.search]);
 
   // Handle Facebook/Instagram OAuth callback (like Twitter)
   useEffect(() => {
@@ -626,6 +678,14 @@ export default function LinkedInDashboard({
   }, [jwt, metrics?.connected]);
 
   const handleRefreshMetrics = async () => {
+    // Demo mode - refresh with mock data
+    if (isDemoMode()) {
+      setLoading(true);
+      setMetrics(DEMO_LINKEDIN_METRICS);
+      setLoading(false);
+      return;
+    }
+
     if (!jwt) return;
     setLoading(true);
     try {
@@ -1469,7 +1529,7 @@ export default function LinkedInDashboard({
       );
     }
 
-    const isConnected = metrics?.connected === true;
+    const isConnected = isDemoMode() ? true : (metrics?.connected === true);
     const profile = metrics?.profile;
 
     return (
@@ -1502,7 +1562,8 @@ export default function LinkedInDashboard({
                     alignItems: "center",
                     gap: 16,
                     flex: 1,
-                    minWidth: 0,
+                    minWidth: isMobile ? "100%" : 0,
+                    flexDirection: isMobile ? "column" : "row",
                   }}
                 >
                   {/* Avatar on the far left */}
@@ -1519,24 +1580,24 @@ export default function LinkedInDashboard({
                       style={{ backgroundColor: "#0077B5", flexShrink: 0 }}
                     />
                   ) : null}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: isMobile ? "100%" : 0, textAlign: isMobile ? "center" : "left" }}>
                     <Typography.Title
                       level={4}
                       style={{
                         margin: 0,
                         display: "flex",
                         alignItems: "center",
+                        justifyContent: isMobile ? "center" : "flex-start",
                         gap: 12,
                       }}
                     >
                       <LinkedinOutlined
                         style={{ color: "#0077B5", fontSize: 22 }}
                       />
-                      LinkedIn Connection
+                      {isConnected && profile?.name ? profile.name : "LinkedIn Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your LinkedIn account to post updates from your
-                      calendar
+                      {isConnected && profile?.email ? profile.email : "Connect your LinkedIn account to post updates from your calendar"}
                     </Typography.Text>
                   </div>
                 </div>
@@ -1661,6 +1722,7 @@ export default function LinkedInDashboard({
                 }}
                 styles={{ body: { padding: 24 } }}
               >
+                <div data-demo-id="social-post-box">
                 <div
                   style={{
                     display: "flex",
@@ -2021,6 +2083,7 @@ export default function LinkedInDashboard({
                     {posting ? "Publishing..." : "Post to LinkedIn"}
                   </Button>
                 </div>
+                </div>
               </Card>
             )}
           </>
@@ -2043,7 +2106,7 @@ export default function LinkedInDashboard({
                   gap: 16,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: isMobile ? "100%" : 0, flexDirection: isMobile ? "column" : "row" }}>
                   {/* Avatar on the left */}
                   {twitterStatus?.connected && twitterStatus?.profile?.picture ? (
                     <Avatar
@@ -2058,24 +2121,24 @@ export default function LinkedInDashboard({
                       style={{ backgroundColor: "#1DA1F2", flexShrink: 0 }}
                     />
                   ) : null}
-                  <div>
+                  <div style={{ minWidth: isMobile ? "100%" : 0, textAlign: isMobile ? "center" : "left" }}>
                     <Typography.Title
                       level={4}
                       style={{
                         margin: 0,
                         display: "flex",
                         alignItems: "center",
+                        justifyContent: isMobile ? "center" : "flex-start",
                         gap: 12,
                       }}
                     >
                       <TwitterOutlined
                         style={{ color: "#1DA1F2", fontSize: 22 }}
                       />
-                      Twitter/X Connection
+                      {twitterStatus?.connected && twitterStatus?.profile?.name ? twitterStatus.profile.name : "Twitter/X Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your Twitter account to post tweets from your
-                      calendar
+                      {twitterStatus?.connected && twitterStatus?.profile?.email ? twitterStatus.profile.email : "Connect your Twitter account to post tweets from your calendar"}
                     </Typography.Text>
                   </div>
                 </div>
@@ -2413,7 +2476,7 @@ export default function LinkedInDashboard({
                   gap: 16,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: isMobile ? "100%" : 0, flexDirection: isMobile ? "column" : "row" }}>
                   {/* Avatar on the left */}
                   {facebookStatus?.connected && facebookStatus?.profile?.picture ? (
                     <Avatar
@@ -2428,24 +2491,24 @@ export default function LinkedInDashboard({
                       style={{ backgroundColor: "#1877F2", flexShrink: 0 }}
                     />
                   ) : null}
-                  <div>
+                  <div style={{ minWidth: isMobile ? "100%" : 0, textAlign: isMobile ? "center" : "left" }}>
                     <Typography.Title
                       level={4}
                       style={{
                         margin: 0,
                         display: "flex",
                         alignItems: "center",
+                        justifyContent: isMobile ? "center" : "flex-start",
                         gap: 12,
                       }}
                     >
                       <FacebookOutlined
                         style={{ color: "#1877F2", fontSize: 22 }}
                       />
-                      Facebook Connection
+                      {facebookStatus?.connected && facebookStatus?.profile?.name ? facebookStatus.profile.name : "Facebook Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your Facebook Page to share posts from your
-                      calendar. Personal accounts can also use this.
+                      {facebookStatus?.connected && facebookStatus?.profile?.email ? facebookStatus.profile.email : "Connect your Facebook Page to share posts from your calendar. Personal accounts can also use this."}
                     </Typography.Text>
                   </div>
                 </div>
@@ -2983,11 +3046,10 @@ export default function LinkedInDashboard({
                       <InstagramOutlined
                         style={{ fontSize: 22, color: "#E4405F" }}
                       />
-                      Instagram Connection
+                      {instagramStatus?.connected && instagramStatus?.profile?.name ? instagramStatus.profile.name : "Instagram Connection"}
                     </Typography.Title>
                     <Typography.Text type="secondary">
-                      Connect your Instagram Business/Creator account. Requires a
-                      Facebook Page (will be connected automatically).
+                      {instagramStatus?.connected && instagramStatus?.profile?.email ? instagramStatus.profile.email : "Connect your Instagram Business/Creator account. Requires a Facebook Page (will be connected automatically)."}
                     </Typography.Text>
                   </div>
                 </div>
@@ -3167,7 +3229,7 @@ export default function LinkedInDashboard({
                     value={instagramPostType}
                     onChange={(value) => {
                       setInstagramPostType(
-                        value as "text" | "image" | "video" | "link"
+                        value as "image" | "video"
                       );
                       if (value !== "image") {
                         handleInstagramRemoveImage();
@@ -3175,23 +3237,8 @@ export default function LinkedInDashboard({
                       if (value !== "video") {
                         handleInstagramVideoClear();
                       }
-                      if (value !== "link") {
-                        setInstagramLinkUrl("");
-                        setInstagramLinkTitle("");
-                        setInstagramLinkDescription("");
-                      }
                     }}
                     options={[
-                      {
-                        label: (
-                          <Tooltip title="Text Post">
-                            <span>
-                              <SendOutlined /> Text
-                            </span>
-                          </Tooltip>
-                        ),
-                        value: "text",
-                      },
                       {
                         label: (
                           <Tooltip title="Image Post">
@@ -3212,16 +3259,6 @@ export default function LinkedInDashboard({
                         ),
                         value: "video",
                       },
-                      {
-                        label: (
-                          <Tooltip title="Link Post">
-                            <span>
-                              <LinkOutlined /> Link
-                            </span>
-                          </Tooltip>
-                        ),
-                        value: "link",
-                      },
                     ]}
                     style={{ marginBottom: 8 }}
                   />
@@ -3236,33 +3273,6 @@ export default function LinkedInDashboard({
                   autoSize={{ minRows: 3, maxRows: 6 }}
                   style={{ marginBottom: 16, borderRadius: 8 }}
                 />
-
-                {/* Link Fields */}
-                {instagramPostType === "link" && (
-                  <div style={{ marginBottom: 16 }}>
-                    <Input
-                      placeholder="Enter URL (e.g., https://example.com)"
-                      value={instagramLinkUrl}
-                      onChange={(e) => setInstagramLinkUrl(e.target.value)}
-                      prefix={<LinkOutlined />}
-                      style={{ marginBottom: 8, borderRadius: 8 }}
-                    />
-                    <Input
-                      placeholder="Link title (optional)"
-                      value={instagramLinkTitle}
-                      onChange={(e) => setInstagramLinkTitle(e.target.value)}
-                      style={{ marginBottom: 8, borderRadius: 8 }}
-                    />
-                    <Input
-                      placeholder="Link description (optional)"
-                      value={instagramLinkDescription}
-                      onChange={(e) =>
-                        setInstagramLinkDescription(e.target.value)
-                      }
-                      style={{ borderRadius: 8 }}
-                    />
-                  </div>
-                )}
 
                 {/* Image Upload Section */}
                 {instagramPostType === "image" && (
@@ -3463,7 +3473,7 @@ export default function LinkedInDashboard({
 
                           // Reset form
                           setInstagramPostText("");
-                          setInstagramPostType("text");
+                          setInstagramPostType("image");
                           setInstagramSelectedImage(null);
                           setInstagramImagePreview(null);
                           setInstagramSelectedVideo(null);
@@ -3471,9 +3481,6 @@ export default function LinkedInDashboard({
                             URL.revokeObjectURL(instagramVideoPreview);
                           }
                           setInstagramVideoPreview(null);
-                          setInstagramLinkUrl("");
-                          setInstagramLinkTitle("");
-                          setInstagramLinkDescription("");
                         } else {
                           message.error(result.error || "Failed to post to Instagram");
                         }
@@ -3812,7 +3819,7 @@ export default function LinkedInDashboard({
   };
 
   // Define isConnected at component level for use in return statement
-  const isConnected = metrics?.connected === true;
+  const isConnected = isDemoMode() ? true : (metrics?.connected === true);
 
   return (
     <Layout className={`${styles.dashboard} ${styles.dashboardLight}`}>
@@ -3845,6 +3852,31 @@ export default function LinkedInDashboard({
               facebookConnected={facebookStatus?.connected === true}
             />
           </Sider>
+        )}
+        {/* Mobile Sidebar Drawer */}
+        {isLoggedIn && isMobile && (
+          <Drawer
+            title="Social Platforms"
+            placement="left"
+            onClose={() => setSidebarDrawerOpen(false)}
+            open={sidebarDrawerOpen}
+            width={280}
+            className={styles.sidebarDrawer}
+          >
+            <SocialSidebar
+              collapsed={false}
+              onToggleSidebar={() => setSidebarDrawerOpen(false)}
+              selectedPlatform={selectedPlatform}
+              onPlatformSelect={(platform) => {
+                handlePlatformSelect(platform);
+                setSidebarDrawerOpen(false);
+              }}
+              linkedInConnected={metrics?.connected === true}
+              twitterConnected={twitterStatus?.connected === true}
+              instagramConnected={instagramStatus?.connected === true}
+              facebookConnected={facebookStatus?.connected === true}
+            />
+          </Drawer>
         )}
         <Content
           className={`${styles.content} ${styles.contentLight} ${styles.socialDashboardContent}`}
@@ -3915,6 +3947,20 @@ export default function LinkedInDashboard({
         </Content>
       </Layout>
 
+      {/* Mobile FloatButton to open sidebar */}
+      {isLoggedIn && isMobile && (
+        <FloatButton
+          icon={<MenuOutlined />}
+          type="primary"
+          style={{
+            right: 16,
+            bottom: 140,
+            backgroundColor: "#10b981",
+            borderColor: "#10b981",
+          }}
+          onClick={() => setSidebarDrawerOpen(true)}
+        />
+      )}
     </Layout>
   );
 }

@@ -199,7 +199,7 @@ ACTION REQUIRED:
       process.env.FRONTEND_URL ||
       "http://localhost:5173";
     res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=oauth_init_failed`
+      `${clientUrl}/socialdashboard?twitter=error&reason=oauth_init_failed&platform=twitter`
     );
   }
 });
@@ -224,7 +224,7 @@ router.get("/callback", async (req, res) => {
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
     return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=user_denied`
+      `${clientUrl}/socialdashboard?twitter=error&reason=user_denied&platform=twitter`
     );
   }
 
@@ -236,7 +236,7 @@ router.get("/callback", async (req, res) => {
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
     return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=missing_params`
+      `${clientUrl}/socialdashboard?twitter=error&reason=missing_params&platform=twitter`
     );
   }
 
@@ -252,7 +252,7 @@ router.get("/callback", async (req, res) => {
         process.env.FRONTEND_URL ||
         "http://localhost:3000";
       return res.redirect(
-        `${clientUrl}/socialdashboard?twitter=error&reason=invalid_token`
+        `${clientUrl}/socialdashboard?twitter=error&reason=invalid_token&platform=twitter`
       );
     }
   } catch (error) {
@@ -261,9 +261,9 @@ router.get("/callback", async (req, res) => {
       process.env.CLIENT_URL ||
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
-    return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=db_error`
-    );
+      return res.redirect(
+        `${clientUrl}/socialdashboard?twitter=error&reason=db_error&platform=twitter`
+      );
   }
 
   const { userId, oauthTokenSecret } = requestTokenDoc;
@@ -273,9 +273,9 @@ router.get("/callback", async (req, res) => {
       process.env.CLIENT_URL ||
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
-    return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=missing_user`
-    );
+      return res.redirect(
+        `${clientUrl}/socialdashboard?twitter=error&reason=missing_user&platform=twitter`
+      );
   }
 
   const appKey = process.env.TWITTER_API_KEY;
@@ -286,9 +286,9 @@ router.get("/callback", async (req, res) => {
       process.env.CLIENT_URL ||
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
-    return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=config_error`
-    );
+      return res.redirect(
+        `${clientUrl}/socialdashboard?twitter=error&reason=config_error&platform=twitter`
+      );
   }
 
   try {
@@ -404,10 +404,10 @@ router.get("/callback", async (req, res) => {
           "Twitter OAuth: Redirecting to success page (rate limited, but tokens saved)"
         );
         res.redirect(
-          `${clientUrl}/socialdashboard?twitter=connected&note=rate_limited`
+          `${clientUrl}/socialdashboard?twitter=connected&note=rate_limited&platform=twitter`
         );
       } else {
-        res.redirect(`${clientUrl}/socialdashboard?twitter=connected`);
+        res.redirect(`${clientUrl}/socialdashboard?twitter=connected&platform=twitter`);
       }
     } catch (saveError: any) {
       console.error("Twitter OAuth: Failed to save tokens:", saveError);
@@ -451,11 +451,11 @@ router.get("/callback", async (req, res) => {
         ? Math.floor(resetTime.getTime() / 1000)
         : null;
       res.redirect(
-        `${clientUrl}/socialdashboard?twitter=error&reason=rate_limited&reset=${resetTimestamp}`
+        `${clientUrl}/socialdashboard?twitter=error&reason=rate_limited&reset=${resetTimestamp}&platform=twitter`
       );
     } else {
       res.redirect(
-        `${clientUrl}/socialdashboard?twitter=error&reason=token_exchange_failed`
+        `${clientUrl}/socialdashboard?twitter=error&reason=token_exchange_failed&platform=twitter`
       );
     }
   }
@@ -911,6 +911,9 @@ router.get("/status", protect, async (req: any, res) => {
   // This prevents wasting the 25 requests/day limit on page refreshes
   if (!shouldVerify && token.twitterUserId) {
     console.log("Twitter status: Using cached data (no API call)");
+    // Get user email from User model
+    const User = (await import("../models/User.js")).default;
+    const user = await User.findById(userId);
     return res.json({
       connected: true,
       profile: {
@@ -918,7 +921,7 @@ router.get("/status", protect, async (req: any, res) => {
         username: token.twitterUsername || null,
         name: token.twitterName || null,
         picture: token.twitterPicture || null,
-        email: null,
+        email: user?.email || null,
       },
       cached: true,
       message: "Using cached profile data. Add ?verify=true to verify token with Twitter API.",
@@ -963,6 +966,10 @@ router.get("/status", protect, async (req: any, res) => {
       }
     );
 
+    // Get user email from User model
+    const User = (await import("../models/User.js")).default;
+    const user = await User.findById(userId);
+
     res.json({
       connected: true,
       profile: {
@@ -970,8 +977,8 @@ router.get("/status", protect, async (req: any, res) => {
         username: userMe.data.username,
         name: userMe.data.name,
         picture: userMe.data.profile_image_url || null,
-        // Twitter API doesn't provide email without special permissions
-        email: null,
+        // Use user's email from database (Twitter API doesn't provide email)
+        email: user?.email || null,
       },
       verified: true,
     });

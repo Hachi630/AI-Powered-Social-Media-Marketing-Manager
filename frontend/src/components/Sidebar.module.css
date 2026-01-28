@@ -1,14 +1,25 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   height: 100%;
-  gap: 24px;
+  gap: 0;
   transition: padding 0.2s ease;
+  position: relative;
+  min-height: 100%;
 }
 
 .sidebarCollapsed {
   padding-inline: 8px;
+}
+
+.topSection {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 80px; /* Reserve space for userSection */
 }
 
 .scrollable {
@@ -37,7 +48,7 @@
 }
 
 [data-theme="warm"] .headerTitle {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #b1a285 !important;
 }
 
@@ -131,7 +142,7 @@
 }
 
 [data-theme="warm"] .title {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #908066 !important;
 }
 
@@ -267,7 +278,7 @@
   }
 
   [data-theme="warm"] .chatItem :global(.ant-typography) {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -277,7 +288,7 @@
   }
 
   [data-theme="warm"] .sectionTitle {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -287,7 +298,7 @@
   }
 
   [data-theme="warm"] .searchInput :global(.ant-input) {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -517,7 +528,7 @@
   }
 
   [data-theme="warm"] .userSection .userName {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   }
 
   .userSection .userEmail {
@@ -527,7 +538,7 @@
   }
 
   [data-theme="warm"] .userSection .userEmail {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   }
 
   .userSection :global(.ant-avatar) {
@@ -554,7 +565,7 @@
 }
 
 [data-theme="warm"] .sectionTitle {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #b1a285 !important;
 }
 

@@ -1,21 +1,301 @@
+/* ================================
+   Analytics 页面扁平渐变风格美化
+   ================================ */
+
+/* CSS Variables */
 .analyticsContainer {
+  --primary: #10b981;
+  --primary-light: #34d399;
+  --primary-dark: #059669;
+  --primary-10: rgba(16, 185, 129, 0.1);
+  --primary-15: rgba(16, 185, 129, 0.15);
+  --primary-20: rgba(16, 185, 129, 0.2);
+  --primary-30: rgba(16, 185, 129, 0.3);
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border-light: #f1f4f8;
+  --border-medium: #e5e7eb;
+
+  /* 渐变背景 */
   padding: 24px;
-  background: #f0f2f5;
-  min-height: 100vh;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+  min-height: calc(100vh - 99px);
+  position: relative;
 }
 
+/* 顶部装饰性光晕 */
+.analyticsContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  max-width: 800px;
+  height: 200px;
+  background: radial-gradient(
+    ellipse at center top,
+    var(--primary-10) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.analyticsContainer > * {
+  position: relative;
+  z-index: 1;
+}
+
+[data-theme="warm"] .analyticsContainer {
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf7 100%);
+}
+
+[data-theme="warm"] .analyticsContainer::before {
+  background: radial-gradient(
+    ellipse at center top,
+    rgba(174, 144, 110, 0.08) 0%,
+    transparent 70%
+  );
+}
+
+/* ================================
+   统计卡片样式
+   ================================ */
 .statCard {
   height: 100%;
+  border-radius: 16px !important;
+  border: 1px solid var(--border-light) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 4px 16px rgba(0, 0, 0, 0.01) !important;
+  transition: all 0.3s ease !important;
+  overflow: hidden;
 }
 
+.statCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.04) !important;
+  border-color: var(--primary-20) !important;
+}
+
+.statCard:hover::before {
+  opacity: 1;
+}
+
+[data-theme="warm"] .statCard {
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf7 100%) !important;
+}
+
+[data-theme="warm"] .statCard:hover {
+  box-shadow:
+    0 4px 12px rgba(174, 144, 110, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(174, 144, 110, 0.2) !important;
+}
+
+[data-theme="warm"] .statCard::before {
+  background: linear-gradient(90deg, #ae906e 0%, #c4a882 100%);
+}
+
+/* ================================
+   图表卡片样式
+   ================================ */
+.chartCard {
+  border-radius: 16px !important;
+  border: 1px solid var(--border-light) !important;
+  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%) !important;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.02),
+    0 4px 16px rgba(0, 0, 0, 0.01) !important;
+  transition: all 0.3s ease !important;
+  overflow: hidden;
+}
+
+.chartCard:hover {
+  box-shadow:
+    0 4px 12px rgba(16, 185, 129, 0.06),
+    0 8px 24px rgba(0, 0, 0, 0.03) !important;
+}
+
+[data-theme="warm"] .chartCard {
+  background: linear-gradient(180deg, #ffffff 0%, #fffdf7 100%) !important;
+}
+
+[data-theme="warm"] .chartCard:hover {
+  box-shadow:
+    0 4px 12px rgba(174, 144, 110, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.03) !important;
+}
+
+/* ================================
+   刷新按钮样式
+   ================================ */
 .refreshButton {
   margin-bottom: 16px;
+  border-radius: 10px !important;
+  border: none !important;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
+  color: white !important;
+  font-weight: 500 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+  transition: all 0.3s ease !important;
+  position: relative;
+  overflow: hidden;
 }
 
+.refreshButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 100%
+  );
+  transition: left 0.5s ease;
+}
 
+.refreshButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+}
 
+.refreshButton:hover::before {
+  left: 100%;
+}
 
+[data-theme="warm"] .refreshButton {
+  background: linear-gradient(135deg, #ae906e 0%, #8a7355 100%) !important;
+  box-shadow: 0 2px 8px rgba(174, 144, 110, 0.3) !important;
+}
 
+[data-theme="warm"] .refreshButton:hover {
+  box-shadow: 0 4px 12px rgba(174, 144, 110, 0.4) !important;
+}
 
+/* ================================
+   分区标题样式
+   ================================ */
+.sectionTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  position: relative;
+  padding-left: 12px;
+}
 
+.sectionTitle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+  border-radius: 2px;
+}
 
+[data-theme="warm"] .sectionTitle {
+  color: #908066;
+}
+
+[data-theme="warm"] .sectionTitle::before {
+  background: linear-gradient(180deg, #ae906e 0%, #8a7355 100%);
+}
+
+/* ================================
+   入场动画
+   ================================ */
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.statCard,
+.chartCard {
+  animation: cardFadeIn 0.4s ease-out;
+}
+
+/* 交错动画延迟 */
+.statCard:nth-child(1) { animation-delay: 0s; }
+.statCard:nth-child(2) { animation-delay: 0.05s; }
+.statCard:nth-child(3) { animation-delay: 0.1s; }
+.statCard:nth-child(4) { animation-delay: 0.15s; }
+
+/* ================================
+   滚动条美化
+   ================================ */
+.analyticsContainer::-webkit-scrollbar {
+  width: 6px;
+}
+
+.analyticsContainer::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.analyticsContainer::-webkit-scrollbar-thumb {
+  background: var(--primary-20);
+  border-radius: 3px;
+}
+
+.analyticsContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-30);
+}
+
+[data-theme="warm"] .analyticsContainer::-webkit-scrollbar-thumb {
+  background: rgba(174, 144, 110, 0.25);
+}
+
+[data-theme="warm"] .analyticsContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(174, 144, 110, 0.35);
+}
+
+/* ================================
+   响应式设计
+   ================================ */
+@media (max-width: 768px) {
+  .analyticsContainer {
+    padding: 16px;
+  }
+
+  .analyticsContainer::before {
+    width: 100%;
+    height: 120px;
+    opacity: 0.4;
+  }
+
+  .statCard,
+  .chartCard {
+    border-radius: 12px !important;
+  }
+}
