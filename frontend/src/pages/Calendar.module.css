@@ -777,14 +777,34 @@
 
   .calendarSection {
     border-radius: 14px;
+    border: none;
+    box-shadow: none;
   }
 
   :global(.ant-picker-cell) {
     height: 90px !important;
+    overflow: visible !important;
+  }
+
+  :global(.ant-picker-calendar-date),
+  :global(.ant-picker-calendar-date-content) {
+    overflow: visible !important;
+  }
+
+  .dateCellContent {
+    overflow: visible !important;
+    padding: 6px 8px !important;
+  }
+
+  .monthDateCell {
+    overflow: visible !important;
   }
 
   .monthDateNumber {
-    height: 24px;
+    height: 32px;
+    overflow: visible !important;
+    padding: 3px;
+    margin-bottom: 4px;
   }
 
   .monthDateText {
@@ -796,13 +816,13 @@
   .monthTodayCircle {
     width: 24px;
     height: 24px;
-    font-size: 12px;
+    font-size: 11px;
     border-radius: 7px;
   }
 
+  /* Hide the outer ring on mobile */
   .monthTodayCircle::after {
-    inset: -2px;
-    border-radius: 9px;
+    display: none !important;
   }
 
   .monthEventLabel {
@@ -811,6 +831,12 @@
     font-size: 10px;
     border-left-width: 2px;
     border-radius: 0 6px 6px 0;
+    justify-content: center;
+  }
+
+  /* Hide event text on mobile, only show icon */
+  .eventLabelText {
+    display: none !important;
   }
 
   .monthEventsList {

@@ -826,7 +826,7 @@ export default function ChatBox({
     <div className={styles.chatContainer}>
       {/* Messages display area */}
       {messages.length > 0 && (
-        <div className={styles.messagesContainer}>
+        <div className={`${styles.messagesContainer} messagesContainer`}>
           {messages.map((msg, index) => (
             <div
               key={index}

@@ -457,7 +457,7 @@
     gap: 0 !important;
     min-height: calc(100vh - 99px) !important;
     height: calc(100vh - 99px) !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     position: relative !important;
     display: flex !important;
     flex-direction: column !important;
@@ -499,44 +499,41 @@
     background-clip: text;
   }
 
-  /* Mobile: Message container displayed in content area, below chat box */
-  .content :global(.messagesContainer) {
-    position: absolute !important;
-    top: 0 !important;
+  /* Mobile: Message container - scrollable area below header */
+  .content :global(.messagesContainer),
+  :global(.messagesContainer) {
+    position: fixed !important;
+    top: 115px !important; /* Below header with safe margin */
     left: 0 !important;
     right: 0 !important;
-    bottom: 160px !important; /* Reserve space for chat box (~160px), no tagline space needed */
+    bottom: 120px !important; /* Reserve space for chat box */
     overflow-y: auto !important;
     overflow-x: hidden !important;
     padding: 16px !important;
-    padding-bottom: 32px !important; /* Increase bottom padding to ensure last message is fully displayed */
+    padding-bottom: 24px !important;
+    margin: 0 !important;
     max-height: none !important;
-    z-index: 1 !important; /* Below chat box but content is visible */
+    z-index: 5 !important;
     background-color: #ffffff !important;
     -webkit-overflow-scrolling: touch !important; /* iOS smooth scrolling */
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
   }
 
-  [data-theme="warm"] .content :global(.messagesContainer) {
+  [data-theme="warm"] .content :global(.messagesContainer),
+  [data-theme="warm"] :global(.messagesContainer) {
     background-color: #ffffff !important;
   }
 
-  /* Mobile: Chat box container fixed at bottom */
+  /* Mobile: Chat box wrapper - just a container, children handle their own positioning */
   .mobileChatWrapper {
-    position: fixed !important;
-    bottom: 0 !important; /* Fixed at bottom, no tagline space needed */
-    left: 0 !important;
-    right: 0 !important;
+    position: relative !important;
     width: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    z-index: 100 !important; /* Ensure above messages */
-    pointer-events: none !important;
+    height: 100% !important;
+    display: block !important;
     background-color: transparent !important;
-  }
-
-  /* Mobile: Chat box inner elements are interactive */
-  .mobileChatWrapper > * {
-    pointer-events: auto !important;
+    overflow: visible !important;
   }
 
   /* Mobile: Tagline fixed at the very bottom of the page */

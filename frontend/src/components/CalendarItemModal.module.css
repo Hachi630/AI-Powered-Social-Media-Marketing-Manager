@@ -42,9 +42,37 @@
 
 .previewActions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding-top: 16px;
   border-top: 1px solid #f0f0f0;
+}
+
+/* Mobile: Keep preview action buttons in one row */
+@media (max-width: 768px) {
+  .previewActions {
+    justify-content: flex-start !important;
+  }
+
+  .previewActions :global(.ant-space) {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .previewActions :global(.ant-space-item) {
+    margin-right: 0 !important;
+  }
+
+  .previewActions :global(.ant-btn) {
+    padding: 4px 12px !important;
+    font-size: 13px !important;
+    height: 32px !important;
+  }
+
+  .previewActions :global(.ant-btn) :global(.anticon) {
+    font-size: 12px !important;
+  }
 }
 
 .imageContainer {
@@ -98,36 +126,36 @@
     width: 100% !important;
     align-items: stretch !important;
   }
-  
+
   .imageUploadArea :global(.ant-space) :global(.ant-space) :global(.ant-space-item) {
     width: 100% !important;
   }
-  
+
   .imageUploadArea :global(.ant-space) :global(.ant-space) :global(.ant-space-item) :global(.ant-btn) {
     width: 100% !important;
   }
-  
-  /* Make Status and Campaign fields vertical on mobile */
-  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) {
+
+  /* Make Status and Campaign fields vertical on mobile - but NOT previewActions */
+  .drawer :global(.ant-drawer-body) :global(.ant-form) :global(.ant-space[class*="ant-space-horizontal"]) {
     flex-direction: column !important;
     width: 100% !important;
     align-items: stretch !important;
   }
-  
-  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) {
+
+  .drawer :global(.ant-drawer-body) :global(.ant-form) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) {
     width: 100% !important;
     flex: 1 1 100% !important;
     margin-bottom: 0 !important;
   }
-  
-  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) {
+
+  .drawer :global(.ant-drawer-body) :global(.ant-form) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) {
     width: 100% !important;
     flex: 1 1 100% !important;
     margin-bottom: 16px !important;
   }
-  
-  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-select),
-  .drawer :global(.ant-drawer-body) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-input) {
+
+  .drawer :global(.ant-drawer-body) :global(.ant-form) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-select),
+  .drawer :global(.ant-drawer-body) :global(.ant-form) :global(.ant-space[class*="ant-space-horizontal"]) :global(.ant-space-item) :global(.ant-form-item) :global(.ant-input) {
     width: 100% !important;
   }
 }

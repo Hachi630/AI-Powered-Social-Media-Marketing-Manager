@@ -237,7 +237,7 @@ export default function Dashboard({
                   type="primary"
                   style={{
                     right: 16,
-                    bottom: 80, // Moved up to avoid blocking send button
+                    bottom: 140,
                     backgroundColor: "#AE906E",
                     borderColor: "#AE906E",
                   }}

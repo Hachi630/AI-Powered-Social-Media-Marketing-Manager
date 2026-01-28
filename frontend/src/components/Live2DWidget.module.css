@@ -24,11 +24,10 @@
   cursor: grabbing;
 }
 
-/* Mobile responsive */
+/* Mobile responsive - hide ELO assistant on mobile */
 @media (max-width: 768px) {
   .live2dWidget {
-    width: 150px;
-    height: 225px;
+    display: none !important;
   }
 }
 
