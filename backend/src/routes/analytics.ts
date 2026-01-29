@@ -479,6 +479,30 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $limit: 30 }
       ]),
       
+      // LinkedIn posts time-series for this user (last 30 days)
+      SocialMediaPost.aggregate([
+        {
+          $match: {
+            userId: userId,
+            platform: 'linkedin',
+            status: 'published'
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { 
+                format: '%Y-%m-%d', 
+                date: { $ifNull: ['$publishedAt', '$createdAt'] }
+              }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $limit: 30 }
+      ]),
+      
       // AI content time-series for this user (last 30 days)
       AIGeneratedContent.aggregate([
         {
@@ -1665,8 +1689,14 @@ router.get('/', requireAuth, async (req: any, res) => {
           date: item._id,
           count: item.count || 0
         })),
-        linkedInPosts: [],
-        mediaFiles: [],
+        linkedInPosts: (linkedInPostsTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        mediaFiles: (mediaFilesTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
       },
       calendarItemsAnalytics: (() => {
         // Extract hashtags from content

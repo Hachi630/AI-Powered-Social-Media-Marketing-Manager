@@ -11,6 +11,9 @@ import LinkedInToken from '../models/LinkedInToken.js'
 import { saveSocialMediaPost } from '../services/databaseService.js'
 import { createLinkedInPost, createLinkedInPostWithImage, initializeImageUpload, uploadImageToLinkedIn } from '../services/linkedinService.js'
 import { shareToFacebook } from '../services/facebookService.js'
+import { readImageAsBase64 } from '../utils/imageReader.js'
+import axios from 'axios'
+import { checkAndPublishScheduledItems } from '../services/schedulerService.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
@@ -20,6 +23,39 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const router = express.Router()
+
+/**
+ * Get image buffer from imageUrl (handles both local paths and URLs)
+ */
+async function getImageBuffer(imageUrl: string): Promise<{ buffer: Buffer; contentType: string } | null> {
+  // Check if it's a URL (starts with http:// or https://)
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    try {
+      const response = await axios.get(imageUrl, {
+        responseType: 'arraybuffer',
+        timeout: 30000, // 30 second timeout
+      });
+      
+      const buffer = Buffer.from(response.data);
+      const contentType = response.headers['content-type'] || 'image/jpeg';
+      
+      return { buffer, contentType };
+    } catch (error: any) {
+      console.error('Failed to download image from URL:', imageUrl, error.message);
+      return null;
+    }
+  }
+  
+  // Otherwise, treat it as a local file path
+  const imageData = readImageAsBase64(imageUrl);
+  if (!imageData.success || !imageData.base64) {
+    console.error('Failed to read local image:', imageData.error);
+    return null;
+  }
+  
+  const buffer = Buffer.from(imageData.base64, 'base64');
+  return { buffer, contentType: imageData.mimeType };
+}
 
 // Helper function to create an event for a batch of calendar items
 // Creates ONE event for all calendar items in the batch with global auto-increment counter
@@ -686,6 +722,7 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
             platformPostId: result.tweetId,
             status: 'published',
             publishedAt: new Date(),
+            calendarItemId: item._id, // Track which calendar item was published
           });
           console.log('✅ Twitter post saved to database for analytics');
         } catch (dbError: any) {
@@ -777,48 +814,67 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
         let result;
         let postId: string | undefined;
 
+        // Handle image if present
         if (item.imageUrl) {
-          // Handle image post
-          // First, initialize image upload
-          const imagePath = item.imageUrl.startsWith('http') 
-            ? item.imageUrl 
-            : path.join(process.cwd(), item.imageUrl);
-          
-          // If it's a local file path, we need to upload it to LinkedIn
-          if (!item.imageUrl.startsWith('http') && fs.existsSync(imagePath)) {
-            const imageBuffer = fs.readFileSync(imagePath);
-            const initResult = await initializeImageUpload(
-              linkedInToken.accessToken,
-              linkedInToken.liMemberId,
-              false // personal profile, not organization
-            );
-
-            if (!initResult.success) {
-              throw new Error(initResult.error || 'Failed to initialize image upload');
+          try {
+            // Get image buffer (handles both URLs and local paths)
+            const imageData = await getImageBuffer(item.imageUrl);
+            
+            if (!imageData) {
+              // Post without image if image fails
+              result = await createLinkedInPost(
+                linkedInToken.accessToken,
+                linkedInToken.liMemberId,
+                content,
+                false // personal profile
+              );
+            } else {
+              // Initialize image upload
+              const uploadInit = await initializeImageUpload(
+                linkedInToken.accessToken,
+                linkedInToken.liMemberId,
+                false // personal profile
+              );
+              
+              if (!uploadInit.success || !uploadInit.uploadUrl || !uploadInit.imageUrn) {
+                // Post without image if upload init fails
+                result = await createLinkedInPost(
+                  linkedInToken.accessToken,
+                  linkedInToken.liMemberId,
+                  content,
+                  false // personal profile
+                );
+              } else {
+                // Upload image
+                const uploadResult = await uploadImageToLinkedIn(
+                  uploadInit.uploadUrl,
+                  imageData.buffer,
+                  imageData.contentType
+                );
+                
+                if (!uploadResult.success) {
+                  // Post without image if upload fails
+                  result = await createLinkedInPost(
+                    linkedInToken.accessToken,
+                    linkedInToken.liMemberId,
+                    content,
+                    false // personal profile
+                  );
+                } else {
+                  // Post with image
+                  result = await createLinkedInPostWithImage(
+                    linkedInToken.accessToken,
+                    linkedInToken.liMemberId,
+                    content,
+                    uploadInit.imageUrn,
+                    false // personal profile
+                  );
+                }
+              }
             }
-
-            // Upload image binary
-            const uploadResult = await uploadImageToLinkedIn(
-              initResult.uploadUrl!,
-              imageBuffer,
-              'image/jpeg'
-            );
-
-            if (!uploadResult.success) {
-              throw new Error(uploadResult.error || 'Failed to upload image');
-            }
-
-            // Create post with image
-            result = await createLinkedInPostWithImage(
-              linkedInToken.accessToken,
-              linkedInToken.liMemberId,
-              content,
-              initResult.imageUrn!,
-              false // personal profile
-            );
-          } else {
-            // If it's already a URL, we can't use it directly with LinkedIn API
-            // For now, create a text post
+          } catch (error: any) {
+            console.error('Error handling image for LinkedIn post:', error);
+            // Post without image if any image-related error occurs
             result = await createLinkedInPost(
               linkedInToken.accessToken,
               linkedInToken.liMemberId,
@@ -858,6 +914,7 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
               platformAuthorId: `urn:li:person:${linkedInToken.liMemberId}`,
               status: 'published',
               publishedAt: new Date(),
+              calendarItemId: item._id, // Track which calendar item was published
             });
             console.log('✅ LinkedIn post saved to database for analytics');
           } catch (dbError: any) {
@@ -947,6 +1004,7 @@ router.post('/:id/share', protect, async (req: AuthRequest, res: Response) => {
             platformPostId: result.postId,
             status: 'published',
             publishedAt: new Date(),
+            calendarItemId: item._id, // Track which calendar item was published
           });
           console.log('✅ Facebook post saved to database for analytics');
         } catch (dbError: any) {

@@ -474,15 +474,33 @@ export default function Analytics({
           eventsTimeSeries: data.analytics.timeSeries?.events,
           campaignsTimeSeries: data.analytics.timeSeries?.campaigns,
         })
-        // Ensure events time series exists
-        if (!data.analytics.timeSeries.events) {
-          data.analytics.timeSeries.events = []
+        
+        // Normalize timeSeries to ensure all required properties exist
+        const normalizedTimeSeries = {
+          postsCreated: data.analytics.timeSeries?.postsCreated || [],
+          publishedPosts: data.analytics.timeSeries?.publishedPosts || [],
+          scheduledPosts: data.analytics.timeSeries?.scheduledPosts || [],
+          aiContent: data.analytics.timeSeries?.aiContent || [],
+          calendarPublishes: data.analytics.timeSeries?.calendarPublishes || [],
+          directPublishes: data.analytics.timeSeries?.directPublishes || [],
+          conversations: data.analytics.timeSeries?.conversations || [],
+          events: data.analytics.timeSeries?.events || [],
+          campaigns: data.analytics.timeSeries?.campaigns || [],
+          calendarItems: data.analytics.timeSeries?.calendarItems || [],
+          posts: data.analytics.timeSeries?.posts || [],
+          linkedInPosts: data.analytics.timeSeries?.linkedInPosts || [],
+          mediaFiles: data.analytics.timeSeries?.mediaFiles || [],
         }
+        
         // Ensure totalEvents exists
         if (data.analytics.overview.totalEvents === undefined) {
           data.analytics.overview.totalEvents = 0
         }
-        setAnalytics(data.analytics)
+        
+        setAnalytics({
+          ...data.analytics,
+          timeSeries: normalizedTimeSeries,
+        })
       } else if (!data.success) {
         // Handle case where API returns success: false
         const errorMessage = data.message || 'Failed to fetch analytics'
@@ -745,6 +763,18 @@ export default function Analytics({
         yPosition += 5
       }
 
+      // Sanitize text for PDF (avoid encoding issues: arrow → and other Unicode)
+      const sanitizeForPDF = (text: string): string => {
+        if (typeof text !== 'string') return String(text)
+        return text
+          .replace(/\u2192/g, ', ')   // → arrow
+          .replace(/\u2014/g, '-')   // em dash
+          .replace(/\u2018|\u2019/g, "'")  // smart quotes
+          .replace(/\u201C|\u201D/g, '"')
+          .replace(/['']/g, "'")
+          .replace(/[""]/g, '"')
+      }
+
       // Enhanced section header with better styling
       const addSectionHeader = (title: string) => {
         checkPageBreak(sectionSpacing + 8)
@@ -796,8 +826,8 @@ export default function Analytics({
       yPosition = 50
       doc.setTextColor(0, 0, 0)
 
-      // Overview Section with styled table
-      addSectionHeader('Overview')
+      // 1. Overview Section with styled table
+      addSectionHeader('1. Overview')
       
       const overviewItems = [
         ['Total Posts Generated', (analytics.overview.totalPostsGenerated || 0).toString()],
@@ -872,8 +902,8 @@ export default function Analytics({
       doc.line(margin, yPosition - 5, pageWidth - margin, yPosition - 5)
       yPosition += 8
 
-      // Key Insights Section with improved 2-column card layout
-      addSectionHeader('Key Insights & Trends')
+      // 2. Key Insights Section with improved 2-column card layout
+      addSectionHeader('2. Key Insights & Trends')
 
       // Helper function to draw insight card
       const drawInsightCard = (doc: any, insight: any, x: number, y: number, width: number, height: number) => {
@@ -893,43 +923,46 @@ export default function Analytics({
         doc.setFillColor(statusColor[0], statusColor[1], statusColor[2])
         doc.circle(x + 5, y + 5, 3, 'F')
         
-        // Title
+        // Title (sanitized for PDF)
         doc.setFontSize(10)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(25, 25, 25)
-        const titleLines = doc.splitTextToSize(insight.title, width - 15)
+        const titleStr = sanitizeForPDF(insight.title)
+        const titleLines = doc.splitTextToSize(titleStr, width - 15)
         const titleY = y + (titleLines.length > 1 ? 3 : 5)
         doc.text(titleLines, x + 12, titleY)
         
-        // Value
+        // Value (sanitized for PDF to avoid encoding issues like !' from arrow)
         doc.setFontSize(10)
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(24, 144, 255)
-        const valueLines = doc.splitTextToSize(insight.value.toString(), width - 10)
+        const valueStr = sanitizeForPDF(insight.value.toString())
+        const valueLines = doc.splitTextToSize(valueStr, width - 10)
         const valueY = y + (titleLines.length > 1 ? 10 : 12)
         doc.text(valueLines, x + 5, valueY)
         
-        // Description
+        // Description (sanitized)
         doc.setFontSize(8)
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(100, 100, 100)
-        const descLines = doc.splitTextToSize(insight.description, width - 10)
+        const descStr = sanitizeForPDF(insight.description)
+        const descLines = doc.splitTextToSize(descStr, width - 10)
         const descY = y + (titleLines.length > 1 ? 17 : 19)
         doc.text(descLines, x + 5, descY)
       }
 
       const cardWidth = (pageWidth - margin * 2 - 10) / 2 // 10px gap between cards
-      const cardHeight = 30
+      const cardHeight = 36 // Increased for better readability and to avoid cramped text
       const cardGap = 10
-      const cardVerticalGap = 10
+      const cardVerticalGap = 12
       let currentRow = 0
       
       insights.forEach((insight, index) => {
         const col = index % 2
         const cardY = yPosition + (currentRow * (cardHeight + cardVerticalGap))
         
-        // Check if we need a new page
-        if (cardY + cardHeight > pageHeight - margin - 20) {
+        // Check if we need a new page (leave room for footer)
+        if (cardY + cardHeight > pageHeight - margin - 28) {
           doc.addPage()
           yPosition = margin
           currentRow = 0
@@ -951,9 +984,11 @@ export default function Analytics({
       const totalRows = Math.ceil(insights.length / 2)
       yPosition += (totalRows * (cardHeight + cardVerticalGap)) + 10
 
-      // Breakdown Section with styled tables
+      // 3. Content Breakdown Section with styled tables (always start on next page)
       if (analytics.breakdown) {
-        addSectionHeader('Content Breakdown')
+        doc.addPage()
+        yPosition = margin
+        addSectionHeader('3. Content Breakdown')
 
         // Posts by Platform - improved table layout
         if (analytics.breakdown.postsByPlatform && Object.keys(analytics.breakdown.postsByPlatform).length > 0) {
@@ -1090,7 +1125,7 @@ export default function Analytics({
 
       // Time Series Summary with styled layout
       if (analytics.timeSeries) {
-        addSectionHeader('Activity Trends Summary')
+        addSectionHeader('4. Activity Trends Summary')
 
         const trendItems: Array<{label: string, total: number, recent: number}> = []
 
@@ -1198,7 +1233,7 @@ export default function Analytics({
 
       // Detailed Activity Trends Section
       if (analytics.timeSeries) {
-        addSectionHeader('Activity Trends - Detailed Analysis')
+        addSectionHeader('5. Activity Trends - Detailed Analysis')
 
         // Helper function to format date for PDF display
         const formatDateForPDF = (dateStr: string) => {
@@ -2406,21 +2441,32 @@ export default function Analytics({
       return ((secondSum - firstSum) / firstSum) * 100
     }
 
-    // Post generation rate
-    if (timeSeries.posts && timeSeries.posts.length > 0) {
-      const postGrowth = calculateGrowthRate(timeSeries.posts)
-      const recentPosts = timeSeries.posts.slice(-7).reduce((sum, item) => sum + item.count, 0)
-      const avgDaily = recentPosts / 7 || 0
+    // Calendar planning momentum (items added to calendar recently)
+    if (timeSeries.calendarItems && timeSeries.calendarItems.length > 0) {
+      const calendarGrowth = calculateGrowthRate(timeSeries.calendarItems)
+      const recentCalendar = timeSeries.calendarItems.slice(-7).reduce((sum, item) => sum + item.count, 0)
       insights.push({
-        title: 'Content Creation Rate',
-        value: `${avgDaily.toFixed(1)}/day`,
-        trend: postGrowth > 10 ? 'up' : postGrowth < -10 ? 'down' : 'stable',
-        percentage: Math.abs(postGrowth),
-        description: postGrowth > 10
-          ? `Creating ${Math.abs(postGrowth).toFixed(1)}% more posts per day`
-          : 'Maintaining consistent content creation',
-        icon: <FileTextOutlined />,
-        color: postGrowth > 10 ? '#52c41a' : '#1890ff',
+        title: 'Calendar Planning',
+        value: recentCalendar > 0 ? `${recentCalendar} this week` : `${overview.totalCalendarItems || 0} total`,
+        trend: calendarGrowth > 10 ? 'up' : calendarGrowth < -10 ? 'down' : 'stable',
+        percentage: Math.abs(calendarGrowth),
+        description: recentCalendar > 0
+          ? calendarGrowth > 10
+            ? `You added ${recentCalendar} items to your calendar (${Math.abs(calendarGrowth).toFixed(0)}% more than before)`
+            : `You added ${recentCalendar} items to your calendar this week`
+          : 'Plan more content on your calendar to stay ahead',
+        icon: <CalendarOutlined />,
+        color: calendarGrowth > 10 ? '#52c41a' : recentCalendar > 0 ? '#1890ff' : '#faad14',
+      })
+    } else if ((overview.totalCalendarItems || 0) > 0) {
+      insights.push({
+        title: 'Calendar Planning',
+        value: `${overview.totalCalendarItems} items planned`,
+        trend: 'stable',
+        percentage: 0,
+        description: 'Keep adding to your calendar to maintain a steady content pipeline',
+        icon: <CalendarOutlined />,
+        color: '#1890ff',
       })
     }
 
@@ -2460,22 +2506,31 @@ export default function Analytics({
       })
     }
 
-    // Publishing rate
-    if (overview.totalPostsGenerated > 0) {
-      const publishRate = overview.publishedPosts && overview.publishedPosts > 0
-        ? (overview.publishedPosts / overview.totalPostsGenerated) * 100
-        : 0
-      if (publishRate > 0) {
-        insights.push({
-          title: 'Publishing',
-          value: `${publishRate.toFixed(1)}%`,
-          trend: publishRate >= 80 ? 'up' : publishRate >= 50 ? 'stable' : 'down',
-          percentage: publishRate,
-          description: `${overview.publishedPosts} of ${overview.totalPostsGenerated} posts published`,
-          icon: <CheckCircleOutlined />,
-          color: publishRate >= 80 ? '#52c41a' : publishRate >= 50 ? '#faad14' : '#ff4d4f',
-        })
-      }
+    // Ready to publish (scheduled queue – actionable pipeline insight)
+    const scheduledCount = overview.scheduledPosts ?? 0
+    const draftCount = overview.draftPosts ?? 0
+    if (scheduledCount > 0 || draftCount > 0) {
+      insights.push({
+        title: 'Content pipeline',
+        value: scheduledCount > 0 ? `${scheduledCount} scheduled` : `${draftCount} in draft`,
+        trend: scheduledCount > 0 ? 'up' : 'stable',
+        percentage: scheduledCount,
+        description: scheduledCount > 0
+          ? `${scheduledCount} posts are queued and will go out automatically`
+          : `${draftCount} drafts ready to schedule when you are`,
+        icon: <ClockCircleOutlined />,
+        color: scheduledCount > 0 ? '#52c41a' : '#1890ff',
+      })
+    } else if ((overview.publishedPosts || 0) > 0) {
+      insights.push({
+        title: 'Content pipeline',
+        value: `${overview.publishedPosts} published`,
+        trend: 'stable',
+        percentage: 0,
+        description: 'Schedule more content from your calendar to keep your pipeline full',
+        icon: <ClockCircleOutlined />,
+        color: '#1890ff',
+      })
     }
 
     // Engagement metrics
@@ -2567,7 +2622,7 @@ export default function Analytics({
       if (calendarPublishesTotal > directPublishesTotal) {
         insights.push({
           title: 'Publishing Method',
-          value: `${calendarPublishesTotal} calendar → ${directPublishesTotal} direct`,
+          value: `${calendarPublishesTotal} calendar, ${directPublishesTotal} direct`,
           description: "Most posts are published via calendar (AI-generated content). You're planning ahead well",
           icon: <CalendarOutlined />,
           status: calendarPublishesTotal >= totalPublishes * 0.6 ? 'on-track' : 'needs-attention',
@@ -2576,7 +2631,7 @@ export default function Analytics({
       } else if (directPublishesTotal > calendarPublishesTotal) {
         insights.push({
           title: 'Publishing Method',
-          value: `${directPublishesTotal} direct → ${calendarPublishesTotal} calendar`,
+          value: `${directPublishesTotal} direct, ${calendarPublishesTotal} calendar`,
           description: "More posts are shared directly from social dashboard. Consider using the calendar for AI-generated content planning",
           icon: <GlobalOutlined />,
           status: directPublishesTotal >= totalPublishes * 0.7 ? 'needs-attention' : 'action-needed',
@@ -2585,7 +2640,7 @@ export default function Analytics({
       } else if (calendarPublishesTotal > 0 && directPublishesTotal > 0) {
         insights.push({
           title: 'Publishing Method',
-          value: `${calendarPublishesTotal} calendar → ${directPublishesTotal} direct`,
+          value: `${calendarPublishesTotal} calendar, ${directPublishesTotal} direct`,
           description: "You're using both methods. Calendar posts help with AI-generated content planning",
           icon: <CalendarOutlined />,
           status: 'on-track',
@@ -2612,19 +2667,19 @@ export default function Analytics({
       }
     }
 
-    // Insight 6: Recent Publishing Activity (Last 7 days)
+    // Insight 6: Posts live this week (actionable output)
     if (timeSeries.publishedPosts && timeSeries.publishedPosts.length > 0) {
       const recentPublished = timeSeries.publishedPosts.slice(-7).reduce((sum, item) => sum + item.count, 0)
       if (recentPublished > 0) {
-        const avgDaily = Math.round(recentPublished / 7)
+        const avgDaily = (recentPublished / 7) || 0
         insights.push({
-          title: 'Publishing Activity',
-          value: `${recentPublished} ${recentPublished === 1 ? 'post' : 'posts'} published this week`,
-          description: avgDaily >= 3
-            ? "You're publishing content consistently"
-            : "Keep publishing regularly to maintain engagement",
+          title: 'Posts live this week',
+          value: `${recentPublished} ${recentPublished === 1 ? 'post' : 'posts'} went out`,
+          description: avgDaily >= 1
+            ? `About ${avgDaily >= 2 ? Math.round(avgDaily) : 1} post${Math.round(avgDaily) !== 1 ? 's' : ''} per day — good momentum`
+            : 'Schedule more from your calendar to keep a steady cadence',
           icon: <ThunderboltOutlined />,
-          status: avgDaily >= 3 ? 'on-track' : avgDaily >= 1 ? 'needs-attention' : 'action-needed',
+          status: avgDaily >= 1 ? 'on-track' : 'needs-attention',
           priority: 6,
         })
       }
@@ -2935,167 +2990,168 @@ export default function Analytics({
                   <Title level={4} style={{ marginBottom: 20, fontSize: 18, fontWeight: 600, color: '#262626' }}>
                     Key Performance Indicators
                   </Title>
-                <Row gutter={[20, 20]}>
-                  {/* 1. TOTAL POSTS */}
-                  {overview.totalPosts && (
-                    <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+                <Row gutter={[20, 20]} align="stretch">
+                  {/* 1. CALENDAR CONTENT */}
+                  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: 16,
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
+                        color: '#fff',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <CalendarOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
+                          CALENDAR CONTENT
+                        </Text>
+                        <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
+                          {(overview.totalCalendarItems || 0).toLocaleString()}
+                        </Title>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
+                          Items planned on your calendar
+                        </Text>
+                      </div>
+                    </Card>
+                  </Col>
 
-                      <Card
-                        hoverable
-                        style={{
-                          borderRadius: 16,
-                          border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          background: 'linear-gradient(135deg, #1890ff 0%, #40a9ff 100%)',
-                          color: '#fff',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
-                          height: '100%'
-                        }}
-                        bodyStyle={{ padding: '24px' }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)'
-                          e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                          <div style={{ fontSize: 32, marginBottom: 12 }}>📱</div>
-                          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
-                            TOTAL POSTS
-                          </Text>
-                          <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
-                            {overview.totalPosts.total.toLocaleString()}
-                          </Title>
-                          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
-                            {overview.totalPosts.publishedText}
-                          </Text>
-                        </div>
-                      </Card>
-                    </Col>
-                  )}
+                  {/* 2. AI CONVERSATIONS */}
+                  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: 16,
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                        color: '#fff',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <MessageOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
+                          AI CONVERSATIONS
+                        </Text>
+                        <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
+                          {(overview.totalConversations || 0).toLocaleString()}
+                        </Title>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
+                          Chat sessions with Melo
+                        </Text>
+                      </div>
+                    </Card>
+                  </Col>
 
-                  {/* 2. SCHEDULED ITEMS */}
-                  {overview.scheduledItems && (
-                    <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                      <Card
-                        hoverable
-                        style={{
-                          borderRadius: 16,
-                          border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          background: 'linear-gradient(135deg, #fa8c16 0%, #ffa940 100%)',
-                          color: '#fff',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
-                          height: '100%'
-                        }}
-                        bodyStyle={{ padding: '24px' }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)'
-                          e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                          <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
-                          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
-                            SCHEDULED ITEMS
-                          </Text>
-                          <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
-                            {overview.scheduledItems.total.toLocaleString()}
-                          </Title>
-                          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
-                            {overview.scheduledItems.scheduledPct}
-                          </Text>
-                        </div>
-                      </Card>
-                    </Col>
-                  )}
+                  {/* 3. TOTAL EVENTS */}
+                  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: 16,
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        background: 'linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%)',
+                        color: '#fff',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <FundProjectionScreenOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
+                          TOTAL EVENTS
+                        </Text>
+                        <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
+                          {(overview.totalEvents || 0).toLocaleString()}
+                        </Title>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
+                          Calendar batches created
+                        </Text>
+                      </div>
+                    </Card>
+                  </Col>
 
-                  {/* 3. AI CONTENT UTILIZATION */}
-                  {overview.aiContentUtilization && (
-                    <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                      <Card
-                        hoverable
-                        style={{
-                          borderRadius: 16,
-                          border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
-                          color: '#fff',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
-                          height: '100%'
-                        }}
-                        bodyStyle={{ padding: '24px' }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)'
-                          e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                          <div style={{ fontSize: 32, marginBottom: 12 }}>🤖</div>
-                          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
-                            AI CONTENT
-                          </Text>
-                          <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
-                            {overview.aiContentUtilization.total.toLocaleString()}
-                          </Title>
-                          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
-                            {overview.aiContentUtilization.usagePct}
-                          </Text>
-                        </div>
-                      </Card>
-                    </Col>
-                  )}
-
-                  {/* 4. TOTAL AI WORDS */}
-                  {overview.totalAIWords !== undefined && (
-                    <Col xs={24} sm={12} md={6} lg={6} xl={6}>
-                      <Card
-                        hoverable
-                        style={{
-                          borderRadius: 16,
-                          border: 'none',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                          background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
-                          color: '#fff',
-                          transition: 'transform 0.2s, box-shadow 0.2s',
-                          height: '100%'
-                        }}
-                        bodyStyle={{ padding: '24px' }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'translateY(-4px)'
-                          e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'translateY(0)'
-                          e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
-                        }}
-                      >
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                          <div style={{ fontSize: 32, marginBottom: 12 }}>✍️</div>
-                          <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
-                            TOTAL AI WORDS
-                          </Text>
-                          <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
-                            {overview.totalAIWords.toLocaleString()}
-                          </Title>
-                          <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
-                            Generated by AI
-                          </Text>
-                        </div>
-                      </Card>
-                    </Col>
-                  )}
+                  {/* 4. CONTENT VELOCITY */}
+                  <Col xs={24} sm={12} md={6} lg={6} xl={6}>
+                    <Card
+                      hoverable
+                      style={{
+                        borderRadius: 16,
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        background: 'linear-gradient(135deg, #722ed1 0%, #9254de 100%)',
+                        color: '#fff',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                      bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-4px)'
+                        e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.12)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)'
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                        <LineChartOutlined style={{ fontSize: 32, marginBottom: 12 }} />
+                        <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'block', marginBottom: 12, fontWeight: 500, letterSpacing: '0.5px' }}>
+                          CONTENT VELOCITY
+                        </Text>
+                        <Title level={1} style={{ color: '#fff', margin: 0, fontSize: 48, fontWeight: 700, lineHeight: 1 }}>
+                          {overview.contentVelocity !== undefined && overview.contentVelocity > 0
+                            ? overview.contentVelocity.toFixed(1)
+                            : '0'}
+                        </Title>
+                        <Text style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, display: 'block', marginTop: 8 }}>
+                          Posts per day (avg)
+                        </Text>
+                      </div>
+                    </Card>
+                  </Col>
                 </Row>
 
                   {/* Best Posting Times */}
@@ -3670,6 +3726,160 @@ export default function Analytics({
                     )}
                   </Card>
                 </Col>
+                <Col xs={24} sm={24} lg={8}>
+                  <Card
+                    hoverable
+                    style={{
+                      borderRadius: 12,
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      height: '100%'
+                    }}
+                    bodyStyle={{ padding: '16px' }}
+                    title={
+                      <Space>
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                        <ClockCircleOutlined style={{ color: '#faad14' }} />
+                        <span style={{ fontWeight: 600 }}>Publishing vs Scheduling</span>
+                      </Space>
+                    }
+                  >
+                    {(timeSeries.publishedPosts?.length ?? 0) > 0 || (timeSeries.scheduledPosts?.length ?? 0) > 0 ? (
+                      (() => {
+                        const chartData = mergeTimeSeries(
+                          timeSeries.publishedPosts ?? [],
+                          timeSeries.scheduledPosts ?? [],
+                          'published',
+                          'scheduled'
+                        )
+                        if (chartData.length === 0) {
+                          return (
+                            <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Text type="secondary" style={{ fontSize: 13 }}>No data</Text>
+                            </div>
+                          )
+                        }
+                        return (
+                          <ResponsiveContainer width="100%" height={260}>
+                            <LineChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#666' }} stroke="#d9d9d9" />
+                              <YAxis
+                                tick={{ fontSize: 11, fill: '#666' }}
+                                label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#666' } }}
+                                allowDecimals={false}
+                                domain={[0, 'auto']}
+                                stroke="#d9d9d9"
+                              />
+                              <Tooltip
+                                contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
+                                labelFormatter={(label) => `Date: ${label}`}
+                              />
+                              <Legend />
+                              <Line
+                                type="monotone"
+                                dataKey="published"
+                                name="Published"
+                                stroke="#52c41a"
+                                strokeWidth={3}
+                                dot={{ r: 4, fill: '#52c41a' }}
+                                activeDot={{ r: 6 }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="scheduled"
+                                name="Scheduled"
+                                stroke="#faad14"
+                                strokeWidth={3}
+                                dot={{ r: 4, fill: '#faad14' }}
+                                activeDot={{ r: 6 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        )
+                      })()
+                    ) : (
+                      <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text type="secondary" style={{ fontSize: 13 }}>No published or scheduled data</Text>
+                      </div>
+                    )}
+                  </Card>
+                </Col>
+                <Col xs={24} sm={24} lg={8}>
+                  <Card
+                    hoverable
+                    style={{
+                      borderRadius: 12,
+                      border: 'none',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      height: '100%'
+                    }}
+                    bodyStyle={{ padding: '16px' }}
+                    title={
+                      <span style={{ fontWeight: 600 }}>Publishing Method Trends (Calendar vs Direct)</span>
+                    }
+                  >
+                    {(timeSeries.calendarPublishes?.length ?? 0) > 0 || (timeSeries.directPublishes?.length ?? 0) > 0 ? (
+                      (() => {
+                        const chartData = mergeTimeSeries(
+                          timeSeries.calendarPublishes ?? [],
+                          timeSeries.directPublishes ?? [],
+                          'calendar',
+                          'direct'
+                        )
+                        if (chartData.length === 0) {
+                          return (
+                            <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <Text type="secondary" style={{ fontSize: 13 }}>No data</Text>
+                            </div>
+                          )
+                        }
+                        return (
+                          <ResponsiveContainer width="100%" height={260}>
+                            <LineChart data={chartData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                              <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#666' }} stroke="#d9d9d9" />
+                              <YAxis
+                                tick={{ fontSize: 11, fill: '#666' }}
+                                label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: '#666' } }}
+                                allowDecimals={false}
+                                domain={[0, 'auto']}
+                                stroke="#d9d9d9"
+                              />
+                              <Tooltip
+                                contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
+                                labelFormatter={(label) => `Date: ${label}`}
+                              />
+                              <Legend />
+                              <Line
+                                type="monotone"
+                                dataKey="calendar"
+                                name="Calendar"
+                                stroke="#722ed1"
+                                strokeWidth={3}
+                                dot={{ r: 4, fill: '#722ed1' }}
+                                activeDot={{ r: 6 }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="direct"
+                                name="Direct"
+                                stroke="#ff4d4f"
+                                strokeWidth={3}
+                                dot={{ r: 4, fill: '#ff4d4f' }}
+                                activeDot={{ r: 6 }}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        )
+                      })()
+                    ) : (
+                      <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text type="secondary" style={{ fontSize: 13 }}>No calendar or direct publishing data</Text>
+                      </div>
+                    )}
+                  </Card>
+                </Col>
               </Row>
             </div>
 
@@ -4068,20 +4278,25 @@ export default function Analytics({
                 </div>
 
                 {/* 1. Content Velocity Funnel */}
-                <div style={{ marginBottom: 48 }}>
-                  <Title level={4} style={{ marginBottom: 24, fontSize: 18, fontWeight: 600, color: '#262626' }}>
-                    1. Content Velocity Funnel
-                  </Title>
-                  <div style={{
-                    marginBottom: 16,
-                    padding: 12,
-                    background: '#e6f7ff',
-                    borderRadius: 8,
-                    border: '1px solid #91d5ff'
-                  }}>
-                    <Text style={{ fontSize: 12, color: '#1890ff' }}>
-                      <strong>Calculation:</strong> Ideation = Total conversations (melo.conversations), Planning = Calendar items with status 'draft' (melo.calendaritems), Live = Published posts (melo.socialmediaposts with status 'published'). Conversion Rate = (Live / Ideation) × 100.
-                    </Text>
+                <div id="content-velocity-funnel" style={{ scrollMarginTop: '100px', marginBottom: 48 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                    <Title level={4} style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#262626' }}>
+                      1. Content Velocity Funnel
+                    </Title>
+                    <AntdTooltip
+                      title={
+                        <div style={{ maxWidth: 400 }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Calculation:</div>
+                          <div>Ideation = Total conversations (melo.conversations)</div>
+                          <div>Planning = Calendar items with status 'draft' (melo.calendaritems)</div>
+                          <div>Live = Published posts (melo.socialmediaposts with status 'published')</div>
+                          <div>Conversion Rate = (Live / Ideation) × 100</div>
+                        </div>
+                      }
+                      placement="top"
+                    >
+                      <InfoCircleOutlined style={{ fontSize: 16, color: '#1890ff', cursor: 'help' }} />
+                    </AntdTooltip>
                   </div>
                   <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                     <Row gutter={[24, 24]}>
@@ -4178,22 +4393,27 @@ export default function Analytics({
 
                 {/* 2. AI Efficiency & ROI */}
                 {analytics.advancedAnalytics.aiEfficiency && (
-                  <div style={{ marginBottom: 48 }}>
-                    <Title level={4} style={{ marginBottom: 24, fontSize: 18, fontWeight: 600, color: '#262626' }}>
-                      2. AI Efficiency & ROI
-                    </Title>
-                    <div style={{
-                      marginBottom: 16,
-                      padding: 12,
-                      background: '#e6f7ff',
-                      borderRadius: 8,
-                      border: '1px solid #91d5ff'
-                    }}>
-                      <Text style={{ fontSize: 12, color: '#1890ff' }}>
-                        <strong>Calculation:</strong> Processing time from melo.aigeneratedcontents (processingTime in milliseconds). Human benchmark = 1800 seconds (30 minutes) per post. Time Saved = (30 min × Total AI Posts) - Sum(processingTime). Efficiency Ratio = Human Time Total / AI Processing Time Total.
-                      </Text>
-                    </div>
-                    <Row gutter={[20, 20]}>
+                  <div id="ai-efficiency-roi" style={{ scrollMarginTop: '100px', marginBottom: 48 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                      <Title level={4} style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#262626' }}>
+                        2. AI Efficiency & ROI
+                      </Title>
+                      <AntdTooltip
+                        title={
+                          <div style={{ maxWidth: 400 }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Calculation:</div>
+                            <div>Processing time from melo.aigeneratedcontents (processingTime in milliseconds)</div>
+                            <div>Human benchmark = 1800 seconds (30 minutes) per post</div>
+                            <div>Time Saved = (30 min × Total AI Posts) - Sum(processingTime)</div>
+                            <div>Efficiency Ratio = Human Time Total / AI Processing Time Total</div>
+                          </div>
+                        }
+                        placement="top"
+                      >
+                        <InfoCircleOutlined style={{ fontSize: 16, color: '#1890ff', cursor: 'help' }} />
+                    </AntdTooltip>
+                  </div>
+                    <Row gutter={[20, 20]} align="stretch">
                       <Col xs={24} sm={12} md={8}>
                         <Card
                           style={{
@@ -4201,8 +4421,12 @@ export default function Analytics({
                             border: 'none',
                             boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
                             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: '#fff'
+                            color: '#fff',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
                           }}
+                          bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
                         >
                           <Text style={{ fontSize: 13, opacity: 0.9, display: 'block', marginBottom: 8 }}>
                             TIME RECLAIMED
@@ -4216,7 +4440,17 @@ export default function Analytics({
                         </Card>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                        <Card 
+                          style={{ 
+                            borderRadius: 16, 
+                            border: 'none', 
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                          bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                        >
                           <Statistic
                             title="Efficiency Ratio"
                             value={analytics.advancedAnalytics.aiEfficiency.efficiencyRatio}
@@ -4229,7 +4463,17 @@ export default function Analytics({
                         </Card>
                       </Col>
                       <Col xs={24} sm={12} md={8}>
-                        <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                        <Card 
+                          style={{ 
+                            borderRadius: 16, 
+                            border: 'none', 
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}
+                          bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
+                        >
                           <Statistic
                             title="Avg Processing Time"
                             value={Math.round(analytics.advancedAnalytics.aiEfficiency.avgProcessingTime / 1000)}
@@ -4246,20 +4490,25 @@ export default function Analytics({
                 )}
 
                 {/* 3. Cross-Platform Strategy Mix */}
-                <div style={{ marginBottom: 48 }}>
-                  <Title level={4} style={{ marginBottom: 24, fontSize: 18, fontWeight: 600, color: '#262626' }}>
-                    3. Cross-Platform Strategy Mix
-                  </Title>
-                  <div style={{
-                    marginBottom: 16,
-                    padding: 12,
-                    background: '#e6f7ff',
-                    borderRadius: 8,
-                    border: '1px solid #91d5ff'
-                  }}>
-                    <Text style={{ fontSize: 12, color: '#1890ff' }}>
-                      <strong>Calculation:</strong> Planned = Count of calendar items by platform (melo.calendaritems grouped by platform). Published = Count of published posts by platform (melo.socialmediaposts with status 'published' grouped by platform). Gap = Planned - Published. Completion Rate = (Published / Planned) × 100.
-                    </Text>
+                <div id="cross-platform-strategy" style={{ scrollMarginTop: '100px', marginBottom: 48 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                    <Title level={4} style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#262626' }}>
+                      3. Cross-Platform Strategy Mix
+                    </Title>
+                    <AntdTooltip
+                      title={
+                        <div style={{ maxWidth: 400 }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Calculation:</div>
+                          <div>Planned = Count of calendar items by platform (melo.calendaritems grouped by platform)</div>
+                          <div>Published = Count of published posts by platform (melo.socialmediaposts with status 'published' grouped by platform)</div>
+                          <div>Gap = Planned - Published</div>
+                          <div>Completion Rate = (Published / Planned) × 100</div>
+                        </div>
+                      }
+                      placement="top"
+                    >
+                      <InfoCircleOutlined style={{ fontSize: 16, color: '#1890ff', cursor: 'help' }} />
+                    </AntdTooltip>
                   </div>
                   <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                     <ResponsiveContainer width="100%" height={400}>
@@ -4268,7 +4517,6 @@ export default function Analytics({
                         <XAxis
                           dataKey="platform"
                           tick={{ fontSize: 11, fill: '#666' }}
-                          label={{ value: 'Platform', position: 'insideBottom', offset: -5, style: { fontSize: 12, fill: '#666' } }}
                         />
                         <YAxis
                           tick={{ fontSize: 11, fill: '#666' }}
@@ -4278,7 +4526,16 @@ export default function Analytics({
                           contentStyle={{ borderRadius: 8, border: '1px solid #e8e8e8' }}
                           formatter={(value: number | undefined, name: string | undefined) => [value || 0, name === 'planned' ? 'Planned' : 'Published']}
                         />
-                        <Legend />
+                        <Legend
+                          wrapperStyle={{ marginTop: 16 }}
+                          layout="horizontal"
+                          align="center"
+                          verticalAlign="bottom"
+                          iconType="square"
+                          iconSize={10}
+                          itemGap={24}
+                          formatter={(value) => <span style={{ marginLeft: 8 }}>{value}</span>}
+                        />
                         <Bar dataKey="planned" fill="#1890ff" name="Planned" radius={[8, 8, 0, 0]} />
                         <Bar dataKey="published" fill="#52c41a" name="Published" radius={[8, 8, 0, 0]} />
                       </ComposedChart>
@@ -4299,25 +4556,30 @@ export default function Analytics({
 
                 {/* 4. Media Asset Utilization */}
                 {analytics.advancedAnalytics.mediaUtilization && (
-                  <div style={{ marginBottom: 48 }}>
-                    <Title level={4} style={{ marginBottom: 24, fontSize: 18, fontWeight: 600, color: '#262626' }}>
-                      4. Media Asset Utilization
-                    </Title>
-                    <div style={{
-                      marginBottom: 16,
-                      padding: 12,
-                      background: '#e6f7ff',
-                      borderRadius: 8,
-                      border: '1px solid #91d5ff'
-                    }}>
-                      <Text style={{ fontSize: 12, color: '#1890ff' }}>
-                        <strong>Calculation:</strong> Total Assets = Count of all media files (melo.mediafiles). Used Assets = Count of posts with non-empty mediaAttachments array (melo.socialmediaposts where mediaAttachments[0].url exists). Utilization Rate = (Used Assets / Total Assets) × 100. Untapped Potential = Total Assets - Used Assets.
-                      </Text>
-                    </div>
-                    <Row gutter={[20, 20]}>
-                      <Col xs={24} md={12}>
-                        <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                          <ResponsiveContainer width="100%" height={300}>
+                  <div id="media-asset-utilization" style={{ scrollMarginTop: '100px', marginBottom: 48 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                      <Title level={4} style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#262626' }}>
+                        4. Media Asset Utilization
+                      </Title>
+                      <AntdTooltip
+                        title={
+                          <div style={{ maxWidth: 400 }}>
+                            <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Calculation:</div>
+                            <div>Total Assets = Count of all media files (melo.mediafiles)</div>
+                            <div>Used Assets = Count of posts with non-empty mediaAttachments array (melo.socialmediaposts where mediaAttachments[0].url exists)</div>
+                            <div>Utilization Rate = (Used Assets / Total Assets) × 100</div>
+                            <div>Untapped Potential = Total Assets - Used Assets</div>
+                          </div>
+                        }
+                        placement="top"
+                      >
+                        <InfoCircleOutlined style={{ fontSize: 16, color: '#1890ff', cursor: 'help' }} />
+                    </AntdTooltip>
+                  </div>
+                    <Row gutter={[20, 20]} style={{ display: 'flex', flexWrap: 'wrap' }}>
+                      <Col xs={24} md={12} style={{ display: 'flex' }}>
+                        <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', width: '100%', minHeight: 380, height: '100%' }} bodyStyle={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          <ResponsiveContainer width="100%" height={300} style={{ flex: '0 0 300px' }}>
                             <PieChart>
                               <Pie
                                 data={[
@@ -4343,9 +4605,9 @@ export default function Analytics({
                           </ResponsiveContainer>
                         </Card>
                       </Col>
-                      <Col xs={24} md={12}>
-                        <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-                          <div style={{ padding: 20 }}>
+                      <Col xs={24} md={12} style={{ display: 'flex' }}>
+                        <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', width: '100%', minHeight: 380, height: '100%' }} bodyStyle={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column' }}>
                             <Text strong style={{ fontSize: 18, display: 'block', marginBottom: 16 }}>
                               Asset Statistics
                             </Text>
@@ -4394,20 +4656,25 @@ export default function Analytics({
                 )}
 
                 {/* 5. Content DNA (Thematic Analysis) */}
-                <div style={{ marginBottom: 48 }}>
-                  <Title level={4} style={{ marginBottom: 24, fontSize: 18, fontWeight: 600, color: '#262626' }}>
-                    5. Content DNA (Thematic Analysis)
-                  </Title>
-                  <div style={{
-                    marginBottom: 16,
-                    padding: 12,
-                    background: '#e6f7ff',
-                    borderRadius: 8,
-                    border: '1px solid #91d5ff'
-                  }}>
-                    <Text style={{ fontSize: 12, color: '#1890ff' }}>
-                      <strong>Calculation:</strong> Hashtags extracted from content fields in melo.calendaritems and melo.socialmediaposts using regex pattern /#(\w+)/g. Frequency counted per hashtag (case-insensitive). Top 20 hashtags displayed by frequency. Tag size proportional to usage count.
-                    </Text>
+                <div id="content-dna" style={{ scrollMarginTop: '100px', marginBottom: 48 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+                    <Title level={4} style={{ margin: 0, fontSize: 18, fontWeight: 600, color: '#262626' }}>
+                      5. Content DNA (Thematic Analysis)
+                    </Title>
+                    <AntdTooltip
+                      title={
+                        <div style={{ maxWidth: 400 }}>
+                          <div style={{ fontWeight: 'bold', marginBottom: 8 }}>Calculation:</div>
+                          <div>Hashtags extracted from content fields in melo.calendaritems and melo.socialmediaposts using regex pattern /#(\w+)/g</div>
+                          <div>Frequency counted per hashtag (case-insensitive)</div>
+                          <div>Top 20 hashtags displayed by frequency</div>
+                          <div>Tag size proportional to usage count</div>
+                        </div>
+                      }
+                      placement="top"
+                    >
+                      <InfoCircleOutlined style={{ fontSize: 16, color: '#1890ff', cursor: 'help' }} />
+                    </AntdTooltip>
                   </div>
                   <Card style={{ borderRadius: 16, border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, padding: 20, minHeight: 200, alignItems: 'center', justifyContent: 'center' }}>
@@ -4755,186 +5022,6 @@ export default function Analytics({
                   </Row>
                 ) : (
                   <Empty description="No best hours data available" />
-                )}
-              </div>
-            )}
-
-            {/* Best Time Analytics Sections */}
-            {bestTimeLoading && selectedSection.startsWith('best-time') && (
-              <div style={{ textAlign: 'center', padding: '40px' }}>
-                <Spin size="large" />
-                <div style={{ marginTop: 16 }}>
-                  <Text>Loading best time analytics...</Text>
-                </div>
-              </div>
-            )}
-
-            {/* Best Hours to Post */}
-            {!bestTimeLoading && bestTimeData && selectedSection === 'best-time-hours' && (
-              <div id="best-time-hours" style={{ scrollMarginTop: '100px', paddingTop: '20px', marginTop: 32, marginBottom: 32 }}>
-                <div style={{ marginBottom: 16 }}>
-                  <Title level={3} style={{ margin: 0 }}>
-                    <ClockCircleOutlined style={{ marginRight: 8 }} />
-                    Best Hours to Post (Global Benchmark)
-                  </Title>
-                  <Text type="secondary" style={{ fontSize: 14, marginTop: 8, display: 'block' }}>
-                    Optimal posting hours per platform based on historical engagement data
-                  </Text>
-                  <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div>
-                      <Text strong style={{ marginRight: 8 }}>Platform:</Text>
-                      <Select
-                        value={selectedBestTimePlatform}
-                        onChange={setSelectedBestTimePlatform}
-                        style={{ width: 180 }}
-                      >
-                        <Select.Option value="all">All Platforms</Select.Option>
-                        <Select.Option value="instagram">Instagram</Select.Option>
-                        <Select.Option value="twitter">Twitter/X</Select.Option>
-                        <Select.Option value="linkedin">LinkedIn</Select.Option>
-                        <Select.Option value="facebook">Facebook</Select.Option>
-                      </Select>
-                    </div>
-                    <div>
-                      <Text strong style={{ marginRight: 8 }}>Year:</Text>
-                      <Select
-                        value={selectedYear}
-                        onChange={(value) => {
-                          setSelectedYear(value)
-                          setSelectedMonth(undefined) // Reset month when year changes
-                        }}
-                        placeholder="All Years"
-                        allowClear
-                        style={{ width: 120 }}
-                      >
-                        {availableYears.map(year => (
-                          <Select.Option key={year} value={year}>{year}</Select.Option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div>
-                      <Text strong style={{ marginRight: 8 }}>Month:</Text>
-                      <Select
-                        value={selectedMonth}
-                        onChange={setSelectedMonth}
-                        placeholder="All Months"
-                        allowClear
-                        disabled={!selectedYear}
-                        style={{ width: 150 }}
-                      >
-                        {availableMonths.map(month => {
-                          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-                          return (
-                            <Select.Option key={month} value={month}>{monthNames[month - 1]}</Select.Option>
-                          )
-                        })}
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-                {bestTimeData.bestHours && Object.keys(bestTimeData.bestHours).length > 0 ? (
-                  <Row gutter={[16, 16]}>
-                    {Object.entries(bestTimeData.bestHours).map(([platform, platformData]) => {
-                      if (selectedBestTimePlatform !== 'all' && platform !== selectedBestTimePlatform) return null
-
-                      const hours = platformData?.hours || (Array.isArray(platformData) ? platformData : [])
-                      if (!Array.isArray(hours) || hours.length === 0) return null
-
-                      const recommendation = platformData?.recommendation || null
-
-                      const chartData = hours.map((h: any) => ({
-                        hour: `${h.hour}:00`,
-                        engagement: h.metrics?.avgEngagement || 0,
-                        likes: h.metrics?.avgLikes || 0,
-                        retweets: h.metrics?.avgRetweets || 0,
-                      }))
-
-                      return (
-                        <Col xs={24} lg={12} key={platform}>
-                          <Card
-                            title={<span style={{ textTransform: 'capitalize' }}>{platform}</span>}
-                            style={{ borderRadius: 12, border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                          >
-                            {recommendation && (
-                              <div style={{
-                                marginBottom: 16,
-                                padding: 12,
-                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                                borderRadius: 8,
-                                color: 'white'
-                              }}>
-                                <Text strong style={{ color: 'white', fontSize: 14 }}>
-                                  💡 Best Time to Post: {recommendation}
-                                </Text>
-                              </div>
-                            )}
-                            <ResponsiveContainer width="100%" height={300}>
-                              <BarChart data={chartData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                <XAxis dataKey="hour" />
-                                <YAxis />
-                                <Tooltip />
-                                <Legend />
-                                <Bar dataKey="engagement" fill="#1890ff" name="Avg Engagement" />
-                              </BarChart>
-                            </ResponsiveContainer>
-                            <div style={{ marginTop: 16 }}>
-                              <Text strong>Top Hours:</Text>
-                              <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                                {(() => {
-                                  // Format hour for display
-                                  const formatHourDisplay = (hour: number) => {
-                                    if (hour === 0) return '12am'
-                                    if (hour < 12) return `${hour}am`
-                                    if (hour === 12) return '12pm'
-                                    return `${hour - 12}pm`
-                                  }
-
-                                  // Use topHoursByEngagement from backend if available (sorted by engagement)
-                                  // Otherwise fall back to filtering hours array
-                                  let hoursToShow: Array<{ hour: number; avgEngagement: number }> = []
-
-                                  if (platformData?.topHoursByEngagement && Array.isArray(platformData.topHoursByEngagement)) {
-                                    // Use backend-provided top hours sorted by engagement
-                                    hoursToShow = platformData.topHoursByEngagement
-                                  } else {
-                                    // Fallback: Get topHours set from backend and filter hours array
-                                    const topHoursSet = new Set(platformData?.topHours || [])
-                                    const topHoursData = hours
-                                      .filter((h: any) => topHoursSet.has(h.hour))
-                                      .sort((a: any, b: any) => (b.metrics?.avgEngagement || 0) - (a.metrics?.avgEngagement || 0))
-                                      .slice(0, 5)
-                                      .map((h: any) => ({
-                                        hour: h.hour,
-                                        avgEngagement: h.metrics?.avgEngagement || 0
-                                      }))
-
-                                    // If still no data, use top 5 from sorted hours
-                                    hoursToShow = topHoursData.length > 0
-                                      ? topHoursData
-                                      : hours.slice(0, 5).map((h: any) => ({
-                                        hour: h.hour,
-                                        avgEngagement: h.metrics?.avgEngagement || 0
-                                      }))
-                                  }
-
-                                  return hoursToShow.map((h: any, idx: number) => (
-                                    <Tag key={h.hour} color={idx < 2 ? 'green' : idx < 3 ? 'blue' : 'default'}>
-                                      {formatHourDisplay(h.hour)} ({Math.round(h.avgEngagement || 0)} avg)
-                                    </Tag>
-                                  ))
-                                })()}
-                              </div>
-                            </div>
-                          </Card>
-                        </Col>
-                      )
-                    })}
-                  </Row>
-                ) : (
-                  <Card>
-                    <Empty description="No data available. The prediction_best_time dataset may be empty." />
-                  </Card>
                 )}
               </div>
             )}

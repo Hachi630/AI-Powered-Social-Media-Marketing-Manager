@@ -88,12 +88,6 @@ export default function AnalyticsSidebar({
       color: "#52c41a",
     },
     {
-      key: "advanced-analytics",
-      label: "Advanced Analytics & Strategic Insights",
-      icon: <ThunderboltOutlined />,
-      color: "#722ed1",
-    },
-    {
       key: "recent-activity",
       label: "Recent Activity",
       icon: <CalendarOutlined />,
@@ -197,8 +191,7 @@ export default function AnalyticsSidebar({
   // Group sections into subsections
   const overviewSections = sections.slice(0, 2); // Overview Statistics, Key Insights
   const detailedSections = sections.slice(2, 4); // Time Series, Breakdown
-  const advancedAnalyticsMain = sections.slice(4, 5); // Advanced Analytics & Strategic Insights
-  const recentActivitySection = sections.slice(5); // Recent Activity
+  const recentActivitySection = sections.slice(4); // Recent Activity
 
   return (
     <Sider
@@ -278,18 +271,9 @@ export default function AnalyticsSidebar({
                     }`}
                   onClick={() => {
                     onSectionSelect(section.key);
-                    // Scroll to section with proper offset
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64; // Header height
-                      const offset = 100; // Additional offset for spacing
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
@@ -351,84 +335,9 @@ export default function AnalyticsSidebar({
                     }`}
                   onClick={() => {
                     onSectionSelect(section.key);
-                    // Scroll to section with proper offset
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64; // Header height
-                      const offset = 100; // Additional offset for spacing
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
-                    }
-                  }}
-                >
-                  <div className={styles.sectionContent}>
-                    <Avatar
-                      size={collapsed ? 40 : 40}
-                      icon={SectionIcon}
-                      style={{
-                        backgroundColor: section.color,
-                        color: "#fff",
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    />
-                    {!collapsed && (
-                      <div className={styles.sectionInfo}>
-                        <Typography.Text
-                          strong
-                          className={styles.sectionLabel}
-                        >
-                          {section.label}
-                        </Typography.Text>
-                      </div>
-                    )}
-                  </div>
-                  {!collapsed && isSelected && (
-                    <div
-                      className={styles.selectedIndicator}
-                      style={{ backgroundColor: section.color }}
-                    />
-                  )}
-                </div>
-              </Tooltip>
-            );
-          })}
-
-          {/* Advanced Analytics Main Section */}
-          {advancedAnalyticsMain.map((section) => {
-            const isSelected = selectedSection === section.key;
-            const SectionIcon = section.icon;
-
-            return (
-              <Tooltip
-                key={section.key}
-                title={collapsed ? section.label : undefined}
-                placement="right"
-              >
-                <div
-                  className={`${styles.sectionItem} ${
-                    isSelected ? styles.sectionItemActive : ""
-                  }`}
-                  onClick={() => {
-                    onSectionSelect(section.key);
-                    const element = document.getElementById(section.key);
-                    if (element) {
-                      const headerHeight = 64;
-                      const offset = 100;
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-                      
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
@@ -493,15 +402,7 @@ export default function AnalyticsSidebar({
                     onSectionSelect(section.key);
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64;
-                      const offset = 100;
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-                      
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
@@ -559,15 +460,7 @@ export default function AnalyticsSidebar({
                     onSectionSelect(section.key);
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64;
-                      const offset = 100;
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-                      
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
@@ -629,18 +522,9 @@ export default function AnalyticsSidebar({
                     }`}
                   onClick={() => {
                     onSectionSelect(section.key);
-                    // Scroll to section with proper offset
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64; // Header height
-                      const offset = 100; // Additional offset for spacing
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
