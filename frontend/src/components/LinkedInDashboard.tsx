@@ -1604,9 +1604,10 @@ export default function LinkedInDashboard({
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: 16,
-                    alignItems: "flex-end",
+                    alignItems: isMobile ? "stretch" : "flex-end",
+                    width: isMobile ? "100%" : "auto",
                   }}
                 >
                   {isConnected && (
@@ -1616,7 +1617,7 @@ export default function LinkedInDashboard({
                         onClick={handleRefreshMetrics}
                         loading={loading}
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -1631,7 +1632,7 @@ export default function LinkedInDashboard({
                         loading={disconnecting}
                         danger
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -1879,7 +1880,7 @@ export default function LinkedInDashboard({
                   maxLength={3000}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Link Fields */}
@@ -2145,9 +2146,10 @@ export default function LinkedInDashboard({
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: 16,
-                    alignItems: "flex-end",
+                    alignItems: isMobile ? "stretch" : "flex-end",
+                    width: isMobile ? "100%" : "auto",
                   }}
                 >
                   {twitterStatus?.connected && (
@@ -2173,7 +2175,7 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingTwitter}
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -2188,7 +2190,7 @@ export default function LinkedInDashboard({
                         loading={disconnectingTwitter}
                         danger
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -2357,7 +2359,7 @@ export default function LinkedInDashboard({
                   maxLength={280}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Image Upload Section */}
@@ -2515,9 +2517,10 @@ export default function LinkedInDashboard({
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: 16,
-                    alignItems: "flex-end",
+                    alignItems: isMobile ? "stretch" : "flex-end",
+                    width: isMobile ? "100%" : "auto",
                   }}
                 >
                   {facebookStatus?.connected && (
@@ -2543,7 +2546,7 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingFacebook}
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -2558,7 +2561,7 @@ export default function LinkedInDashboard({
                         loading={disconnectingFacebook}
                         danger
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -2787,7 +2790,7 @@ export default function LinkedInDashboard({
                   maxLength={5000}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Link Fields */}
@@ -3056,9 +3059,10 @@ export default function LinkedInDashboard({
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: 16,
-                    alignItems: "flex-end",
+                    alignItems: isMobile ? "stretch" : "flex-end",
+                    width: isMobile ? "100%" : "auto",
                   }}
                 >
                   {instagramStatus?.connected && (
@@ -3084,7 +3088,7 @@ export default function LinkedInDashboard({
                         }}
                         loading={loadingInstagram}
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -3099,7 +3103,7 @@ export default function LinkedInDashboard({
                         loading={disconnectingInstagram}
                         danger
                         style={{
-                          width: 150,
+                          width: isMobile ? "50%" : 150,
                           height: 44,
                           display: "inline-flex",
                           justifyContent: "center",
@@ -3271,7 +3275,7 @@ export default function LinkedInDashboard({
                   maxLength={2200}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Image Upload Section */}

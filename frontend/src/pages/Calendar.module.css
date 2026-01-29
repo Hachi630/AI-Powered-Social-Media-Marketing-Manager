@@ -842,4 +842,47 @@
   .monthEventsList {
     gap: 4px;
   }
+
+  /* Remove purple/blue box around selected/today calendar date on mobile only */
+  :global(.ant-picker-cell-selected) :global(.ant-picker-cell-inner),
+  :global(.ant-picker-cell-selected) :global(.ant-picker-calendar-date),
+  :global(.ant-picker-cell-selected .ant-picker-cell-inner),
+  :global(.ant-picker-cell-selected .ant-picker-calendar-date),
+  :global(.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner),
+  :global(.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-calendar-date) {
+    box-shadow: none !important;
+    outline: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Today cell - also remove the box */
+  :global(.ant-picker-cell-today .ant-picker-cell-inner),
+  :global(.ant-picker-cell-today .ant-picker-calendar-date),
+  :global(.ant-picker-cell-today.ant-picker-cell-selected .ant-picker-cell-inner),
+  :global(.ant-picker-cell-today.ant-picker-cell-selected .ant-picker-calendar-date) {
+    box-shadow: none !important;
+    outline: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Hide ::before / ::after pseudo-elements that draw the today/selected ring */
+  :global(.ant-picker-cell-today .ant-picker-cell-inner::before),
+  :global(.ant-picker-cell-selected .ant-picker-cell-inner::before),
+  :global(.ant-picker-cell-in-view.ant-picker-cell-today .ant-picker-cell-inner::before),
+  :global(.ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner::before),
+  :global(.ant-picker-cell .ant-picker-cell-inner::before),
+  :global(.ant-picker-cell .ant-picker-cell-inner::after) {
+    display: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Our date cell wrapper - ensure no box */
+  .dateCellContent {
+    box-shadow: none !important;
+    outline: none !important;
+    border: none !important;
+  }
 }
