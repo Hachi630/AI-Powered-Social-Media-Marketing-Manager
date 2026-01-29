@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => {
     // and the frontend will make direct API calls to the backend URL
     server: {
       port: 3000,
+      strictPort: true, // Only use 3000; do not fall back to 3001, 3002, etc.
       proxy: {
         '/api': {
           target: `http://localhost:${backendPort}`,
