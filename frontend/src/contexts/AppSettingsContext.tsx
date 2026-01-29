@@ -33,8 +33,18 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: "Inter, system-ui, sans-serif",
   accentColor: "#bacf65",
   darkMode: false,
-  live2dModel: "/umiushi/うみうしモデル.model3.json",
+  live2dModel: "/umiushi/model.model3.json",
   enableElo: true,
+};
+
+// Helper function to migrate old model paths to new paths
+const migrateModelPath = (path: string): string => {
+  // Migrate old Japanese filename to new English filename
+  if (path.includes('うみうしモデル') || path.includes('/umiushi/うみうしモデル')) {
+    return "/umiushi/model.model3.json";
+  }
+  // Keep other paths as-is
+  return path;
 };
 
 const STORAGE_KEY = "melo_app_settings";
@@ -145,7 +155,14 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...DEFAULT_SETTINGS, ...parsed };
+        // Migrate old model paths to new paths
+        if (parsed.live2dModel) {
+          parsed.live2dModel = migrateModelPath(parsed.live2dModel);
+        }
+        const migratedSettings = { ...DEFAULT_SETTINGS, ...parsed };
+        // Save migrated settings back to localStorage
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(migratedSettings));
+        return migratedSettings;
       }
     } catch (error) {
       console.error("Failed to load app settings:", error);
@@ -521,6 +538,28 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       console.error("Failed to save app settings:", error);
     }
   }, [settings]);
+
+  // Listen for demo settings update event
+  useEffect(() => {
+    const handleSettingsUpdate = () => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const newSettings = { ...DEFAULT_SETTINGS, ...parsed };
+          setSettings(newSettings);
+          setPendingSettings(newSettings);
+        }
+      } catch (error) {
+        console.error("Failed to reload app settings:", error);
+      }
+    };
+
+    window.addEventListener("demo-settings-updated", handleSettingsUpdate);
+    return () => {
+      window.removeEventListener("demo-settings-updated", handleSettingsUpdate);
+    };
+  }, []);
 
   const updatePendingSettings = (newSettings: Partial<AppSettings>) => {
     setPendingSettings((prev) => ({ ...prev, ...newSettings }));

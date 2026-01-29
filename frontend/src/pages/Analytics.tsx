@@ -47,6 +47,8 @@ import {
 } from 'recharts'
 import Header from '../components/Header'
 import { User } from '../services/authService'
+import { isDemoMode } from '../demo/demoMode'
+import { demoAnalytics } from '../demo/demoServices'
 
 const { Content, Sider } = Layout
 const { Title, Text } = Typography
@@ -391,6 +393,13 @@ export default function Analytics({
 
   const fetchAnalytics = useCallback(async () => {
     try {
+      if (isDemoMode()) {
+        const data = await demoAnalytics()
+        if (data.success && data.analytics) {
+          setAnalytics(data.analytics)
+        }
+        return
+      }
       const token = localStorage.getItem('token')
       if (!token) {
         setLoading(false)
@@ -1109,11 +1118,13 @@ export default function Analytics({
                 </Text>
               </div>
 
-              {/* Core KPI Metrics - 4 Main Metrics */}
-              <div style={{ marginBottom: 40 }}>
-                <Title level={4} style={{ marginBottom: 20, fontSize: 18, fontWeight: 600, color: '#262626' }}>
-                  Key Performance Indicators
-                </Title>
+              {/* KPI Section with Best Times - Wrapped for Demo */}
+              <div data-demo-id="analytics-kpi-cards">
+                {/* Core KPI Metrics - 4 Main Metrics */}
+                <div style={{ marginBottom: 40 }}>
+                  <Title level={4} style={{ marginBottom: 20, fontSize: 18, fontWeight: 600, color: '#262626' }}>
+                    Key Performance Indicators
+                  </Title>
                 <Row gutter={[20, 20]}>
                   {/* 1. TOTAL POSTS */}
                   {overview.totalPosts && (
@@ -1275,6 +1286,54 @@ export default function Analytics({
                     </Col>
                   )}
                 </Row>
+
+                  {/* Best Posting Times */}
+                  {(overview as any).bestPostingTimes && (
+                    <Card
+                      data-demo-id="analytics-best-time"
+                      style={{
+                        marginTop: 24,
+                        borderRadius: 16,
+                        border: 'none',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                        background: 'linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
+                        <ClockCircleOutlined style={{ fontSize: 24, color: '#1890ff', marginRight: 12 }} />
+                        <Title level={5} style={{ margin: 0, fontSize: 16, fontWeight: 600, color: '#262626' }}>
+                          💡 Best Times to Post
+                        </Title>
+                      </div>
+                      <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12} md={6}>
+                          <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+                            <Text strong style={{ color: '#1890ff', fontSize: 13, display: 'block', marginBottom: 4 }}>Instagram</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.instagram}</Text>
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                          <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+                            <Text strong style={{ color: '#fa8c16', fontSize: 13, display: 'block', marginBottom: 4 }}>Facebook</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.facebook}</Text>
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                          <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+                            <Text strong style={{ color: '#722ed1', fontSize: 13, display: 'block', marginBottom: 4 }}>Twitter</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.twitter}</Text>
+                          </div>
+                        </Col>
+                        <Col xs={24} sm={12} md={6}>
+                          <div style={{ padding: 12, background: '#fff', borderRadius: 8, border: '1px solid #e8e8e8' }}>
+                            <Text strong style={{ color: '#52c41a', fontSize: 13, display: 'block', marginBottom: 4 }}>Overall Best</Text>
+                            <Text style={{ fontSize: 12, color: '#595959' }}>{(overview as any).bestPostingTimes.overall}</Text>
+                          </div>
+                        </Col>
+                      </Row>
+                    </Card>
+                  )}
+                </div>
               </div>
 
               {/* Next 7 Days - Upcoming Content */}

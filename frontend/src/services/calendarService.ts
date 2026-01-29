@@ -1,4 +1,6 @@
 // API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+import { isDemoMode } from "../demo/demoMode";
+import { demoCalendar } from "../demo/demoServices";
 const BASE_API_URL = import.meta.env.VITE_API_URL || ''
 const API_URL = `${BASE_API_URL}/api/calendar`
 
@@ -55,6 +57,9 @@ export const calendarService = {
     startDate: string,
     endDate: string
   ): Promise<CalendarItemsResponse> {
+    if (isDemoMode()) {
+      return demoCalendar.getCalendarItems();
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -88,6 +93,13 @@ export const calendarService = {
    * Get a single calendar item by ID
    */
   async getCalendarItem(id: string): Promise<CalendarItemResponse> {
+    if (isDemoMode()) {
+      const items = await demoCalendar.getCalendarItems();
+      return {
+        success: true,
+        item: items.items?.find((item) => item.id === id),
+      };
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -120,6 +132,9 @@ export const calendarService = {
   async createCalendarItem(
     item: Omit<CalendarItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
   ): Promise<CalendarItemResponse> {
+    if (isDemoMode()) {
+      return demoCalendar.createCalendarItem(item);
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -154,6 +169,9 @@ export const calendarService = {
     id: string,
     item: Partial<Omit<CalendarItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>>
   ): Promise<CalendarItemResponse> {
+    if (isDemoMode()) {
+      return demoCalendar.updateCalendarItem(id, item);
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -185,6 +203,9 @@ export const calendarService = {
    * Delete a calendar item
    */
   async deleteCalendarItem(id: string): Promise<{ success: boolean; message?: string }> {
+    if (isDemoMode()) {
+      return demoCalendar.deleteCalendarItem(id);
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }
@@ -217,6 +238,12 @@ export const calendarService = {
   async createCalendarItemsBatch(
     items: Omit<CalendarItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>[]
   ): Promise<BatchCreateResponse> {
+    if (isDemoMode()) {
+      for (const item of items) {
+        await demoCalendar.createCalendarItem(item);
+      }
+      return { success: true, items: items as CalendarItem[], count: items.length };
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }

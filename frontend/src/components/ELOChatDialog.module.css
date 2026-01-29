@@ -293,20 +293,10 @@
   font-size: 13px;
 }
 
-/* Mobile responsive */
+/* Mobile responsive - hide ELO chat dialog on mobile */
 @media (max-width: 768px) {
   .cloudBubble {
-    width: calc(100vw - 40px);
-    max-height: 60vh;
-  }
-
-  .messagesContainer {
-    max-height: 200px;
-  }
-
-  .messageUser,
-  .messageAssistant {
-    max-width: 85%;
+    display: none !important;
   }
 }
 

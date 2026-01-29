@@ -10,7 +10,7 @@
 /* Header with days */
 .headerRow {
   display: flex;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #eceff3;
   background: #ffffff;
   z-index: 10;
   position: relative;
@@ -21,7 +21,7 @@
   flex: 1;
   text-align: center;
   padding: 12px 0;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #eceff3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -35,7 +35,7 @@
 .dayName {
   font-size: 11px;
   font-weight: 500;
-  color: #86868b;
+  color: #6b7280;
   text-transform: uppercase;
 }
 
@@ -47,27 +47,28 @@
   align-items: center;
   justify-content: center;
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 500;
   color: #1d1d1f;
   transition: all 0.2s ease;
 }
 
 .todayColumn .dayName {
-  color: #ff3b30;
+  color: #10b981;
   font-weight: 600;
 }
 
 .todayColumn .dayNumber {
-  background-color: #ff3b30;
-  color: white;
+  background-color: #ecfdf5;
+  color: #10b981;
   font-weight: 600;
+  border: 1px solid #10b981;
 }
 
 /* All-day section */
 .allDaySection {
   display: flex;
   padding-left: 60px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #eceff3;
   min-height: 30px;
   flex-shrink: 0;
 }
@@ -77,10 +78,10 @@
   left: 0;
   width: 60px;
   font-size: 10px;
-  color: #86868b;
+  color: #6b7280;
   padding: 8px;
   text-align: right;
-  border-right: 1px solid #e5e5e5;
+  border-right: 1px solid #eceff3;
 }
 
 .allDayGrid {
@@ -91,7 +92,7 @@
 
 .allDayCell {
   flex: 1;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #eceff3;
   padding: 2px;
   min-height: 28px;
 }
@@ -108,7 +109,7 @@
 .timeAxis {
   width: 60px;
   flex-shrink: 0;
-  border-right: 1px solid #e5e5e5;
+  border-right: 1px solid #eceff3;
   background: #ffffff;
   position: sticky;
   left: 0;
@@ -127,7 +128,7 @@
   top: -6px;
   right: 8px;
   font-size: 11px;
-  color: #86868b;
+  color: #6b7280;
   font-weight: 500;
 }
 
@@ -140,7 +141,7 @@
 
 .gridColumn {
   flex: 1;
-  border-right: 1px solid #f0f0f0;
+  border-right: 1px solid #eceff3;
   position: relative;
   min-width: 100px;
 }
@@ -154,7 +155,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #eceff3;
   height: 1px;
   width: 100%;
   pointer-events: none;
@@ -166,7 +167,7 @@
   left: 0;
   right: 0;
   height: 2px;
-  background-color: #ff3b30;
+  background-color: #10b981;
   z-index: 20;
   pointer-events: none;
 }
@@ -175,7 +176,7 @@
   position: absolute;
   left: -55px;
   top: -5px;
-  color: #ff3b30;
+  color: #10b981;
   font-size: 10px;
   font-weight: 600;
   background: #fff;
@@ -189,7 +190,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: #ff3b30;
+  background-color: #10b981;
 }
 
 /* Event styles */
@@ -197,21 +198,21 @@
   position: absolute;
   left: 2px;
   right: 4px;
-  background: #ebf5ff;
-  border-left: 3px solid #0071e3;
-  border-radius: 4px;
+  background: #ffffff;
+  border-left: 2px solid #10b981;
+  border-radius: 6px;
   padding: 4px 6px;
   font-size: 12px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
   z-index: 10;
 }
 
 .eventCard:hover {
   transform: scale(1.02);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.08);
   z-index: 15;
 }
 
@@ -226,17 +227,17 @@
 
 .eventTime {
   font-size: 10px;
-  color: #515154;
+  color: #6b7280;
 }
 
 /* Platform specific colors */
-.event_instagram { background: #ffeef0; border-left-color: #E1306C; }
-.event_instagram_post { background: #ffeef0; border-left-color: #E1306C; } /* Backward compatibility */
-.event_instagram_story { background: #ffeef0; border-left-color: #E1306C; } /* Backward compatibility */
-.event_instagram_reels { background: #ffeef0; border-left-color: #E1306C; } /* Backward compatibility */
-.event_twitter { background: #f0f8ff; border-left-color: #1DA1F2; }
-.event_facebook { background: #eef4ff; border-left-color: #1877F2; }
-.event_linkedin { background: #eef6fb; border-left-color: #0077B5; }
+.event_instagram { border-left-color: #E1306C; }
+.event_instagram_post { border-left-color: #E1306C; } /* Backward compatibility */
+.event_instagram_story { border-left-color: #E1306C; } /* Backward compatibility */
+.event_instagram_reels { border-left-color: #E1306C; } /* Backward compatibility */
+.event_twitter { border-left-color: #1DA1F2; }
+.event_facebook { border-left-color: #1877F2; }
+.event_linkedin { border-left-color: #0077B5; }
 
 /* Add button on hover */
 .addSlotButton {
@@ -255,11 +256,11 @@
 
 .gridColumn:hover .addSlotButton:hover {
   opacity: 1;
-  background-color: rgba(0, 113, 227, 0.05);
+  background-color: rgba(16, 185, 129, 0.08);
 }
 
 .addIcon {
-  color: #0071e3;
+  color: #10b981;
   font-size: 16px;
 }
 

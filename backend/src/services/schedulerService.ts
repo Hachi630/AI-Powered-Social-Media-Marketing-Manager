@@ -11,6 +11,8 @@ import {
 } from './linkedinService.js';
 import { twitterService } from './twitterService.js';
 import { shareToFacebook } from './facebookService.js';
+import { shareToInstagram } from './instagramService.js';
+import { uploadToS3, isS3Configured, getS3PublicUrl } from './s3Service.js';
 import { readImageAsBase64 } from '../utils/imageReader.js';
 import axios from 'axios';
 import path from 'path';
@@ -72,11 +74,11 @@ export async function checkAndPublishScheduledItems(): Promise<void> {
     console.log(`[Scheduler] Checking for scheduled posts at ${now.format('YYYY-MM-DD HH:mm:ss')}...`);
     console.log(`[Scheduler] Current timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
     
-    // Query for ALL scheduled items (LinkedIn, Twitter, and Facebook, no date filter to avoid timezone issues)
+    // Query for ALL scheduled items (LinkedIn, Twitter, Facebook, and Instagram, no date filter to avoid timezone issues)
     // We'll filter by date and time in code
     const scheduledItems = await CalendarItem.find({
       status: 'scheduled',
-      platform: { $in: ['linkedin', 'twitter', 'facebook'] },
+      platform: { $in: ['linkedin', 'twitter', 'facebook', 'instagram'] },
     }).lean();
     
     if (scheduledItems.length === 0) {
@@ -166,6 +168,8 @@ export async function checkAndPublishScheduledItems(): Promise<void> {
           await publishTwitterItem(item);
         } else if (item.platform === 'facebook') {
           await publishFacebookItem(item);
+        } else if (item.platform === 'instagram') {
+          await publishInstagramItem(item);
         } else {
           console.warn(`[Scheduler] Unknown platform for item ${item._id}: ${item.platform}`);
         }
@@ -716,6 +720,189 @@ async function publishFacebookItem(item: any): Promise<void> {
       response: error.response?.data,
       hasContent: !!content && content.trim().length > 0,
       contentLength: content?.length || 0,
+    });
+    // Keep status as 'scheduled' for retry
+  }
+}
+
+/**
+ * Publish a single Instagram calendar item
+ */
+async function publishInstagramItem(item: any): Promise<void> {
+  const itemId = item._id.toString();
+  console.log(`[Scheduler] Processing Instagram item ${itemId}`);
+  console.log(`[Scheduler] Item details:`, {
+    id: itemId,
+    userId: item.userId,
+    platform: item.platform,
+    date: item.date,
+    time: item.time,
+    title: item.title,
+    status: item.status,
+    hasContent: !!item.content,
+    hasInstagramVariant: !!item.variants?.instagram,
+    hasImage: !!item.imageUrl,
+  });
+  
+  // Get user's Instagram token
+  const user = await User.findById(item.userId);
+  
+  if (!user) {
+    console.error(`[Scheduler] User not found for item ${itemId}`);
+    // Update status to published to prevent retrying
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    return;
+  }
+  
+  const instagram = user.socialConnections?.instagram;
+  
+  if (!instagram?.accessToken || !instagram?.userId) {
+    console.error(`[Scheduler] Instagram account not connected for user ${item.userId}`);
+    // Keep item as 'scheduled' - user needs to connect their account
+    return;
+  }
+  
+  console.log(`[Scheduler] Found Instagram token for user ${item.userId}, instagramUserId: ${instagram.userId}`);
+  
+  // Check if token is expired
+  if (instagram.expiresAt) {
+    const expiresAt = dayjs(instagram.expiresAt);
+    const isExpired = expiresAt.isBefore(dayjs());
+    console.log(`[Scheduler] Token expires at: ${expiresAt.format('YYYY-MM-DD HH:mm:ss')}, expired: ${isExpired}`);
+    if (isExpired) {
+      console.error(`[Scheduler] Instagram token expired for user ${item.userId}`);
+      // Keep item as 'scheduled' - user needs to reconnect their account
+      return;
+    }
+  } else {
+    console.log(`[Scheduler] Token has no expiration date`);
+  }
+  
+  // Determine content to post (prefer variant, fallback to content)
+  const content = item.variants?.instagram || item.content;
+  
+  if (!content || content.trim().length === 0) {
+    console.error(`[Scheduler] No content found for item ${itemId}`);
+    // Update status to published to prevent retrying empty content
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    return;
+  }
+  
+  // Instagram requires an image URL - check if imageUrl is available
+  if (!item.imageUrl) {
+    console.error(`[Scheduler] Instagram item ${itemId} requires an image URL, but none provided`);
+    // Update status to published to prevent retrying without image
+    await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+    return;
+  }
+  
+  let result;
+  
+  try {
+    // Share to Instagram using Graph API
+    // Instagram requires publicly accessible image URLs
+    // Refer to Instagram share logic for handling images (upload to S3 if needed)
+    let imageUrl = item.imageUrl;
+    
+    // Check if imageUrl is a local file path (not a URL)
+    // If it's a local path, we need to upload it to S3 first
+    if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      // It's a local file path - check if S3 is configured
+      if (isS3Configured()) {
+        try {
+          console.log(`[Scheduler] Item ${itemId} has local image path, uploading to S3...`);
+          
+          // Get image buffer from local file
+          let filePath = imageUrl;
+          if (imageUrl.startsWith('/uploads')) {
+            filePath = path.join(process.cwd(), imageUrl);
+          } else if (!path.isAbsolute(imageUrl)) {
+            filePath = path.join(process.cwd(), 'uploads', 'images', imageUrl);
+          }
+          
+          // Check if file exists
+          if (!fs.existsSync(filePath)) {
+            console.error(`[Scheduler] Image file not found at ${filePath} for item ${itemId}`);
+            // Update status to published to prevent retrying
+            await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+            return;
+          }
+          
+          // Read file and get mime type
+          const fileBuffer = fs.readFileSync(filePath);
+          const ext = path.extname(filePath).toLowerCase();
+          const mimeTypes: Record<string, string> = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+          };
+          const mimeType = mimeTypes[ext] || 'image/jpeg';
+          const fileName = path.basename(filePath);
+          
+          // Upload to S3 (Instagram requires publicly accessible URL)
+          const s3Result = await uploadToS3(
+            fileBuffer,
+            fileName,
+            mimeType,
+            'instagram', // Instagram images are stored in instagram folder
+            item.userId.toString(),
+            true // Instagram images need public access
+          );
+          
+          imageUrl = getS3PublicUrl(s3Result.key);
+          console.log(`[Scheduler] Image uploaded to S3 for item ${itemId}: ${imageUrl}`);
+        } catch (s3Error: any) {
+          console.error(`[Scheduler] Failed to upload image to S3 for item ${itemId}:`, s3Error);
+          // Don't fallback to local storage - Instagram cannot access localhost URLs
+          // If S3 is configured but upload fails, keep item as scheduled for retry
+          throw new Error(
+            `Failed to upload image to S3: ${s3Error.message || 'Unknown error'}. ` +
+            `Instagram API requires publicly accessible URLs and cannot access localhost.`
+          );
+        }
+      } else {
+        // S3 is not configured - Instagram requires publicly accessible URLs
+        console.error(`[Scheduler] S3 is not configured, but item ${itemId} has local image path`);
+        // Update status to published to prevent retrying
+        await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+        return;
+      }
+    } else {
+      // It's already a URL - check if it's localhost (Instagram cannot access localhost)
+      if (imageUrl.startsWith('http://localhost') || imageUrl.startsWith('https://localhost')) {
+        console.error(`[Scheduler] Instagram cannot access localhost URLs. Image URL: ${imageUrl}`);
+        // Update status to published to prevent retrying with localhost URL
+        await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+        return;
+      }
+      
+      // It's already a public URL (S3 or other), use it directly
+      console.log(`[Scheduler] Item ${itemId} using existing public image URL: ${imageUrl.substring(0, 100)}`);
+    }
+    
+    result = await shareToInstagram(instagram.userId, instagram.accessToken, {
+      text: content,
+      imageUrl: imageUrl,
+    });
+    
+    // Update item status based on result
+    if (result.postId) {
+      await CalendarItem.findByIdAndUpdate(itemId, { status: 'published' });
+      console.log(`[Scheduler] ✅ Successfully published Instagram item ${itemId}, postId: ${result.postId}`);
+    } else {
+      console.error(`[Scheduler] ❌ Failed to publish Instagram item ${itemId}: no postId returned`);
+      // Keep status as 'scheduled' for retry
+    }
+  } catch (error: any) {
+    console.error(`[Scheduler] ❌ Failed to publish Instagram item ${itemId}`);
+    console.error(`[Scheduler] Error details:`, {
+      error: error.message,
+      response: error.response?.data,
+      hasContent: !!content && content.trim().length > 0,
+      contentLength: content?.length || 0,
+      imageUrl: item.imageUrl?.substring(0, 100),
     });
     // Keep status as 'scheduled' for retry
   }

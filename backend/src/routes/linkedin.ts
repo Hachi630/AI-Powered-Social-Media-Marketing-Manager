@@ -193,13 +193,13 @@ router.get("/callback", async (req, res) => {
   // Handle LinkedIn authorization errors (user denied, etc.)
   if (error) {
     console.error("LinkedIn OAuth denied:", error, errorDescription);
-    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=${encodeURIComponent(error)}`);
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=${encodeURIComponent(error)}&platform=linkedin`);
   }
 
   // Check if code is present
   if (!code) {
     console.error("LinkedIn OAuth: No authorization code received");
-    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=no_code`);
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=no_code&platform=linkedin`);
   }
 
   // Bug 1 Fix: Decode userId from state parameter
@@ -209,11 +209,11 @@ router.get("/callback", async (req, res) => {
     const stateData = JSON.parse(decodedState);
     userId = stateData.userId;
   } catch {
-    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=invalid_state`);
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=invalid_state&platform=linkedin`);
   }
 
   if (!userId) {
-    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=missing_user`);
+    return res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=missing_user&platform=linkedin`);
   }
 
   try {
@@ -250,7 +250,7 @@ router.get("/callback", async (req, res) => {
     res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=connected`);
   } catch (error: any) {
     console.error("LinkedIn OAuth error:", error?.response?.data || error.message || error);
-    res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=token_exchange_failed`);
+    res.redirect(`${process.env.CLIENT_URL}/socialdashboard?linkedin=error&reason=token_exchange_failed&platform=linkedin`);
   }
 });
 

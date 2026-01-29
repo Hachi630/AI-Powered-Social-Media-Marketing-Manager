@@ -13,13 +13,13 @@ export interface IAIGeneratedContent extends Document {
     topP?: number
     topK?: number
   }
-
+  
   // For image generation
   imageUrl?: string
   imagePrompt?: string
   imageStyle?: string
   imageSize?: string
-
+  
   // For content plans
   contentPlanItems?: Array<{
     date: Date
@@ -27,21 +27,21 @@ export interface IAIGeneratedContent extends Document {
     content: string
     mediaType?: string
   }>
-
+  
   // Metadata
   tokensUsed?: number
   processingTime?: number // milliseconds
   cost?: number // if tracking costs
-
+  
   // Usage tracking
   usedInPost?: Types.ObjectId // Reference to SocialMediaPost if used
   usedInCampaign?: Types.ObjectId // Reference to Campaign if used
-
+  
   // Quality metrics
   qualityScore?: number
   userRating?: number
   userFeedback?: string
-
+  
   createdAt: Date
   updatedAt: Date
 }

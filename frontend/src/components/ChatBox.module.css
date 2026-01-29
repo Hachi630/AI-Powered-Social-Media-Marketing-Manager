@@ -40,10 +40,10 @@
   .messagesContainer {
     display: flex !important;
     flex-direction: column !important;
+    justify-content: flex-start !important; /* Messages start from top */
     gap: 16px !important;
     width: 100% !important;
-    max-height: 80vh !important; 
-    /* min-height is controlled by Dashboard's absolute positioning, no need to set here */
+    max-height: none !important;
     box-sizing: border-box !important;
   }
 
@@ -900,4 +900,8 @@
 [data-theme="warm"] .fileSize {
   color: #B1A285;
 }
+
+/* Template Grid Styles - imported from PromptTemplatesGrid */
+/* Note: Template grid styles are in PromptTemplatesGrid.module.css */
+/* This section is reserved for any ChatBox-specific template overrides if needed */
 

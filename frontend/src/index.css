@@ -999,3 +999,173 @@ html[data-darkreader-mode] .logoGroup::after {
   display: none !important;
   background: none !important;
 }
+
+/* ==========================================
+   Mobile Styles for Ant Design Components
+   ========================================== */
+
+/* Mobile DatePicker/RangePicker dropdown fix */
+@media (max-width: 767px) {
+  /* Make modal body scrollable on mobile - use overflow: visible for dropdowns to work */
+  .ant-modal-body {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    overflow-x: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Ensure Select dropdown stays open and visible */
+  .ant-select-dropdown {
+    position: fixed !important;
+    z-index: 2001 !important;
+    max-height: 50vh !important;
+    overflow-y: auto !important;
+  }
+
+  /* Prevent modal scroll from closing dropdown */
+  .ant-modal-wrap {
+    overflow: visible !important;
+  }
+
+  /* Keep dropdown open while interacting */
+  .ant-select-open .ant-select-selector {
+    z-index: 2000 !important;
+  }
+
+  /* DatePicker dropdown panel - ensure it fits on screen and is scrollable */
+  .ant-picker-dropdown {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-width: 95vw !important;
+    max-height: 80vh !important;
+    overflow: visible !important;
+    z-index: 2000 !important;
+  }
+
+  /* RangePicker panels container - make it scrollable */
+  .ant-picker-dropdown .ant-picker-panels {
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Individual panel styling for mobile */
+  .ant-picker-dropdown .ant-picker-panel {
+    width: 100% !important;
+    max-width: 320px !important;
+    margin: 0 auto !important;
+  }
+
+  /* RangePicker - stack panels vertically on mobile */
+  .ant-picker-dropdown .ant-picker-range-wrapper {
+    max-width: 95vw !important;
+    overflow: visible !important;
+  }
+
+  .ant-picker-dropdown .ant-picker-range-wrapper .ant-picker-panels {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+  }
+
+  /* Calendar header - ensure full width and navigation arrows visible */
+  .ant-picker-dropdown .ant-picker-header {
+    padding: 8px !important;
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* Ensure ALL navigation buttons are visible and clickable on BOTH panels */
+  .ant-picker-dropdown .ant-picker-header-super-prev-btn,
+  .ant-picker-dropdown .ant-picker-header-prev-btn,
+  .ant-picker-dropdown .ant-picker-header-next-btn,
+  .ant-picker-dropdown .ant-picker-header-super-next-btn {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    min-width: 32px !important;
+    min-height: 32px !important;
+    padding: 4px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Force show hidden navigation buttons in RangePicker panels */
+  .ant-picker-panel:first-child .ant-picker-header-next-btn,
+  .ant-picker-panel:first-child .ant-picker-header-super-next-btn,
+  .ant-picker-panel:last-child .ant-picker-header-prev-btn,
+  .ant-picker-panel:last-child .ant-picker-header-super-prev-btn {
+    visibility: visible !important;
+    display: inline-flex !important;
+  }
+
+  /* Header view (month/year display) */
+  .ant-picker-dropdown .ant-picker-header-view {
+    flex: 1 !important;
+    text-align: center !important;
+  }
+
+  /* Calendar content adjustments */
+  .ant-picker-dropdown .ant-picker-content {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .ant-picker-dropdown .ant-picker-content th,
+  .ant-picker-dropdown .ant-picker-content td {
+    padding: 4px 0 !important;
+    min-width: 32px !important;
+  }
+
+  .ant-picker-dropdown .ant-picker-cell {
+    padding: 2px !important;
+  }
+
+  .ant-picker-dropdown .ant-picker-cell-inner {
+    min-width: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    font-size: 13px !important;
+  }
+
+  /* Add overlay background when DatePicker dropdown is open - only for picker */
+  .ant-picker-dropdown {
+    background: #fff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Modal adjustments for mobile */
+  .ant-modal {
+    max-width: 95vw !important;
+    margin: 0 auto !important;
+    top: 5vh !important;
+    padding-bottom: 0 !important;
+  }
+
+  .ant-modal-content {
+    max-height: 90vh !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .ant-modal-header {
+    flex-shrink: 0 !important;
+  }
+
+  .ant-modal-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .ant-modal-footer {
+    flex-shrink: 0 !important;
+  }
+}
