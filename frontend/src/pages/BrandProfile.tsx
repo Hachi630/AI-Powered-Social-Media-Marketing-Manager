@@ -825,6 +825,8 @@ export default function BrandProfile({
         setSaveStatus("saved");
         setIsDirty(false);
         setLastSavedAt(new Date());
+        setStepError(""); // Clear error on successful save
+        setFieldErrors({}); // Clear field errors on successful save
         message.success("Saved");
         return true;
       }
@@ -987,6 +989,7 @@ export default function BrandProfile({
                   onChange={(event) => {
                     setBrandName(event.target.value);
                     setFieldErrors((prev) => ({ ...prev, brandName: undefined }));
+                    setStepError(""); // Clear step error when user starts fixing
                     markDirty();
                   }}
                 />
@@ -1007,6 +1010,7 @@ export default function BrandProfile({
                   onChange={(value) => {
                     setIndustry(value);
                     setFieldErrors((prev) => ({ ...prev, industry: undefined }));
+                    setStepError(""); // Clear step error when user starts fixing
                     markDirty();
                   }}
                   options={industryOptions}
