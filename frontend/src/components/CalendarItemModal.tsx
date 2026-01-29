@@ -604,11 +604,19 @@ export default function CalendarItemModal({
             rules={[{ required: true, message: 'Please select a date' }]}
             style={{ flex: 1 }}
           >
-            <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+            <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" popupClassName="calendarItemDatePicker" />
           </Form.Item>
 
           <Form.Item name="time" label="Time" style={{ flex: 1 }}>
-            <TimePicker style={{ width: '100%' }} format="HH:mm" data-demo-id="calendar-time-picker" />
+            <TimePicker 
+              style={{ width: '100%' }} 
+              format="HH:mm" 
+              data-demo-id="calendar-time-picker" 
+              popupClassName="calendarItemTimePicker"
+              onChange={(time) => {
+                form.setFieldsValue({ time });
+              }}
+            />
           </Form.Item>
         </Space>
 

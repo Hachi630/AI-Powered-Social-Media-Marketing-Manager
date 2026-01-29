@@ -58,7 +58,6 @@ export default function ContentPlanModal({
   const [generatedPlan, setGeneratedPlan] = useState<any[]>([]);
   const [planGenerated, setPlanGenerated] = useState(false);
 
-<<<<<<< HEAD
   // Inject calendar styles for scrollable and compact date picker
   useEffect(() => {
     const styleId = 'contentPlanDatePicker-styles';
@@ -278,7 +277,6 @@ export default function ContentPlanModal({
       });
     }
   }, [open, form]);
->>>>>>> origin/main
 
   const platformOptions = [
     { value: PLATFORMS.INSTAGRAM, label: "Instagram" },
