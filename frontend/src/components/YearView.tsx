@@ -92,7 +92,13 @@ export default function YearView({ currentDate, items, onMonthClick, onItemClick
                     {dateItems.slice(0, 3).map((item, itemIdx) => (
                       <div
                         key={itemIdx}
-                        className={`${styles.eventDot} ${styles[`event_${item.platform}`]}`}
+                        className={`${styles.eventDot} ${styles[`event_${
+                          item.platform === 'instagram_post' || 
+                          item.platform === 'instagram_story' || 
+                          item.platform === 'instagram_reels'
+                            ? 'instagram'
+                            : item.platform
+                        }`]}`}
                         title={item.title}
                       />
                     ))}

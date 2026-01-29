@@ -1,5 +1,5 @@
 import { Modal, Input, Button, message } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { chatService } from "../services/chatService";
 
 const { TextArea } = Input;
@@ -9,6 +9,7 @@ interface ImageGenerationModalProps {
   onCancel: () => void;
   onSuccess: (imageUrl: string, conversationId?: string) => void;
   conversationId?: string | null;
+  initialPrompt?: string;
 }
 
 export default function ImageGenerationModal({
@@ -16,9 +17,16 @@ export default function ImageGenerationModal({
   onCancel,
   onSuccess,
   conversationId,
+  initialPrompt,
 }: ImageGenerationModalProps) {
   const [prompt, setPrompt] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && initialPrompt) {
+      setPrompt(initialPrompt);
+    }
+  }, [open, initialPrompt]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -72,7 +80,7 @@ export default function ImageGenerationModal({
         </Button>,
       ]}
     >
-      <div style={{ marginTop: 16 }}>
+      <div data-demo-id="image-modal" style={{ marginTop: 16 }}>
         <TextArea
           placeholder="Please enter image description, e.g., a cute little rabbit on the grass"
           value={prompt}

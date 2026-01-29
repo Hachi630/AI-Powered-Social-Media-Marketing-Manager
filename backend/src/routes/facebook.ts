@@ -172,11 +172,11 @@ router.get("/callback", async (req: Request, res: Response) => {
         return res.json({
           success: true,
           message: "Redirecting to social dashboard",
-          redirectUrl: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard`,
+          redirectUrl: `${process.env.CLIENT_URL || process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?platform=facebook`,
         });
       }
       return res.redirect(
-        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard`
+        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?platform=facebook`
       );
     }
 
@@ -313,8 +313,8 @@ router.get("/callback", async (req: Request, res: Response) => {
         // Include instagram=connected if Instagram was auto-connected
         const instagramConnected = !!user.socialConnections?.instagram?.userId;
         const redirectUrl = instagramConnected
-          ? `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`
-          : `${clientUrl}/socialdashboard?facebook=connected`;
+          ? `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=facebook`
+          : `${clientUrl}/socialdashboard?facebook=connected&platform=facebook`;
 
         if (isFrontendCallback) {
           const response: any = {
@@ -900,6 +900,7 @@ router.get("/status", protect, async (req: AuthRequest, res: Response) => {
         id: facebook.userId,
         name: pageResponse.data.name || null,
         picture: pageResponse.data.picture?.data?.url || null,
+        email: freshUser.email || null, // Use user's email from database
       };
     } catch (profileError: any) {
       console.warn(
@@ -911,6 +912,7 @@ router.get("/status", protect, async (req: AuthRequest, res: Response) => {
         id: facebook.userId,
         name: null,
         picture: null,
+        email: freshUser.email || null, // Use user's email from database
       };
     }
 

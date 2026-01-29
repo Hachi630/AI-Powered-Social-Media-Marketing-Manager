@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 400">
+  <defs>
+    <linearGradient id="blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="100%" style="stop-color:#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#34D399"/>
+      <stop offset="100%" style="stop-color:#10B981"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#A78BFA"/>
+      <stop offset="100%" style="stop-color:#8B5CF6"/>
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="400" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="500" y="45" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="700" fill="#1F2937" text-anchor="middle">MCP Copywriter 架构</text>
+
+  <!-- Box 1: User Request -->
+  <g filter="url(#shadow)">
+    <rect x="50" y="120" width="180" height="160" rx="20" fill="url(#blue)"/>
+    <text x="140" y="175" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">用户请求</text>
+    <text x="140" y="205" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.9)" text-anchor="middle">"生成 Instagram</text>
+    <text x="140" y="225" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.9)" text-anchor="middle">春季新品文案"</text>
+  </g>
+
+  <!-- Arrow 1 -->
+  <path d="M 230 200 L 300 200" stroke="#CBD5E1" stroke-width="4" fill="none"/>
+  <polygon points="295,192 315,200 295,208" fill="#CBD5E1"/>
+
+  <!-- Box 2: MCP Server -->
+  <g filter="url(#shadow)">
+    <rect x="320" y="80" width="360" height="240" rx="24" fill="url(#green)"/>
+    <text x="500" y="125" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700" fill="white" text-anchor="middle">MCP Copywriter Server</text>
+
+    <!-- Inner boxes -->
+    <rect x="345" y="145" width="150" height="50" rx="10" fill="rgba(255,255,255,0.25)"/>
+    <text x="420" y="177" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle">平台规则</text>
+
+    <rect x="505" y="145" width="150" height="50" rx="10" fill="rgba(255,255,255,0.25)"/>
+    <text x="580" y="177" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle">语气指南</text>
+
+    <rect x="345" y="205" width="150" height="50" rx="10" fill="rgba(255,255,255,0.25)"/>
+    <text x="420" y="237" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle">文案结构</text>
+
+    <rect x="505" y="205" width="150" height="50" rx="10" fill="rgba(255,255,255,0.25)"/>
+    <text x="580" y="237" font-family="Inter, Arial, sans-serif" font-size="13" font-weight="600" fill="white" text-anchor="middle">输出验证</text>
+
+    <text x="500" y="290" font-family="Inter, Arial, sans-serif" font-size="11" fill="rgba(255,255,255,0.8)" text-anchor="middle">自动注入规则 → 统一提示词模板</text>
+  </g>
+
+  <!-- Arrow 2 -->
+  <path d="M 680 200 L 750 200" stroke="#CBD5E1" stroke-width="4" fill="none"/>
+  <polygon points="745,192 765,200 745,208" fill="#CBD5E1"/>
+
+  <!-- Box 3: Gemini API -->
+  <g filter="url(#shadow)">
+    <rect x="770" y="120" width="180" height="160" rx="20" fill="url(#purple)"/>
+    <text x="860" y="165" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle">Gemini API</text>
+    <text x="860" y="190" font-family="Inter, Arial, sans-serif" font-size="11" fill="rgba(255,255,255,0.7)" text-anchor="middle">gemini-3.0-pro</text>
+    <text x="860" y="220" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.9)" text-anchor="middle">接收增强后的</text>
+    <text x="860" y="240" font-family="Inter, Arial, sans-serif" font-size="12" fill="rgba(255,255,255,0.9)" text-anchor="middle">System Prompt</text>
+  </g>
+
+  <!-- Bottom output -->
+  <rect x="250" y="345" width="500" height="45" rx="12" fill="#F0FDF4" stroke="#10B981" stroke-width="2"/>
+  <text x="500" y="375" font-family="monospace" font-size="13" fill="#059669" text-anchor="middle">{"copy": "...", "hashtags": [...], "cta": "..."} ← 结构化输出</text>
+
+  <!-- Return arrow -->
+  <path d="M 860 280 L 860 330 L 500 330" stroke="#10B981" stroke-width="3" stroke-dasharray="8,4" fill="none"/>
+  <polygon points="505,322 485,330 505,338" fill="#10B981"/>
+</svg>

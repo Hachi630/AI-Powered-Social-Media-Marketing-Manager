@@ -22,6 +22,7 @@ import {
   Spin,
   Dropdown,
   MenuProps,
+  Grid,
 } from "antd";
 import { useState, useEffect, useCallback, useRef } from "react";
 import ReactMarkdown from "react-markdown";
@@ -31,9 +32,12 @@ import { chatService, ChatMessage } from "../services/chatService";
 import { uploadService } from "../services/uploadService";
 import ImageGenerationModal from "./ImageGenerationModal";
 import ContentPlanModal from "./ContentPlanModal";
+import PromptTemplatesGrid from "./PromptTemplatesGrid";
+import { promptTemplates } from "../constants/promptTemplates";
 import { getImageUrl } from "../utils/imageUtils";
 
 const { TextArea } = Input;
+const { useBreakpoint } = Grid;
 
 interface ChatBoxProps {
   conversationId?: string | null;
@@ -50,6 +54,8 @@ export default function ChatBox({
   onContentChange,
   onInsertContent,
 }: ChatBoxProps) {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
   const [inputMessage, setInputMessage] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,7 +64,9 @@ export default function ChatBox({
   >(conversationId || null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false);
+  const [demoImagePrompt, setDemoImagePrompt] = useState("");
   const [lastUserMessage, setLastUserMessage] = useState<string>("");
+  const [lastMessageText, setLastMessageText] = useState<string>("");
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<
     Array<{ url: string; name: string; type: string; size: number }>
@@ -66,6 +74,7 @@ export default function ChatBox({
   const [uploading, setUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textAreaRef = useRef<any>(null);
   const isInitializingRef = useRef(false);
   const previousHasMessagesRef = useRef(false);
 
@@ -194,13 +203,24 @@ export default function ChatBox({
     const hasContent = inputMessage.trim() || uploadedImages.length > 0;
     if (!hasContent || loading) return;
 
+    const messageContent = inputMessage.trim() ||
+      (uploadedImages.length > 0 || uploadedFiles.length > 0
+        ? `Uploaded ${uploadedImages.length > 0 ? `${uploadedImages.length} image(s)` : ""}${uploadedImages.length > 0 && uploadedFiles.length > 0 ? " and " : ""}${uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s)` : ""}`
+        : "");
+
+    // Check if the last user message is the same to prevent duplicates
+    const lastUserMessage = messages
+      .filter(msg => msg.role === 'user')
+      .pop();
+    if (lastUserMessage && lastUserMessage.content === messageContent && 
+        uploadedImages.length === 0 && uploadedFiles.length === 0) {
+      // Skip if it's a duplicate text message
+      return;
+    }
+
     const userMessage: ChatMessage = {
       role: "user",
-      content:
-        inputMessage.trim() ||
-        (uploadedImages.length > 0 || uploadedFiles.length > 0
-          ? `Uploaded ${uploadedImages.length > 0 ? `${uploadedImages.length} image(s)` : ""}${uploadedImages.length > 0 && uploadedFiles.length > 0 ? " and " : ""}${uploadedFiles.length > 0 ? `${uploadedFiles.length} file(s)` : ""}`
-          : ""),
+      content: messageContent,
       images: uploadedImages.length > 0 ? [...uploadedImages] : undefined,
       files:
         uploadedFiles.length > 0
@@ -287,12 +307,13 @@ export default function ChatBox({
   };
 
   const handleOpenContentPlanModal = () => {
-    // Extract goal from conversation history
-    // Combine all user messages and assistant messages that mention calendar
-    const conversationText = messages
-      .map(msg => msg.content || '')
-      .join(' ');
+    // Extract the last assistant message which should contain the campaign plan
+    const lastAssistantMessage = messages
+      .filter(msg => msg.role === 'assistant')
+      .pop()?.content || '';
     setContentPlanModalOpen(true);
+    // Store the message text to pass to ContentPlanModal
+    setLastMessageText(lastAssistantMessage);
   };
 
   // Get conversation goal from history for ContentPlanModal
@@ -313,6 +334,23 @@ export default function ChatBox({
     setInputMessage(value);
     updateTypingStatus(Boolean(value.trim()));
   };
+
+  const handleTemplateSelect = useCallback((prompt: string) => {
+    setInputMessage(prompt);
+    updateTypingStatus(Boolean(prompt.trim()));
+    // Focus the textarea after a short delay to ensure it's rendered
+    setTimeout(() => {
+      if (textAreaRef.current) {
+        const textarea = textAreaRef.current.resizableTextArea?.textArea || textAreaRef.current;
+        if (textarea) {
+          textarea.focus();
+          // Move cursor to end of text
+          const length = prompt.length;
+          textarea.setSelectionRange(length, length);
+        }
+      }
+    }, 100);
+  }, []);
 
   const handleFocus = () => {
     if (inputMessage.trim().length > 0) {
@@ -347,6 +385,25 @@ export default function ChatBox({
     };
   }, []);
 
+  useEffect(() => {
+    const handleDemoImage = (event: CustomEvent) => {
+      const prompt = event.detail?.prompt;
+      if (prompt) {
+        setDemoImagePrompt(prompt);
+      }
+      setImageModalOpen(true);
+    };
+    const handleDemoPlan = () => {
+      setContentPlanModalOpen(true);
+    };
+    window.addEventListener('demo-open-image-modal', handleDemoImage as EventListener);
+    window.addEventListener('demo-open-plan-modal', handleDemoPlan as EventListener);
+    return () => {
+      window.removeEventListener('demo-open-image-modal', handleDemoImage as EventListener);
+      window.removeEventListener('demo-open-plan-modal', handleDemoPlan as EventListener);
+    };
+  }, []);
+
   // Auto-send pending ELO message when input is set and component is ready
   useEffect(() => {
     if (pendingELOMessageRef.current && inputMessage === pendingELOMessageRef.current && !loading && inputMessage.trim()) {
@@ -370,6 +427,10 @@ export default function ChatBox({
 
   const handleImageGenerate = () => {
     setImageModalOpen(true);
+  };
+
+  const handlePlanGenerate = () => {
+    setContentPlanModalOpen(true);
   };
 
   // File validation
@@ -399,6 +460,15 @@ export default function ChatBox({
       // Other
       "application/rtf",
       "text/csv",
+      // Database files
+      "application/x-sql",
+      "application/sql",
+      "text/x-sql",
+      "application/x-sqlite3",
+      "application/x-sqlite",
+      "application/vnd.sqlite3",
+      "application/x-db",
+      "application/octet-stream", // For .db, .sqlite files
     ];
 
     if (isImage) {
@@ -411,8 +481,10 @@ export default function ChatBox({
         return "Image size must be less than 10MB";
       }
     } else {
-      if (!allowedFileTypes.includes(file.type)) {
-        return "File type not supported. Allowed: PDF, Word, PPT, Excel, TXT, CSV, RTF";
+      // Check if file type is allowed or if it's a database file by extension
+      const isDatabaseFile = /\.(sql|db|sqlite|sqlite3)$/i.test(file.name);
+      if (!allowedFileTypes.includes(file.type) && !isDatabaseFile) {
+        return "File type not supported. Allowed: PDF, Word, PPT, Excel, TXT, CSV, RTF, SQL, Database files";
       }
       // Check file size (50MB limit for documents)
       const maxSize = 50 * 1024 * 1024; // 50MB
@@ -582,11 +654,36 @@ export default function ChatBox({
 
   // Dropdown menu items
   const menuItems: MenuProps["items"] = [
+    // Template options (only on mobile)
+    ...(isMobile && messages.length === 0
+      ? [
+          {
+            key: "templates",
+            label: "Templates",
+            type: "group" as const,
+            children: promptTemplates.map((template) => ({
+              key: `template-${template.id}`,
+              label: template.title,
+              icon: <template.icon />,
+              onClick: () => handleTemplateSelect(template.prompt),
+            })),
+          },
+          {
+            type: "divider" as const,
+          },
+        ]
+      : []),
     {
       key: "generate-image",
-      label: "Generate Image",
+      label: <span data-demo-id="image-generate">Generate Image</span>,
       icon: <PictureOutlined />,
       onClick: handleImageGenerate,
+    },
+    {
+      key: "generate-plan",
+      label: <span data-demo-id="plan-generate">Generate Plan</span>,
+      icon: <CalendarOutlined />,
+      onClick: handlePlanGenerate,
     },
     {
       key: "upload-files",
@@ -729,7 +826,7 @@ export default function ChatBox({
     <div className={styles.chatContainer}>
       {/* Messages display area */}
       {messages.length > 0 && (
-        <div className={styles.messagesContainer}>
+        <div className={`${styles.messagesContainer} messagesContainer`}>
           {messages.map((msg, index) => (
             <div
               key={index}
@@ -865,12 +962,12 @@ export default function ChatBox({
                       </div>
                     )}
                     {msg.content && (
+                      <div className={styles.messageTextContainer}>
                       <div className={styles.markdownContent}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {msg.content}
                         </ReactMarkdown>
                       </div>
-                    )}
                     {msg.role === "user" && (
                       <div className={styles.messageActions}>
                         <Button
@@ -882,6 +979,8 @@ export default function ChatBox({
                         >
                           Edit
                         </Button>
+                          </div>
+                        )}
                       </div>
                     )}
                     {msg.role === "assistant" &&
@@ -893,6 +992,7 @@ export default function ChatBox({
                             icon={<CalendarOutlined />}
                             onClick={handleOpenContentPlanModal}
                             size="small"
+                            data-demo-id="plan-generate"
                           >
                             Send to Calendar
                           </Button>
@@ -979,6 +1079,7 @@ export default function ChatBox({
                 icon={<PlusOutlined />}
                 disabled={loading || uploading}
                 className={styles.plusButton}
+                data-demo-id="image-generate"
               />
             </Tooltip>
           </Dropdown>
@@ -997,6 +1098,7 @@ export default function ChatBox({
             onDrop={handleDrop}
           >
             <TextArea
+              ref={textAreaRef}
               autoSize={{ minRows: 1, maxRows: 4 }}
               placeholder={
                 isDragOver ? "Drop files here" : "What would you like to know?"
@@ -1007,6 +1109,7 @@ export default function ChatBox({
               onFocus={handleFocus}
               onBlur={handleBlur}
               disabled={loading || uploading}
+              data-demo-id="chat-input"
             />
           </div>
           <Tooltip title="Send message">
@@ -1029,19 +1132,29 @@ export default function ChatBox({
         </div>
       </Card>
 
+      {/* Template Grid - only show on desktop when there are no messages, separated from input box */}
+      {!isMobile && messages.length === 0 && (
+        <PromptTemplatesGrid onTemplateSelect={handleTemplateSelect} />
+      )}
+
       {/* Image Generation Modal */}
       <ImageGenerationModal
         open={imageModalOpen}
         onCancel={() => setImageModalOpen(false)}
         onSuccess={handleImageSuccess}
         conversationId={currentConversationId}
+        initialPrompt={demoImagePrompt}
       />
 
       {/* Content Plan Modal */}
       <ContentPlanModal
         open={contentPlanModalOpen}
         goal={getConversationGoal()}
-        onClose={() => setContentPlanModalOpen(false)}
+        messageText={lastMessageText}
+        onClose={() => {
+          setContentPlanModalOpen(false);
+          setLastMessageText("");
+        }}
         onSuccess={handleContentPlanSuccess}
       />
     </div>

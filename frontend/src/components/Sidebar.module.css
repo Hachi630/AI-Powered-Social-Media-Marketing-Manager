@@ -1,14 +1,25 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   height: 100%;
-  gap: 24px;
+  gap: 0;
   transition: padding 0.2s ease;
+  position: relative;
+  min-height: 100%;
 }
 
 .sidebarCollapsed {
   padding-inline: 8px;
+}
+
+.topSection {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 80px; /* Reserve space for userSection */
 }
 
 .scrollable {
@@ -22,6 +33,23 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 18px;
+  padding: 0 24px;
+}
+
+.headerTitle {
+  flex: 1;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary, #8e8ea0) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 !important;
+}
+
+[data-theme="warm"] .headerTitle {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
+  color: #b1a285 !important;
 }
 
 .headerActions {
@@ -114,7 +142,7 @@
 }
 
 [data-theme="warm"] .title {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #908066 !important;
 }
 
@@ -159,7 +187,7 @@
 }
 
 .chatItem {
-  padding: 12px 16px !important;
+  padding: 12px 16px 12px 0 !important;
   border-radius: 12px;
   border: none !important;
   cursor: pointer;
@@ -173,7 +201,7 @@
   align-items: center !important;
   justify-content: space-between !important;
   gap: 8px !important;
-  padding: 12px 16px !important;
+  padding: 12px 0 !important;
   border-radius: 12px !important;
   border: none !important;
   cursor: pointer;
@@ -250,7 +278,7 @@
   }
 
   [data-theme="warm"] .chatItem :global(.ant-typography) {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -260,7 +288,7 @@
   }
 
   [data-theme="warm"] .sectionTitle {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -270,7 +298,7 @@
   }
 
   [data-theme="warm"] .searchInput :global(.ant-input) {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
     color: #908066 !important;
   }
 
@@ -302,6 +330,7 @@
   gap: 10px;
   flex: 1;
   min-width: 0;
+  padding-left: 20px;
 }
 
 .chatIcon {
@@ -321,14 +350,25 @@
 .chatTitle {
   flex: 1;
   min-width: 0;
+  max-width: 80%;
 }
 
 .userSection {
   border-top: 1px solid var(--border-color, #e0e0e0);
-  padding-top: 16px;
+  padding: 16px 24px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
   display: flex;
   align-items: center;
   gap: 12px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--bg-primary, #f7f7f8);
+  flex-shrink: 0;
+  z-index: 10;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .userSection :global(.ant-avatar) {
@@ -372,6 +412,7 @@
 
 [data-theme="warm"] .userSection {
   border-top: 1px solid #e0e0e0;
+  background-color: #faf9f4;
 }
 
 .userSectionCollapsed {
@@ -431,7 +472,7 @@
   }
 
   [data-theme="warm"] .userSection .userName {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   }
 
   .userSection .userEmail {
@@ -441,7 +482,7 @@
   }
 
   [data-theme="warm"] .userSection .userEmail {
-    font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   }
 
   .userSection :global(.ant-avatar) {
@@ -455,6 +496,7 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 8px;
+  padding: 0 24px;
 }
 
 .sectionTitle {
@@ -467,7 +509,7 @@
 }
 
 [data-theme="warm"] .sectionTitle {
-  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif !important;
   color: #b1a285 !important;
 }
 

@@ -1,7 +1,8 @@
 import { Router } from 'express'
-import { requireAuth } from '../middleware/auth'
-import { postToAyrshare, uploadMediaToAyrshare } from '../services/ayrshareService'
-import { saveSocialMediaPost } from '../services/databaseService'
+import { requireAuth } from '../middleware/auth.js'
+// import { getNextBestTime } from '../services/bestTimeAnalyticsService.js'
+import { saveSocialMediaPost } from '../services/databaseService.js'
+import { uploadMediaToAyrshare, postToAyrshare } from '../services/ayrshareService.js'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -20,7 +21,7 @@ if (!fs.existsSync(tempDir)) {
 }
 
 // Multer config for temporary file uploads
-const upload = multer({ 
+const upload = multer({
   dest: tempDir,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
 })
@@ -37,22 +38,22 @@ router.post('/upload-media', requireAuth, upload.single('file'), async (req: any
         message: 'No file provided',
       })
     }
-    
+
     const fileBuffer = fs.readFileSync(req.file.path)
     const fileName = req.file.originalname || req.file.filename
     const mimeType = req.file.mimetype || 'image/jpeg'
-    
+
     console.log(`[Ayrshare Upload] Uploading file: ${fileName}, size: ${fileBuffer.length} bytes, mimeType: ${mimeType}`)
-    
+
     const result = await uploadMediaToAyrshare(fileBuffer, fileName, mimeType)
-    
+
     // Clean up temp file
     try {
       fs.unlinkSync(req.file.path)
     } catch (unlinkError) {
       console.warn('Failed to delete temp file:', unlinkError)
     }
-    
+
     if (result.success) {
       res.json({
         success: true,
@@ -88,14 +89,14 @@ router.post('/post', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user._id
     const { post, platforms, mediaUrls, scheduleDate } = req.body
-    
+
     if (!post || !platforms || !Array.isArray(platforms) || platforms.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'Post content and platforms are required',
       })
     }
-    
+
     // Validate platforms
     const validPlatforms = ['facebook', 'twitter', 'instagram', 'linkedin']
     const invalidPlatforms = platforms.filter((p: string) => !validPlatforms.includes(p.toLowerCase()))
@@ -105,10 +106,10 @@ router.post('/post', requireAuth, async (req: any, res) => {
         message: `Invalid platforms: ${invalidPlatforms.join(', ')}. Valid platforms are: ${validPlatforms.join(', ')}`,
       })
     }
-    
+
     // Normalize platforms to lowercase
     const normalizedPlatforms = platforms.map((p: string) => p.toLowerCase())
-    
+
     // Process media URLs - upload local files to Ayrshare if needed
     let processedMediaUrls = mediaUrls
     if (processedMediaUrls && processedMediaUrls.length > 0) {
@@ -118,7 +119,7 @@ router.post('/post', requireAuth, async (req: any, res) => {
           if (url.startsWith('https://') && !url.includes('localhost')) {
             return url
           }
-          
+
           // If it's a localhost URL or relative path, upload to Ayrshare
           if (url.includes('localhost') || url.startsWith('/uploads/')) {
             try {
@@ -134,26 +135,26 @@ router.post('/post', requireAuth, async (req: any, res) => {
               } else {
                 filePath = url
               }
-              
+
               // Check if file exists
               if (!fs.existsSync(filePath)) {
                 console.error(`[Ayrshare Route] File not found: ${filePath}`)
                 return url // Return original URL if file not found
               }
-              
+
               // Read file
               const fileBuffer = fs.readFileSync(filePath)
               const fileName = path.basename(filePath)
               const mimeType = url.match(/\.(jpg|jpeg)$/i) ? 'image/jpeg' :
-                              url.match(/\.(png)$/i) ? 'image/png' :
-                              url.match(/\.(gif)$/i) ? 'image/gif' :
-                              'image/jpeg'
-              
+                url.match(/\.(png)$/i) ? 'image/png' :
+                  url.match(/\.(gif)$/i) ? 'image/gif' :
+                    'image/jpeg'
+
               console.log(`[Ayrshare Route] Uploading media to Ayrshare: ${fileName}`)
-              
+
               // Upload to Ayrshare
               const uploadResult = await uploadMediaToAyrshare(fileBuffer, fileName, mimeType)
-              
+
               if (uploadResult.success && uploadResult.url) {
                 console.log(`[Ayrshare Route] Media uploaded successfully: ${uploadResult.url}`)
                 return uploadResult.url
@@ -166,19 +167,19 @@ router.post('/post', requireAuth, async (req: any, res) => {
               return url // Return original URL on error
             }
           }
-          
+
           return url
         })
       )
     }
-    
+
     console.log('[Ayrshare Route] Posting with:', {
       postLength: post.length,
       platforms: normalizedPlatforms,
       mediaUrlsCount: processedMediaUrls?.length || 0,
       mediaUrls: processedMediaUrls,
     })
-    
+
     // Post to Ayrshare
     const result = await postToAyrshare({
       post,
@@ -186,21 +187,21 @@ router.post('/post', requireAuth, async (req: any, res) => {
       mediaUrls: processedMediaUrls,
       scheduleDate,
     })
-    
+
     if (!result.success) {
       return res.status(500).json({
         success: false,
         message: result.error || 'Failed to post via Ayrshare',
       })
     }
-    
+
     // Save posts to database for each platform
     const savedPosts = []
     for (const platform of platforms) {
       const platformLower = platform.toLowerCase()
       const platformPostId = result.postIds?.[platformLower] || result.id
       const postUrl = result.urls?.[platformLower]
-      
+
       try {
         const savedPost = await saveSocialMediaPost({
           userId,
@@ -226,7 +227,7 @@ router.post('/post', requireAuth, async (req: any, res) => {
         // Continue even if DB save fails
       }
     }
-    
+
     res.json({
       success: true,
       message: `Post published to ${platforms.length} platform(s)`,

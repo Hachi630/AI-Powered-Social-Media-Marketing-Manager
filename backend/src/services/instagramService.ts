@@ -65,12 +65,6 @@ export function getInstagramAuthUrl(
     .filter(Boolean)
     .join(",");
 
-  // Alternative: If above doesn't work, try minimal set:
-  // const scopes = 'pages_read_engagement'
-
-  // Fallback: Use empty scope (let Facebook use default permissions)
-  // const scopes = ''
-
   const params = new URLSearchParams({
     client_id: FACEBOOK_APP_ID,
     redirect_uri: INSTAGRAM_REDIRECT_URI,

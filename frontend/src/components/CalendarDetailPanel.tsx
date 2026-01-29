@@ -35,9 +35,9 @@ export default function CalendarDetailPanel({
   
   const platformIcons: Record<string, string> = {
     instagram: '🟣',
-    instagram_post: '🟣',
-    instagram_story: '📸',
-    instagram_reels: '🎬',
+    instagram_post: '🟣', // Backward compatibility
+    instagram_story: '🟣', // Backward compatibility
+    instagram_reels: '🟣', // Backward compatibility
     facebook: '📘',
     twitter: '🐦',
     linkedin: '💼'
@@ -45,9 +45,10 @@ export default function CalendarDetailPanel({
 
   const getPlatformLabel = (platform: string) => {
     const labels: Record<string, string> = {
-      instagram_post: 'Post',
-      instagram_story: 'Story',
-      instagram_reels: 'Reels',
+      instagram: 'Instagram',
+      instagram_post: 'Instagram', // Backward compatibility
+      instagram_story: 'Instagram', // Backward compatibility
+      instagram_reels: 'Instagram', // Backward compatibility
       facebook: 'Facebook',
       twitter: 'X',
       linkedin: 'LinkedIn'

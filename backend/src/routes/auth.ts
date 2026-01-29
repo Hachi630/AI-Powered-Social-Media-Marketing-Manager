@@ -563,6 +563,16 @@ router.put("/profile", protect, async (req: AuthRequest, res: Response) => {
             : [],
           companyDescription: String(company.companyDescription || ""),
           brandLogoUrl: String(company.brandLogoUrl || ""),
+          // CRITICAL: Include productImages, productTypes, and meloGoals
+          productImages: Array.isArray(company.productImages)
+            ? company.productImages.map((img: any) => String(img))
+            : [],
+          productTypes: Array.isArray(company.productTypes)
+            ? company.productTypes.map((type: any) => String(type))
+            : [],
+          meloGoals: Array.isArray(company.meloGoals)
+            ? company.meloGoals.map((goal: any) => String(goal))
+            : [],
         }));
 
         console.log(
@@ -575,6 +585,18 @@ router.put("/profile", protect, async (req: AuthRequest, res: Response) => {
       }
       // Mark companies as modified to ensure Mongoose saves nested array changes
       user.markModified("companies");
+      
+      // Debug: Log productImages before save
+      console.log(
+        "[Profile Update] Companies before save - productImages check:",
+        user.companies?.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          productImages: c.productImages,
+          productTypes: c.productTypes,
+          meloGoals: c.meloGoals,
+        }))
+      );
     }
 
     // Save updated user
@@ -583,29 +605,45 @@ router.put("/profile", protect, async (req: AuthRequest, res: Response) => {
       user.companies?.length || 0
     );
     await user.save();
+    
+    // Reload user from database to verify save and get latest data
+    const savedUser = await User.findById(user._id);
+    console.log(
+      "[Profile Update] After save - productImages check:",
+      savedUser?.companies?.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        productImages: c.productImages,
+        productTypes: c.productTypes,
+        meloGoals: c.meloGoals,
+      }))
+    );
     console.log("[Profile Update] User saved successfully");
 
+    // Use savedUser (reloaded from DB) to ensure we return the latest data
+    const finalUser = savedUser || user;
+    
     res.status(200).json({
       success: true,
       user: {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        brandName: user.brandName,
-        brandLogoUrl: user.brandLogoUrl,
-        phone: user.phone,
-        birthday: user.birthday,
-        gender: user.gender,
-        address: user.address,
-        aboutMe: user.aboutMe,
-        avatar: user.avatar,
-        industry: user.industry,
-        toneOfVoice: user.toneOfVoice,
-        knowledgeProducts: user.knowledgeProducts,
-        targetAudience: user.targetAudience,
-        companies: user.companies || [],
-        authProvider: user.authProvider,
-        createdAt: user.createdAt,
+        id: finalUser._id.toString(),
+        email: finalUser.email,
+        name: finalUser.name,
+        brandName: finalUser.brandName,
+        brandLogoUrl: finalUser.brandLogoUrl,
+        phone: finalUser.phone,
+        birthday: finalUser.birthday,
+        gender: finalUser.gender,
+        address: finalUser.address,
+        aboutMe: finalUser.aboutMe,
+        avatar: finalUser.avatar,
+        industry: finalUser.industry,
+        toneOfVoice: finalUser.toneOfVoice,
+        knowledgeProducts: finalUser.knowledgeProducts,
+        targetAudience: finalUser.targetAudience,
+        companies: finalUser.companies || [],
+        authProvider: finalUser.authProvider,
+        createdAt: finalUser.createdAt,
       },
     });
   } catch (error: any) {
@@ -893,6 +931,8 @@ router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
       productTypes,
       productImages,
       meloGoals,
+      publishingPlatforms,
+      contentTypes,
     } = req.body;
 
     // Get or create first company
@@ -915,6 +955,8 @@ router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
         productTypes: productTypes || [],
         productImages: productImages || [],
         meloGoals: meloGoals || [],
+        publishingPlatforms: publishingPlatforms || [],
+        contentTypes: contentTypes || [],
       };
       companies = [firstCompany];
     } else {
@@ -928,6 +970,8 @@ router.post("/onboarding", protect, async (req: AuthRequest, res: Response) => {
       if (productTypes !== undefined) firstCompany.productTypes = productTypes;
       if (productImages !== undefined) firstCompany.productImages = productImages;
       if (meloGoals !== undefined) firstCompany.meloGoals = meloGoals;
+      if (publishingPlatforms !== undefined) firstCompany.publishingPlatforms = publishingPlatforms;
+      if (contentTypes !== undefined) firstCompany.contentTypes = contentTypes;
       companies[0] = firstCompany;
     }
 

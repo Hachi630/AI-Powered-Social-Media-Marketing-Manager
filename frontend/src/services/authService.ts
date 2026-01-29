@@ -1,4 +1,6 @@
 // API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+import { isDemoMode, getDemoToken } from "../demo/demoMode";
+import { demoAuth } from "../demo/demoServices";
 const BASE_API_URL = import.meta.env.VITE_API_URL || ''
 const API_URL = `${BASE_API_URL}/api/auth`
 
@@ -41,6 +43,7 @@ export interface User {
   productTypes?: string[]
   productImages?: string[]
   meloGoals?: string[]
+  companyDescription?: string
   createdAt: string
 }
 
@@ -54,6 +57,11 @@ export interface AuthResponse {
 export const authService = {
   // Register user
   register: async (email: string, password: string): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      localStorage.setItem("token", getDemoToken());
+      const user = await demoAuth.getCurrentUser();
+      return { success: true, token: getDemoToken(), user: user || undefined };
+    }
     try {
       const url = `${API_URL}/register`
       console.log('[Auth Service] Register request to:', url)
@@ -119,6 +127,11 @@ export const authService = {
 
   // Login user
   login: async (email: string, password: string): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      localStorage.setItem("token", getDemoToken());
+      const user = await demoAuth.getCurrentUser();
+      return { success: true, token: getDemoToken(), user: user || undefined };
+    }
     try {
       const url = `${API_URL}/login`
       console.log('[Auth Service] Login request to:', url)
@@ -191,6 +204,9 @@ export const authService = {
 
   // Get current user
   getCurrentUser: async (): Promise<User | null> => {
+    if (isDemoMode()) {
+      return demoAuth.getCurrentUser();
+    }
     const token = localStorage.getItem('token')
     if (!token) return null
 
@@ -210,6 +226,7 @@ export const authService = {
 
   // Check if user is logged in
   isAuthenticated: (): boolean => {
+    if (isDemoMode()) return true;
     return !!localStorage.getItem('token')
   },
 
@@ -218,7 +235,7 @@ export const authService = {
     try {
       const url = `${API_URL}/google`
       console.log('[Auth Service] Google login request to:', url)
-      
+
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -226,9 +243,9 @@ export const authService = {
         },
         body: JSON.stringify({ idToken }),
       })
-      
+
       console.log('[Auth Service] Google login response status:', response.status)
-      
+
       if (!response.ok) {
         // Try to extract error message from response
         let errorMessage = `Server error: ${response.status} ${response.statusText}`
@@ -298,7 +315,7 @@ export const authService = {
           message: errorMessage
         }
       }
-      
+
       const data = await response.json()
       console.log('[Auth Service] Google login success:', data.success)
       console.log('[Auth Service] User data received:', {
@@ -308,16 +325,15 @@ export const authService = {
         avatar: data.user?.avatar,
         hasAvatar: !!data.user?.avatar
       })
-      
       if (data.token) {
         localStorage.setItem('token', data.token)
       }
       return data
     } catch (error: any) {
       console.error('[Auth Service] Google login network error:', error)
-      return { 
-        success: false, 
-        message: error.message || 'Network error: Unable to connect to server' 
+      return {
+        success: false,
+        message: error.message || 'Network error: Unable to connect to server'
       }
     }
   },
@@ -382,6 +398,9 @@ export const authService = {
     productImages?: string[]
     meloGoals?: string[]
   }): Promise<AuthResponse> => {
+    if (isDemoMode()) {
+      return demoAuth.completeOnboarding(onboardingData);
+    }
     const token = localStorage.getItem('token')
     if (!token) {
       return { success: false, message: 'Not authenticated' }

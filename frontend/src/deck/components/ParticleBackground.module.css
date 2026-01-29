@@ -1,0 +1,33 @@
+.coverParticles {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 20;
+}
+
+.particle {
+  position: absolute;
+  background: radial-gradient(circle, rgba(253, 179, 56, 1), rgba(253, 179, 56, 0.5) 40%, transparent);
+  border-radius: 50%;
+  filter: blur(0.5px);
+  animation: particleFloat var(--duration) linear var(--delay) infinite;
+  box-shadow: 0 0 8px rgba(253, 179, 56, 0.8), 0 0 12px rgba(253, 179, 56, 0.4);
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translate(var(--start-x), var(--start-y));
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.8;
+  }
+  90% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--end-x), var(--end-y));
+    opacity: 0;
+  }
+}

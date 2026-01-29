@@ -2,7 +2,7 @@
 
 Melo is an AI-powered social media and marketing management platform that helps businesses create, manage, and optimize their social media content and marketing strategies.
 
-## 📋 Table of Contents 
+## 📋 Table of Contents
 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
@@ -14,6 +14,11 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [LinkedIn Integration](#-linkedin-integration)
 - [Deployment](#-deployment)
 - [Additional Features](#-additional-features)
+  - [Content Plan Generation](#content-plan-generation)
+  - [Campaign Management](#campaign-management)
+  - [Multi-Company Support](#multi-company-support)
+  - [ELO AI Assistant](#elo-ai-assistant)
+  - [Demo Mode & Interactive Product Tour](#demo-mode--interactive-product-tour)
 - [Troubleshooting](#-troubleshooting)
 - [API Documentation](#api-documentation)
 - [Development](#development)
@@ -42,6 +47,8 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **Facebook & Instagram Integration**: Connect Facebook and Instagram accounts via OAuth and publish content directly
 - **ELO AI Assistant**: Interactive Live2D AI assistant with intelligent guidance, quick actions, and proactive tips
 - **ELO Crawl Animation**: When user is inactive for 15 seconds, ELO slowly crawls across the screen with smooth animation
+- **Demo Mode**: Interactive product tour with step-by-step guidance using spotlight effects and tooltips
+- **PPT-Style Presentation**: Guided walkthrough of all major features with draggable tooltips and keyboard navigation
 - **Dark Mode**: Built-in dark mode support with theme toggle
 - **Responsive Design**: Modern UI built with Ant Design, fully responsive across devices
 
@@ -183,6 +190,11 @@ Melo/
 │   │   │   ├── CalendarItemModal.tsx
 │   │   │   ├── ContentPlanModal.tsx
 │   │   │   └── LinkedInDashboard.tsx
+│   │   ├── demo/            # Demo mode components
+│   │   │   ├── DemoPresenter.tsx
+│   │   │   ├── demoSteps.ts
+│   │   │   ├── demoMode.ts
+│   │   │   └── demoServices.ts
 │   │   ├── pages/           # Page components
 │   │   │   ├── BrandProfile.tsx
 │   │   │   ├── Calendar.tsx
@@ -337,6 +349,13 @@ GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-2.5-flash-image
 GOOGLE_CLIENT_ID=438863330302-odum2gjdipe9hc4v257aj4lkvr100d32.apps.googleusercontent.com
 
+# AWS S3 Configuration (Optional - for file storage)
+# If not configured, files will be stored locally
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_S3_BUCKET_NAME=your_bucket_name
+AWS_REGION=us-east-1
+
 # Twitter/X OAuth Credentials (Required for Twitter integration)
 TWITTER_API_KEY=your_twitter_api_key
 TWITTER_API_SECRET=your_twitter_api_secret
@@ -451,6 +470,35 @@ INSTAGRAM_APP_SECRET=your_instagram_app_secret
 - Get credentials from [Meta for Developers](https://developers.facebook.com/)
 - Configure redirect URIs in Meta App settings
 - Enable required permissions for posting content
+
+### AWS S3 File Storage (.env)
+
+For AWS S3 file storage (optional - for Brand Profile files and Instagram images), add the following to `backend/.env`:
+
+```env
+# AWS S3 Configuration (Optional)
+# If not configured, files will be stored locally
+AWS_ACCESS_KEY_ID=your_aws_access_key_id
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key
+AWS_S3_BUCKET_NAME=your_bucket_name
+AWS_REGION=us-east-1
+```
+
+**Note**:
+- **Optional**: If S3 is not configured, the system will automatically fall back to local file storage
+- Get your AWS credentials from [AWS IAM Console](https://console.aws.amazon.com/iam/)
+- Create an S3 bucket in [AWS S3 Console](https://console.aws.amazon.com/s3/)
+- **Bucket Configuration**:
+  - **Brand Profile files**: Private access (uses presigned URLs)
+  - **Instagram images**: Public read access (required for Instagram API)
+- **CORS Configuration**: Ensure your S3 bucket has proper CORS settings for web access
+- **Bucket Policy**: For Instagram images, ensure the `instagram/` folder has public read access
+
+**File Organization**:
+- `brand-profile/{userId}/` - Brand Profile documents (private)
+- `instagram/{userId}/` - Instagram images/videos (public)
+- `images/` - General images
+- `files/` - General files
 
 ## 🐦 Twitter/X Integration
 
@@ -788,6 +836,31 @@ Interactive Live2D AI assistant that provides intelligent guidance and proactive
 - **Crawl Animation**: When user is inactive for 15 seconds, ELO slowly crawls across the screen (50 pixels/second, 5-15 seconds duration) with smooth, natural movement
 - **Page Persistence**: Chat dialog opens on current page without navigation
 - **Context-Aware**: Welcome messages adapt based on current page (Dashboard, Calendar, etc.)
+
+### Demo Mode & Interactive Product Tour
+
+PPT-style interactive walkthrough that guides users through all major features:
+
+- **Step-by-Step Guidance**: 13-step guided tour covering onboarding, AI features, calendar, scheduling, and analytics
+- **Spotlight Effects**: Dynamic spotlight highlights target UI elements
+- **Draggable Tooltips**: Informative tooltips that can be repositioned by dragging
+- **Progress Tracking**: Visual progress bar showing completion percentage
+- **Keyboard Navigation**: Arrow keys (Left/Right) for navigation, Escape to restart
+- **Automated Actions**: Simulates user interactions (form filling, image generation, plan creation)
+- **Multi-Page Tour**: Seamlessly navigates across different pages (Dashboard, Calendar, Settings, Analytics, Messaging)
+- **Feature Demonstrations**:
+  - Onboarding form with Live2D assistant selection
+  - AI-powered chat and question answering
+  - Image generation with custom prompts
+  - Content plan generation and calendar integration
+  - Calendar scheduling with time picker
+  - Brand profile configuration
+  - Social dashboard management
+  - Analytics and KPI insights
+  - Messaging capabilities
+- **Demo Controls**: Back, Next, Restart, and Exit buttons for full control
+- **Context-Aware**: Tooltips adjust position based on screen layout
+- **Demo Banner**: Persistent "Demo Mode" indicator during tour
 
 ## 🔧 Troubleshooting
 

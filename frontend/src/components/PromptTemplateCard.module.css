@@ -1,0 +1,108 @@
+.templateCard {
+  height: 100%;
+  transition: all 0.3s ease;
+  border-radius: 12px !important;
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: 180px;
+}
+
+.templateCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+[data-theme="warm"] .templateCard {
+  background-color: #ffffff !important;
+}
+
+[data-theme="warm"] .templateCard:hover {
+  box-shadow: 0 8px 24px rgba(174, 144, 110, 0.2) !important;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 12px 8px;
+}
+
+.iconWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.templateCard:hover .iconWrapper {
+  transform: scale(1.1);
+}
+
+.textContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.title {
+  margin: 0 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: var(--text-primary, #1e1e1e) !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+}
+
+[data-theme="warm"] .title {
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  color: #908066 !important;
+}
+
+.description {
+  margin: 0 !important;
+  font-size: 11px !important;
+  color: var(--text-secondary, #666666) !important;
+  line-height: 1.4 !important;
+  font-family: var(--font-family, "Inter", sans-serif) !important;
+}
+
+[data-theme="warm"] .description {
+  font-family: "ZCOOL KuaiLe", "Inter", sans-serif !important;
+  color: #b1a285 !important;
+}
+
+/* Mobile styles */
+@media (max-width: 767px) {
+  .templateCard {
+    width: calc(50% - 4px);
+    min-width: 140px;
+  }
+
+  .cardContent {
+    gap: 8px;
+    padding: 10px 6px;
+  }
+
+  .iconWrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .iconWrapper :global(svg) {
+    font-size: 18px !important;
+  }
+
+  .title {
+    font-size: 12px !important;
+  }
+
+  .description {
+    font-size: 10px !important;
+  }
+}

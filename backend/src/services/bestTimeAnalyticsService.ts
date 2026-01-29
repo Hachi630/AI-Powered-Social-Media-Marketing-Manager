@@ -1,4 +1,4 @@
-import PredictionBestTime from '../models/PredictionBestTime'
+import PredictionBestTime from '../models/PredictionBestTime.js'
 
 /**
  * Best Time Analytics Service
@@ -26,12 +26,12 @@ function formatHour(hour: number): string {
 function formatHourRange(hours: number[]): string {
   if (hours.length === 0) return ''
   if (hours.length === 1) return formatHour(hours[0])
-  
+
   const sorted = [...hours].sort((a, b) => a - b)
   const ranges: string[] = []
   let start = sorted[0]
   let end = sorted[0]
-  
+
   for (let i = 1; i < sorted.length; i++) {
     if (sorted[i] === end + 1) {
       end = sorted[i]
@@ -45,13 +45,13 @@ function formatHourRange(hours: number[]): string {
       end = sorted[i]
     }
   }
-  
+
   if (start === end) {
     ranges.push(formatHour(start))
   } else {
     ranges.push(`${formatHour(start)}-${formatHour(end)}`)
   }
-  
+
   return ranges.join(', ')
 }
 
@@ -73,10 +73,10 @@ export async function getAvailableTimePeriods() {
         $sort: { '_id.year': -1, '_id.month': -1 }
       }
     ])
-    
+
     const years = [...new Set(result.map((r: any) => r._id.year))].sort((a, b) => b - a)
     const monthsByYear: Record<number, number[]> = {}
-    
+
     result.forEach((r: any) => {
       const year = r._id.year
       const month = r._id.month
@@ -87,12 +87,12 @@ export async function getAvailableTimePeriods() {
         monthsByYear[year].push(month)
       }
     })
-    
+
     // Sort months for each year
     Object.keys(monthsByYear).forEach(year => {
       monthsByYear[parseInt(year)].sort((a, b) => b - a)
     })
-    
+
     return { years, monthsByYear }
   } catch (error: any) {
     console.error('[Available Time Periods] Error:', error)
@@ -110,17 +110,17 @@ export async function getBestHoursPerPlatform(platform?: string, year?: number, 
     // First check if there's any data in the collection
     const totalCount = await PredictionBestTime.countDocuments({})
     console.log(`[Best Hours] Total documents in prediction_best_time: ${totalCount}`)
-    
+
     if (totalCount === 0) {
       console.warn('[Best Hours] No data found in prediction_best_time collection')
       return {}
     }
-    
+
     const matchStage: any = {}
     if (platform) {
       matchStage.platform = platform
     }
-    
+
     // Add year and month filtering
     if (year || month) {
       const dateFilter: any = {}
@@ -135,84 +135,84 @@ export async function getBestHoursPerPlatform(platform?: string, year?: number, 
       }
       matchStage.timestamp = dateFilter
     }
-    
+
     const matchCount = await PredictionBestTime.countDocuments(matchStage)
     console.log(`[Best Hours] Matching documents${platform ? ` for platform ${platform}` : ''}: ${matchCount}`)
 
     const result = await PredictionBestTime.aggregate([
-    { $match: matchStage },
-    {
-      $group: {
-        _id: { platform: '$platform', hour: '$hour' },
-        avgLikes: { $avg: '$likes' },
-        avgRetweets: { $avg: '$retweets' },
-        avgEngagement: { $avg: '$engagementScore' },
-        postCount: { $sum: 1 },
-        totalEngagement: { $sum: '$engagementScore' },
+      { $match: matchStage },
+      {
+        $group: {
+          _id: { platform: '$platform', hour: '$hour' },
+          avgLikes: { $avg: '$likes' },
+          avgRetweets: { $avg: '$retweets' },
+          avgEngagement: { $avg: '$engagementScore' },
+          postCount: { $sum: 1 },
+          totalEngagement: { $sum: '$engagementScore' },
+        },
       },
-    },
-    {
-      $sort: { totalEngagement: -1 },
-    },
-    {
-      $group: {
-        _id: '$_id.platform',
-        hours: {
-          $push: {
-            hour: '$_id.hour',
-            avgLikes: '$avgLikes',
-            avgRetweets: '$avgRetweets',
-            avgEngagement: '$avgEngagement',
-            postCount: '$postCount',
-            totalEngagement: '$totalEngagement',
+      {
+        $sort: { totalEngagement: -1 },
+      },
+      {
+        $group: {
+          _id: '$_id.platform',
+          hours: {
+            $push: {
+              hour: '$_id.hour',
+              avgLikes: '$avgLikes',
+              avgRetweets: '$avgRetweets',
+              avgEngagement: '$avgEngagement',
+              postCount: '$postCount',
+              totalEngagement: '$totalEngagement',
+            },
           },
         },
       },
-    },
-  ])
+    ])
 
-  const formatted: Record<string, any> = {}
-  
-  result.forEach((platformData) => {
-    const platform = platformData._id
-    const sortedHours = platformData.hours
-      .sort((a: any, b: any) => b.totalEngagement - a.totalEngagement)
-    
-    // Get top hours (above average engagement)
-    const avgEngagement = sortedHours.reduce((sum: number, h: any) => sum + h.avgEngagement, 0) / sortedHours.length
-    const topHoursData = sortedHours
-      .filter((h: any) => h.avgEngagement >= avgEngagement * 0.8) // Top 80% or better
-      .slice(0, 8) // Top 8 hours max
-    
-    // Extract hour numbers for recommendation (sorted numerically for range formatting)
-    const topHours = topHoursData.map((h: any) => h.hour).sort((a: number, b: number) => a - b)
-    
-    // Top hours sorted by engagement (for display)
-    const topHoursByEngagement = topHoursData
-      .sort((a: any, b: any) => b.avgEngagement - a.avgEngagement)
-      .slice(0, 5) // Top 5 for display
-      .map((h: any) => ({
-        hour: h.hour,
-        avgEngagement: Math.round(h.avgEngagement * 100) / 100,
-      }))
-    
-    formatted[platform] = {
-      hours: sortedHours.slice(0, 10).map((h: any) => ({
-        hour: h.hour,
-        metrics: {
-          avgLikes: Math.round(h.avgLikes * 100) / 100,
-          avgRetweets: Math.round(h.avgRetweets * 100) / 100,
+    const formatted: Record<string, any> = {}
+
+    result.forEach((platformData) => {
+      const platform = platformData._id
+      const sortedHours = platformData.hours
+        .sort((a: any, b: any) => b.totalEngagement - a.totalEngagement)
+
+      // Get top hours (above average engagement)
+      const avgEngagement = sortedHours.reduce((sum: number, h: any) => sum + h.avgEngagement, 0) / sortedHours.length
+      const topHoursData = sortedHours
+        .filter((h: any) => h.avgEngagement >= avgEngagement * 0.8) // Top 80% or better
+        .slice(0, 8) // Top 8 hours max
+
+      // Extract hour numbers for recommendation (sorted numerically for range formatting)
+      const topHours = topHoursData.map((h: any) => h.hour).sort((a: number, b: number) => a - b)
+
+      // Top hours sorted by engagement (for display)
+      const topHoursByEngagement = topHoursData
+        .sort((a: any, b: any) => b.avgEngagement - a.avgEngagement)
+        .slice(0, 5) // Top 5 for display
+        .map((h: any) => ({
+          hour: h.hour,
           avgEngagement: Math.round(h.avgEngagement * 100) / 100,
-          postCount: h.postCount,
-          totalEngagement: h.totalEngagement,
-        },
-      })),
-      // Add formatted recommendation string
-      recommendation: formatHourRange(topHours),
-      topHours: topHours, // Numerically sorted for recommendation
-      topHoursByEngagement: topHoursByEngagement, // Sorted by engagement for display
-    }
-  })
+        }))
+
+      formatted[platform] = {
+        hours: sortedHours.slice(0, 10).map((h: any) => ({
+          hour: h.hour,
+          metrics: {
+            avgLikes: Math.round(h.avgLikes * 100) / 100,
+            avgRetweets: Math.round(h.avgRetweets * 100) / 100,
+            avgEngagement: Math.round(h.avgEngagement * 100) / 100,
+            postCount: h.postCount,
+            totalEngagement: h.totalEngagement,
+          },
+        })),
+        // Add formatted recommendation string
+        recommendation: formatHourRange(topHours),
+        topHours: topHours, // Numerically sorted for recommendation
+        topHoursByEngagement: topHoursByEngagement, // Sorted by engagement for display
+      }
+    })
 
     console.log(`[Best Hours] Returning data for ${Object.keys(formatted).length} platforms`)
     return formatted
@@ -244,19 +244,19 @@ function formatDayAbbr(day: string): string {
 function formatDayRange(days: string[]): string {
   if (days.length === 0) return ''
   if (days.length === 1) return formatDayAbbr(days[0])
-  
+
   const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   const sorted = days.sort((a, b) => dayOrder.indexOf(a) - dayOrder.indexOf(b))
-  
+
   // If consecutive days, format as range
   const ranges: string[] = []
   let start = sorted[0]
   let end = sorted[0]
-  
+
   for (let i = 1; i < sorted.length; i++) {
     const currentIdx = dayOrder.indexOf(sorted[i])
     const prevIdx = dayOrder.indexOf(end)
-    
+
     if (currentIdx === prevIdx + 1) {
       end = sorted[i]
     } else {
@@ -269,13 +269,13 @@ function formatDayRange(days: string[]): string {
       end = sorted[i]
     }
   }
-  
+
   if (start === end) {
     ranges.push(formatDayAbbr(start))
   } else {
     ranges.push(`${formatDayAbbr(start)}-${formatDayAbbr(end)}`)
   }
-  
+
   return ranges.join(', ')
 }
 
@@ -288,7 +288,7 @@ export async function getBestDaysPerPlatform(platform?: string, year?: number, m
   if (platform) {
     matchStage.platform = platform
   }
-  
+
   // Add year and month filtering
   if (year || month) {
     const dateFilter: any = {}
@@ -337,18 +337,18 @@ export async function getBestDaysPerPlatform(platform?: string, year?: number, m
   ])
 
   const formatted: Record<string, any> = {}
-  
+
   result.forEach((platformData) => {
     const platform = platformData._id
     const sortedDays = platformData.days
       .sort((a: any, b: any) => (b as any).totalEngagement - (a as any).totalEngagement)
-    
+
     // Get top days (above average engagement)
     const avgEngagement = sortedDays.reduce((sum: number, d: any) => sum + d.avgEngagement, 0) / sortedDays.length
     const topDays = sortedDays
       .filter((d: any) => d.avgEngagement >= avgEngagement * 0.85) // Top 85% or better
       .map((d: any) => d.day)
-    
+
     formatted[platform] = {
       days: sortedDays.map((d: any) => ({
         day: d.day,
@@ -377,7 +377,7 @@ export async function getDayHourHeatmap(platform?: string, metric: 'likes' | 're
   if (platform) {
     matchStage.platform = platform
   }
-  
+
   // Add year and month filtering
   if (year || month) {
     const dateFilter: any = {}
@@ -426,17 +426,17 @@ export async function getDayHourHeatmap(platform?: string, metric: 'likes' | 're
       heatmapData[platform] = []
     }
 
-    const value = metric === 'engagement' 
-      ? item.totalEngagement 
-      : metric === 'likes' 
-      ? item.totalLikes 
-      : item.totalRetweets
+    const value = metric === 'engagement'
+      ? item.totalEngagement
+      : metric === 'likes'
+        ? item.totalLikes
+        : item.totalRetweets
 
     const avgValue = metric === 'engagement'
       ? item.avgEngagement
       : metric === 'likes'
-      ? item.avgLikes
-      : item.avgRetweets
+        ? item.avgLikes
+        : item.avgRetweets
 
     heatmapData[platform].push({
       day: item._id.day,
@@ -455,7 +455,7 @@ export async function getDayHourHeatmap(platform?: string, metric: 'likes' | 're
     const existing = new Set(
       heatmapData[platform].map((d) => `${d.day}-${d.hour}`)
     )
-    
+
     days.forEach((day) => {
       hours.forEach((hour) => {
         const key = `${day}-${hour}`
@@ -520,15 +520,15 @@ export async function getEngagementMetrics(platform?: string, country?: string) 
   ])
 
   // Calculate overall averages for comparison
-  const totalPosts = result.reduce((sum, item) => sum + item.totalPosts, 0)
-  const totalEngagement = result.reduce((sum, item) => sum + item.totalEngagement, 0)
+  const totalPosts = result.reduce((sum: number, item: any) => sum + item.totalPosts, 0)
+  const totalEngagement = result.reduce((sum: number, item: any) => sum + item.totalEngagement, 0)
   const overallAvgEngagement = totalPosts > 0 ? totalEngagement / totalPosts : 0
 
-  return result.map((item) => {
+  return result.map((item: any) => {
     const avgEngagement = item.avgEngagementPerPost || 0
     const performanceRatio = overallAvgEngagement > 0 ? (avgEngagement / overallAvgEngagement) : 1
     const performanceLabel = performanceRatio >= 1.2 ? 'High' : performanceRatio >= 0.8 ? 'Average' : 'Low'
-    
+
     return {
       group: item._id || 'all',
       totalPosts: item.totalPosts,
@@ -568,8 +568,8 @@ export async function getTopPosts(limit: number = 10, sortBy: 'likes' | 'retweet
   const allEngagementScores = await PredictionBestTime.find({})
     .select('engagementScore')
     .lean()
-    .then(posts => posts.map(p => p.engagementScore).sort((a, b) => b - a))
-  
+    .then(posts => posts.map((p: any) => p.engagementScore).sort((a: any, b: any) => b - a))
+
   const p50 = allEngagementScores[Math.floor(allEngagementScores.length * 0.5)] || 0
   const p75 = allEngagementScores[Math.floor(allEngagementScores.length * 0.25)] || 0
   const p90 = allEngagementScores[Math.floor(allEngagementScores.length * 0.1)] || 0
@@ -580,7 +580,7 @@ export async function getTopPosts(limit: number = 10, sortBy: 'likes' | 'retweet
     if (score >= p90) percentile = 'Top 10%'
     else if (score >= p75) percentile = 'Top 25%'
     else if (score >= p50) percentile = 'Top 50%'
-    
+
     return {
       rank: index + 1,
       timestamp: post.timestamp,
@@ -632,8 +632,8 @@ export async function getSentimentInsights(platform?: string) {
   ])
 
   const insights: Record<string, any> = {}
-  
-  result.forEach((item) => {
+
+  result.forEach((item: any) => {
     const key = `${item._id.platform}_${item._id.sentiment}`
     if (!insights[key]) {
       insights[key] = {
@@ -644,9 +644,9 @@ export async function getSentimentInsights(platform?: string) {
         avgEngagement: 0,
       }
     }
-    
+
     insights[key].totalPosts += item.postCount
-    
+
     // Get top 5 hours by average engagement
     if (insights[key].bestHours.length < 5) {
       insights[key].bestHours.push({
@@ -664,7 +664,7 @@ export async function getSentimentInsights(platform?: string) {
   return Object.values(insights).map((insight: any) => {
     const avgEngagement = insight.bestHours.reduce((sum: number, h: any) => sum + h.avgEngagement, 0) / insight.bestHours.length
     const topHours = insight.bestHours.slice(0, 3).map((h: any) => h.hour).sort((a: number, b: number) => a - b)
-    
+
     return {
       ...insight,
       avgEngagement: Math.round(avgEngagement * 100) / 100,
@@ -726,15 +726,15 @@ export async function getPlatformComparison() {
   })
 
   // Calculate overall averages for comparison
-  const totalPosts = result.reduce((sum, item) => sum + item.totalPosts, 0)
-  const totalEngagement = result.reduce((sum, item) => sum + item.totalEngagement, 0)
+  const totalPosts = result.reduce((sum: number, item: any) => sum + item.totalPosts, 0)
+  const totalEngagement = result.reduce((sum: number, item: any) => sum + item.totalEngagement, 0)
   const overallAvgEngagement = totalPosts > 0 ? totalEngagement / totalPosts : 0
 
-  return result.map((item, index) => {
+  return result.map((item: any, index: any) => {
     const avgEngagement = item.avgEngagementPerPost || 0
     const performanceRatio = overallAvgEngagement > 0 ? (avgEngagement / overallAvgEngagement) : 1
     const rank = index + 1
-    
+
     return {
       platform: item._id,
       rank,
@@ -779,8 +779,8 @@ export async function getHashtagTrends(limit: number = 20) {
 
   // Group by hashtag
   const hashtagMap: Record<string, any> = {}
-  
-  hashtagCounts.forEach((item) => {
+
+  hashtagCounts.forEach((item: any) => {
     const hashtag = item._id.hashtag
     if (!hashtagMap[hashtag]) {
       hashtagMap[hashtag] = {
@@ -793,19 +793,19 @@ export async function getHashtagTrends(limit: number = 20) {
         days: [],
       }
     }
-    
+
     hashtagMap[hashtag].totalCount += item.count
     hashtagMap[hashtag].totalEngagement += item.totalEngagement
     hashtagMap[hashtag].totalLikes += item.totalLikes
     hashtagMap[hashtag].totalRetweets += item.totalRetweets
-    
+
     hashtagMap[hashtag].hours.push({
       hour: item._id.hour,
       count: item.count,
       avgEngagement: Math.round(item.avgEngagement * 100) / 100,
       totalEngagement: item.totalEngagement,
     })
-    
+
     hashtagMap[hashtag].days.push({
       day: item._id.day,
       count: item.count,
@@ -821,7 +821,7 @@ export async function getHashtagTrends(limit: number = 20) {
       const topHours = h.hours
         .sort((a: any, b: any) => b.avgEngagement - a.avgEngagement)
         .slice(0, 5)
-      
+
       // Get peak day
       const dayCounts: Record<string, number> = {}
       h.days.forEach((d: any) => {
@@ -829,10 +829,10 @@ export async function getHashtagTrends(limit: number = 20) {
       })
       const peakDay = Object.entries(dayCounts)
         .sort(([, a], [, b]) => b - a)[0]?.[0] || 'Unknown'
-      
+
       const avgEngagement = h.totalCount > 0 ? h.totalEngagement / h.totalCount : 0
       const peakHours = topHours.map((th: any) => th.hour).sort((a: number, b: number) => a - b)
-      
+
       return {
         hashtag: h.hashtag,
         totalCount: h.totalCount,
@@ -901,16 +901,16 @@ export async function getCountryInsights(country?: string) {
   ])
 
   const formatted: Record<string, any> = {}
-  
+
   result.forEach((item) => {
     const key = `${item._id.country}_${item._id.platform}`
     const sortedHours = item.bestHours
       .sort((a: any, b: any) => b.avgEngagement - a.avgEngagement)
       .slice(0, 5)
-    
+
     const topHours = sortedHours.map((h: any) => h.hour).sort((a: number, b: number) => a - b)
     const avgEngagement = item.totalPosts > 0 ? item.totalEngagement / item.totalPosts : 0
-    
+
     formatted[key] = {
       country: item._id.country,
       platform: item._id.platform,

@@ -1,8 +1,8 @@
 import { Types } from 'mongoose'
-import SocialMediaPost, { ISocialMediaPost, IMediaAttachment } from '../models/SocialMediaPost'
-import AIGeneratedContent, { IAIGeneratedContent } from '../models/AIGeneratedContent'
-import MediaFile, { IMediaFile } from '../models/MediaFile'
-import APIResponse, { IAPIResponse } from '../models/APIResponse'
+import SocialMediaPost, { ISocialMediaPost, IMediaAttachment } from '../models/SocialMediaPost.js'
+import AIGeneratedContent, { IAIGeneratedContent } from '../models/AIGeneratedContent.js'
+import MediaFile, { IMediaFile } from '../models/MediaFile.js'
+import APIResponse, { IAPIResponse } from '../models/APIResponse.js'
 
 /**
  * Save a social media post to the database
@@ -49,7 +49,7 @@ export async function saveSocialMediaPost(data: {
     errorMessage: data.errorMessage,
     calendarItemId: data.calendarItemId,
   })
-  
+
   return await post.save()
 }
 
@@ -96,7 +96,7 @@ export async function saveAIGeneratedContent(data: {
     processingTime: data.processingTime,
     usedInPost: data.usedInPost,
   })
-  
+
   return await content.save()
 }
 
@@ -120,7 +120,34 @@ export async function saveMediaFile(data: {
   platform?: 'linkedin' | 'twitter' | 'local'
   description?: string
   altText?: string
+  storageProvider?: 'local' | 's3' | 'cloudinary'
+  storageBucket?: string
+  storageKey?: string
 }): Promise<IMediaFile> {
+  // Auto-detect storage provider
+  let storageProvider: 'local' | 's3' | 'cloudinary' = data.storageProvider || 'local'
+  let storageBucket: string | undefined = data.storageBucket
+  let storageKey: string | undefined = data.storageKey
+
+  // If fileUrl is S3 URL, auto-detect
+  if (data.fileUrl.startsWith('https://') && data.fileUrl.includes('.s3.')) {
+    storageProvider = 's3'
+    // Extract bucket and key from URL
+    const urlMatch = data.fileUrl.match(/https:\/\/([^\.]+)\.s3\.([^\.]+)\.amazonaws\.com\/(.+)/)
+    if (urlMatch) {
+      storageBucket = urlMatch[1]
+      storageKey = urlMatch[3]
+    }
+  } else if (data.filePath.startsWith('s3://')) {
+    storageProvider = 's3'
+    // Extract bucket and key from s3:// path
+    const s3Match = data.filePath.match(/s3:\/\/([^\/]+)\/(.+)/)
+    if (s3Match) {
+      storageBucket = s3Match[1]
+      storageKey = s3Match[2]
+    }
+  }
+
   const mediaFile = new MediaFile({
     userId: data.userId,
     fileName: data.fileName,
@@ -138,8 +165,11 @@ export async function saveMediaFile(data: {
     platform: data.platform || 'local',
     description: data.description,
     altText: data.altText,
+    storageProvider,
+    storageBucket,
+    storageKey,
   })
-  
+
   return await mediaFile.save()
 }
 
@@ -177,7 +207,7 @@ export async function saveAPIResponse(data: {
     relatedPostId: data.relatedPostId,
     relatedMediaId: data.relatedMediaId,
   })
-  
+
   return await apiResponse.save()
 }
 
@@ -211,12 +241,12 @@ export async function linkMediaToPost(
   await MediaFile.findByIdAndUpdate(mediaFileId, {
     $addToSet: { usedInPosts: postId }
   })
-  
+
   // Also update the post to reference the media
   const mediaFile = await MediaFile.findById(mediaFileId)
   if (mediaFile) {
     await SocialMediaPost.findByIdAndUpdate(postId, {
-      $addToSet: { 
+      $addToSet: {
         mediaAttachments: {
           type: mediaFile.fileType === 'image' ? 'image' : mediaFile.fileType === 'video' ? 'video' : 'document',
           url: mediaFile.fileUrl,

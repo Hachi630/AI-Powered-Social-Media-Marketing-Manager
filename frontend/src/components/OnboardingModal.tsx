@@ -6,6 +6,7 @@ import { authService } from '../services/authService';
 import { uploadService } from '../services/uploadService';
 import { useAppSettings } from '../contexts/AppSettingsContext';
 import styles from './OnboardingModal.module.css';
+import { isDemoMode } from '../demo/demoMode';
 
 // Lazy load Live2DWidget for preview
 const Live2DWidgetLazy = lazy(() => import('./Live2DWidget'));
@@ -19,16 +20,16 @@ interface OnboardingModalProps {
 
 // Step 2 - Target Audience Options
 const TARGET_AUDIENCE_OPTIONS = [
-  'Teenagers',
-  'Young Girls',
-  'Young Boys',
-  'Infants/Toddlers',
-  'Mothers',
-  'Women',
-  'Men',
-  'Elderly',
+  'all groups',
+  'Children (0–12)',
+  'Teenagers (13–18)',
+  'Young Adults (18–30)',
+  'Adults (30–50)',
+  'Seniors (50+)',
   'Students',
-  'Professionals',
+  'Working Professionals',
+  'Parents / Families',
+  'Businesses (B2B)',
   'Other',
 ];
 
@@ -38,30 +39,54 @@ const PRODUCT_TYPES_OPTIONS = [
   'Hats',
   'Shoes',
   'Accessories',
-  'Cleaning Products',
-  'Cosmetics',
+  'Beauty & Cosmetics',
+  'Home & Living',
+  'Food & Beverage',
   'Electronics',
-  'Food',
   'Toys',
   'Books',
+  'Digital Products (eBooks, courses, apps)',
+  'Services (e.g. tutoring, consulting)',
   'Other',
 ];
 
 // Step 5 - Melo Goals Options
 const MELO_GOALS_OPTIONS = [
-  'Expand Market',
-  'Acquire New Users',
-  'Improve Product Quality',
-  'Enhance Product Value',
-  'Filter Users',
-  'Enhance Brand Image',
-  'Optimize Marketing Strategy',
+  'Generate marketing copy faster',
+  'Grow my social media presence',
+  'Attract more customers',
+  'Improve brand consistency',
+  'Save time on content creation',
+  'Optimize marketing strategy',
+  'Understand what content works best',
   'Other',
 ];
 
-// Character options for Step 6
+// Step 6 - Publishing Platforms Options
+const PUBLISHING_PLATFORMS_OPTIONS = [
+  'Instagram',
+  'Facebook',
+  'X (Twitter)',
+  'TikTok',
+  'LinkedIn',
+  'Pinterest',
+  'Other',
+];
+
+// Step 7 - Content Types Options
+const CONTENT_TYPES_OPTIONS = [
+  'Social media posts',
+  'Product descriptions',
+  'Promotional content',
+  'Brand storytelling',
+  'Educational content',
+  'Campaign content',
+  'Other',
+];
+
+// Character options for Step 8
 const CHARACTER_OPTIONS = [
-  { name: "Umiushi", path: "/umiushi/うみうしモデル.model3.json", color: "#8ecae6" },
+  { name: "Umiushi", path: "/umiushi/model.model3.json", color: "#8ecae6" },
   { name: "Kurage", path: "/kurage/クラゲモデル.model3.json", color: "#219ebc" },
   { name: "Kurione", path: "/kurione/クリオネモデル.model3.json", color: "#023047" },
   { name: "Mendako", path: "/mendako/めんだこモデル.model3.json", color: "#ffb703" },
@@ -92,7 +117,15 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   const [selectedMeloGoals, setSelectedMeloGoals] = useState<string[]>([]);
   const [otherMeloGoal, setOtherMeloGoal] = useState('');
 
-  // Step 6: Character Selection
+  // Step 6: Publishing Platforms
+  const [selectedPublishingPlatforms, setSelectedPublishingPlatforms] = useState<string[]>([]);
+  const [otherPublishingPlatform, setOtherPublishingPlatform] = useState('');
+
+  // Step 7: Content Types
+  const [selectedContentTypes, setSelectedContentTypes] = useState<string[]>([]);
+  const [otherContentType, setOtherContentType] = useState('');
+
+  // Step 8: Character Selection
   const [selectedCharacter, setSelectedCharacter] = useState<string>(CHARACTER_OPTIONS[0].path);
 
   // Reset all form data when modal opens
@@ -109,11 +142,42 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       setProductImages([]);
       setSelectedMeloGoals([]);
       setOtherMeloGoal('');
+      setSelectedPublishingPlatforms([]);
+      setOtherPublishingPlatform('');
+      setSelectedContentTypes([]);
+      setOtherContentType('');
       setSelectedCharacter(CHARACTER_OPTIONS[0].path);
       setLoading(false);
       setUploading(false);
+      if (isDemoMode()) {
+        setBrandName("Maya’s Cake Studio");
+        setSelectedTargetAudience(["Working Professionals", "Parents / Families"]);
+        setSelectedProductTypes(["Food & Beverage"]);
+        setSelectedMeloGoals(["Attract more customers", "Save time on content creation"]);
+        setSelectedPublishingPlatforms(["Instagram", "Facebook"]);
+        setSelectedContentTypes(["Social media posts"]);
+      }
     }
   }, [open]);
+
+  useEffect(() => {
+    const handleDemoStep = (event: CustomEvent) => {
+      const step = event.detail?.step;
+      if (typeof step === "number") {
+        setCurrentStep(step);
+      }
+    };
+    window.addEventListener(
+      "demo-onboarding-step",
+      handleDemoStep as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "demo-onboarding-step",
+        handleDemoStep as EventListener
+      );
+    };
+  }, []);
 
   const handleNext = () => {
     // Validate current step
@@ -146,9 +210,25 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
         messageApi.error('Please select at least one goal');
         return;
       }
+    } else if (currentStep === 6) {
+      const finalPublishingPlatforms = selectedPublishingPlatforms.includes('Other')
+        ? [...selectedPublishingPlatforms.filter((item) => item !== 'Other'), otherPublishingPlatform.trim()].filter(Boolean)
+        : selectedPublishingPlatforms;
+      if (finalPublishingPlatforms.length === 0) {
+        messageApi.error('Please select at least one publishing platform');
+        return;
+      }
+    } else if (currentStep === 7) {
+      const finalContentTypes = selectedContentTypes.includes('Other')
+        ? [...selectedContentTypes.filter((item) => item !== 'Other'), otherContentType.trim()].filter(Boolean)
+        : selectedContentTypes;
+      if (finalContentTypes.length === 0) {
+        messageApi.error('Please select at least one content type');
+        return;
+      }
     }
 
-    if (currentStep < 6) {
+    if (currentStep < 8) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -199,13 +279,13 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
   };
 
   const handleComplete = async () => {
-    // Validate step 5
-    const finalMeloGoals = selectedMeloGoals.includes('Other')
-      ? [...selectedMeloGoals.filter((item) => item !== 'Other'), otherMeloGoal.trim()].filter(Boolean)
-      : selectedMeloGoals;
+    // Validate step 7
+    const finalContentTypes = selectedContentTypes.includes('Other')
+      ? [...selectedContentTypes.filter((item) => item !== 'Other'), otherContentType.trim()].filter(Boolean)
+      : selectedContentTypes;
     
-    if (finalMeloGoals.length === 0) {
-      messageApi.error('Please select at least one goal');
+    if (finalContentTypes.length === 0) {
+      messageApi.error('Please select at least one content type');
       return;
     }
 
@@ -220,23 +300,48 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
         ? [...selectedProductTypes.filter((item) => item !== 'Other'), otherProductType.trim()].filter(Boolean)
         : selectedProductTypes;
 
+      const finalMeloGoals = selectedMeloGoals.includes('Other')
+        ? [...selectedMeloGoals.filter((item) => item !== 'Other'), otherMeloGoal.trim()].filter(Boolean)
+        : selectedMeloGoals;
+
+      const finalPublishingPlatforms = selectedPublishingPlatforms.includes('Other')
+        ? [...selectedPublishingPlatforms.filter((item) => item !== 'Other'), otherPublishingPlatform.trim()].filter(Boolean)
+        : selectedPublishingPlatforms;
+
       const onboardingData = {
         brandName: brandName.trim(),
         targetAudience: finalTargetAudience,
         productTypes: finalProductTypes,
         productImages: productImages,
         meloGoals: finalMeloGoals,
+        publishingPlatforms: finalPublishingPlatforms,
+        contentTypes: finalContentTypes,
       };
 
       const response = await authService.completeOnboarding(onboardingData);
       
       if (response.success && response.user) {
-        // Save character selection to AppSettings
-        updatePendingSettings({ live2dModel: selectedCharacter });
-        applySettings();
+        // Save character selection to AppSettings directly
+        // Use applySettings with overrideSettings to ensure it's applied immediately
+        applySettings({ live2dModel: selectedCharacter });
+        
+        // Also directly save to localStorage to ensure it persists
+        // This ensures the setting is saved even if React state update is delayed
+        try {
+          const STORAGE_KEY = "melo_app_settings";
+          const saved = localStorage.getItem(STORAGE_KEY);
+          let currentSettings = saved ? JSON.parse(saved) : {};
+          currentSettings.live2dModel = selectedCharacter;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(currentSettings));
+        } catch (error) {
+          console.error("Failed to save live2d model to localStorage:", error);
+        }
         
         messageApi.success('Profile completed successfully!');
-        onComplete(response.user);
+        // Use setTimeout to ensure settings are applied before closing modal
+        setTimeout(() => {
+          onComplete(response.user);
+        }, 100);
       } else {
         messageApi.error(response.message || 'Failed to save, please try again');
       }
@@ -268,6 +373,20 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
     }
   };
 
+  const handlePublishingPlatformsChange = (checkedValues: string[]) => {
+    setSelectedPublishingPlatforms(checkedValues);
+    if (!checkedValues.includes('Other')) {
+      setOtherPublishingPlatform('');
+    }
+  };
+
+  const handleContentTypesChange = (checkedValues: string[]) => {
+    setSelectedContentTypes(checkedValues);
+    if (!checkedValues.includes('Other')) {
+      setOtherContentType('');
+    }
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -287,7 +406,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       case 2:
         return (
           <div className={styles.stepContent}>
-            <Title level={4}>Select your targeted users</Title>
+            <Title level={4}>Who are your primary target customers? (You can select multiple)</Title>
             <Checkbox.Group
               value={selectedTargetAudience}
               onChange={handleTargetAudienceChange}
@@ -345,7 +464,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
           <div className={styles.stepContent}>
             <Title level={4}>Upload your product images (Optional)</Title>
             <Text type="secondary" style={{ display: 'block', marginTop: 8, marginBottom: 16 }}>
-              You can upload multiple images or skip this step
+              Uploading images helps Melo generate more accurate and relevant content.
             </Text>
             <Upload
               onChange={handleImageUpload}
@@ -381,7 +500,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       case 5:
         return (
           <div className={styles.stepContent}>
-            <Title level={4}>What do you hope Melo can help you with?</Title>
+            <Title level={4}>What are your main goals with Melo? (Select all that apply)</Title>
             <Checkbox.Group
               value={selectedMeloGoals}
               onChange={handleMeloGoalsChange}
@@ -409,7 +528,66 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       case 6:
         return (
           <div className={styles.stepContent}>
-            <Title level={4}>Choose your elo</Title>
+            <Title level={4}>Where do you plan to publish your content?</Title>
+            <Text type="secondary" style={{ display: 'block', marginTop: 8, marginBottom: 16 }}>
+              This helps Melo tailor content style and tone for each platform.
+            </Text>
+            <Checkbox.Group
+              value={selectedPublishingPlatforms}
+              onChange={handlePublishingPlatformsChange}
+              style={{ width: '100%', marginTop: 16 }}
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {PUBLISHING_PLATFORMS_OPTIONS.map((option) => (
+                  <Checkbox key={option} value={option}>
+                    {option}
+                  </Checkbox>
+                ))}
+              </Space>
+            </Checkbox.Group>
+            {selectedPublishingPlatforms.includes('Other') && (
+              <Input
+                placeholder="Enter other publishing platform"
+                value={otherPublishingPlatform}
+                onChange={(e) => setOtherPublishingPlatform(e.target.value)}
+                style={{ marginTop: 16 }}
+              />
+            )}
+          </div>
+        );
+
+      case 7:
+        return (
+          <div className={styles.stepContent}>
+            <Title level={4}>What type of content do you want to create?</Title>
+            <Checkbox.Group
+              value={selectedContentTypes}
+              onChange={handleContentTypesChange}
+              style={{ width: '100%', marginTop: 16 }}
+            >
+              <Space direction="vertical" style={{ width: '100%' }}>
+                {CONTENT_TYPES_OPTIONS.map((option) => (
+                  <Checkbox key={option} value={option}>
+                    {option}
+                  </Checkbox>
+                ))}
+              </Space>
+            </Checkbox.Group>
+            {selectedContentTypes.includes('Other') && (
+              <Input
+                placeholder="Enter other content type"
+                value={otherContentType}
+                onChange={(e) => setOtherContentType(e.target.value)}
+                style={{ marginTop: 16 }}
+              />
+            )}
+          </div>
+        );
+
+      case 8:
+        return (
+          <div className={styles.stepContent}>
+            <Title level={4}>Choose your own elo</Title>
             <Text type="secondary" style={{ display: 'block', marginTop: 8, marginBottom: 16 }}>
               Select your character companion for your dashboard
             </Text>
@@ -435,7 +613,7 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
                 </Space>
               </Col>
               <Col xs={24} sm={24} md={12} lg={12}>
-                <div className={styles.characterPreview}>
+                <div className={styles.characterPreview} data-demo-id="onboarding-live2d">
                   <Text type="secondary" style={{ display: 'block', marginBottom: 8, textAlign: 'center' }}>
                     Preview
                   </Text>
@@ -467,15 +645,15 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
       width={600}
       className={styles.onboardingModal}
     >
-      <div className={styles.modalContent}>
+      <div className={styles.modalContent} data-demo-id="onboarding-form">
         <div className={styles.progressSection}>
           <Progress
-            percent={(currentStep / 6) * 100}
+            percent={(currentStep / 8) * 100}
             showInfo={false}
             strokeColor="#1890ff"
           />
           <Text type="secondary" style={{ marginTop: 8, display: 'block', textAlign: 'center' }}>
-            Step {currentStep} / 6
+            Step {currentStep} / 8
           </Text>
         </div>
 
@@ -490,12 +668,12 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
                 Previous
               </Button>
             )}
-            {currentStep < 6 ? (
-              <Button type="primary" icon={<RightOutlined />} onClick={handleNext}>
+            {currentStep < 8 ? (
+              <Button type="primary" icon={<RightOutlined />} onClick={handleNext} data-demo-id="onboarding-submit">
                 Next
               </Button>
             ) : (
-              <Button type="primary" loading={loading} onClick={handleComplete}>
+              <Button type="primary" loading={loading} onClick={handleComplete} data-demo-id="onboarding-submit">
                 Complete
               </Button>
             )}

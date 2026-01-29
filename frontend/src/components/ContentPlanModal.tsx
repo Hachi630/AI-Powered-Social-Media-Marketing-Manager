@@ -26,8 +26,12 @@ import {
   GlobalOutlined,
 } from "@ant-design/icons";
 import { Dayjs } from "dayjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PLATFORMS } from "./CalendarItemModal";
+import { isDemoMode } from "../demo/demoMode";
+import { demoChat } from "../demo/demoServices";
+import { parseCampaignText, ParsedCampaignDay } from "../utils/campaignParser";
+import dayjs from "dayjs";
 
 const { TextArea } = Input;
 const { RangePicker } = DatePicker;
@@ -37,6 +41,7 @@ const { Title, Text } = Typography;
 interface ContentPlanModalProps {
   open: boolean;
   goal?: string;
+  messageText?: string; // Optional message text to parse
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -44,6 +49,7 @@ interface ContentPlanModalProps {
 export default function ContentPlanModal({
   open,
   goal: initialGoal,
+  messageText,
   onClose,
   onSuccess,
 }: ContentPlanModalProps) {
@@ -52,10 +58,39 @@ export default function ContentPlanModal({
   const [generatedPlan, setGeneratedPlan] = useState<any[]>([]);
   const [planGenerated, setPlanGenerated] = useState(false);
 
+  // Parse message text when modal opens
+  useEffect(() => {
+    if (open && messageText) {
+      const parsedDays = parseCampaignText(messageText);
+      if (parsedDays.length > 0) {
+        // Convert parsed days to plan format
+        const plan = parsedDays.map((day: ParsedCampaignDay) => ({
+          date: day.date,
+          platform: day.platform,
+          title: day.title,
+          content: day.content,
+          time: day.time,
+        }));
+        setGeneratedPlan(plan);
+        setPlanGenerated(true);
+        message.success(`Parsed ${plan.length} days from campaign text`);
+      }
+    }
+  }, [open, messageText]);
+
+  // Pre-fill form in demo mode
+  useEffect(() => {
+    if (open && isDemoMode()) {
+      form.setFieldsValue({
+        goal: "I want a 7-day Valentine's campaign for my cake shop. Warm and playful tone.",
+        dateRange: [dayjs("2026-02-08"), dayjs("2026-02-14")],
+        platforms: [PLATFORMS.INSTAGRAM, PLATFORMS.FACEBOOK, PLATFORMS.TWITTER, PLATFORMS.LINKEDIN],
+      });
+    }
+  }, [open, form]);
+
   const platformOptions = [
-    { value: PLATFORMS.INSTAGRAM_POST, label: "Instagram Post" },
-    { value: PLATFORMS.INSTAGRAM_STORY, label: "Instagram Story" },
-    { value: PLATFORMS.INSTAGRAM_REELS, label: "Instagram Reels" },
+    { value: PLATFORMS.INSTAGRAM, label: "Instagram" },
     { value: PLATFORMS.FACEBOOK, label: "Facebook" },
     { value: PLATFORMS.TWITTER, label: "Twitter/X" },
     { value: PLATFORMS.LINKEDIN, label: "LinkedIn" },
@@ -71,6 +106,16 @@ export default function ContentPlanModal({
       setLoading(true);
 
       const [startDate, endDate] = values.dateRange as [Dayjs, Dayjs];
+
+      if (isDemoMode()) {
+        const demo = await demoChat.generatePlan();
+        if (demo.success) {
+          setGeneratedPlan(demo.plan || []);
+          setPlanGenerated(true);
+          message.success(`Generated ${demo.plan?.length || 0} content items`);
+          return;
+        }
+      }
 
       // Use BASE_API_URL if set (production), otherwise use relative path (development with vite proxy)
       const BASE_API_URL = import.meta.env.VITE_API_URL || '';
@@ -161,6 +206,16 @@ export default function ContentPlanModal({
     try {
       setLoading(true);
 
+      if (isDemoMode()) {
+        const demo = await demoChat.sendToCalendar();
+        if (demo.success) {
+          message.success(`Successfully added ${demo.count || 0} items to calendar`);
+          onSuccess();
+          handleClose();
+          return;
+        }
+      }
+
       // Use BASE_API_URL if set (production), otherwise use relative path (development with vite proxy)
       const BASE_API_URL = import.meta.env.VITE_API_URL || '';
       const API_URL = BASE_API_URL 
@@ -230,9 +285,10 @@ export default function ContentPlanModal({
 
   const getPlatformColor = (platform: string) => {
     const colors: Record<string, string> = {
-      instagram_post: "#E4405F",
-      instagram_story: "#E4405F",
-      instagram_reels: "#E4405F",
+      instagram: "#E4405F",
+      instagram_post: "#E4405F", // Backward compatibility
+      instagram_story: "#E4405F", // Backward compatibility
+      instagram_reels: "#E4405F", // Backward compatibility
       facebook: "#1877F2",
       twitter: "#1DA1F2",
       linkedin: "#0A66C2",
@@ -262,12 +318,13 @@ export default function ContentPlanModal({
         body: { padding: "24px", maxHeight: "80vh", overflowY: "auto" },
       }}
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ goal: initialGoal }}
-        requiredMark={true}
-      >
+      <div data-demo-id="plan-modal">
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ goal: initialGoal }}
+          requiredMark={true}
+        >
         <Card
           size="small"
           style={{
@@ -512,7 +569,8 @@ export default function ContentPlanModal({
             </div>
           </div>
         )}
-      </Form>
+        </Form>
+      </div>
     </Modal>
   );
 }

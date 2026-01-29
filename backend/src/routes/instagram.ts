@@ -18,6 +18,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import { uploadToS3, isS3Configured, getS3PublicUrl } from "../services/s3Service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -183,11 +184,11 @@ router.get("/callback", async (req: Request, res: Response) => {
         return res.json({
           success: true,
           message: "Redirecting to social dashboard",
-          redirectUrl: `${clientUrl}/socialdashboard?instagram=connected`,
+          redirectUrl: `${clientUrl}/socialdashboard?instagram=connected&platform=instagram`,
         });
       }
       return res.redirect(
-        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?instagram=connected`
+        `${process.env.FRONTEND_URL || "http://localhost:3000"}/socialdashboard?instagram=connected&platform=instagram`
       );
     }
 
@@ -348,7 +349,7 @@ router.get("/callback", async (req: Request, res: Response) => {
             process.env.CLIENT_URL ||
             process.env.FRONTEND_URL ||
             "http://localhost:3000";
-          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+          const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`;
 
           if (isFrontendCallback) {
             return res.json({
@@ -449,7 +450,7 @@ router.get("/callback", async (req: Request, res: Response) => {
                 process.env.CLIENT_URL ||
                 process.env.FRONTEND_URL ||
                 "http://localhost:3000";
-              const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+              const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`;
 
               if (isFrontendCallback) {
                 return res.json({
@@ -553,7 +554,7 @@ router.get("/callback", async (req: Request, res: Response) => {
         process.env.CLIENT_URL ||
         process.env.FRONTEND_URL ||
         "http://localhost:3000";
-      const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`;
+      const redirectUrl = `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`;
 
       if (isFrontendCallback) {
         return res.json({
@@ -706,24 +707,104 @@ router.post(
       let finalImageUrl = imageUrl;
       let finalVideoUrl: string | undefined;
 
-      // If an image file was uploaded, convert it to a URL
+      // If an image file was uploaded, upload to S3 if configured
       if (imageFile) {
-        // For Instagram, we need a publicly accessible URL
-        // In production (with BACKEND_URL set), use the backend URL
-        // In development, localhost won't work, but we'll still try
-        const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-        // The file is saved in uploads/images directory
-        const relativePath = `/uploads/images/${imageFile.filename}`;
-        finalImageUrl = `${backendUrl}${relativePath}`;
-        console.log("[Instagram Share] Image file uploaded, converted to URL:", finalImageUrl);
+        if (isS3Configured()) {
+          try {
+            // Upload to S3 (Instagram requires publicly accessible URL)
+            const fileBuffer = fs.readFileSync(imageFile.path);
+            const result = await uploadToS3(
+              fileBuffer,
+              imageFile.filename,
+              imageFile.mimetype,
+              'instagram', // Instagram images are stored in instagram folder
+              freshUser._id.toString(),
+              true // Instagram images need public access
+            );
+            finalImageUrl = getS3PublicUrl(result.key);
+            console.log("[Instagram Share] Image uploaded to S3:", finalImageUrl);
+            
+            // Delete local temporary file
+            fs.unlinkSync(imageFile.path);
+          } catch (s3Error: any) {
+            console.error("[Instagram Share] S3 upload failed:", s3Error);
+            // Don't fallback to local storage - Instagram cannot access localhost URLs
+            // If S3 is configured but upload fails, throw an error
+            // Provide helpful error message based on error type
+            let errorMessage = s3Error.message || 'Unknown error';
+            if (errorMessage.includes('does not allow ACLS') || errorMessage.includes('ACL')) {
+              errorMessage = 
+                `S3 bucket does not allow ACLs. ` +
+                `Your S3 bucket uses "Bucket owner enforced" Object Ownership, which disables ACLs. ` +
+                `To enable public access for Instagram images, you need to configure a Bucket Policy instead: ` +
+                `Go to S3 Console > Your Bucket > Permissions > Bucket Policy, and add a policy that allows public read access for "instagram/*" objects. ` +
+                `Example: {"Version":"2012-10-17","Statement":[{"Sid":"PublicRead","Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::BUCKET_NAME/instagram/*"}]} ` +
+                `Also ensure "Block public access" settings allow the bucket policy to grant public access.`;
+            }
+            throw new Error(
+              `Failed to upload image to S3: ${errorMessage}. ` +
+              `Instagram API requires publicly accessible URLs and cannot access localhost.`
+            );
+          }
+        } else {
+          // S3 is not configured - Instagram requires publicly accessible URLs
+          // Don't use local storage as Instagram API cannot access localhost URLs
+          throw new Error(
+            'S3 is not configured. Instagram API requires publicly accessible image URLs. ' +
+            'Please configure AWS S3 (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION) or use Google Drive for image storage. ' +
+            'Localhost URLs are not accessible by Instagram API.'
+          );
+        }
       }
       
-      // If a video file was uploaded, convert it to a URL
+      // If a video file was uploaded, upload to S3 if configured
       if (videoFile) {
-        const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-        const relativePath = `/uploads/images/${videoFile.filename}`; // Multer saves to images dir
-        finalVideoUrl = `${backendUrl}${relativePath}`;
-        console.log("[Instagram Share] Video file uploaded, converted to URL:", finalVideoUrl);
+        if (isS3Configured()) {
+          try {
+            // Upload to S3 (Instagram requires publicly accessible URL)
+            const fileBuffer = fs.readFileSync(videoFile.path);
+            const result = await uploadToS3(
+              fileBuffer,
+              videoFile.filename,
+              videoFile.mimetype,
+              'instagram', // Instagram videos are stored in instagram folder
+              freshUser._id.toString(),
+              true // Instagram videos need public access
+            );
+            finalVideoUrl = getS3PublicUrl(result.key);
+            console.log("[Instagram Share] Video uploaded to S3:", finalVideoUrl);
+            
+            // Delete local temporary file
+            fs.unlinkSync(videoFile.path);
+          } catch (s3Error: any) {
+            console.error("[Instagram Share] S3 upload failed:", s3Error);
+            // Don't fallback to local storage - Instagram cannot access localhost URLs
+            // If S3 is configured but upload fails, throw an error
+            // Provide helpful error message based on error type
+            let errorMessage = s3Error.message || 'Unknown error';
+            if (errorMessage.includes('does not allow ACLS') || errorMessage.includes('ACL')) {
+              errorMessage = 
+                `S3 bucket does not allow ACLs. ` +
+                `Your S3 bucket uses "Bucket owner enforced" Object Ownership, which disables ACLs. ` +
+                `To enable public access for Instagram videos, you need to configure a Bucket Policy instead: ` +
+                `Go to S3 Console > Your Bucket > Permissions > Bucket Policy, and add a policy that allows public read access for "instagram/*" objects. ` +
+                `Example: {"Version":"2012-10-17","Statement":[{"Sid":"PublicRead","Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::BUCKET_NAME/instagram/*"}]} ` +
+                `Also ensure "Block public access" settings allow the bucket policy to grant public access.`;
+            }
+            throw new Error(
+              `Failed to upload video to S3: ${errorMessage}. ` +
+              `Instagram API requires publicly accessible URLs and cannot access localhost.`
+            );
+          }
+        } else {
+          // S3 is not configured - Instagram requires publicly accessible URLs
+          // Don't use local storage as Instagram API cannot access localhost URLs
+          throw new Error(
+            'S3 is not configured. Instagram API requires publicly accessible video URLs. ' +
+            'Please configure AWS S3 (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_BUCKET_NAME, AWS_REGION) or use Google Drive for video storage. ' +
+            'Localhost URLs are not accessible by Instagram API.'
+          );
+        }
       }
 
       // Convert relative URLs to absolute URLs using BACKEND_URL
@@ -777,12 +858,22 @@ router.post(
           const base64Match = generatedImageDataUrl.match(/^data:([^;]+);base64,(.+)$/);
           if (base64Match) {
             const [, mimeType, base64Data] = base64Match;
-            // Save the generated image
-            const savedImagePath = await saveImage(base64Data, mimeType);
-            // Convert to full URL for Instagram API
-            // Use backend URL since images are served from backend
-            const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
-            finalImageUrl = `${backendUrl}${savedImagePath}`;
+            // Save the generated image (upload to S3, Instagram requires public access)
+            const savedImagePath = await saveImage(
+              base64Data,
+              mimeType,
+              freshUser._id.toString(),
+              'instagram',
+              true // Instagram images need public access
+            );
+            
+            // If returned URL is S3 URL, use it directly; otherwise convert to full URL
+            if (savedImagePath.startsWith('http')) {
+              finalImageUrl = savedImagePath;
+            } else {
+              const backendUrl = process.env.BACKEND_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+              finalImageUrl = `${backendUrl}${savedImagePath}`;
+            }
             console.log("[Instagram Share] Generated and saved text image:", finalImageUrl);
           } else {
             throw new Error("Failed to parse generated image data");
@@ -894,6 +985,31 @@ router.post(
           message:
             "Instagram access token expired or invalid. Please reconnect your account.",
           requiresAuth: true,
+        });
+      }
+
+      // Check if it's an S3 upload error
+      if (error.message && (error.message.includes('S3 upload failed') || error.message.includes('S3 is not configured'))) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      // Check if it's the "Only photo or video can be accepted as media type" error
+      // This usually means Instagram API cannot access the image URL
+      if (
+        error.response?.data?.error?.message?.includes('Only photo or video can be accepted as media type') ||
+        error.message?.includes('Only photo or video can be accepted as media type')
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Failed to create media container: Only photo or video can be accepted as media type. " +
+            "This usually means Instagram API cannot access the image URL. " +
+            "Ensure the image URL is publicly accessible (not localhost). " +
+            "For local testing, use ngrok or deploy to a public URL. " +
+            "If using S3, ensure the bucket allows public read access and the file is uploaded with public-read ACL.",
         });
       }
 
@@ -1078,7 +1194,7 @@ router.post(
       res.json({
         success: true,
         message: "Successfully connected Instagram and Facebook Page",
-        redirectUrl: `${clientUrl}/socialdashboard?facebook=connected&instagram=connected`,
+        redirectUrl: `${clientUrl}/socialdashboard?facebook=connected&instagram=connected&platform=instagram`,
         instagram: {
           userId: instagramAccount.instagramAccountId,
           username: instagramAccount.username,
@@ -1176,7 +1292,7 @@ router.get(
           id: instagram.userId,
           username: profileResponse.data.username || instagram.username,
           name: profileResponse.data.username || instagram.username,
-          email: null, // Instagram API doesn't provide email
+          email: freshUser.email || null, // Use user's email from database (Instagram API doesn't provide email)
           picture: null,
           accountType: instagram.accountType || 'BUSINESS', // Use stored accountType or default
         };
@@ -1190,7 +1306,7 @@ router.get(
           id: instagram.userId,
           username: instagram.username,
           name: instagram.username || "Instagram Account",
-          email: null,
+          email: freshUser.email || null, // Use user's email from database
           picture: null,
           accountType: instagram.accountType || 'BUSINESS',
         };

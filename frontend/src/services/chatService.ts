@@ -1,4 +1,6 @@
 // API base URL - use VITE_API_URL if set (production), otherwise use relative path (development with vite proxy)
+import { isDemoMode } from "../demo/demoMode";
+import { demoChat } from "../demo/demoServices";
 const BASE_API_URL = import.meta.env.VITE_API_URL || ''
 const API_URL = `${BASE_API_URL}/api/chat`
 
@@ -68,6 +70,9 @@ export const chatService = {
     editMessageIndex?: number,
     questionType?: 'step' | 'general'
   ): Promise<ChatResponse> {
+    if (isDemoMode()) {
+      return demoChat.sendMessage(message);
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       return { success: false, message: "Not authenticated" };
@@ -114,6 +119,9 @@ export const chatService = {
     folders?: ProjectFolder[];
     message?: string;
   }> {
+    if (isDemoMode()) {
+      return demoChat.getConversations();
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       return { success: false, message: "Not authenticated" };
@@ -153,6 +161,9 @@ export const chatService = {
     conversation?: Conversation;
     message?: string;
   }> {
+    if (isDemoMode()) {
+      return demoChat.getConversation(id);
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       return { success: false, message: "Not authenticated" };
@@ -224,6 +235,9 @@ export const chatService = {
     prompt: string,
     conversationId?: string
   ): Promise<ImageGenerationResponse> {
+    if (isDemoMode()) {
+      return demoChat.generateImage();
+    }
     const token = localStorage.getItem("token");
     if (!token) {
       return { success: false, message: "Not authenticated" };

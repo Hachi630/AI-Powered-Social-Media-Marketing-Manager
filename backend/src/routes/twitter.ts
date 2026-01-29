@@ -199,7 +199,7 @@ ACTION REQUIRED:
       process.env.FRONTEND_URL ||
       "http://localhost:5173";
     res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=oauth_init_failed`
+      `${clientUrl}/socialdashboard?twitter=error&reason=oauth_init_failed&platform=twitter`
     );
   }
 });
@@ -224,7 +224,7 @@ router.get("/callback", async (req, res) => {
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
     return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=user_denied`
+      `${clientUrl}/socialdashboard?twitter=error&reason=user_denied&platform=twitter`
     );
   }
 
@@ -236,7 +236,7 @@ router.get("/callback", async (req, res) => {
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
     return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=missing_params`
+      `${clientUrl}/socialdashboard?twitter=error&reason=missing_params&platform=twitter`
     );
   }
 
@@ -252,7 +252,7 @@ router.get("/callback", async (req, res) => {
         process.env.FRONTEND_URL ||
         "http://localhost:3000";
       return res.redirect(
-        `${clientUrl}/socialdashboard?twitter=error&reason=invalid_token`
+        `${clientUrl}/socialdashboard?twitter=error&reason=invalid_token&platform=twitter`
       );
     }
   } catch (error) {
@@ -261,9 +261,9 @@ router.get("/callback", async (req, res) => {
       process.env.CLIENT_URL ||
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
-    return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=db_error`
-    );
+      return res.redirect(
+        `${clientUrl}/socialdashboard?twitter=error&reason=db_error&platform=twitter`
+      );
   }
 
   const { userId, oauthTokenSecret } = requestTokenDoc;
@@ -273,9 +273,9 @@ router.get("/callback", async (req, res) => {
       process.env.CLIENT_URL ||
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
-    return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=missing_user`
-    );
+      return res.redirect(
+        `${clientUrl}/socialdashboard?twitter=error&reason=missing_user&platform=twitter`
+      );
   }
 
   const appKey = process.env.TWITTER_API_KEY?.trim();
@@ -286,9 +286,9 @@ router.get("/callback", async (req, res) => {
       process.env.CLIENT_URL ||
       process.env.FRONTEND_URL ||
       "http://localhost:3000";
-    return res.redirect(
-      `${clientUrl}/socialdashboard?twitter=error&reason=config_error`
-    );
+      return res.redirect(
+        `${clientUrl}/socialdashboard?twitter=error&reason=config_error&platform=twitter`
+      );
   }
 
   try {
@@ -404,10 +404,10 @@ router.get("/callback", async (req, res) => {
           "Twitter OAuth: Redirecting to success page (rate limited, but tokens saved)"
         );
         res.redirect(
-          `${clientUrl}/socialdashboard?twitter=connected&note=rate_limited`
+          `${clientUrl}/socialdashboard?twitter=connected&note=rate_limited&platform=twitter`
         );
       } else {
-        res.redirect(`${clientUrl}/socialdashboard?twitter=connected`);
+        res.redirect(`${clientUrl}/socialdashboard?twitter=connected&platform=twitter`);
       }
     } catch (saveError: any) {
       console.error("Twitter OAuth: Failed to save tokens:", saveError);
@@ -451,11 +451,11 @@ router.get("/callback", async (req, res) => {
         ? Math.floor(resetTime.getTime() / 1000)
         : null;
       res.redirect(
-        `${clientUrl}/socialdashboard?twitter=error&reason=rate_limited&reset=${resetTimestamp}`
+        `${clientUrl}/socialdashboard?twitter=error&reason=rate_limited&reset=${resetTimestamp}&platform=twitter`
       );
     } else {
       res.redirect(
-        `${clientUrl}/socialdashboard?twitter=error&reason=token_exchange_failed`
+        `${clientUrl}/socialdashboard?twitter=error&reason=token_exchange_failed&platform=twitter`
       );
     }
   }
@@ -722,12 +722,15 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
     }
 
     // Post tweet using user's tokens
+    console.log('📤 Posting tweet to Twitter API...', { userId: userId.toString(), hasImage: !!imagePath });
     const result = await twitterService.postTweet(
       text.trim(),
       imagePath,
       twitterToken.accessToken,
       twitterToken.accessSecret
     );
+
+    console.log('📥 Twitter API response:', { success: result.success, tweetId: result.tweetId, error: result.error });
 
     if (result.success) {
       // Save to SocialMediaPost database for analytics
@@ -758,11 +761,102 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
       if (req.file && imagePath && fs.existsSync(imagePath)) {
         try {
           fs.unlinkSync(imagePath);
-          console.log('Temporary image file deleted:', imagePath);
+          console.log('🗑️ Temporary image file deleted:', imagePath);
         } catch (cleanupError) {
-          console.warn('Failed to delete temporary image file:', cleanupError);
+          console.warn('⚠️ Failed to delete temporary image file:', cleanupError);
           // Don't fail the request if cleanup fails
         }
+      }
+
+      // Save post to SocialMediaPost database for analytics
+      console.log('💾 Attempting to save Twitter post to database...', {
+        userId: userId.toString(),
+        tweetId: result.tweetId,
+        contentLength: text.trim().length,
+        hasImage: !!req.file,
+      });
+      
+      try {
+        const imageUrl = req.file ? `/uploads/images/${req.file.filename}` : null;
+        const postData = {
+          userId,
+          platform: 'twitter' as const,
+          postType: (imageUrl ? 'image' : 'text') as 'image' | 'text',
+          content: text.trim(),
+          mediaAttachments: imageUrl ? [{
+            type: 'image' as const,
+            url: imageUrl,
+          }] : [],
+          platformPostId: result.tweetId,
+          status: 'published' as const,
+          publishedAt: new Date(),
+        };
+        
+        console.log('💾 Saving post data:', {
+          userId: postData.userId.toString(),
+          platform: postData.platform,
+          postType: postData.postType,
+          platformPostId: postData.platformPostId,
+          contentPreview: postData.content.substring(0, 50) + '...',
+        });
+        
+        // Check if this tweet was already saved (duplicate platformPostId)
+        const SocialMediaPost = (await import('../models/SocialMediaPost.js')).default;
+        const existingPost = await SocialMediaPost.findOne({
+          userId,
+          platform: 'twitter',
+          platformPostId: result.tweetId,
+        });
+        
+        if (existingPost) {
+          console.log('⚠️ Tweet already exists in database, skipping save:', {
+            existingPostId: existingPost._id.toString(),
+            platformPostId: existingPost.platformPostId,
+          });
+        } else {
+          const savedPost = await saveSocialMediaPost(postData);
+          
+          console.log('✅ Twitter post saved to database for analytics:', {
+            postId: savedPost._id.toString(),
+            platformPostId: savedPost.platformPostId,
+            platform: savedPost.platform,
+            userId: savedPost.userId.toString(),
+          });
+        }
+      } catch (dbError: any) {
+        console.error('❌ Failed to save Twitter post to database:', {
+          error: dbError.message,
+          errorName: dbError.name,
+          errorCode: dbError.code,
+          stack: dbError.stack,
+          userId: userId.toString(),
+          tweetId: result.tweetId,
+        });
+        
+        // Check if it's a duplicate key error
+        if (dbError.code === 11000 || dbError.name === 'MongoServerError') {
+          console.error('⚠️ Duplicate platformPostId detected. This tweet may have already been saved.');
+          
+          // Try to find the existing post
+          try {
+            const SocialMediaPost = (await import('../models/SocialMediaPost.js')).default;
+            const existingPost = await SocialMediaPost.findOne({
+              userId,
+              platform: 'twitter',
+              platformPostId: result.tweetId,
+            });
+            if (existingPost) {
+              console.log('✅ Found existing post:', {
+                postId: existingPost._id.toString(),
+                platformPostId: existingPost.platformPostId,
+              });
+            }
+          } catch (findError) {
+            console.error('Failed to find existing post:', findError);
+          }
+        }
+        
+        // Don't fail the request if DB save fails, but log the error for debugging
       }
 
       return res.json({
@@ -841,6 +935,9 @@ router.get("/status", protect, async (req: any, res) => {
   // This prevents wasting the 25 requests/day limit on page refreshes
   if (!shouldVerify && token.twitterUserId) {
     console.log("Twitter status: Using cached data (no API call)");
+    // Get user email from User model
+    const User = (await import("../models/User.js")).default;
+    const user = await User.findById(userId);
     return res.json({
       connected: true,
       profile: {
@@ -848,7 +945,7 @@ router.get("/status", protect, async (req: any, res) => {
         username: token.twitterUsername || null,
         name: token.twitterName || null,
         picture: token.twitterPicture || null,
-        email: null,
+        email: user?.email || null,
       },
       cached: true,
       message: "Using cached profile data. Add ?verify=true to verify token with Twitter API.",
@@ -893,6 +990,10 @@ router.get("/status", protect, async (req: any, res) => {
       }
     );
 
+    // Get user email from User model
+    const User = (await import("../models/User.js")).default;
+    const user = await User.findById(userId);
+
     res.json({
       connected: true,
       profile: {
@@ -900,8 +1001,8 @@ router.get("/status", protect, async (req: any, res) => {
         username: userMe.data.username,
         name: userMe.data.name,
         picture: userMe.data.profile_image_url || null,
-        // Twitter API doesn't provide email without special permissions
-        email: null,
+        // Use user's email from database (Twitter API doesn't provide email)
+        email: user?.email || null,
       },
       verified: true,
     });

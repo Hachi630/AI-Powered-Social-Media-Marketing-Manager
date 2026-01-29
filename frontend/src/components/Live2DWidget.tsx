@@ -88,12 +88,14 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
 
     const widgetWidth = 200;
     const widgetHeight = 200;
-    const margin = 20; // Margin from edges
-    
+    const marginRight = 20; // Margin from right edge
+    const marginBottom = 120; // Margin from bottom edge - increased to ensure dialog is fully visible
+
     // Calculate bottom right position - ensure it's in the bottom right corner
+    // with enough space above for the ELO dialog to be fully visible
     const calculatePosition = () => {
-      const defaultX = window.innerWidth - widgetWidth - margin;
-      const defaultY = window.innerHeight - widgetHeight - margin;
+      const defaultX = window.innerWidth - widgetWidth - marginRight;
+      const defaultY = window.innerHeight - widgetHeight - marginBottom;
       return { x: defaultX, y: defaultY };
     };
 
@@ -105,8 +107,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         const defaultPos = calculatePosition();
         // If saved position is too far from bottom right, reset to default
         const distanceFromBottomRight = Math.sqrt(
-          Math.pow((window.innerWidth - margin - widgetWidth) - (parsed.x || defaultPos.x), 2) +
-          Math.pow((window.innerHeight - margin - widgetHeight) - (parsed.y || defaultPos.y), 2)
+          Math.pow((window.innerWidth - marginRight - widgetWidth) - (parsed.x || defaultPos.x), 2) +
+          Math.pow((window.innerHeight - marginBottom - widgetHeight) - (parsed.y || defaultPos.y), 2)
         );
         // If saved position is more than 100px away from bottom right, use default
         if (distanceFromBottomRight > 100) {
@@ -114,8 +116,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           localStorage.setItem('live2d-widget-position', JSON.stringify(defaultPos));
         } else {
           // Ensure saved position is valid (within viewport)
-          const validX = Math.max(margin, Math.min(parsed.x || defaultPos.x, window.innerWidth - widgetWidth - margin));
-          const validY = Math.max(margin, Math.min(parsed.y || defaultPos.y, window.innerHeight - widgetHeight - margin));
+          const validX = Math.max(marginRight, Math.min(parsed.x || defaultPos.x, window.innerWidth - widgetWidth - marginRight));
+          const validY = Math.max(20, Math.min(parsed.y || defaultPos.y, window.innerHeight - widgetHeight - 20));
           setPosition({ x: validX, y: validY });
         }
       } catch {
@@ -132,8 +134,8 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       const defaultPos = calculatePosition();
       setPosition(prev => {
         // Keep relative position, but ensure it stays in bottom right area
-        const newX = Math.min(prev.x, window.innerWidth - widgetWidth - margin);
-        const newY = Math.min(prev.y, window.innerHeight - widgetHeight - margin);
+        const newX = Math.min(prev.x, window.innerWidth - widgetWidth - marginRight);
+        const newY = Math.min(prev.y, window.innerHeight - widgetHeight - 20);
         return { x: newX, y: newY };
       });
     };
@@ -234,20 +236,43 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           }
         }
 
-        // Load model
-        console.log(`Live2D: Loading model from ${modelPath}`);
-        const model = await Live2DModel.from(modelPath, {
-          autoInteract: true,
+        // Normalize model path - ensure it uses the correct filename
+        let normalizedModelPath = modelPath;
+        // Migrate old Japanese filename to new English filename
+        if (normalizedModelPath.includes('うみうしモデル') || normalizedModelPath.includes('/umiushi/うみうしモデル')) {
+          normalizedModelPath = "/umiushi/model.model3.json";
+          console.log('Live2D: Migrated old model path to:', normalizedModelPath);
+        }
+        
+        // Load model with full URL for production
+        const fullModelPath = normalizedModelPath.startsWith('http')
+          ? normalizedModelPath
+          : `${window.location.origin}${normalizedModelPath}`;
+        console.log(`Live2D: Loading model from ${fullModelPath}`);
+
+        const model = await Live2DModel.from(fullModelPath, {
+          autoInteract: false, // Disabled to avoid pixi.js conflicts
+        }).catch((loadError) => {
+          console.error('Live2D: Model load error:', loadError);
+          // Try without origin prefix as fallback
+          if (!normalizedModelPath.startsWith('http')) {
+            console.log('Live2D: Retrying with relative path...');
+            return Live2DModel.from(normalizedModelPath, { autoInteract: false });
+          }
+          throw loadError;
         });
         console.log('Live2D: Model loaded successfully', model);
 
         // Scale model to fit container
-        const scale = Math.min(200 / model.width, 200 / model.height) * 0.8;
-        model.scale.set(scale);
+        const modelAny = model as any;
+        const scale = Math.min(200 / (modelAny.width || 200), 200 / (modelAny.height || 200)) * 0.8;
+        if (modelAny.scale) {
+          modelAny.scale.set(scale);
+        }
 
         // Center model in container
-        model.x = (200 - model.width) / 2;
-        model.y = (200 - model.height) / 2;
+        modelAny.x = (200 - (modelAny.width || 200)) / 2;
+        modelAny.y = (200 - (modelAny.height || 200)) / 2;
 
         // Check if app is still valid/mounted before adding child
         if (!app || app !== appRef.current || !app.stage) {
@@ -256,14 +281,13 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
           return;
         }
 
-        app.stage.addChild(model);
+        app.stage.addChild(modelAny as any);
         modelRef.current = model;
         setIsLoaded(true);
         console.log('Live2D: Model added to stage, widget should be visible now');
 
-        // Enable interactions for click
-        model.interactive = true;
-        model.cursor = 'pointer';
+        // Use native canvas click instead of pixi.js interactive to avoid errors
+        // Don't set interactive/cursor properties that cause pixi.js errors
 
         // Set event mode to allow both click and drag
         // Pixi v6 uses interactive, v7 uses eventMode. We are on v6.
@@ -293,33 +317,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
         // Play idle motion after a delay
         setTimeout(playIdleMotion, 1000);
 
-        // Set up click handler - toggle dialog open/close
-        model.on('pointertap', async () => {
-          // Stop crawl animation if user clicks (use ref for latest state)
-          if (isCrawlingRef.current) {
-            stopCrawlAnimation();
-            return;
-          }
-
-          console.log('[ELO] Model clicked, toggling dialog');
-          // Toggle ELO dialog
-          setDialogOpen(prev => {
-            const newState = !prev;
-            console.log('[ELO] Dialog state changed:', newState);
-            return newState;
-          });
-          // Play tap motion if available
-          try {
-            if (typeof model.motion === 'function') {
-              await (model.motion as any)('tap', 0);
-            }
-          } catch (error) {
-            // Motion may not exist, that's okay
-            console.debug('Tap motion not available');
-          }
-        });
-
-        // Mouse follow (eye tracking)
+        // Mouse follow (eye tracking) - set up after model is loaded
         const handleMouseMove = (event: MouseEvent) => {
           if (!model || !model.internalModel) return;
 
@@ -357,9 +355,11 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
 
         window.addEventListener('mousemove', handleMouseMove);
 
-        return () => {
-          window.removeEventListener('mousemove', handleMouseMove);
-        };
+        // Set canvas cursor style for click indication
+        const canvasElement = canvasRef.current?.querySelector('canvas');
+        if (canvasElement) {
+          canvasElement.style.cursor = 'pointer';
+        }
       } catch (error) {
         console.error('Failed to load Live2D model:', error);
         setLoadError(error instanceof Error ? error.message : 'Unknown error');
@@ -485,8 +485,43 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = async (e: MouseEvent) => {
       if (dragStartPosRef.current) {
+        const timeElapsed = Date.now() - dragStartPosRef.current.time;
+        const moveDistance = Math.sqrt(
+          Math.pow(e.clientX - dragStartPosRef.current.x, 2) +
+          Math.pow(e.clientY - dragStartPosRef.current.y, 2)
+        );
+
+        // If it's a click (not a drag): time < 300ms and moveDistance < 5px
+        if (!isDragging && timeElapsed < 300 && moveDistance < 5) {
+          // Stop crawl animation if user clicks
+          if (isCrawlingRef.current) {
+            stopCrawlAnimation();
+            dragStartPosRef.current = null;
+            setIsDragging(false);
+            return;
+          }
+
+          console.log('[ELO] Model clicked, toggling dialog');
+          // Toggle ELO dialog
+          setDialogOpen(prev => {
+            const newState = !prev;
+            console.log('[ELO] Dialog state changed:', newState);
+            return newState;
+          });
+          // Play tap motion if available
+          try {
+            const model = modelRef.current;
+            if (model && typeof (model as any).motion === 'function') {
+              await ((model as any).motion as any)('tap', 0);
+            }
+          } catch (error) {
+            // Motion may not exist, that's okay
+            console.debug('Tap motion not available');
+          }
+        }
+
         // Save position to localStorage if dragged
         if (isDragging) {
           localStorage.setItem('live2d-widget-position', JSON.stringify(position));
@@ -504,7 +539,7 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, position]);
+  }, [isDragging, position, stopCrawlAnimation]);
 
   // Handle touch events for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -656,9 +691,9 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     const distance = Math.sqrt(
       Math.pow(targetX - currentPos.x, 2) + Math.pow(targetY - currentPos.y, 2)
     );
-    // Calculate duration based on distance - very slow crawl movement (about 40-60 pixels per second)
-    const pixelsPerSecond = 50; // Very slow crawl speed for realistic crawling feel
-    const duration = Math.max(5000, Math.min(15000, (distance / pixelsPerSecond) * 1000)); // 5-15 seconds based on distance
+    // Calculate duration based on distance - extremely slow crawl movement for smooth, natural feel
+    const pixelsPerSecond = 20; // Much slower crawl speed (reduced from 50 to 20)
+    const duration = Math.max(8000, Math.min(25000, (distance / pixelsPerSecond) * 1000)); // 8-25 seconds based on distance
     const startTime = Date.now();
     const startX = currentPos.x;
     const startY = currentPos.y;
@@ -699,11 +734,11 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
             const returnStartY = targetY;
             // Calculate return duration based on distance
             const returnDistance = Math.sqrt(
-              Math.pow(originalPositionRef.current.x - targetX, 2) + 
+              Math.pow(originalPositionRef.current.x - targetX, 2) +
               Math.pow(originalPositionRef.current.y - targetY, 2)
             );
-            const pixelsPerSecond = 50; // Same slow speed for return
-            const returnDuration = Math.max(4000, Math.min(12000, (returnDistance / pixelsPerSecond) * 1000)); // 4-12 seconds to return
+            const pixelsPerSecond = 20; // Much slower return speed (reduced from 50 to 20)
+            const returnDuration = Math.max(6000, Math.min(20000, (returnDistance / pixelsPerSecond) * 1000)); // 6-20 seconds to return
 
             const returnAnimate = () => {
               const returnElapsed = Date.now() - returnStartTime;
@@ -766,16 +801,12 @@ export default function Live2DWidget({ modelPath, onSendToDashboard, isPreview =
     };
   }, []);
 
-  // Inactivity detection - trigger crawl after 15 seconds
+  // Inactivity detection - DISABLED (user requested no automatic crawling)
   useInactivity({
     timeout: 15000,
-    enabled: isLoaded && !isDragging && !isCrawlingRef.current && !dialogOpen && !isPreview,
+    enabled: false, // Disabled automatic crawling
     onInactive: () => {
-      // Use ref to check latest state and call function
-      if (!isCrawlingRef.current && !isDragging && !dialogOpen && isLoaded && performCrawlAnimationRef.current) {
-        console.log('[ELO] User inactive for 15 seconds, starting crawl');
-        performCrawlAnimationRef.current();
-      }
+      // Crawl animation disabled by user request
     },
   });
 
