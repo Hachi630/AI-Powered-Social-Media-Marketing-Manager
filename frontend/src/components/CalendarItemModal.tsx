@@ -92,6 +92,7 @@ export default function CalendarItemModal({
       loadCampaigns()
       if (item) {
         // Edit mode: populate form with item data
+        // Use item.id as key to ensure we reset when item changes
         form.setFieldsValue({
           platform: item.platform,
           date: dayjs(item.date),
@@ -131,8 +132,13 @@ export default function CalendarItemModal({
         // Create mode: always in editing state
         setIsEditing(true)
       }
+    } else {
+      // Reset form and state when modal closes
+      form.resetFields()
+      setImageUrl(null)
+      setIsEditing(false)
     }
-  }, [open, item, defaultDate, defaultTime, form])
+  }, [open, item?.id, defaultDate, defaultTime, form]) // Use item?.id instead of item to properly detect changes
 
   useEffect(() => {
     const handleDemoSchedule = (event: CustomEvent) => {

@@ -20,9 +20,9 @@ Open `backend/.env` and add:
 
 ```env
 # Twilio Configuration
-TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID
+TWILIO_ACCOUNT_SID=your_account_sid_here
 TWILIO_AUTH_TOKEN=your_actual_auth_token_here
-TWILIO_PHONE_NUMBER=+18509898481
+TWILIO_PHONE_NUMBER=your_phone_number_here
 ```
 
 **Important:** 
@@ -54,17 +54,11 @@ If you see an error, double-check:
 3. The Account SID and Auth Token are from the same account
 4. There are no extra spaces or quotes in the .env file
 
-## Your Credentials (from your message)
+## Getting Your Credentials
 
-Based on your provided credentials:
+**⚠️ Important**: Never use credentials from documentation or examples. Always get your own credentials from the Twilio Console.
 
-```env
-TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=YOUR_TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER=+18509898481
-```
-
-**Note:** If the Auth Token `YOUR_TWILIO_AUTH_TOKEN` doesn't work, you may need to:
+If your Auth Token doesn't work, you may need to:
 1. Check if it was regenerated in Twilio Console
 2. Use the current Auth Token from your Twilio Console
 3. Make sure you're using the "Live" credentials, not "Test" credentials

@@ -95,7 +95,11 @@ router.get('/', requireAuth, async (req: any, res) => {
       campaignsTimeSeries,
       calendarItemsTimeSeries,
       conversationsTimeSeries,
-      postsTimeSeries,
+      postsCreatedTimeSeries,
+      publishedPostsTimeSeries,
+      scheduledPostsTimeSeries,
+      calendarPublishesTimeSeries,
+      directPublishesTimeSeries,
       linkedInPostsTimeSeries,
       aiContentTimeSeries,
       mediaFilesTimeSeries,
@@ -106,11 +110,23 @@ router.get('/', requireAuth, async (req: any, res) => {
           $match: { userId: userId }
         },
         {
+          $addFields: {
+            normalizedPlatform: {
+              $cond: [
+                { $regexMatch: { input: { $toLower: '$platform' }, regex: /^instagram/i } },
+                'instagram',
+                { $toLower: '$platform' }
+              ]
+            }
+          }
+        },
+        {
           $group: {
-            _id: '$platform',
+            _id: '$normalizedPlatform',
             count: { $sum: 1 }
           }
-        }
+        },
+        { $sort: { count: -1 } }
       ]),
       
       // Posts by status for this user
@@ -352,7 +368,7 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $limit: 30 }
       ]),
       
-      // Posts time-series for this user (last 30 days)
+      // Trend 1: Content Creation Over Time - Posts created per day (from createdAt)
       SocialMediaPost.aggregate([
         {
           $match: { userId: userId }
@@ -369,18 +385,116 @@ router.get('/', requireAuth, async (req: any, res) => {
         { $limit: 30 }
       ]),
       
-      // LinkedIn posts time-series for this user (last 30 days)
+      // Trend 2: Published posts per day (status='published', grouped by publishedAt or createdAt)
       SocialMediaPost.aggregate([
         {
-          $match: {
+          $match: { 
             userId: userId,
-            platform: 'linkedin'
+            status: 'published'
           }
         },
         {
           $group: {
             _id: {
-              $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+              $dateToString: { 
+                format: '%Y-%m-%d', 
+                date: { $ifNull: ['$publishedAt', '$createdAt'] }
+              }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $limit: 30 }
+      ]),
+      
+      // Trend 2: Scheduled posts per day (from calendaritems with status='scheduled', grouped by date)
+      CalendarItem.aggregate([
+        {
+          $match: { 
+            userId: userId,
+            status: 'scheduled'
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: '%Y-%m-%d', date: '$date' }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $limit: 30 }
+      ]),
+      
+      // Trend 4: Calendar publishes per day (posts with calendarItemId, grouped by publishedAt)
+      SocialMediaPost.aggregate([
+        {
+          $match: { 
+            userId: userId,
+            status: 'published',
+            calendarItemId: { $exists: true, $ne: null }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { 
+                format: '%Y-%m-%d', 
+                date: { $ifNull: ['$publishedAt', '$createdAt'] }
+              }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $limit: 30 }
+      ]),
+      
+      // Trend 4: Direct publishes per day (posts without calendarItemId, grouped by publishedAt)
+      SocialMediaPost.aggregate([
+        {
+          $match: { 
+            userId: userId,
+            status: 'published',
+            $or: [
+              { calendarItemId: { $exists: false } },
+              { calendarItemId: null }
+            ]
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { 
+                format: '%Y-%m-%d', 
+                date: { $ifNull: ['$publishedAt', '$createdAt'] }
+              }
+            },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { _id: 1 } },
+        { $limit: 30 }
+      ]),
+      
+      // LinkedIn posts time-series for this user (last 30 days)
+      SocialMediaPost.aggregate([
+        {
+          $match: {
+            userId: userId,
+            platform: 'linkedin',
+            status: 'published'
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: { 
+                format: '%Y-%m-%d', 
+                date: { $ifNull: ['$publishedAt', '$createdAt'] }
+              }
             },
             count: { $sum: 1 }
           }
@@ -577,7 +691,19 @@ router.get('/', requireAuth, async (req: any, res) => {
       // Calendar items by platform
       CalendarItem.aggregate([
         { $match: { userId } },
-        { $group: { _id: '$platform', count: { $sum: 1 } } }
+        {
+          $addFields: {
+            normalizedPlatform: {
+              $cond: [
+                { $regexMatch: { input: { $toLower: '$platform' }, regex: /^instagram/i } },
+                'instagram',
+                { $toLower: '$platform' }
+              ]
+            }
+          }
+        },
+        { $group: { _id: '$normalizedPlatform', count: { $sum: 1 } } },
+        { $sort: { count: -1 } }
       ]),
       // Campaigns by status
       Campaign.aggregate([
@@ -863,12 +989,40 @@ router.get('/', requireAuth, async (req: any, res) => {
       Promise.all([
         CalendarItem.aggregate([
           { $match: { userId } },
-          { $group: { _id: '$platform', count: { $sum: 1 } } },
+          {
+            $addFields: {
+              normalizedPlatform: {
+                $cond: [
+                  { $regexMatch: { input: '$platform', regex: /^instagram/i } },
+                  'instagram',
+                  {
+                    $cond: [
+                      { $eq: [{ $toLower: '$platform' }, 'x'] },
+                      'twitter',
+                      { $toLower: '$platform' }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          { $group: { _id: '$normalizedPlatform', count: { $sum: 1 } } },
           { $sort: { count: -1 } }
         ]),
         SocialMediaPost.aggregate([
           { $match: { userId, status: 'published' } },
-          { $group: { _id: '$platform', count: { $sum: 1 } } },
+          {
+            $addFields: {
+              normalizedPlatform: {
+                $cond: [
+                  { $eq: [{ $toLower: '$platform' }, 'x'] },
+                  'twitter',
+                  { $toLower: '$platform' }
+                ]
+              }
+            }
+          },
+          { $group: { _id: '$normalizedPlatform', count: { $sum: 1 } } },
           { $sort: { count: -1 } }
         ]),
       ]),
@@ -1483,39 +1637,65 @@ router.get('/', requireAuth, async (req: any, res) => {
         total: item.total || 0
       })),
       timeSeries: {
-        campaigns: campaignsTimeSeries.map((item: any) => ({
+        // Trend 1: Content Creation Over Time - Posts created per day
+        postsCreated: (postsCreatedTimeSeries || []).map((item: any) => ({
           date: item._id,
-          count: item.count
+          count: item.count || 0
         })),
-        events: eventsTimeSeries.length > 0 
+        // Trend 2: Publishing vs Scheduling
+        publishedPosts: (publishedPostsTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        scheduledPosts: (scheduledPostsTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        // Trend 3: AI Generation Activity - AI pieces generated per day
+        aiContent: (aiContentTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        // Trend 4: Publishing Method Trend
+        calendarPublishes: (calendarPublishesTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        directPublishes: (directPublishesTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        // Trend 5: User Interaction Activity
+        conversations: (conversationsTimeSeries || []).map((item: any) => ({
+          date: item._id,
+          count: item.count || 0
+        })),
+        events: eventsTimeSeries.length > 0
           ? eventsTimeSeries.map((item: any) => ({
               date: item._id,
-              count: item.count
+              count: item.count || 0
             }))
           : [],
-        calendarItems: calendarItemsTimeSeries.map((item: any) => ({
+        // Legacy data (kept for backward compatibility, but not used in Activity Trends)
+        campaigns: (campaignsTimeSeries || []).map((item: any) => ({
           date: item._id,
-          count: item.count
+          count: item.count || 0
         })),
-        conversations: conversationsTimeSeries.map((item: any) => ({
+        calendarItems: (calendarItemsTimeSeries || []).map((item: any) => ({
           date: item._id,
-          count: item.count
+          count: item.count || 0
         })),
-        posts: postsTimeSeries.map((item: any) => ({
+        posts: (postsCreatedTimeSeries || []).map((item: any) => ({
           date: item._id,
-          count: item.count
+          count: item.count || 0
         })),
-        linkedInPosts: linkedInPostsTimeSeries.map((item: any) => ({
+        linkedInPosts: (linkedInPostsTimeSeries || []).map((item: any) => ({
           date: item._id,
-          count: item.count
+          count: item.count || 0
         })),
-        aiContent: aiContentTimeSeries.map((item: any) => ({
+        mediaFiles: (mediaFilesTimeSeries || []).map((item: any) => ({
           date: item._id,
-          count: item.count
-        })),
-        mediaFiles: mediaFilesTimeSeries.map((item: any) => ({
-          date: item._id,
-          count: item.count
+          count: item.count || 0
         })),
       },
       calendarItemsAnalytics: (() => {
@@ -1683,21 +1863,76 @@ router.get('/', requireAuth, async (req: any, res) => {
         // Process Cross-Platform Strategy Mix
         const [plannedPlatforms, publishedPlatforms] = crossPlatformStrategyData || [[], []]
         const platformMap = new Map()
+        
+        // First, add all planned platforms
         plannedPlatforms.forEach((p: any) => {
-          platformMap.set(p._id, { platform: p._id, planned: p.count, published: 0, gap: p.count })
+          if (p._id) {
+            platformMap.set(p._id.toLowerCase(), { 
+              platform: p._id.toLowerCase(), 
+              planned: p.count || 0, 
+              published: 0, 
+              gap: p.count || 0 
+            })
+          }
         })
+        
+        // Then, add/update with published platforms
         publishedPlatforms.forEach((p: any) => {
-          const existing = platformMap.get(p._id) || { platform: p._id, planned: 0, published: 0, gap: 0 }
-          existing.published = p.count
-          existing.gap = existing.planned - p.count
-          platformMap.set(p._id, existing)
+          if (p._id) {
+            const platformKey = p._id.toLowerCase()
+            const existing = platformMap.get(platformKey) || { 
+              platform: platformKey, 
+              planned: 0, 
+              published: 0, 
+              gap: 0 
+            }
+            existing.published = p.count || 0
+            existing.gap = existing.planned - existing.published
+            platformMap.set(platformKey, existing)
+          }
         })
 
-        const crossPlatformStrategy = Array.from(platformMap.values()).map((p: any) => ({
-          ...p,
-          completionRate: p.planned > 0 ? Math.round((p.published / p.planned) * 100 * 100) / 100 : 0,
-          insight: p.gap > p.published ? `We are falling behind on our ${p.platform} strategy.` : null,
-        }))
+        // Normalize platform names for display and ensure consistent ordering
+        const platformDisplayNames: Record<string, string> = {
+          'linkedin': 'LinkedIn',
+          'twitter': 'Twitter',
+          'facebook': 'Facebook',
+          'instagram': 'Instagram'
+        }
+
+        // Filter out SMS and WhatsApp from the platform map
+        const socialMediaPlatforms = ['linkedin', 'twitter', 'facebook', 'instagram']
+        const filteredPlatformMap = new Map()
+        platformMap.forEach((value, key) => {
+          if (socialMediaPlatforms.includes(key.toLowerCase())) {
+            filteredPlatformMap.set(key, value)
+          }
+        })
+
+        const crossPlatformStrategy = Array.from(filteredPlatformMap.values())
+          .map((p: any) => {
+            const normalizedPlatform = (p.platform || '').toLowerCase()
+            const displayName = platformDisplayNames[normalizedPlatform] || normalizedPlatform.charAt(0).toUpperCase() + normalizedPlatform.slice(1)
+            return {
+              platform: displayName,
+              platformKey: normalizedPlatform, // Keep original for sorting
+              planned: p.planned || 0,
+              published: p.published || 0,
+              gap: (p.planned || 0) - (p.published || 0),
+              completionRate: p.planned > 0 ? Math.round((p.published / p.planned) * 100 * 100) / 100 : 0,
+              insight: p.gap > p.published ? `We are falling behind on our ${displayName} strategy.` : null,
+            }
+          })
+          .sort((a, b) => {
+            // Sort by platform name for consistent display
+            const platformOrder = ['linkedin', 'twitter', 'facebook', 'instagram']
+            const aIndex = platformOrder.indexOf(a.platformKey)
+            const bIndex = platformOrder.indexOf(b.platformKey)
+            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex
+            if (aIndex !== -1) return -1
+            if (bIndex !== -1) return 1
+            return a.platformKey.localeCompare(b.platformKey)
+          })
 
         // Process Media Asset Utilization
         const mediaUtilization = mediaUtilizationStats ? {
@@ -2136,9 +2371,24 @@ router.get('/', requireAuth, async (req: any, res) => {
   } catch (error: any) {
     console.error('Analytics error:', error)
     console.error('Error stack:', error.stack)
+    
+    // Provide detailed error message
+    let errorMessage = 'Failed to fetch analytics'
+    if (error?.message) {
+      errorMessage = error.message
+    } else if (error instanceof Error) {
+      errorMessage = error.toString()
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT') {
+      errorMessage = 'Database connection error. Please try again.'
+    } else if (error?.name === 'MongooseError' || error?.name === 'MongoError') {
+      errorMessage = 'Database error occurred. Please try again.'
+    }
+    
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to fetch analytics',
+      message: errorMessage,
       error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     })
   }
@@ -3037,9 +3287,24 @@ router.get('/best-time/all', requireAuth, async (req: any, res) => {
     })
   } catch (error: any) {
     console.error('[Best Time Analytics] Error:', error)
+    
+    // Provide detailed error message
+    let errorMessage = 'Failed to get analytics'
+    if (error?.message) {
+      errorMessage = error.message
+    } else if (error instanceof Error) {
+      errorMessage = error.toString()
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else if (error?.code === 'ECONNREFUSED' || error?.code === 'ETIMEDOUT') {
+      errorMessage = 'Database connection error. Please try again.'
+    } else if (error?.name === 'MongooseError' || error?.name === 'MongoError') {
+      errorMessage = 'Database error occurred. Please try again.'
+    }
+    
     res.status(500).json({
       success: false,
-      message: error.message || 'Failed to get analytics',
+      message: errorMessage,
     })
   }
 })

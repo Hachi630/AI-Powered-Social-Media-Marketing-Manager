@@ -26,6 +26,7 @@ export async function saveSocialMediaPost(data: {
   aiPrompt?: string
   aiModel?: string
   errorMessage?: string
+  calendarItemId?: string | Types.ObjectId
 }): Promise<ISocialMediaPost> {
   const post = new SocialMediaPost({
     userId: data.userId,
@@ -46,6 +47,7 @@ export async function saveSocialMediaPost(data: {
     aiPrompt: data.aiPrompt,
     aiModel: data.aiModel,
     errorMessage: data.errorMessage,
+    calendarItemId: data.calendarItemId,
   })
 
   return await post.save()

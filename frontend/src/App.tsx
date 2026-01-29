@@ -233,9 +233,40 @@ function AppContent() {
     };
   }, []);
 
-  const handleLoginSuccess = (user: User) => {
+  const handleLoginSuccess = async (user: User) => {
+    console.log('[App] handleLoginSuccess called with user:', {
+      id: user?.id,
+      email: user?.email,
+      avatar: user?.avatar,
+      hasAvatar: !!user?.avatar,
+      authProvider: user?.authProvider
+    });
+    
     setIsLoggedIn(true);
     setUser(user);
+    
+    // Refresh user data from server to ensure we have the latest avatar
+    try {
+      // Small delay to ensure backend has saved the avatar
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const refreshedUser = await authService.getCurrentUser();
+      if (refreshedUser) {
+        console.log('[App] Refreshed user data from server:', {
+          id: refreshedUser.id,
+          email: refreshedUser.email,
+          avatar: refreshedUser.avatar,
+          hasAvatar: !!refreshedUser.avatar,
+          authProvider: refreshedUser.authProvider
+        });
+        setUser(refreshedUser);
+      } else {
+        console.warn('[App] Failed to refresh user data - getCurrentUser returned null');
+      }
+    } catch (error) {
+      console.error('[App] Failed to refresh user data:', error);
+    }
+    
     // Only show onboarding once per user per device
     const onboardingSeenKey = `onboardingSeen_${user.id}`;
     const hasSeenOnboarding = localStorage.getItem(onboardingSeenKey) === "true";

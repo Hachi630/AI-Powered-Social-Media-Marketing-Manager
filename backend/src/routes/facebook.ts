@@ -11,6 +11,7 @@ import {
   shareToFacebook,
 } from "../services/facebookService.js";
 import { getInstagramAccountIdForPage } from "../services/instagramService.js";
+import { saveSocialMediaPost } from "../services/databaseService.js";
 import crypto from "crypto";
 import multer from "multer";
 import path from "path";
@@ -465,6 +466,30 @@ router.post("/share", protect, async (req: AuthRequest, res: Response) => {
       imageUrl: imageUrl,
     });
 
+    // Save to SocialMediaPost database for analytics
+    try {
+      const mediaAttachments = imageUrl ? [{
+        type: 'image' as const,
+        url: imageUrl,
+        thumbnailUrl: imageUrl,
+      }] : undefined;
+      
+      await saveSocialMediaPost({
+        userId: freshUser._id,
+        platform: 'facebook',
+        postType: imageUrl ? 'image' : 'text',
+        content: content,
+        mediaAttachments: mediaAttachments,
+        platformPostId: result.postId,
+        status: 'published',
+        publishedAt: new Date(),
+      });
+      console.log('✅ Facebook post saved to database for analytics');
+    } catch (dbError: any) {
+      console.error('Failed to save Facebook post to database:', dbError);
+      // Don't fail the request if DB save fails
+    }
+
     res.json({
       success: true,
       message: "Successfully shared to Facebook",
@@ -670,6 +695,48 @@ router.post(
         linkName: linkName || undefined,
         linkDescription: linkDescription || undefined,
       });
+
+      // Save to SocialMediaPost database for analytics
+      try {
+        const mediaAttachments: any[] = [];
+        if (imageFile) {
+          mediaAttachments.push({
+            type: 'image' as const,
+            url: `/uploads/images/${imageFile.filename}`,
+            thumbnailUrl: `/uploads/images/${imageFile.filename}`,
+            fileName: imageFile.originalname,
+            fileSize: imageFile.size,
+            mimeType: imageFile.mimetype,
+          });
+        }
+        if (videoFile) {
+          mediaAttachments.push({
+            type: 'video' as const,
+            url: `/uploads/images/${videoFile.filename}`,
+            thumbnailUrl: `/uploads/images/${videoFile.filename}`,
+            fileName: videoFile.originalname,
+            fileSize: videoFile.size,
+            mimeType: videoFile.mimetype,
+          });
+        }
+        
+        const postType = videoFile ? 'video' : imageFile ? 'image' : linkUrl ? 'link' : 'text';
+        
+        await saveSocialMediaPost({
+          userId: freshUser._id,
+          platform: 'facebook',
+          postType: postType,
+          content: text.trim(),
+          mediaAttachments: mediaAttachments.length > 0 ? mediaAttachments : undefined,
+          platformPostId: result.postId,
+          status: 'published',
+          publishedAt: new Date(),
+        });
+        console.log('✅ Facebook post saved to database for analytics');
+      } catch (dbError: any) {
+        console.error('Failed to save Facebook post to database:', dbError);
+        // Don't fail the request if DB save fails
+      }
 
       // Clean up uploaded files after successful post
       if (imageFile) {

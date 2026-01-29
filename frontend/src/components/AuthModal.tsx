@@ -140,8 +140,12 @@ export default function AuthModal({
         onLoginSuccess(result.user);
         onCancel();
       } else {
-        const errorMsg = result.message || "Failed to sign in with Google";
-        console.error("[Google Sign-In] Backend error:", errorMsg);
+        // Extract error message from result
+        const errorMsg = result.message || result.error || "Failed to sign in with Google";
+        console.error("[Google Sign-In] Backend error:", {
+          message: errorMsg,
+          result: result
+        });
         message.error(errorMsg);
       }
     } catch (error: any) {
@@ -149,18 +153,29 @@ export default function AuthModal({
         message: error.message,
         stack: error.stack,
         response: error.response,
+        error: error
       });
       
       // Provide more specific error messages
-      if (error.message?.includes("Network") || error.message?.includes("fetch")) {
-        message.error("Network error: Unable to connect to server. Please check your connection and backend URL.");
+      let errorMessage = "Failed to sign in with Google";
+      
+      if (error.message) {
+        errorMessage = error.message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
       } else if (error.response?.status === 401) {
-        message.error("Invalid Google token. Please try again.");
+        errorMessage = "Invalid Google token. Please try again.";
+      } else if (error.response?.status === 400) {
+        errorMessage = "Invalid request. Please try again.";
       } else if (error.response?.status === 500) {
-        message.error("Server error. Please check backend logs.");
-      } else {
-        message.error(`Google sign-in failed: ${error.message || "Unknown error"}`);
+        errorMessage = "Server error. Please try again later.";
+      } else if (error.message?.includes("Network") || error.message?.includes("fetch") || error.message?.includes("Failed to fetch")) {
+        errorMessage = "Network error: Unable to connect to server. Please check your connection and backend URL.";
+      } else if (error.name === "TypeError" && error.message?.includes("fetch")) {
+        errorMessage = "Network error: Unable to connect to server. Please check your connection.";
       }
+      
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -526,7 +541,7 @@ export default function AuthModal({
           </Typography.Text>
 
           <Space
-            direction="vertical"
+            orientation="vertical"
             size={12}
             className={styles.socialButtons}
           >

@@ -13,19 +13,12 @@ Add the following variables to your `backend/.env` file:
 
 ```env
 # Twilio Configuration
-TWILIO_ACCOUNT_SID=YOUR_TWILIO_ACCOUNT_SID
-TWILIO_AUTH_TOKEN=YOUR_TWILIO_AUTH_TOKEN
-TWILIO_PHONE_NUMBER=+18509898481
+TWILIO_ACCOUNT_SID=your_account_sid_here
+TWILIO_AUTH_TOKEN=your_auth_token_here
+TWILIO_PHONE_NUMBER=your_phone_number_here
 ```
 
-## Default Credentials (Already Configured)
-
-The application has default Twilio credentials configured in the code:
-- **Account SID**: `YOUR_TWILIO_ACCOUNT_SID`
-- **Auth Token**: `YOUR_TWILIO_AUTH_TOKEN`
-- **Phone Number**: `+18509898481`
-
-If you want to use different credentials, add them to your `.env` file as shown above.
+**⚠️ Security Note**: Never commit your `.env` file with real credentials to version control. Always use environment variables for sensitive credentials.
 
 ## Features
 

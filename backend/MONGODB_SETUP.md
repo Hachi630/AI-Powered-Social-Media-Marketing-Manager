@@ -2,10 +2,15 @@
 
 ## 连接字符串格式
 
-你的 MongoDB Atlas 连接 URI 应该是：
+你的 MongoDB Atlas 连接 URI 格式应该是：
 
 ```
-mongodb+srv://YOUR_MONGODB_USER:<db_password>@your-cluster.mongodb.net/melo?appName=Melo&retryWrites=true&w=majority
+mongodb+srv://<username>:<password>@<cluster-address>/<database>?appName=Melo&retryWrites=true&w=majority
+```
+
+**示例**（使用你自己的凭据）：
+```
+mongodb+srv://your_username:your_password@your-cluster.mongodb.net/melo?appName=Melo&retryWrites=true&w=majority
 ```
 
 ## 配置步骤
@@ -24,7 +29,7 @@ touch .env
 在 `.env` 文件中添加以下内容，**将 `<db_password>` 替换为你的实际数据库密码**：
 
 ```env
-MONGODB_URI=mongodb+srv://YOUR_MONGODB_USER:YOUR_ACTUAL_PASSWORD@your-cluster.mongodb.net/melo?appName=Melo&retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://your_username:your_password@your-cluster.mongodb.net/melo?appName=Melo&retryWrites=true&w=majority
 ```
 
 **重要提示**：
@@ -84,7 +89,7 @@ Database: melo
 
 ```env
 # MongoDB Atlas Connection
-MONGODB_URI=mongodb+srv://YOUR_MONGODB_USER:YOUR_PASSWORD@your-cluster.mongodb.net/melo?appName=Melo&retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://your_username:your_password@your-cluster.mongodb.net/melo?appName=Melo&retryWrites=true&w=majority
 
 # Server Configuration
 PORT=5000

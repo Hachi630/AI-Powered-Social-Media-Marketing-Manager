@@ -65,8 +65,8 @@ router.get("/auth", async (req, res) => {
     return res.status(400).json({ error: "userId is required" });
   }
 
-  const appKey = process.env.TWITTER_API_KEY;
-  const appSecret = process.env.TWITTER_API_SECRET;
+  const appKey = process.env.TWITTER_API_KEY?.trim();
+  const appSecret = process.env.TWITTER_API_SECRET?.trim();
   const port = process.env.PORT || 5000;
   const backendUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
   const callbackUrl =
@@ -278,8 +278,8 @@ router.get("/callback", async (req, res) => {
       );
   }
 
-  const appKey = process.env.TWITTER_API_KEY;
-  const appSecret = process.env.TWITTER_API_SECRET;
+  const appKey = process.env.TWITTER_API_KEY?.trim();
+  const appSecret = process.env.TWITTER_API_SECRET?.trim();
 
   if (!appKey || !appSecret) {
     const clientUrl =
@@ -733,6 +733,30 @@ router.post("/posts", protect, upload.single('image'), async (req: AuthRequest, 
     console.log('📥 Twitter API response:', { success: result.success, tweetId: result.tweetId, error: result.error });
 
     if (result.success) {
+      // Save to SocialMediaPost database for analytics
+      try {
+        const mediaAttachments = imagePath ? [{
+          type: 'image' as const,
+          url: imagePath.replace(process.cwd(), ''),
+          thumbnailUrl: imagePath.replace(process.cwd(), ''),
+        }] : undefined;
+        
+        await saveSocialMediaPost({
+          userId: userId,
+          platform: 'twitter',
+          postType: imagePath ? 'image' : 'text',
+          content: text.trim(),
+          mediaAttachments: mediaAttachments,
+          platformPostId: result.tweetId,
+          status: 'published',
+          publishedAt: new Date(),
+        });
+        console.log('✅ Twitter post saved to database for analytics');
+      } catch (dbError: any) {
+        console.error('Failed to save Twitter post to database:', dbError);
+        // Don't fail the request if DB save fails
+      }
+
       // Clean up uploaded image file after successful post
       if (req.file && imagePath && fs.existsSync(imagePath)) {
         try {
@@ -933,8 +957,8 @@ router.get("/status", protect, async (req: any, res) => {
     console.log("Twitter status: Verifying with Twitter API (verify=" + shouldVerify + ")");
 
     // Verify token is still valid by getting user info
-    const appKey = process.env.TWITTER_API_KEY;
-    const appSecret = process.env.TWITTER_API_SECRET;
+    const appKey = process.env.TWITTER_API_KEY?.trim();
+    const appSecret = process.env.TWITTER_API_SECRET?.trim();
 
     if (!appKey || !appSecret) {
       return res.json({

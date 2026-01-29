@@ -1,31 +1,38 @@
 import twilio from 'twilio'
 
-// Twilio credentials - use environment variables if available, otherwise use defaults
+// Twilio credentials - must be provided via environment variables for security
 // Get your credentials from: https://console.twilio.com/
-const accountSid = process.env.TWILIO_ACCOUNT_SID || 'YOUR_TWILIO_ACCOUNT_SID'
-const authToken = process.env.TWILIO_AUTH_TOKEN || 'YOUR_TWILIO_AUTH_TOKEN_2'
-const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER || '+18509898481'
+const accountSid = process.env.TWILIO_ACCOUNT_SID
+const authToken = process.env.TWILIO_AUTH_TOKEN
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER
 // WhatsApp sender number (Sandbox or approved WhatsApp number)
-const whatsappSenderNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+14155238886'
+const whatsappSenderNumber = process.env.TWILIO_WHATSAPP_NUMBER
+
+// Check if Twilio is configured
+const isTwilioConfigured = accountSid && authToken
 
 // Log credentials status (without exposing the actual token)
-console.log('Twilio Configuration:')
-console.log('  Account SID:', accountSid ? `${accountSid.substring(0, 4)}...` : 'NOT SET')
-console.log('  Auth Token:', authToken ? `${authToken.substring(0, 4)}...` : 'NOT SET')
-console.log('  Phone Number:', twilioPhoneNumber)
-console.log('  WhatsApp Number:', whatsappSenderNumber)
-if (!process.env.TWILIO_ACCOUNT_SID) {
-  console.log('  Note: Using default credentials. For production, set TWILIO_* in backend/.env')
+if (isTwilioConfigured) {
+  console.log('Twilio Configuration:')
+  console.log('  Account SID:', accountSid ? `${accountSid.substring(0, 4)}...` : 'NOT SET')
+  console.log('  Auth Token:', authToken ? `${authToken.substring(0, 4)}...` : 'NOT SET')
+  console.log('  Phone Number:', twilioPhoneNumber || 'NOT SET')
+  console.log('  WhatsApp Number:', whatsappSenderNumber || 'NOT SET')
+} else {
+  console.warn('⚠️  Twilio not configured. Messaging features will be disabled.')
+  console.warn('   To enable Twilio, set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in backend/.env')
 }
 
-// Initialize Twilio client
-let client: twilio.Twilio
-try {
-  client = twilio(accountSid, authToken)
-  console.log('✅ Twilio client initialized successfully')
-} catch (error) {
-  console.error('❌ Failed to initialize Twilio client:', error)
-  throw error
+// Initialize Twilio client (only if configured)
+let client: twilio.Twilio | null = null
+if (isTwilioConfigured) {
+  try {
+    client = twilio(accountSid!, authToken!)
+    console.log('✅ Twilio client initialized successfully')
+  } catch (error) {
+    console.error('❌ Failed to initialize Twilio client:', error)
+    console.warn('⚠️  Continuing without Twilio support')
+  }
 }
 
 export interface SendMessageOptions {
@@ -81,7 +88,10 @@ export async function sendSMS(options: SendMessageOptions): Promise<SendMessageR
     
     // Verify client is initialized
     if (!client) {
-      throw new Error('Twilio client not initialized. Check your credentials.')
+      return {
+        success: false,
+        error: 'Twilio is not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your .env file.',
+      }
     }
     
     const message = await client.messages.create({
@@ -127,6 +137,14 @@ export async function sendSMS(options: SendMessageOptions): Promise<SendMessageR
  */
 export async function sendMMS(options: SendMessageOptions): Promise<SendMessageResult> {
   try {
+    // Verify client is initialized
+    if (!client) {
+      return {
+        success: false,
+        error: 'Twilio is not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your .env file.',
+      }
+    }
+    
     // Ensure phone number is in E.164 format
     const toNumber = formatPhoneNumber(options.to)
     
@@ -203,7 +221,10 @@ export async function sendWhatsApp(options: SendMessageOptions): Promise<SendMes
     
     // Verify client is initialized
     if (!client) {
-      throw new Error('Twilio client not initialized. Check your credentials.')
+      return {
+        success: false,
+        error: 'Twilio is not configured. Please set TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN in your .env file.',
+      }
     }
     
     const messageOptions: any = {

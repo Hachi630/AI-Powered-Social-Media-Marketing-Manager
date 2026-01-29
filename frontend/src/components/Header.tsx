@@ -1,6 +1,6 @@
 import type { MenuProps } from 'antd'
 import { Button, Layout, Menu, Space, Typography, Dropdown, Drawer, Grid } from 'antd'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
@@ -10,6 +10,7 @@ import styles from './Header.module.css'
 import { UserOutlined, LogoutOutlined, MenuOutlined, SettingOutlined } from '@ant-design/icons'
 import { User } from '../services/authService'
 import { Avatar } from 'antd'
+import { getImageUrl } from '../utils/imageUtils'
 import { enableDemoMode, disableDemoMode, isDemoBuild, isDemoMode, isEmbedMode, resetDemoMode } from '../demo/demoMode'
 
 const { useBreakpoint } = Grid
@@ -53,6 +54,18 @@ export default function Header({
   const [isPersonalModalOpen, setIsPersonalModalOpen] = useState(false)
 
   const isHomePage = location.pathname === '/' || location.pathname === '/home'
+  
+  // Debug: Log user changes
+  useEffect(() => {
+    console.log('[Header] User prop changed:', {
+      isLoggedIn,
+      userId: user?.id,
+      email: user?.email,
+      avatar: user?.avatar,
+      hasAvatar: !!user?.avatar,
+      authProvider: user?.authProvider
+    });
+  }, [user, isLoggedIn]);
   
   let selectedKey =
     navItems?.find((item) => location.pathname.startsWith(String(item?.key)))?.key ?? ''
@@ -171,10 +184,59 @@ export default function Header({
             <Dropdown menu={userMenu} placement="bottomRight" arrow>
               <Avatar
                 size="large"
-                src={user?.avatar}
+                src={user?.avatar ? (() => {
+                  const avatarUrl = getImageUrl(user.avatar);
+                  if (avatarUrl) {
+                    console.log('[Header] Attempting to load avatar:', {
+                      original: user.avatar,
+                      processed: avatarUrl,
+                      hasAvatar: !!user.avatar,
+                      userId: user?.id,
+                      email: user?.email,
+                      urlType: avatarUrl.startsWith('http') ? 'external' : avatarUrl.startsWith('data') ? 'base64' : 'relative',
+                      isGoogleUrl: avatarUrl.includes('googleusercontent.com') || avatarUrl.includes('google.com')
+                    });
+                  }
+                  return avatarUrl;
+                })() : undefined}
+                icon={!user?.avatar ? <UserOutlined /> : undefined}
                 style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
+                crossOrigin="anonymous"
+                onError={(e: any) => {
+                  const avatarUrl = user?.avatar ? getImageUrl(user.avatar) : undefined;
+                  const errorDetails = {
+                    originalAvatar: user?.avatar || 'null/undefined',
+                    processedUrl: avatarUrl || 'null/undefined',
+                    userId: user?.id || 'unknown',
+                    email: user?.email || 'unknown',
+                    errorType: e?.type || 'unknown',
+                    errorMessage: e?.message || 'No error message',
+                    errorTarget: e?.target ? {
+                      src: (e.target as HTMLImageElement)?.src?.substring(0, 200) || 'no src',
+                      currentSrc: (e.target as HTMLImageElement)?.currentSrc?.substring(0, 200) || 'no currentSrc',
+                      naturalWidth: (e.target as HTMLImageElement)?.naturalWidth || 0,
+                      naturalHeight: (e.target as HTMLImageElement)?.naturalHeight || 0,
+                      complete: (e.target as HTMLImageElement)?.complete || false,
+                      networkState: (e.target as HTMLImageElement)?.networkState || 'unknown'
+                    } : 'no target',
+                    timestamp: new Date().toISOString()
+                  };
+                  
+                  console.error('[Header] ❌ Failed to load avatar image:', errorDetails);
+                  
+                  // Check if it's a CORS or network error
+                  if (avatarUrl && (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://'))) {
+                    if (avatarUrl.includes('googleusercontent.com') || avatarUrl.includes('google.com')) {
+                      console.warn('[Header] ⚠️ Google profile picture may have CORS restrictions. Consider proxying through backend.');
+                    } else {
+                      console.warn('[Header] ⚠️ External avatar URL. Possible CORS or network issue.');
+                    }
+                  }
+                  
+                  return false; // Return false to prevent default error handling and show fallback
+                }}
               >
-                {user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U'}
+                {!user?.avatar && (user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U')}
               </Avatar>
             </Dropdown>
           )}

@@ -13,6 +13,7 @@ import {
   TagOutlined,
   EnvironmentOutlined,
   HeartOutlined,
+  PictureOutlined,
 } from "@ant-design/icons";
 import { Layout, Button, Typography, Tooltip, Avatar } from "antd";
 import styles from "./AnalyticsSidebar.module.css";
@@ -24,6 +25,12 @@ export type AnalyticsSection =
   | "key-insights"
   | "time-series"
   | "breakdown"
+  | "advanced-analytics"
+  | "content-velocity-funnel"
+  | "ai-efficiency-roi"
+  | "cross-platform-strategy"
+  | "media-asset-utilization"
+  | "content-dna"
   | "recent-activity"
   | "best-time-hours"
   | "best-time-days"
@@ -88,6 +95,40 @@ export default function AnalyticsSidebar({
     },
   ];
 
+  // Advanced Analytics subsections
+  const advancedAnalyticsSections: SectionConfig[] = [
+    {
+      key: "content-velocity-funnel",
+      label: "Content Velocity Funnel",
+      icon: <LineChartOutlined />,
+      color: "#1890ff",
+    },
+    {
+      key: "ai-efficiency-roi",
+      label: "AI Efficiency & ROI",
+      icon: <ThunderboltOutlined />,
+      color: "#722ed1",
+    },
+    {
+      key: "cross-platform-strategy",
+      label: "Cross-Platform Strategy Mix",
+      icon: <BarChartOutlined />,
+      color: "#52c41a",
+    },
+    {
+      key: "media-asset-utilization",
+      label: "Media Asset Utilization",
+      icon: <PictureOutlined />,
+      color: "#fa8c16",
+    },
+    {
+      key: "content-dna",
+      label: "Content DNA (Thematic Analysis)",
+      icon: <TagOutlined />,
+      color: "#eb2f96",
+    },
+  ];
+
 
   // Add Best Time Analytics sections (from prediction_best_time dataset)
   const bestTimeSections: SectionConfig[] = [
@@ -149,7 +190,8 @@ export default function AnalyticsSidebar({
 
   // Group sections into subsections
   const overviewSections = sections.slice(0, 2); // Overview Statistics, Key Insights
-  const detailedSections = sections.slice(2); // Time Series, Breakdown, Recent Activity
+  const detailedSections = sections.slice(2, 4); // Time Series, Breakdown
+  const recentActivitySection = sections.slice(4); // Recent Activity
 
   return (
     <Sider
@@ -229,18 +271,9 @@ export default function AnalyticsSidebar({
                     }`}
                   onClick={() => {
                     onSectionSelect(section.key);
-                    // Scroll to section with proper offset
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64; // Header height
-                      const offset = 100; // Additional offset for spacing
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
@@ -302,18 +335,132 @@ export default function AnalyticsSidebar({
                     }`}
                   onClick={() => {
                     onSectionSelect(section.key);
-                    // Scroll to section with proper offset
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64; // Header height
-                      const offset = 100; // Additional offset for spacing
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                >
+                  <div className={styles.sectionContent}>
+                    <Avatar
+                      size={collapsed ? 40 : 40}
+                      icon={SectionIcon}
+                      style={{
+                        backgroundColor: section.color,
+                        color: "#fff",
+                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    />
+                    {!collapsed && (
+                      <div className={styles.sectionInfo}>
+                        <Typography.Text
+                          strong
+                          className={styles.sectionLabel}
+                        >
+                          {section.label}
+                        </Typography.Text>
+                      </div>
+                    )}
+                  </div>
+                  {!collapsed && isSelected && (
+                    <div
+                      className={styles.selectedIndicator}
+                      style={{ backgroundColor: section.color }}
+                    />
+                  )}
+                </div>
+              </Tooltip>
+            );
+          })}
 
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+          {/* Advanced Analytics Subsections */}
+          {!collapsed && (
+            <div className={styles.subsection} style={{ marginTop: 24 }}>
+              <Typography.Text className={styles.subsectionTitle}>
+                Advanced Analytics Subsections
+              </Typography.Text>
+            </div>
+          )}
+          {advancedAnalyticsSections.map((section) => {
+            const isSelected = selectedSection === section.key;
+            const SectionIcon = section.icon;
+
+            return (
+              <Tooltip
+                key={section.key}
+                title={collapsed ? section.label : undefined}
+                placement="right"
+              >
+                <div
+                  className={`${styles.sectionItem} ${
+                    isSelected ? styles.sectionItemActive : ""
+                  }`}
+                  onClick={() => {
+                    onSectionSelect(section.key);
+                    const element = document.getElementById(section.key);
+                    if (element) {
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }
+                  }}
+                >
+                  <div className={styles.sectionContent}>
+                    <Avatar
+                      size={collapsed ? 40 : 40}
+                      icon={SectionIcon}
+                      style={{
+                        backgroundColor: section.color,
+                        color: "#fff",
+                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    />
+                    {!collapsed && (
+                      <div className={styles.sectionInfo}>
+                        <Typography.Text
+                          strong
+                          className={styles.sectionLabel}
+                        >
+                          {section.label}
+                        </Typography.Text>
+                      </div>
+                    )}
+                  </div>
+                  {!collapsed && isSelected && (
+                    <div
+                      className={styles.selectedIndicator}
+                      style={{ backgroundColor: section.color }}
+                    />
+                  )}
+                </div>
+              </Tooltip>
+            );
+          })}
+
+          {/* Recent Activity Section */}
+          {recentActivitySection.map((section) => {
+            const isSelected = selectedSection === section.key;
+            const SectionIcon = section.icon;
+
+            return (
+              <Tooltip
+                key={section.key}
+                title={collapsed ? section.label : undefined}
+                placement="right"
+              >
+                <div
+                  className={`${styles.sectionItem} ${
+                    isSelected ? styles.sectionItemActive : ""
+                  }`}
+                  onClick={() => {
+                    onSectionSelect(section.key);
+                    const element = document.getElementById(section.key);
+                    if (element) {
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >
@@ -375,18 +522,9 @@ export default function AnalyticsSidebar({
                     }`}
                   onClick={() => {
                     onSectionSelect(section.key);
-                    // Scroll to section with proper offset
                     const element = document.getElementById(section.key);
                     if (element) {
-                      const headerHeight = 64; // Header height
-                      const offset = 100; // Additional offset for spacing
-                      const elementPosition = element.getBoundingClientRect().top;
-                      const offsetPosition = elementPosition + window.pageYOffset - headerHeight - offset;
-
-                      window.scrollTo({
-                        top: offsetPosition,
-                        behavior: "smooth"
-                      });
+                      element.scrollIntoView({ behavior: "smooth", block: "start" });
                     }
                   }}
                 >

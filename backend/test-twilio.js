@@ -6,8 +6,15 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID || 'YOUR_TWILIO_ACCOUNT_SID'
-const authToken = process.env.TWILIO_AUTH_TOKEN || 'YOUR_TWILIO_AUTH_TOKEN'
+// Get credentials from environment variables only (no hardcoded fallbacks for security)
+const accountSid = process.env.TWILIO_ACCOUNT_SID
+const authToken = process.env.TWILIO_AUTH_TOKEN
+
+if (!accountSid || !authToken) {
+  console.error('❌ Error: TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set in environment variables')
+  console.error('   Please add them to your .env file or export them before running this script')
+  process.exit(1)
+}
 
 console.log('Testing Twilio credentials...')
 console.log('Account SID:', accountSid.substring(0, 4) + '...')

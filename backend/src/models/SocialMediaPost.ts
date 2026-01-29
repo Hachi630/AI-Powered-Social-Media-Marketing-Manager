@@ -54,6 +54,9 @@ export interface ISocialMediaPost extends Document {
   aiPrompt?: string
   aiModel?: string
   
+  // Calendar tracking (to distinguish calendar publishes from direct publishes)
+  calendarItemId?: Types.ObjectId
+  
   createdAt: Date
   updatedAt: Date
 }
@@ -220,6 +223,11 @@ const SocialMediaPostSchema: Schema = new Schema(
     },
     aiModel: {
       type: String,
+    },
+    calendarItemId: {
+      type: Schema.Types.ObjectId,
+      ref: 'CalendarItem',
+      index: true,
     },
   },
   {

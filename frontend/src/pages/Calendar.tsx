@@ -1,4 +1,4 @@
-﻿import { Calendar, Layout, Button, message, Grid, Popover } from 'antd';
+import { Calendar, Layout, Button, message, Grid, Popover } from 'antd';
 import {
   PlusOutlined,
   LeftOutlined,
@@ -141,8 +141,8 @@ export default function CalendarPage({
   }, [isLoggedIn]);
 
   // Load calendar items
-  const loadCalendarItems = useCallback(async () => {
-    if (!isLoggedIn) return;
+  const loadCalendarItems = useCallback(async (): Promise<CalendarItem[]> => {
+    if (!isLoggedIn) return [];
 
     // setLoading(true);
     try {
@@ -156,12 +156,15 @@ export default function CalendarPage({
 
       if (response.success && response.items) {
         setCalendarItems(response.items);
+        return response.items;
       } else {
         message.error(response.message || 'Failed to load calendar items');
+        return [];
       }
     } catch (error) {
       console.error('Load calendar items error:', error);
       message.error('Failed to load calendar items');
+      return [];
     } finally {
       // setLoading(false);
     }
@@ -286,9 +289,13 @@ export default function CalendarPage({
                 key={item.id}
                 item={item}
                 isMonthView={true}
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation();
-                  setSelectedItem(item);
+                  // Always reload items first to ensure we have the latest data
+                  const freshItems = await loadCalendarItems();
+                  // Find the fresh item from the updated list
+                  const freshItem = freshItems.find(i => i.id === item.id) || item;
+                  setSelectedItem(freshItem);
                   setModalOpen(true);
                 }}
               />
@@ -413,6 +420,7 @@ export default function CalendarPage({
       {/* Modals */}
       {isLoggedIn && (
         <CalendarItemModal
+          key={selectedItem?.id || 'new'} // Force remount when item changes
           open={modalOpen}
           item={selectedItem}
           defaultDate={selectedDate || undefined}
@@ -424,15 +432,22 @@ export default function CalendarPage({
             setSelectedDate(null);
             setSelectedTime(undefined);
           }}
-          onSave={() => {
-            loadCalendarItems();
+          onSave={async () => {
+            await loadCalendarItems();
             setModalOpen(false);
+            setSelectedItem(null);
           }}
-          onItemUpdate={(updatedItem) => {
-            // Update selectedItem with the refreshed data
-            setSelectedItem(updatedItem);
-            // Refresh the calendar list
-            loadCalendarItems();
+          onItemUpdate={async (updatedItem) => {
+            // Refresh the calendar list first to get all updated items
+            const freshItems = await loadCalendarItems();
+            // Find the updated item from the fresh calendar items list
+            const freshItem = freshItems.find(i => i.id === updatedItem.id);
+            if (freshItem) {
+              setSelectedItem(freshItem);
+            } else {
+              // If item not found, use the updated item directly
+              setSelectedItem(updatedItem);
+            }
             // Keep modal open to show the updated status
           }}
         />

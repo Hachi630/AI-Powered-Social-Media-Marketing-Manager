@@ -408,5 +408,86 @@ router.post('/file', protect, fileUpload.single('file'), async (req: AuthRequest
   }
 })
 
+// @desc    Proxy external images (e.g., Google profile pictures) to avoid CORS and rate limiting
+// @route   GET /api/upload/proxy-image
+// @access  Public (but validates Google URLs only for security)
+router.get('/proxy-image', async (req: Request, res: Response) => {
+  try {
+    const imageUrl = req.query.url as string
+
+    if (!imageUrl) {
+      return res.status(400).json({
+        success: false,
+        message: 'Image URL is required'
+      })
+    }
+
+    // Validate that it's a Google profile picture URL for security
+    const isGoogleUrl = imageUrl.includes('googleusercontent.com') || 
+                       imageUrl.includes('google.com') ||
+                       imageUrl.includes('googleapis.com')
+    
+    if (!isGoogleUrl) {
+      console.warn('[Image Proxy] Blocked non-Google URL:', imageUrl.substring(0, 100))
+      return res.status(400).json({
+        success: false,
+        message: 'Only Google profile picture URLs are allowed'
+      })
+    }
+    
+    // Additional security: validate URL format
+    try {
+      const url = new URL(imageUrl)
+      if (!url.hostname.includes('google')) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid Google URL'
+        })
+      }
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid URL format'
+      })
+    }
+
+    console.log('[Image Proxy] Fetching image from:', imageUrl.substring(0, 100))
+
+    // Fetch the image from Google using built-in fetch (Node 18+)
+    const response = await fetch(imageUrl, {
+      headers: {
+        'User-Agent': 'Melo-Backend/1.0',
+        'Accept': 'image/*'
+      }
+    })
+
+    if (!response.ok) {
+      console.error('[Image Proxy] Failed to fetch image:', response.status, response.statusText)
+      return res.status(response.status).json({
+        success: false,
+        message: `Failed to fetch image: ${response.statusText}`
+      })
+    }
+
+    // Get the image buffer
+    const imageBuffer = await response.arrayBuffer()
+    const contentType = response.headers.get('content-type') || 'image/jpeg'
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Cache-Control', 'public, max-age=86400') // Cache for 1 day
+    res.setHeader('Access-Control-Allow-Origin', '*')
+
+    // Send the image
+    res.send(Buffer.from(imageBuffer))
+  } catch (error: any) {
+    console.error('[Image Proxy] Error:', error)
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to proxy image'
+    })
+  }
+})
+
 export default router
 

@@ -11,6 +11,7 @@ import {
   getFacebookPagesWithInstagram,
   shareToInstagram,
 } from "../services/instagramService.js";
+import { saveSocialMediaPost } from "../services/databaseService.js";
 import crypto from "crypto";
 import multer from "multer";
 import path from "path";
@@ -927,6 +928,34 @@ router.post(
           imageUrl: finalImageUrl!,
         }
       );
+
+      // Save to SocialMediaPost database for analytics
+      try {
+        const mediaAttachments = finalImageUrl ? [{
+          type: 'image' as const,
+          url: finalImageUrl,
+          thumbnailUrl: finalImageUrl,
+        }] : finalVideoUrl ? [{
+          type: 'video' as const,
+          url: finalVideoUrl,
+          thumbnailUrl: finalVideoUrl,
+        }] : undefined;
+        
+        await saveSocialMediaPost({
+          userId: freshUser._id,
+          platform: 'instagram',
+          postType: finalVideoUrl ? 'video' : 'image',
+          content: content,
+          mediaAttachments: mediaAttachments,
+          platformPostId: result.postId,
+          status: 'published',
+          publishedAt: new Date(),
+        });
+        console.log('✅ Instagram post saved to database for analytics');
+      } catch (dbError: any) {
+        console.error('Failed to save Instagram post to database:', dbError);
+        // Don't fail the request if DB save fails
+      }
 
       res.json({
         success: true,
