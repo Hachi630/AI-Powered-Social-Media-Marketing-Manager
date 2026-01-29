@@ -1879,7 +1879,7 @@ export default function LinkedInDashboard({
                   maxLength={3000}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Link Fields */}
@@ -2357,7 +2357,7 @@ export default function LinkedInDashboard({
                   maxLength={280}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Image Upload Section */}
@@ -2787,7 +2787,7 @@ export default function LinkedInDashboard({
                   maxLength={5000}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Link Fields */}
@@ -3271,7 +3271,7 @@ export default function LinkedInDashboard({
                   maxLength={2200}
                   showCount
                   autoSize={{ minRows: 3, maxRows: 6 }}
-                  style={{ marginBottom: 16, borderRadius: 8 }}
+                  style={{ marginBottom: 30, borderRadius: 8 }}
                 />
 
                 {/* Image Upload Section */}
