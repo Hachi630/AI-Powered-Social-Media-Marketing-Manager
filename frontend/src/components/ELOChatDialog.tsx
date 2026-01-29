@@ -71,6 +71,7 @@ export default function ELOChatDialog({
   const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [isNewUserState, setIsNewUserState] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPresetAnswer, setSelectedPresetAnswer] = useState<PresetAnswer | null>(null);
@@ -355,24 +356,111 @@ export default function ELOChatDialog({
     }
   };
 
-  // Calculate dialog position (top left of Live2D widget)
-  // Position dialog to the left and above the Live2D widget
-  const dialogWidth = 360;
-  const widgetWidth = 200;
-  const widgetHeight = 200;
-  
-  // Position to the left of the widget, aligned with the top
-  const dialogLeft = position.x - dialogWidth - 10; // 10px gap from widget, to the left
-  const dialogTop = position.y; // Align with top of widget
-  
-  // Ensure dialog stays within viewport
-  const constrainedLeft = Math.max(20, Math.min(dialogLeft, window.innerWidth - dialogWidth - 20));
-  const constrainedTop = Math.max(20, Math.min(dialogTop, window.innerHeight - 300));
-  
-  const dialogStyle: React.CSSProperties = {
-    top: `${constrainedTop}px`,
-    left: `${constrainedLeft}px`,
-  };
+  // Smart position calculation function
+  const calculateDialogPosition = useCallback((): { top: number; left: number } => {
+    if (!dialogRef.current) {
+      // Fallback position if ref is not available yet
+      return { top: 20, left: 20 };
+    }
+
+    const dialogRect = dialogRef.current.getBoundingClientRect();
+    const dialogHeight = dialogRect.height || 400; // Default height if not measured yet
+    const dialogWidth = 360;
+    const widgetWidth = 200;
+    const margin = 20;
+    const gap = 10;
+
+    // Calculate ideal position (to the left and above the ELO widget)
+    let idealLeft = position.x - dialogWidth - gap;
+    let idealTop = position.y;
+
+    // Check bottom space
+    const bottomSpace = window.innerHeight - idealTop;
+    if (bottomSpace < dialogHeight + margin) {
+      // Bottom space insufficient, try placing above the widget
+      idealTop = position.y - dialogHeight - gap;
+      // If top space is also insufficient, place at screen top
+      if (idealTop < margin) {
+        idealTop = margin;
+      }
+    }
+
+    // Check left space
+    if (idealLeft < margin) {
+      idealLeft = position.x + widgetWidth + gap; // Place to the right
+      // If right space is also insufficient, center it
+      if (idealLeft + dialogWidth > window.innerWidth - margin) {
+        idealLeft = (window.innerWidth - dialogWidth) / 2;
+      }
+    }
+
+    // Ensure it doesn't exceed viewport
+    const constrainedLeft = Math.max(
+      margin,
+      Math.min(idealLeft, window.innerWidth - dialogWidth - margin)
+    );
+    const constrainedTop = Math.max(
+      margin,
+      Math.min(idealTop, window.innerHeight - dialogHeight - margin)
+    );
+
+    return { top: constrainedTop, left: constrainedLeft };
+  }, [position]);
+
+  // State for dialog position
+  const [dialogStyle, setDialogStyle] = useState<React.CSSProperties>({});
+
+  // Update position when dialog opens or position changes
+  useEffect(() => {
+    if (open && dialogRef.current) {
+      // Use requestAnimationFrame to ensure DOM is fully rendered
+      requestAnimationFrame(() => {
+        const newPosition = calculateDialogPosition();
+        setDialogStyle({
+          top: `${newPosition.top}px`,
+          left: `${newPosition.left}px`,
+        });
+      });
+    }
+  }, [open, position, calculateDialogPosition]);
+
+  // Listen for window resize
+  useEffect(() => {
+    if (!open) return;
+
+    const handleResize = () => {
+      if (dialogRef.current) {
+        requestAnimationFrame(() => {
+          const newPosition = calculateDialogPosition();
+          setDialogStyle({
+            top: `${newPosition.top}px`,
+            left: `${newPosition.left}px`,
+          });
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [open, calculateDialogPosition]);
+
+  // Listen for dialog content size changes using ResizeObserver
+  useEffect(() => {
+    if (!open || !dialogRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      requestAnimationFrame(() => {
+        const newPosition = calculateDialogPosition();
+        setDialogStyle({
+          top: `${newPosition.top}px`,
+          left: `${newPosition.left}px`,
+        });
+      });
+    });
+
+    resizeObserver.observe(dialogRef.current);
+    return () => resizeObserver.disconnect();
+  }, [open, calculateDialogPosition]);
 
   // Debug logging
   useEffect(() => {
@@ -391,7 +479,7 @@ export default function ELOChatDialog({
   console.log('[ELO Dialog] Rendering dialog with style:', dialogStyle);
 
   return (
-    <div className={styles.cloudBubble} style={dialogStyle}>
+    <div ref={dialogRef} className={styles.cloudBubble} style={dialogStyle}>
       <div className={styles.dialogHeader}>
         <h3 className={styles.dialogTitle}>
           <span>ELO</span>
