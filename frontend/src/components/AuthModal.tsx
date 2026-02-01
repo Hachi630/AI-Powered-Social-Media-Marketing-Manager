@@ -141,7 +141,7 @@ export default function AuthModal({
         onCancel();
       } else {
         // Extract error message from result
-        const errorMsg = result.message || result.error || "Failed to sign in with Google";
+        const errorMsg = result.message || "Failed to sign in with Google";
         console.error("[Google Sign-In] Backend error:", {
           message: errorMsg,
           result: result

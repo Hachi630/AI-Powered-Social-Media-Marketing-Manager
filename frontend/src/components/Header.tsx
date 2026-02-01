@@ -202,23 +202,13 @@ export default function Header({
                 icon={!user?.avatar ? <UserOutlined /> : undefined}
                 style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
                 crossOrigin="anonymous"
-                onError={(e: any) => {
+                onError={() => {
                   const avatarUrl = user?.avatar ? getImageUrl(user.avatar) : undefined;
                   const errorDetails = {
                     originalAvatar: user?.avatar || 'null/undefined',
                     processedUrl: avatarUrl || 'null/undefined',
                     userId: user?.id || 'unknown',
                     email: user?.email || 'unknown',
-                    errorType: e?.type || 'unknown',
-                    errorMessage: e?.message || 'No error message',
-                    errorTarget: e?.target ? {
-                      src: (e.target as HTMLImageElement)?.src?.substring(0, 200) || 'no src',
-                      currentSrc: (e.target as HTMLImageElement)?.currentSrc?.substring(0, 200) || 'no currentSrc',
-                      naturalWidth: (e.target as HTMLImageElement)?.naturalWidth || 0,
-                      naturalHeight: (e.target as HTMLImageElement)?.naturalHeight || 0,
-                      complete: (e.target as HTMLImageElement)?.complete || false,
-                      networkState: (e.target as HTMLImageElement)?.networkState || 'unknown'
-                    } : 'no target',
                     timestamp: new Date().toISOString()
                   };
                   
