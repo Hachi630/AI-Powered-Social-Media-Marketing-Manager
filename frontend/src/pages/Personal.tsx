@@ -13,7 +13,7 @@ import {
   message,
   Modal,
 } from 'antd'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import {
   EditOutlined,
   SaveOutlined,
@@ -49,11 +49,15 @@ interface PersonalProps {
 export default function Personal({
   open,
   onClose,
-  isLoggedIn,
-  onLoginSuccess,
-  onLogout,
+  isLoggedIn: _isLoggedIn,
+  onLoginSuccess: _onLoginSuccess,
+  onLogout: _onLogout,
   user: propUser,
 }: PersonalProps) {
+  // Suppress unused parameter warnings for interface compliance
+  void _isLoggedIn;
+  void _onLoginSuccess;
+  void _onLogout;
   const [isEditing, setIsEditing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [user, setUser] = useState<User | null>(propUser || null)
@@ -69,7 +73,7 @@ export default function Personal({
     avatar: '',
   })
   const [originalData, setOriginalData] = useState(formData)
-  const [avatarFile, setAvatarFile] = useState<UploadFile[]>([])
+  const [, setAvatarFile] = useState<UploadFile[]>([])
   const [avatarBase64, setAvatarBase64] = useState<string>('')
   
   // Password change modal state
@@ -77,8 +81,6 @@ export default function Personal({
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showNewPassword, setShowNewPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Inject calendar styles dynamically to ensure they apply
   useEffect(() => {
@@ -418,7 +420,7 @@ export default function Personal({
       } else {
         message.error(response.message || 'Failed to update profile')
       }
-    } catch (error) {
+    } catch {
       message.error('An error occurred while updating profile')
     } finally {
       setLoading(false)
@@ -429,8 +431,8 @@ export default function Personal({
     // Get file from different possible locations
     const file = 
       info.file.originFileObj || 
-      (info.file as any).originFileObj || 
-      (info.file as any)
+      (info.file as UploadFile & { originFileObj?: File }).originFileObj || 
+      (info.file as UploadFile)
     
     // Check if it's actually a File object
     if (file && file instanceof File) {
@@ -478,7 +480,7 @@ export default function Personal({
     }
   }
 
-  const beforeUpload = (file: File) => {
+  const beforeUpload = () => {
     // Return false to prevent auto upload, we'll handle it manually in onChange
     return false
   }
@@ -512,7 +514,7 @@ export default function Personal({
       } else {
         message.error(response.message || 'Failed to change password')
       }
-    } catch (error) {
+    } catch {
       message.error('An error occurred while changing password')
     } finally {
       setPasswordLoading(false)
@@ -601,6 +603,8 @@ export default function Personal({
       className={styles.personalModal}
       footer={null}
       centered
+      zIndex={2000}
+      getContainer={false}
     >
       <div className={styles.modalContent}>
         <div className={styles.headerSection}>

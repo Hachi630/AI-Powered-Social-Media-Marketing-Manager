@@ -419,6 +419,8 @@ export default function AuthModal({
       className={styles.authModal}
       styles={{ mask: { backgroundColor: "rgba(0, 0, 0, 0.05)" } }}
       closable={step === "login"}
+      zIndex={2000}
+      getContainer={false}
     >
       {step === "phone" ? (
         <div className={styles.signupContainer}>

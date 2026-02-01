@@ -136,6 +136,8 @@ export default function AppSettings({ open, onClose }: AppSettingsProps) {
       }
       width={800}
       className={styles.settingsModal}
+      zIndex={2000}
+      getContainer={false}
       footer={[
         <Button
           key="reset"

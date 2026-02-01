@@ -543,10 +543,21 @@
     background-color: #ffffff !important;
     width: 18px !important;
     height: 18px !important;
+    border-radius: 2px !important;
     margin-top: -6px !important;
     box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3) !important;
     transition: all 0.2s ease !important;
     outline: none !important;
+    display: block !important;
+}
+
+/* Hide any pseudo-elements that might create a circular button overlay */
+.slider :global(.ant-slider-handle::before) {
+    display: none !important;
+}
+
+.slider :global(.ant-slider-handle::after) {
+    display: none !important;
 }
 
 .slider :global(.ant-slider-handle:hover),
@@ -558,6 +569,7 @@
 
 [data-theme="warm"] .slider :global(.ant-slider-handle) {
     border-color: #ae906e !important;
+    border-radius: 2px !important;
     box-shadow: 0 2px 6px rgba(174, 144, 110, 0.3) !important;
     outline: none !important;
 }
