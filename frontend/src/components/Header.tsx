@@ -1,6 +1,6 @@
 import type { MenuProps } from 'antd'
 import { Button, Layout, Menu, Space, Typography, Dropdown, Drawer, Grid } from 'antd'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
@@ -209,7 +209,6 @@ export default function Header({
                     processedUrl: avatarUrl || 'null/undefined',
                     userId: user?.id || 'unknown',
                     email: user?.email || 'unknown',
-                    timestamp: new Date().toISOString()
                   };
                   
                   console.error('[Header] ❌ Failed to load avatar image:', errorDetails);
@@ -222,8 +221,7 @@ export default function Header({
                       console.warn('[Header] ⚠️ External avatar URL. Possible CORS or network issue.');
                     }
                   }
-                  
-                  return false; // Return false to prevent default error handling and show fallback
+                  return false;
                 }}
               >
                 {!user?.avatar && (user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U')}
