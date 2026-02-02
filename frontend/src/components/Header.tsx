@@ -1,6 +1,6 @@
 import type { MenuProps } from 'antd'
 import { Button, Layout, Menu, Space, Typography, Dropdown, Drawer, Grid } from 'antd'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { MELO_LOGO } from '../constants/assets'
 import AuthModal from './AuthModal'
@@ -202,24 +202,13 @@ export default function Header({
                 icon={!user?.avatar ? <UserOutlined /> : undefined}
                 style={{ backgroundColor: '#87d068', cursor: 'pointer' }}
                 crossOrigin="anonymous"
-                onError={(e: any) => {
+                onError={() => {
                   const avatarUrl = user?.avatar ? getImageUrl(user.avatar) : undefined;
                   const errorDetails = {
                     originalAvatar: user?.avatar || 'null/undefined',
                     processedUrl: avatarUrl || 'null/undefined',
                     userId: user?.id || 'unknown',
                     email: user?.email || 'unknown',
-                    errorType: e?.type || 'unknown',
-                    errorMessage: e?.message || 'No error message',
-                    errorTarget: e?.target ? {
-                      src: (e.target as HTMLImageElement)?.src?.substring(0, 200) || 'no src',
-                      currentSrc: (e.target as HTMLImageElement)?.currentSrc?.substring(0, 200) || 'no currentSrc',
-                      naturalWidth: (e.target as HTMLImageElement)?.naturalWidth || 0,
-                      naturalHeight: (e.target as HTMLImageElement)?.naturalHeight || 0,
-                      complete: (e.target as HTMLImageElement)?.complete || false,
-                      networkState: (e.target as HTMLImageElement)?.networkState || 'unknown'
-                    } : 'no target',
-                    timestamp: new Date().toISOString()
                   };
                   
                   console.error('[Header] ❌ Failed to load avatar image:', errorDetails);
@@ -232,8 +221,7 @@ export default function Header({
                       console.warn('[Header] ⚠️ External avatar URL. Possible CORS or network issue.');
                     }
                   }
-                  
-                  return false; // Return false to prevent default error handling and show fallback
+                  return false;
                 }}
               >
                 {!user?.avatar && (user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : 'U')}

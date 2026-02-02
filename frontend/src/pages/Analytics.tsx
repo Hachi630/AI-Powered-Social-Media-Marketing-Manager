@@ -4533,7 +4533,6 @@ export default function Analytics({
                           verticalAlign="bottom"
                           iconType="square"
                           iconSize={10}
-                          itemGap={24}
                           formatter={(value) => <span style={{ marginLeft: 8 }}>{value}</span>}
                         />
                         <Bar dataKey="planned" fill="#1890ff" name="Planned" radius={[8, 8, 0, 0]} />
