@@ -479,6 +479,34 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
           .ant-modal .ant-tabs-tab:hover {
             color: ${accentColor} !important;
           }
+          
+          /* ===== GLOBAL SPIN/LOADING COLOR ===== */
+          .ant-spin-dot-item {
+            background-color: ${accentColor} !important;
+          }
+          
+          .ant-spin-text {
+            color: ${accentColor} !important;
+          }
+          
+          /* ===== GLOBAL TABS UNDERLINE ===== */
+          .ant-tabs-ink-bar {
+            background: ${accentColor} !important;
+          }
+          
+          .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+            color: ${accentColor} !important;
+          }
+          
+          .ant-tabs-tab:hover {
+            color: ${accentColor} !important;
+          }
+          
+          /* ===== MENU UNDERLINE ===== */
+          .ant-menu-horizontal > .ant-menu-item-selected::after,
+          .ant-menu-horizontal > .ant-menu-item:hover::after {
+            border-bottom-color: ${accentColor} !important;
+          }
         `;
       }
 
