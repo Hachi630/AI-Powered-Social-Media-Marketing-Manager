@@ -271,7 +271,7 @@ export default function CalendarItemModal({
         message.info(`Sharing to ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}...`)
         const response = await calendarService.shareCalendarItem(item.id, platform)
         if (response.success) {
-          message.success(`Successfully posted to ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}!`)
+          message.success(`Successfully shared on ${platform === 'twitter' ? 'Twitter/X' : platform === 'linkedin' ? 'LinkedIn' : 'Facebook'}`)
           // Refresh the item data to get updated status
           try {
             const updatedItemResponse = await calendarService.getCalendarItem(item.id)
