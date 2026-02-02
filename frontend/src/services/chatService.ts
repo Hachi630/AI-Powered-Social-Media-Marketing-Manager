@@ -68,7 +68,8 @@ export const chatService = {
     images?: string[],
     files?: ChatFile[],
     editMessageIndex?: number,
-    questionType?: 'step' | 'general'
+    questionType?: 'step' | 'general',
+    signal?: AbortSignal
   ): Promise<ChatResponse> {
     if (isDemoMode()) {
       return demoChat.sendMessage(message);
@@ -93,6 +94,7 @@ export const chatService = {
           editMessageIndex,
           questionType,
         }),
+        signal,
       });
 
       const data = await response.json();
@@ -106,6 +108,10 @@ export const chatService = {
 
       return data;
     } catch (error) {
+      // Check if request was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw error; // Re-throw AbortError to be handled by caller
+      }
       return { success: false, message: "Network error" };
     }
   },

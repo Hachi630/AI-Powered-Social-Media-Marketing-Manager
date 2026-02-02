@@ -220,10 +220,16 @@ export default function ContentPlanModal({
         color: #ffffff !important;
       }
       
-      /* Today's date */
+      /* Today's date - hide default Ant Design pseudo-elements to avoid double border */
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner::before,
+      .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner::after {
+        display: none !important;
+      }
+      
       .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today .ant-picker-cell-inner {
         border: 1px solid #AE906E !important;
         border-radius: 4px !important;
+        position: relative !important;
       }
       
       .contentPlanDatePicker.ant-picker-dropdown .ant-picker-cell-today:not(.ant-picker-cell-selected) .ant-picker-cell-inner {

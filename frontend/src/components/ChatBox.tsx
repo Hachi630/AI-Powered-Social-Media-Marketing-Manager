@@ -79,6 +79,7 @@ export default function ChatBox({
   const previousHasMessagesRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Edit message state (from main branch)
   const [editingMessageIndex, setEditingMessageIndex] = useState<number | null>(
@@ -254,6 +255,12 @@ export default function ChatBox({
       scrollToBottom();
     }, 100);
 
+    // Abort any ongoing request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     try {
       const response = await chatService.sendMessage(
         currentInput ||
@@ -262,7 +269,10 @@ export default function ChatBox({
             : ""),
         currentConversationId || undefined,
         currentImages.length > 0 ? currentImages : undefined,
-        currentFiles.length > 0 ? currentFiles : undefined
+        currentFiles.length > 0 ? currentFiles : undefined,
+        undefined, // editMessageIndex
+        undefined, // questionType
+        abortControllerRef.current.signal
       );
 
       if (response.success && response.response) {
@@ -306,7 +316,11 @@ export default function ChatBox({
         setUploadedImages(currentImages);
         setUploadedFiles(currentFiles);
       }
-    } catch {
+    } catch (error) {
+      // If request was aborted, don't show error or restore state
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       isInitializingRef.current = false;
       message.error("An error occurred while sending message");
       setMessages((prev) => prev.slice(0, -1));
@@ -790,6 +804,12 @@ export default function ChatBox({
       return;
     }
 
+    // Abort any ongoing request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setLoading(true);
 
     try {
@@ -801,7 +821,9 @@ export default function ChatBox({
         currentConversationId,
         editingMessageImages.length > 0 ? editingMessageImages : undefined,
         editingMessageFiles.length > 0 ? editingMessageFiles : undefined,
-        index
+        index,
+        undefined, // questionType
+        abortControllerRef.current.signal
       );
 
       if (response.success && response.response) {
@@ -845,7 +867,11 @@ export default function ChatBox({
       } else {
         message.error(response.message || "Failed to update message");
       }
-    } catch {
+    } catch (error) {
+      // If request was aborted, don't show error
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       message.error("An error occurred while updating message");
     } finally {
       setLoading(false);
@@ -875,7 +901,6 @@ export default function ChatBox({
                       onChange={(e) => setEditingMessageContent(e.target.value)}
                       autoSize={{ minRows: 1, maxRows: 4 }}
                       placeholder="Edit your message..."
-                      disabled={loading}
                     />
                     {editingMessageImages.length > 0 && (
                       <div className={styles.imagePreviewContainer}>
@@ -899,7 +924,6 @@ export default function ChatBox({
                                 )
                               }
                               className={styles.removeImageButton}
-                              disabled={loading}
                             />
                           </div>
                         ))}
@@ -931,14 +955,13 @@ export default function ChatBox({
                                 )
                               }
                               className={styles.removeFileButton}
-                              disabled={loading}
                             />
                           </div>
                         ))}
                       </div>
                     )}
                     <div className={styles.editActions}>
-                      <Button onClick={handleCancelEdit} disabled={loading}>
+                      <Button onClick={handleCancelEdit}>
                         Cancel
                       </Button>
                       <Button
@@ -1005,7 +1028,7 @@ export default function ChatBox({
                           size="small"
                           icon={<EditOutlined />}
                           onClick={() => handleEditMessage(index)}
-                          disabled={loading || editingMessageIndex !== null}
+                          disabled={editingMessageIndex !== null}
                         >
                           Edit
                         </Button>
