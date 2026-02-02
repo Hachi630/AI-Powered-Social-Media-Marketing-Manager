@@ -3,7 +3,7 @@
  * This is a temporary debugging file - can be removed after verification
  */
 import express from 'express';
-import { verifyGoogleToken } from '../utils/googleAuth';
+import { verifyGoogleToken } from '../utils/googleAuth.js';
 
 const router = express.Router();
 
