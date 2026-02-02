@@ -1006,6 +1006,11 @@ html[data-darkreader-mode] .logoGroup::after {
 
 /* Mobile DatePicker/RangePicker dropdown fix */
 @media (max-width: 767px) {
+  /* Ensure success/error messages appear above Drawer/Modal (e.g. after share) */
+  .ant-message {
+    z-index: 4000 !important;
+  }
+
   /* Make modal body scrollable on mobile - use overflow: visible for dropdowns to work */
   .ant-modal-body {
     max-height: 70vh !important;
