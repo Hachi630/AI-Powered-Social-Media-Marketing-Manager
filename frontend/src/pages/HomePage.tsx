@@ -1,39 +1,88 @@
-import { Button, Card, Col, Layout, Row, Space, Typography } from "antd";
-import {
-  MessageOutlined,
-  ShopOutlined,
-  CalendarOutlined,
-  PictureOutlined,
-  ThunderboltOutlined,
-  SafetyOutlined,
-  ClockCircleOutlined,
-  LineChartOutlined,
-  TeamOutlined,
-  UserOutlined,
-  FileTextOutlined,
-  BulbOutlined,
-  DownOutlined,
-} from "@ant-design/icons";
+import { Button, Layout, Space, Typography } from "antd";
+import { ArrowRightOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthModal from "../components/AuthModal";
+import MiniDemo from "../components/landing/MiniDemo";
 import styles from "./HomePage.module.css";
 import { User } from "../services/authService";
-import lulinYangImg from "../img/Lulin Yang.png";
-import kikiXingImg from "../img/Kiki Xing.png";
-import tazwarHabibImg from "../img/Tazwar Habib.png";
-import weijingZhangImg from "../img/Weijing Zhang.png";
-import xingyuanZhouImg from "../img/Xingyuan Zhou.png";
 import meloLogo from "../img/melo-logo.jpg";
 
+// Landing screenshots — drop PNGs into frontend/src/img/landing/ to make them appear.
+// Imports use Vite's eager glob so missing files don't break the build.
+const screenshotGlob = import.meta.glob("../img/landing/*.{png,jpg,jpeg,webp}", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+
+function shot(filename: string): string | null {
+  const key = `../img/landing/${filename}`;
+  return screenshotGlob[key] || null;
+}
+
 const { Footer } = Layout;
-const { Title, Paragraph } = Typography;
+const { Paragraph } = Typography;
 
 interface HomePageProps {
   isLoggedIn?: boolean;
   onLoginSuccess?: (user: User) => void;
   onLogout?: () => void;
   user?: User | null;
+}
+
+function ScreenshotFrame({
+  src,
+  alt,
+  className,
+}: {
+  src: string | null;
+  alt: string;
+  className?: string;
+}) {
+  return (
+    <div className={`${styles.screenshotFrame} ${className || ""}`}>
+      <div className={styles.screenshotBar}>
+        <span className={styles.dot} style={{ background: "#ff5f57" }} />
+        <span className={styles.dot} style={{ background: "#febc2e" }} />
+        <span className={styles.dot} style={{ background: "#28c840" }} />
+      </div>
+      {src ? (
+        <img src={src} alt={alt} className={styles.screenshotImg} />
+      ) : (
+        <div className={styles.screenshotPlaceholder}>
+          <span>Screenshot coming</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepCard({
+  number,
+  title,
+  description,
+  thumbSrc,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  thumbSrc: string | null;
+}) {
+  return (
+    <div className={styles.stepCard}>
+      <div className={styles.stepNumber}>{number}</div>
+      <div className={styles.stepThumb}>
+        {thumbSrc ? (
+          <img src={thumbSrc} alt={title} />
+        ) : (
+          <div className={styles.stepThumbPlaceholder} />
+        )}
+      </div>
+      <h3 className={styles.stepTitle}>{title}</h3>
+      <p className={styles.stepDescription}>{description}</p>
+    </div>
+  );
 }
 
 export default function HomePage({
@@ -57,120 +106,22 @@ export default function HomePage({
     navigate("/dashboard");
   };
 
-  const products = [
-    {
-      icon: <MessageOutlined className={styles.productIcon} />,
-      title: "AI Chat Interface",
-      description:
-        "Intelligent conversation assistant powered by advanced AI to help you create compelling marketing content and strategies.",
-    },
-    {
-      icon: <ShopOutlined className={styles.productIcon} />,
-      title: "Brand Profile",
-      description:
-        "Configure your brand voice, target audience, and knowledge base to ensure consistent messaging across all channels.",
-    },
-    {
-      icon: <CalendarOutlined className={styles.productIcon} />,
-      title: "Smart Calendar",
-      description:
-        "Schedule and manage your marketing campaigns with an intuitive calendar interface that keeps you organized.",
-    },
-    {
-      icon: <PictureOutlined className={styles.productIcon} />,
-      title: "Image Generation",
-      description:
-        "Generate stunning visuals for your marketing campaigns using AI-powered image generation technology.",
-    },
-  ];
-
-  const advantages = [
-    {
-      icon: <ShopOutlined className={styles.advantageIcon} />,
-      title: "Remembers Your Brand",
-      description:
-        "Melo keeps a persistent Brand DNA profile instead of starting from a blank chat every time.",
-    },
-    {
-      icon: <CalendarOutlined className={styles.advantageIcon} />,
-      title: "Campaign-level Planning",
-      description:
-        "You describe your goals, Melo builds multi-day, multi-channel campaign structures for you.",
-    },
-    {
-      icon: <ThunderboltOutlined className={styles.advantageIcon} />,
-      title: "One Workflow Instead of Many Tools",
-      description:
-        "Ideas, copy, scheduling and performance live in one place – no more switching between five tabs.",
-    },
-    {
-      icon: <LineChartOutlined className={styles.advantageIcon} />,
-      title: "Learns From Your Performance",
-      description:
-        "Melo uses post performance to improve future suggestions for your specific audience.",
-    },
-  ];
-
-  const outcomes = [
-    {
-      icon: <LineChartOutlined className={styles.outcomeIcon} />,
-      title: "Increased Efficiency",
-      description:
-        "Reduce manual copy-pasting between tools and manage your campaigns from one place.",
-    },
-    {
-      icon: <SafetyOutlined className={styles.outcomeIcon} />,
-      title: "Brand Consistency",
-      description:
-        "Keep a unified brand voice and style across every post and channel with Brand DNA profiles.",
-    },
-    {
-      icon: <ClockCircleOutlined className={styles.outcomeIcon} />,
-      title: "Faster Content Creation",
-      description:
-        "Turn business goals into ready-to-edit content ideas and drafts in minutes.",
-    },
-    {
-      icon: <LineChartOutlined className={styles.outcomeIcon} />,
-      title: "Better Engagement",
-      description:
-        "Create content that truly resonates with your audience by understanding their needs and preferences.",
-    },
-  ];
-
-  const targetAudiences = [
-    {
-      icon: <UserOutlined className={styles.audienceIcon} />,
-      title: "Independent Brand Owners",
-      description:
-        "Owners who run their brand and marketing themselves and need simple, on-brand workflows.",
-    },
-    {
-      icon: <TeamOutlined className={styles.audienceIcon} />,
-      title: "Solo & Small Marketing Teams",
-      description:
-        "Marketers handling social, email and campaigns with very limited time and tools.",
-    },
-    {
-      icon: <FileTextOutlined className={styles.audienceIcon} />,
-      title: "Freelance Social Media Managers",
-      description:
-        "Freelancers managing multiple client accounts who must keep each brand distinct and consistent.",
-    },
-    {
-      icon: <BulbOutlined className={styles.audienceIcon} />,
-      title: "Content-first Founders",
-      description:
-        "Founders who know content matters but can't plan every post from scratch.",
-    },
-  ];
+  const scrollToHowItWorks = () => {
+    document
+      .getElementById("how-it-works")
+      ?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <Layout className={styles.layout}>
-      {/* Header Bar */}
+      {/* Header */}
       <header className={styles.headerBar}>
         <div className={styles.headerContent}>
-          <div className={styles.headerLeft}>
+          <div
+            className={styles.headerLeft}
+            onClick={() => navigate("/home")}
+            style={{ cursor: "pointer" }}
+          >
             <img src={meloLogo} alt="Melo" className={styles.headerLogo} />
           </div>
           <div className={styles.headerTagline}>
@@ -179,289 +130,210 @@ export default function HomePage({
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className={styles.heroSection}>
-        <div className={styles.heroContentWrapper}>
-          <Row gutter={[48, 48]} align="middle">
-            <Col xs={24} lg={12} className={styles.heroLeft}>
-              <div className={styles.heroContent}>
-                <Title level={1} className={styles.heroTitle}>
-                  <span className={styles.gradientText1}>Start</span> growing
-                  your small brand with{" "}
-                  <span className={styles.gradientText2}>AI-powered</span>{" "}
-                  marketing
-                </Title>
-                <Paragraph className={styles.heroSubtitle}>
-                  Melo helps small brands and lean marketing teams plan
-                  campaigns, create on-brand content, and manage social media in
-                  one place – without needing a full-time marketing department.
-                </Paragraph>
-                <Space size="large" className={styles.heroButtons}>
-                  <Button
-                    type="primary"
-                    size="large"
-                    onClick={handleGetStarted}
-                    className={styles.heroButtonPrimary}
-                  >
-                    Get Started
-                  </Button>
-                  <Button
-                    size="large"
-                    onClick={() => navigate("/dashboard")}
-                    className={styles.heroButtonSecondary}
-                  >
-                    Explore Melo
-                  </Button>
-                </Space>
-                <div className={styles.scrollHint}>
-                  <DownOutlined className={styles.scrollIcon} />
-                  <span>Scroll to learn more</span>
-                </div>
-              </div>
-            </Col>
-            <Col xs={24} lg={12} className={styles.heroRight}>
-              <div className={styles.heroVisuals}>
-                <div className={styles.abstractBackground}></div>
-                <div className={styles.productCardsContainer}>
-                  {products.slice(0, 3).map((product, index) => (
-                    <Card
-                      key={index}
-                      className={styles.heroProductCard}
-                      style={{
-                        transform: `rotate(${index === 0 ? -5 : index === 1 ? 5 : -3}deg)`,
-                      }}
-                    >
-                      <div className={styles.heroProductIconWrapper}>
-                        {product.icon}
-                      </div>
-                      <Title level={4} className={styles.heroProductTitle}>
-                        {product.title}
-                      </Title>
-                      <Paragraph className={styles.heroProductDescription}>
-                        {product.description}
-                      </Paragraph>
-                      <div className={styles.heroProductBadge}>
-                        <span>Featured</span>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </Col>
-          </Row>
+      {/* Hero — dark, oversized type, single product screenshot */}
+      <section className={styles.hero}>
+        <div className={styles.heroOrb} aria-hidden />
+        <div className={styles.heroContent}>
+          <h1 className={styles.heroTitle}>
+            Marketing that
+            <br />
+            <span className={styles.heroAccent}>runs itself.</span>
+          </h1>
+          <p className={styles.heroSubtitle}>
+            Brand-aware AI that plans, writes, schedules and publishes.
+            <br />
+            Built for small brands and lean teams.
+          </p>
+          <Space size={16} className={styles.heroCtas}>
+            <Button
+              type="primary"
+              size="large"
+              className={styles.primaryBtn}
+              onClick={handleGetStarted}
+            >
+              Get started
+            </Button>
+            <Button
+              size="large"
+              className={styles.ghostBtn}
+              onClick={scrollToHowItWorks}
+            >
+              See how it works <ArrowRightOutlined />
+            </Button>
+          </Space>
+
+          <div className={styles.heroProduct}>
+            <MiniDemo />
+          </div>
         </div>
       </section>
 
-      {/* Products Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionContentWrapper}>
-          <Title level={2} className={styles.sectionTitle}>
-            Our <span className={styles.gradientText1}>Products</span>
-          </Title>
-          <Paragraph className={styles.sectionDescription}>
-            Comprehensive tools to power your marketing success
-          </Paragraph>
-          <Row gutter={[24, 24]} className={styles.productsRow}>
-            {products.map((product, index) => (
-              <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
-                <Card className={styles.productCard} hoverable>
-                  <div className={styles.productIconWrapper}>
-                    {product.icon}
-                  </div>
-                  <Title level={4} className={styles.productTitle}>
-                    {product.title}
-                  </Title>
-                  <Paragraph className={styles.productDescription}>
-                    {product.description}
-                  </Paragraph>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+      {/* How it works — light section */}
+      <section id="how-it-works" className={styles.howItWorks}>
+        <div className={styles.sectionWrap}>
+          <h2 className={styles.sectionTitle}>
+            From idea to published, in four steps.
+          </h2>
+          <p className={styles.sectionLead}>
+            One workflow that replaces a stack of marketing tools. No tabs to
+            juggle. No copy-pasting between apps.
+          </p>
+
+          <div className={styles.stepGrid}>
+            <StepCard
+              number="01"
+              title="Setup Brand"
+              description="Tell Melo your voice, audience and products. It remembers across every conversation."
+              thumbSrc={shot("step-1-brand.png")}
+            />
+            <StepCard
+              number="02"
+              title="Chat"
+              description="Generate post copy, images and ideas through natural conversation."
+              thumbSrc={shot("step-2-chat.png")}
+            />
+            <StepCard
+              number="03"
+              title="Plan Campaign"
+              description="Turn a goal and date range into a multi-platform content schedule in one click."
+              thumbSrc={shot("step-3-plan.png")}
+            />
+            <StepCard
+              number="04"
+              title="Auto-Publish"
+              description="Calendar pushes to LinkedIn and more at the right time. Set it once, it runs itself."
+              thumbSrc={shot("step-4-publish.png")}
+            />
+          </div>
         </div>
       </section>
 
-      {/* Advantages Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionContentWrapper}>
-          <Title level={2} className={styles.sectionTitle}>
-            Why Choose <span className={styles.gradientText2}>Melo</span>
-          </Title>
-          <Paragraph className={styles.sectionDescription}>
-            Discover what makes our platform the best choice for your marketing
-            needs
-          </Paragraph>
-          <Row gutter={[24, 24]} className={styles.advantagesRow}>
-            {advantages.map((advantage, index) => (
-              <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
-                <Card className={styles.advantageCard} hoverable>
-                  <div className={styles.advantageIconWrapper}>
-                    {advantage.icon}
-                  </div>
-                  <Title level={4} className={styles.advantageTitle}>
-                    {advantage.title}
-                  </Title>
-                  <Paragraph className={styles.advantageDescription}>
-                    {advantage.description}
-                  </Paragraph>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+      {/* Feature deep-dive 1 — dark */}
+      <section className={styles.featureDark}>
+        <div className={styles.featureRow}>
+          <div className={styles.featureCopy}>
+            <h2 className={styles.featureTitle}>
+              An AI that
+              <br />
+              <span className={styles.heroAccent}>knows your brand.</span>
+            </h2>
+            <p className={styles.featureLead}>
+              Every reply is shaped by your brand profile. The same chat helps
+              you draft, refine, and visualise content without leaving the
+              conversation.
+            </p>
+            <ul className={styles.featureBullets}>
+              <li>Brand profile context built into every reply</li>
+              <li>Drop images, PDFs and docs straight into chat</li>
+              <li>Conversation memory across sessions</li>
+            </ul>
+          </div>
+          <div className={styles.featureVisual}>
+            <ScreenshotFrame
+              src={shot("feature-chat.png")}
+              alt="Brand-aware chat"
+            />
+          </div>
         </div>
       </section>
 
-      {/* Outcomes Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionContentWrapper}>
-          <Title level={2} className={styles.sectionTitle}>
-            What Melo Helps You{" "}
-            <span className={styles.gradientText1}>Achieve</span>
-          </Title>
-          <Paragraph className={styles.sectionDescription}>
-            See how Melo can improve your day-to-day marketing work
-          </Paragraph>
-          <Row gutter={[24, 24]} className={styles.outcomesRow}>
-            {outcomes.map((outcome, index) => (
-              <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
-                <Card className={styles.outcomeCard} hoverable>
-                  <div className={styles.outcomeIconWrapper}>
-                    {outcome.icon}
-                  </div>
-                  <Title level={4} className={styles.outcomeTitle}>
-                    {outcome.title}
-                  </Title>
-                  <Paragraph className={styles.outcomeDescription}>
-                    {outcome.description}
-                  </Paragraph>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+      {/* Feature deep-dive 2 — light */}
+      <section className={styles.featureLight}>
+        <div className={`${styles.featureRow} ${styles.featureRowReverse}`}>
+          <div className={styles.featureCopy}>
+            <h2 className={styles.featureTitle}>
+              Campaigns,
+              <br />
+              <span className={styles.heroAccentDark}>not just posts.</span>
+            </h2>
+            <p className={styles.featureLead}>
+              Give Melo a goal and a date range. It returns a complete
+              multi-platform calendar with copy variants for Instagram,
+              LinkedIn, X and more.
+            </p>
+            <ul className={styles.featureBullets}>
+              <li>Goal-based plan generation</li>
+              <li>Per-platform copy variants</li>
+              <li>Calendar with drag-and-drop scheduling</li>
+            </ul>
+          </div>
+          <div className={styles.featureVisual}>
+            <ScreenshotFrame
+              src={shot("feature-campaigns.png")}
+              alt="Multi-platform campaign calendar"
+            />
+          </div>
         </div>
       </section>
 
-      {/* Target Audience Section */}
-      <section className={styles.section}>
-        <div className={styles.sectionContentWrapper}>
-          <Title level={2} className={styles.sectionTitle}>
-            Built for <span className={styles.gradientText2}>Small Brands</span>{" "}
-            and Lean Teams
-          </Title>
-          <Paragraph className={styles.sectionDescription}>
-            Melo is designed for small businesses and marketers who need to do a
-            lot with limited time and resources.
-          </Paragraph>
-          <Row gutter={[24, 24]} className={styles.audienceRow}>
-            {targetAudiences.map((audience, index) => (
-              <Col xs={24} sm={12} md={12} lg={6} xl={6} key={index}>
-                <Card className={styles.audienceCard} hoverable>
-                  <div className={styles.audienceIconWrapper}>
-                    {audience.icon}
-                  </div>
-                  <Title level={4} className={styles.audienceTitle}>
-                    {audience.title}
-                  </Title>
-                  <Paragraph className={styles.audienceDescription}>
-                    {audience.description}
-                  </Paragraph>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+      {/* Feature deep-dive 3 — dark */}
+      <section className={styles.featureDark}>
+        <div className={styles.featureRow}>
+          <div className={styles.featureCopy}>
+            <h2 className={styles.featureTitle}>
+              Schedule once.
+              <br />
+              <span className={styles.heroAccent}>Publish forever.</span>
+            </h2>
+            <p className={styles.featureLead}>
+              Connect LinkedIn once and Melo posts on your behalf at the right
+              time. Recurring schedules generate fresh content automatically,
+              whether you're posting weekly product updates or building a
+              personal brand on LinkedIn.
+            </p>
+            <ul className={styles.featureBullets}>
+              <li>LinkedIn OAuth, one-click connect</li>
+              <li>Recurring schedules with fresh AI-generated posts</li>
+              <li>Run-now to preview and publish on demand</li>
+            </ul>
+          </div>
+          <div className={styles.featureVisual}>
+            <ScreenshotFrame
+              src={shot("feature-schedule.png")}
+              alt="Recurring schedule"
+            />
+          </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className={styles.ctaSection}>
-        <div className={styles.sectionContentWrapper}>
-          <Title level={2} className={styles.ctaTitle}>
-            Ready to Transform Your Marketing?
-          </Title>
-          <Paragraph className={styles.ctaDescription}>
-            Explore our prototype and see how Melo could fit into your social
-            media workflow.
-          </Paragraph>
+      {/* Built for */}
+      <section className={styles.builtFor}>
+        <div className={styles.sectionWrap}>
+          <h2 className={styles.sectionTitle}>Built for the people doing it all.</h2>
+          <div className={styles.personaGrid}>
+            <div className={styles.personaCard}>
+              <h3>Independent Brand Owners</h3>
+              <p>You make the product, write the captions, and answer DMs. Melo takes the captions off the list.</p>
+            </div>
+            <div className={styles.personaCard}>
+              <h3>Solo & Small Marketing Teams</h3>
+              <p>One marketer, five platforms, infinite ideas. Melo turns the plan into shipped posts.</p>
+            </div>
+            <div className={styles.personaCard}>
+              <h3>Content-First Founders</h3>
+              <p>Show up on LinkedIn weekly without burning your evenings. Melo schedules and posts for you.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section className={styles.closingCta}>
+        <div className={styles.closingOrb} aria-hidden />
+        <div className={styles.closingContent}>
+          <h2 className={styles.closingTitle}>
+            Stop juggling tools.
+            <br />
+            <span className={styles.heroAccent}>Start shipping.</span>
+          </h2>
           <Button
             type="primary"
             size="large"
+            className={`${styles.primaryBtn} ${styles.primaryBtnLarge}`}
             onClick={handleGetStarted}
-            className={styles.ctaButton}
           >
-            Get Started Free
+            Get started free
           </Button>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className={styles.teamSection}>
-        <div className={styles.sectionContentWrapper}>
-          <Title level={2} className={styles.sectionTitle}>
-            Our <span className={styles.gradientText1}>Team</span>
-          </Title>
-          <Paragraph
-            className={`${styles.sectionDescription} ${styles.teamDescription}`}
-          >
-            Five Master's students at University of Auckland building an AI
-            marketing partner for small brands
-          </Paragraph>
-          <div className={styles.teamRow}>
-            {[
-              {
-                id: 1,
-                avatar: lulinYangImg,
-                name: "Lulin Yang",
-                role: "Backend Developer",
-              },
-              {
-                id: 2,
-                avatar: tazwarHabibImg,
-                name: "Tazwar Habib",
-                role: "Backend Developer",
-              },
-              {
-                id: 3,
-                avatar: kikiXingImg,
-                name: "Kiki Xing",
-                role: "Frontend Developer",
-              },
-              {
-                id: 4,
-                avatar: weijingZhangImg,
-                name: "Weijing Zhang",
-                role: "Frontend Developer",
-              },
-              {
-                id: 5,
-                avatar: xingyuanZhouImg,
-                name: "Xingyuan Zhou",
-                role: "Full-stack Developer",
-              },
-            ].map((member) => (
-              <div className={styles.teamMemberWrapper} key={member.id}>
-                <div className={styles.teamMemberCard}>
-                  <div className={styles.teamMemberAvatar}>
-                    {member.avatar ? (
-                      <img
-                        src={member.avatar}
-                        alt={member.name || `Team member ${member.id}`}
-                      />
-                    ) : (
-                      <div className={styles.avatarPlaceholder}>
-                        <span>Avatar {member.id}</span>
-                      </div>
-                    )}
-                  </div>
-                  <Title level={4} className={styles.teamMemberName}>
-                    {member.name || ""}
-                  </Title>
-                  <Paragraph className={styles.teamMemberRole}>
-                    {member.role}
-                  </Paragraph>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -495,6 +367,7 @@ export default function HomePage({
           </Space>
         </div>
       </Footer>
+
       <AuthModal
         open={isAuthModalOpen}
         onCancel={() => setIsAuthModalOpen(false)}

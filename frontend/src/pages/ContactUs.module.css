@@ -51,9 +51,10 @@
 }
 
 .contentWrapper {
-  max-width: 800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 24px;
+  text-align: center;
 }
 
 .pageTitle {
@@ -120,6 +121,96 @@
   cursor: pointer;
   transition: color 0.2s ease;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  display: inline-block;
+}
+
+/* Team grid */
+.teamRow {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.teamMemberWrapper {
+  flex: 0 0 calc(20% - 26px);
+  max-width: calc(20% - 26px);
+  min-width: 180px;
+}
+
+.teamMemberCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 24px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.teamMemberCard:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.teamMemberAvatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  margin-bottom: 24px;
+  overflow: hidden;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.teamMemberAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.teamMemberName {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  margin: 0 0 8px 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+.teamMemberRole {
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  margin: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
+}
+
+@media (max-width: 991px) {
+  .teamMemberWrapper {
+    flex: 0 0 calc(33.333% - 22px);
+    max-width: calc(33.333% - 22px);
+  }
+}
+
+@media (max-width: 767px) {
+  .teamMemberWrapper {
+    flex: 0 0 calc(50% - 16px);
+    max-width: calc(50% - 16px);
+  }
+  .teamRow {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 575px) {
+  .teamMemberWrapper {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
 }
 
 .backLink:hover {

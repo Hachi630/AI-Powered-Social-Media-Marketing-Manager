@@ -1,5 +1,7 @@
 # 🚀 AI-Powered Social Media & Marketing Manager - Melo
 
+**🌐 Language**: **English** · [中文](./README.zh-CN.md)
+
 Melo is an AI-powered social media and marketing management platform that helps businesses create, manage, and optimize their social media content and marketing strategies.
 
 ## 📋 Table of Contents
@@ -12,6 +14,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - [Environment Variables](#environment-variables)
 - [Twitter/X Integration](#-twitterx-integration)
 - [LinkedIn Integration](#-linkedin-integration)
+- [Job Hunt LinkedIn Auto-Poster](#-job-hunt-linkedin-auto-poster)
 - [Deployment](#-deployment)
 - [Additional Features](#-additional-features)
   - [Content Plan Generation](#content-plan-generation)
@@ -43,6 +46,7 @@ Melo is an AI-powered social media and marketing management platform that helps 
 - **Message Editing**: Edit previous chat messages and regenerate AI responses
 - **File Upload & Processing**: Upload and process documents (PDF, DOCX) with automatic text extraction for AI analysis
 - **Auto-Publish Scheduler**: Automatic publishing of scheduled LinkedIn posts (runs every 5 minutes)
+- **Job Hunt LinkedIn Auto-Poster**: Recurring AI-generated LinkedIn posts on weekly/daily schedules. Each run generates a fresh post (and optional image) on configured hot topics and auto-publishes to LinkedIn at the chosen time. Tuned for AI/Software Engineering job-hunt content but works for any persona.
 - **Calendar Views**: Multiple calendar views (Day, Week, Year) for flexible content scheduling
 - **Facebook & Instagram Integration**: Connect Facebook and Instagram accounts via OAuth and publish content directly
 - **ELO AI Assistant**: Interactive Live2D AI assistant with intelligent guidance, quick actions, and proactive tips
@@ -678,6 +682,82 @@ The LinkedIn integration allows users to connect their LinkedIn accounts and man
   cd backend && cat .env | grep LI_
   ```
 - **Verify services**: Backend on port 5000, Frontend on port 3000
+
+## 🤖 Job Hunt LinkedIn Auto-Poster
+
+### Overview
+
+A recurring LinkedIn auto-poster built on top of the LinkedIn integration. The user configures a **RecurringSchedule** (weekly or daily, with chosen days/time, sub-domains, hot-topic keywords, tone, optional image), and the backend takes care of the rest:
+
+1. Every 5 minutes, the in-process scheduler scans active recurring schedules whose `nextRunAt` has arrived.
+2. For each due schedule, it calls **Gemini** to generate a fresh, brand-aware LinkedIn post (and optionally an image) using the configured hot topics + tone + persona prompt.
+3. A `CalendarItem` is created with `platform='linkedin'`, `status='scheduled'`, `date`/`time` from `nextRunAt`, and links back to the schedule via `recurringScheduleId`.
+4. The existing `checkAndPublishScheduledItems` pipeline picks up the CalendarItem and publishes it to LinkedIn at the scheduled minute (or immediately if the time is already in the past).
+5. The scheduler advances `nextRunAt` to the next matching weekday+time, or pauses the schedule if `endDate` has passed.
+
+### Entry Point
+
+In the chat dashboard, click the **+** menu inside the ChatBox and choose **"Schedule Job Hunt Posts"**. The `JobHuntPostModal` opens with two tabs:
+- **Create New** — fill the form, optionally **Preview a post** to see exactly what Gemini would generate (no DB write), then **Activate Schedule** to save it.
+- **My Schedules** — list all your active and paused schedules with **Run Now** (generate + publish immediately), **Pause/Resume**, and **Delete** actions. Each schedule expands to show recently generated posts with `Scheduled` / `Published` status badges, image thumbnails, and post text.
+
+### Configuration Fields
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `name` | yes | Display name for the schedule |
+| `subDomains` | no | Multi-select: `LLMs`, `RAG`, `AI Agents`, `MLOps`, `System Design`, `Backend`, `Frontend`, `DevOps`, `Open Source`, `Distributed Systems` |
+| `hotTopics` | no | Free-form tags, e.g. `DeepSeek V4`, `MCP`, `RAG 2.0`. The prompt picks ONE per generation. |
+| `tone` | yes | `technical` / `storytelling` / `achievement` |
+| `recurrencePattern` | yes | `{ type: 'weekly' \| 'daily', daysOfWeek?: number[], timeOfDay: 'HH:mm' }` |
+| `includeImage` | no | Default `true`. Toggles AI image generation per post. |
+| `imageStyle` | no | Default `clean tech illustration`. Appended to the model-generated `imagePrompt`. |
+| `endDate` | no | After this date, schedule auto-pauses. |
+
+### Prompt Design
+
+`backend/src/services/jobHuntPromptService.ts:buildJobHuntSystemPrompt` builds a system prompt with the user's chosen `subDomains`, `hotTopics`, and `tone`. The prompt enforces:
+
+- Natural human voice (no AI-influencer hooks like "Stop doing X" / "Most engineers don't understand…")
+- No fabricated benchmarks, employer names, or "in production at scale" claims
+- IELTS 6.5–7 reading level, 120–180 words
+- Never ends with a question or generic engagement-bait CTA (a post-process pass strips any trailing question line)
+- No em-dashes / en-dashes (replaced with commas by `sanitizeContent`)
+- 3–5 hashtags on the last line including `#OpenToWork`
+- Job search is **never mentioned in the body** — only signalled by the `#OpenToWork` hashtag
+
+Gemini returns strict JSON `{ postText, imagePrompt, safetyNotes }`. The image prompt is wrapped in a template that bans fake dashboards, charts, robot imagery, or readable text in the image.
+
+### Render Free-Tier Keep-Alive
+
+Render free instances spin down after 15 minutes of inactivity, which would stop the internal cron. The fix is documented in [`docs/RENDER_KEEP_ALIVE.md`](./docs/RENDER_KEEP_ALIVE.md):
+
+1. Sign up at [cron-job.org](https://cron-job.org) (free).
+2. Create a job that pings `https://<your-backend>.onrender.com/api/health` every **10 minutes**.
+3. Render stays awake, both `processRecurringSchedules` and `checkAndPublishScheduledItems` run on the in-process `*/5 * * * *` cron without interruption.
+
+### API Endpoints
+
+All endpoints require JWT auth (`Authorization: Bearer <token>`).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/job-hunt/schedules` | Create a recurring schedule. Initial `nextRunAt` is computed from `recurrencePattern`. |
+| `GET` | `/api/job-hunt/schedules` | List the current user's schedules (newest first). |
+| `PATCH` | `/api/job-hunt/schedules/:id` | Edit fields (status pause/resume, tone, topics, etc.). When `recurrencePattern` changes, `nextRunAt` is recomputed. |
+| `DELETE` | `/api/job-hunt/schedules/:id` | Remove a schedule. Already-generated CalendarItems remain. |
+| `POST` | `/api/job-hunt/preview` | Generate a one-off preview post (and image if `includeImage`). Nothing is persisted. |
+| `GET` | `/api/job-hunt/schedules/:id/items` | List recent CalendarItems generated from this schedule. |
+| `POST` | `/api/job-hunt/schedules/:id/run-now` | Generate one post immediately, create a CalendarItem for the current minute, and trigger the publisher. Useful for verifying setup without waiting. |
+
+### Files
+
+- `backend/src/models/RecurringSchedule.ts` — schema (userId, name, status, subDomains, tone, hotTopics, recurrencePattern, includeImage, imageStyle, endDate, nextRunAt, lastGeneratedAt)
+- `backend/src/services/jobHuntPromptService.ts` — prompt build + Gemini call + image persistence (S3 or local fallback)
+- `backend/src/services/schedulerService.ts` — `processRecurringSchedules` runs alongside `checkAndPublishScheduledItems` in the same cron tick
+- `backend/src/routes/jobHunt.ts` — REST endpoints under `/api/job-hunt`
+- `frontend/src/components/JobHuntPostModal.tsx` — full Modal (create / manage tabs)
+- `frontend/src/services/jobHuntService.ts` — typed client for the 7 endpoints
 
 ## 🚀 Deployment
 
