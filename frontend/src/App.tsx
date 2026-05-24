@@ -439,6 +439,10 @@ function AppContent() {
         <OnboardingModal
           open={showOnboarding}
           onComplete={handleOnboardingComplete}
+          onSkip={() => {
+            if (user) handleOnboardingComplete(user);
+            else setShowOnboarding(false);
+          }}
         />
       )}
       {!isDeckRoute && <DemoPresenter />}

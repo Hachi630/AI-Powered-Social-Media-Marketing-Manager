@@ -16,6 +16,7 @@ const { Title, Text } = Typography;
 interface OnboardingModalProps {
   open: boolean;
   onComplete: (user: any) => void;
+  onSkip?: () => void;
 }
 
 // Step 2 - Target Audience Options
@@ -92,7 +93,7 @@ const CHARACTER_OPTIONS = [
   { name: "Mendako", path: "/mendako/めんだこモデル.model3.json", color: "#ffb703" },
 ];
 
-export default function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
+export default function OnboardingModal({ open, onComplete, onSkip }: OnboardingModalProps) {
   const { message: messageApi } = App.useApp();
   const { updatePendingSettings, applySettings } = useAppSettings();
   const [currentStep, setCurrentStep] = useState(1);
@@ -661,7 +662,14 @@ export default function OnboardingModal({ open, onComplete }: OnboardingModalPro
           {renderStepContent()}
         </div>
 
-        <div className={styles.footerSection}>
+        <div className={styles.footerSection} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            {onSkip && (
+              <Button type="text" onClick={onSkip} style={{ color: '#bbb' }}>
+                Skip for now
+              </Button>
+            )}
+          </div>
           <Space>
             {currentStep > 1 && (
               <Button icon={<LeftOutlined />} onClick={handlePrevious}>
