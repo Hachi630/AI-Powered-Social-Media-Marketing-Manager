@@ -83,11 +83,11 @@ app.use(cors({
       return callback(null, true)
     }
     
-    // In production, check against allowed origins
-    if (allowedOrigins.includes(origin)) {
+    // In production, check against allowed origins (also allow all vercel.app previews)
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
       callback(null, true)
     } else {
-      callback(new Error('Not allowed by CORS'))
+      callback(null, false)
     }
   },
   credentials: true,
