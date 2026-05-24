@@ -12,6 +12,7 @@ import {
   FileTextOutlined,
   FileOutlined,
   EditOutlined,
+  ThunderboltOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -32,6 +33,7 @@ import { chatService, ChatMessage } from "../services/chatService";
 import { uploadService } from "../services/uploadService";
 import ImageGenerationModal from "./ImageGenerationModal";
 import ContentPlanModal from "./ContentPlanModal";
+import JobHuntPostModal from "./JobHuntPostModal";
 import PromptTemplatesGrid from "./PromptTemplatesGrid";
 import { promptTemplates } from "../constants/promptTemplates";
 import { getImageUrl } from "../utils/imageUtils";
@@ -64,6 +66,7 @@ export default function ChatBox({
   >(conversationId || null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [contentPlanModalOpen, setContentPlanModalOpen] = useState(false);
+  const [jobHuntModalOpen, setJobHuntModalOpen] = useState(false);
   const [demoImagePrompt, setDemoImagePrompt] = useState("");
   const [lastUserMessage, setLastUserMessage] = useState<string>("");
   const [lastMessageText, setLastMessageText] = useState<string>("");
@@ -730,6 +733,12 @@ export default function ChatBox({
       onClick: handlePlanGenerate,
     },
     {
+      key: "job-hunt-posts",
+      label: "Schedule Job Hunt Posts",
+      icon: <ThunderboltOutlined />,
+      onClick: () => setJobHuntModalOpen(true),
+    },
+    {
       key: "upload-files",
       label: "Upload Files",
       icon: <UploadOutlined />,
@@ -1071,7 +1080,7 @@ export default function ChatBox({
 
       {/* Input area */}
       <Card 
-        className={`${styles.chatCard} ${messages.length > 0 ? styles.chatCardFixed : ''}`} 
+        className={`${styles.chatCard} ${styles.chatCardFixed}`}
         styles={{ body: { padding: 24 } }}
       >
         {/* Image preview */}
@@ -1187,10 +1196,6 @@ export default function ChatBox({
         </div>
       </Card>
 
-      {/* Template Grid - only show on desktop when there are no messages, separated from input box */}
-      {!isMobile && messages.length === 0 && (
-        <PromptTemplatesGrid onTemplateSelect={handleTemplateSelect} />
-      )}
 
       {/* Image Generation Modal */}
       <ImageGenerationModal
@@ -1211,6 +1216,12 @@ export default function ChatBox({
           setLastMessageText("");
         }}
         onSuccess={handleContentPlanSuccess}
+      />
+
+      {/* Job Hunt Post Schedule Modal */}
+      <JobHuntPostModal
+        open={jobHuntModalOpen}
+        onClose={() => setJobHuntModalOpen(false)}
       />
     </div>
   );

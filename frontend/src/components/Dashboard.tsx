@@ -248,11 +248,6 @@ export default function Dashboard({
           ) : (
             <>
               {/* Web: Keep original layout */}
-              {!hasMessages && (
-                <Typography.Title level={1} className={styles.title}>
-                  {heroTitle}
-                </Typography.Title>
-              )}
               <ChatBox
                 conversationId={selectedConversationId}
                 onConversationChange={handleConversationChange}
@@ -260,11 +255,6 @@ export default function Dashboard({
                 onContentChange={handleContentChange}
                 onInsertContent={handleInsertContent}
               />
-              {tagline && !hasMessages && (
-                <Typography.Paragraph className={styles.tagline}>
-                  {tagline}
-                </Typography.Paragraph>
-              )}
             </>
           )}
         </Content>

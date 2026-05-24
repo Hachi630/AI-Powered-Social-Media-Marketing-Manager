@@ -3,6 +3,8 @@ import CalendarItem from '../models/CalendarItem.js';
 import LinkedInToken from '../models/LinkedInToken.js';
 import TwitterToken from '../models/TwitterToken.js';
 import User from '../models/User.js';
+import RecurringSchedule, { IRecurringSchedule } from '../models/RecurringSchedule.js';
+import { generateJobHuntPostWithImage } from './jobHuntPromptService.js';
 import {
   createLinkedInPost,
   createLinkedInPostWithImage,
@@ -907,3 +909,109 @@ async function publishInstagramItem(item: any): Promise<void> {
     // Keep status as 'scheduled' for retry
   }
 }
+
+/**
+ * Process active RecurringSchedules whose nextRunAt has arrived.
+ * For each, generate a fresh post + image and create a scheduled CalendarItem.
+ * The existing checkAndPublishScheduledItems will pick it up at its scheduled date/time.
+ */
+export async function processRecurringSchedules(): Promise<void> {
+  try {
+    const now = dayjs();
+    console.log(`[RecurringScheduler] Checking recurring schedules at ${now.format('YYYY-MM-DD HH:mm:ss')}`);
+
+    const due = await RecurringSchedule.find({
+      status: 'active',
+      nextRunAt: { $lte: now.toDate() },
+    });
+
+    if (due.length === 0) {
+      console.log('[RecurringScheduler] No recurring schedules due');
+      return;
+    }
+
+    console.log(`[RecurringScheduler] Found ${due.length} schedule(s) due`);
+
+    for (const schedule of due) {
+      try {
+        await runRecurringSchedule(schedule);
+      } catch (err: any) {
+        console.error(`[RecurringScheduler] Schedule ${schedule._id} failed:`, err.message || err);
+      }
+    }
+  } catch (error: any) {
+    console.error('[RecurringScheduler] Top-level error:', error);
+  }
+}
+
+async function runRecurringSchedule(schedule: IRecurringSchedule): Promise<void> {
+  const runAt = dayjs(schedule.nextRunAt);
+  console.log(`[RecurringScheduler] Running schedule ${schedule._id} (${schedule.name}) scheduled at ${runAt.format('YYYY-MM-DD HH:mm')}`);
+
+  // 1. Generate post + image (best-effort image)
+  const post = await generateJobHuntPostWithImage({
+    subDomains: schedule.subDomains,
+    tone: schedule.tone,
+    hotTopics: schedule.hotTopics,
+    imageStyle: schedule.imageStyle,
+    includeImage: schedule.includeImage,
+    userId: schedule.userId,
+  } as any);
+
+  // 2. Create CalendarItem so the existing publisher will pick it up
+  await CalendarItem.create({
+    userId: schedule.userId,
+    recurringScheduleId: schedule._id,
+    platform: 'linkedin',
+    date: runAt.startOf('day').toDate(),
+    time: runAt.format('HH:mm'),
+    title: post.title,
+    content: post.content,
+    imageUrl: post.imageUrl || null,
+    variants: { linkedin: post.content },
+    status: 'scheduled',
+  });
+
+  console.log(`[RecurringScheduler] Created CalendarItem for schedule ${schedule._id}`);
+
+  // 3. Compute next occurrence
+  const next = computeNextRunAt(schedule, runAt);
+
+  // 4. Persist updates
+  schedule.lastGeneratedAt = new Date();
+  if (next && (!schedule.endDate || dayjs(next).isBefore(dayjs(schedule.endDate)))) {
+    schedule.nextRunAt = next.toDate();
+  } else {
+    schedule.status = 'paused';
+    console.log(`[RecurringScheduler] Schedule ${schedule._id} reached endDate, paused`);
+  }
+  await schedule.save();
+}
+
+function computeNextRunAt(schedule: IRecurringSchedule, fromTime: dayjs.Dayjs): dayjs.Dayjs | null {
+  const pattern = schedule.recurrencePattern;
+  const [hh, mm] = pattern.timeOfDay.split(':').map(Number);
+
+  if (pattern.type === 'daily') {
+    return fromTime.add(1, 'day').hour(hh).minute(mm).second(0).millisecond(0);
+  }
+
+  if (pattern.type === 'weekly') {
+    const days = (pattern.daysOfWeek || []).slice().sort((a, b) => a - b);
+    if (days.length === 0) return null;
+
+    // Start scanning from the next minute
+    let candidate = fromTime.add(1, 'minute');
+    for (let i = 0; i < 14; i++) {
+      const dow = candidate.day();
+      if (days.includes(dow)) {
+        return candidate.hour(hh).minute(mm).second(0).millisecond(0);
+      }
+      candidate = candidate.add(1, 'day');
+    }
+    return null;
+  }
+
+  return null;
+}
+

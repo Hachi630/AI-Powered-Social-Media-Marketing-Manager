@@ -17,40 +17,54 @@ export async function generateImage(prompt: string): Promise<string> {
     console.log('Generating image with prompt:', prompt)
     console.log('Using model:', model)
 
-    // Call Gemini API with image generation request
-    // Note: Gemini API may not support direct image generation in all models
-    // We'll try multiple approaches
+    // Call Gemini API with image generation request.
+    // The @google/genai SDK uses `config` (not `generationConfig`) as the field
+    // for response modalities since v1. We try a few shapes for backward compat.
     let response: any
-    try {
-      response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }],
-          },
-        ],
-        // Request image response using responseModalities
-        generationConfig: {
-          responseModalities: ['IMAGE'],
-        },
-      } as any)
-    } catch (apiError: any) {
-      // If responseModalities is not supported, try without it
-      console.warn('Image generation with responseModalities failed, trying alternative method:', apiError.message)
-      try {
-        response = await ai.models.generateContent({
+    const attempts: Array<{ label: string; payload: any }> = [
+      {
+        label: 'config.responseModalities=[IMAGE,TEXT]',
+        payload: {
           model,
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `Generate an image: ${prompt}` }],
-            },
-          ],
-        })
-      } catch (fallbackError: any) {
-        throw new Error(`Gemini API call failed: ${fallbackError.message || 'Unknown error'}`)
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          config: { responseModalities: ['IMAGE', 'TEXT'] },
+        },
+      },
+      {
+        label: 'config.responseModalities=[Image]',
+        payload: {
+          model,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          config: { responseModalities: ['Image'] },
+        },
+      },
+      {
+        label: 'generationConfig.responseModalities=[IMAGE]',
+        payload: {
+          model,
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['IMAGE'] },
+        },
+      },
+    ]
+
+    let lastError: any = null
+    for (const attempt of attempts) {
+      try {
+        console.log(`[ImageGen] Trying ${attempt.label}`)
+        response = await ai.models.generateContent(attempt.payload as any)
+        if (response) {
+          console.log(`[ImageGen] Got response via ${attempt.label}`)
+          break
+        }
+      } catch (apiError: any) {
+        lastError = apiError
+        console.warn(`[ImageGen] ${attempt.label} failed:`, apiError?.message || apiError)
       }
+    }
+
+    if (!response) {
+      throw new Error(`Gemini image API call failed: ${lastError?.message || 'all attempts failed'}`)
     }
 
     // Extract image from response

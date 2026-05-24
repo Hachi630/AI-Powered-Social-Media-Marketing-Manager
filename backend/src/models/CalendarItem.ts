@@ -12,6 +12,7 @@ export interface ICalendarItemVariants {
 export interface ICalendarItem extends Document {
   userId: Types.ObjectId
   campaignId?: Types.ObjectId | null
+  recurringScheduleId?: Types.ObjectId | null
   companyId?: string | null
   platform: string
   date: Date
@@ -49,6 +50,12 @@ const CalendarItemSchema: Schema = new Schema(
       type: Schema.Types.ObjectId,
       ref: 'Campaign',
       default: null,
+    },
+    recurringScheduleId: {
+      type: Schema.Types.ObjectId,
+      ref: 'RecurringSchedule',
+      default: null,
+      index: true,
     },
     companyId: {
       type: String,

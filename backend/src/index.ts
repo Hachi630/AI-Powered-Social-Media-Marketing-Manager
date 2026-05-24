@@ -32,7 +32,8 @@ import twitterRoutes from "./routes/twitter.js";
 import analyticsRoutes from "./routes/analytics.js";
 import messagingRoutes from "./routes/messaging.js";
 import ayrshareRoutes from "./routes/ayrshare.js";
-import { checkAndPublishScheduledItems } from './services/schedulerService.js';
+import jobHuntRoutes from "./routes/jobHunt.js";
+import { checkAndPublishScheduledItems, processRecurringSchedules } from './services/schedulerService.js';
 
 // Connect to database and start scheduler
 connectDB().then(() => {
@@ -41,6 +42,9 @@ connectDB().then(() => {
   cron.schedule('*/5 * * * *', async () => {
     try {
       console.log('[Scheduler] Cron job triggered at', new Date().toISOString());
+      // Order matters: generate first so newly-created CalendarItems can be
+      // published in the same cron tick.
+      await processRecurringSchedules();
       await checkAndPublishScheduledItems();
     } catch (error: any) {
       console.error('[Scheduler] Error in scheduled task:', error);
@@ -121,6 +125,7 @@ app.use("/api/twitter", twitterRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/messaging", messagingRoutes);
 app.use("/api/ayrshare", ayrshareRoutes);
+app.use("/api/job-hunt", jobHuntRoutes);
 
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', message: 'Server is running' })
