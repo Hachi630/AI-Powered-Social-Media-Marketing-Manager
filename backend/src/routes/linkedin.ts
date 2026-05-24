@@ -158,16 +158,16 @@ router.get("/auth", (req, res) => {
     return res.status(400).json({ error: "userId is required" });
   }
 
-  // Encode userId in state so we can retrieve it in callback
+  // Encode userId in state so we can retrieve it in callback (URL-safe base64)
   const state = JSON.stringify({ userId, nonce: Math.random().toString(36) });
-  const encodedState = Buffer.from(state).toString('base64');
+  const encodedState = Buffer.from(state).toString('base64url');
 
   // LinkedIn API scopes
   // - openid, profile, email: Sign In with LinkedIn using OpenID Connect
   // - w_member_social: Share on LinkedIn (required for posting)
   // - r_events: Read organization events
   // - rw_events: Create/update/delete organization events
-  const scopes = "openid profile email w_member_social r_events rw_events";
+  const scopes = "openid profile email w_member_social";
 
   const params = new URLSearchParams({
     response_type: "code",
@@ -205,7 +205,7 @@ router.get("/callback", async (req, res) => {
   // Bug 1 Fix: Decode userId from state parameter
   let userId: string | undefined;
   try {
-    const decodedState = Buffer.from(stateParam, 'base64').toString('utf-8');
+    const decodedState = Buffer.from(stateParam, 'base64url').toString('utf-8');
     const stateData = JSON.parse(decodedState);
     userId = stateData.userId;
   } catch {
